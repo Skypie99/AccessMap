@@ -35,6 +35,7 @@ import {
 } from 'lucide-react-native';
 import { decorativeProps, isAxRecompose } from '@/lib/accessibility';
 import { LinearGradient } from 'expo-linear-gradient';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenHeader, EYEBROW_TRACKING } from '@/components/ui/ScreenHeader';
@@ -92,6 +93,14 @@ const FALLBACK_PEEK_REGION = {
 //   2. 'Nobody has reported a barrier around here yet.'
 //   3. 'No reports here yet. You could add the first.'   <- RATIFIED by Sky
 const EMPTY_LOCAL_INVITE = 'No reports here yet. You could add the first.';
+// Board 10 — the same ratified sentence, in the two halves the empty-state
+// recipe asks for (heading, then body). Derived from the const above rather
+// than retyped, so the peek chip and the list card can never drift apart and
+// a future rewording is still the one-line swap the A-5 note promises.
+const [EMPTY_INVITE_TITLE, EMPTY_INVITE_BODY] = ((): [string, string] => {
+  const cut = EMPTY_LOCAL_INVITE.indexOf('. ') + 1;
+  return [EMPTY_LOCAL_INVITE.slice(0, cut), EMPTY_LOCAL_INVITE.slice(cut).trim()];
+})();
 
 type HomeNav = BottomTabNavigationProp<RootTabParamList, 'Home'>;
 
@@ -597,19 +606,25 @@ export default function HomeScreen() {
 
         {error && flags.length === 0 ? (
           <GlassSurface variant="row" style={styles.listCard}>
-            <View style={styles.stateInner} accessibilityLiveRegion="polite">
-              <AppText variant="body" style={styles.errorText}>Couldn’t load barriers.</AppText>
-              <PressableScale
-                onPress={() => void refresh()}
-                style={styles.retryBtn}
-                pressedTint={color.ctaFillPressed}
-                accessibilityRole="button"
-                accessibilityLabel="Try again"
-              >
-                <RefreshCw size={15} color={color.textOnBrand} strokeWidth={2.4} />
-                <AppText variant="label" style={styles.retryText}>Try again</AppText>
-              </PressableScale>
-            </View>
+            {/* W5: the house empty/error recipe, with the path mark. Copy is
+                the shipped sentence, verbatim; the retry is the shipped
+                control, moved into the block's action slot. */}
+            <EmptyState
+              live
+              title="Couldn’t load barriers."
+              action={
+                <PressableScale
+                  onPress={() => void refresh()}
+                  style={styles.retryBtn}
+                  pressedTint={color.ctaFillPressed}
+                  accessibilityRole="button"
+                  accessibilityLabel="Try again"
+                >
+                  <RefreshCw size={15} color={color.textOnBrand} strokeWidth={2.4} />
+                  <AppText variant="label" style={styles.retryText}>Try again</AppText>
+                </PressableScale>
+              }
+            />
           </GlassSurface>
         ) : showFirstLoad ? (
           <GlassSurface variant="row" style={styles.listCard}>
@@ -622,7 +637,29 @@ export default function HomeScreen() {
           </GlassSurface>
         ) : items.length === 0 ? (
           <GlassSurface variant="row" style={styles.listCard}>
-            <AppText variant="body" style={styles.emptyText}>No barriers reported yet.</AppText>
+            {/* Board 10. The card used to say "No barriers reported yet." while
+                the map peek two inches above said the RATIFIED sentence
+                (A-5, `EMPTY_LOCAL_INVITE`) for the same condition. One screen,
+                two sentences about the same nothing. The ratified one wins and
+                splits into the recipe's heading + body — no new words, and the
+                invitation Sky picked is now on the surface a first-time user
+                actually reads. */}
+            <EmptyState
+              title={EMPTY_INVITE_TITLE}
+              body={EMPTY_INVITE_BODY}
+              action={
+                <PressableScale
+                  onPress={() => navigation.navigate('FullMap', { openReport: true, ts: Date.now() })}
+                  style={styles.retryBtn}
+                  pressedTint={color.ctaFillPressed}
+                  accessibilityRole="button"
+                  accessibilityLabel="Report a barrier"
+                >
+                  <Plus size={15} color={color.textOnBrand} strokeWidth={2.4} />
+                  <AppText variant="label" style={styles.retryText}>Report a barrier</AppText>
+                </PressableScale>
+              }
+            />
           </GlassSurface>
         ) : (
           <GlassSurface variant="row" style={styles.listCard}>
@@ -854,8 +891,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       overflow: 'hidden',
     },
-    stateInner: { padding: spacing.lg, alignItems: 'center', gap: spacing.md },
-    errorText: { fontSize: font.size.base, color: color.inkGlassMuted, textAlign: 'center' },
     retryBtn: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -873,7 +908,6 @@ const makeStyles = (color: ColorTheme) =>
     // gap(12) = 48 (was 40 for the old 11px dot; the mini-disc pushed the text
     // right). QA 2026-08-18: value was 52, a 4px drift from its own math.
     sep: { height: StyleSheet.hairlineWidth, backgroundColor: color.border, marginLeft: 48 },
-    emptyText: { fontSize: font.size.base, color: color.inkGlassMuted, padding: spacing.lg, textAlign: 'center' },
     reportPill: {
       position: 'absolute',
       right: spacing.lg,

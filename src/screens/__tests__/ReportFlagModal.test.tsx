@@ -29,6 +29,8 @@ import { useAuth } from '@/lib/auth';
 // ---------------------------------------------------------------------------
 import ReportFlagModal from '../ReportFlagModal';
 import { takeReportDraft } from '@/lib/reportDraft';
+import { validReportTemplates } from '@/lib/reportTemplates';
+import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 
 // ---------------------------------------------------------------------------
 // Supabase env stubs — required before any module that imports supabase.ts
@@ -223,6 +225,20 @@ jest.mock('@/lib/contextTags', () => ({
 jest.mock('@/lib/reportTemplates', () => ({ validReportTemplates: jest.fn(() => []) }));
 
 // ---------------------------------------------------------------------------
+// Mock: useWindowDimensions — pin the DEFAULT text size for this suite.
+//
+// RN's jest environment reports fontScale 2, which is past the F4 recomposition
+// threshold, so without this every test below would silently be walking the
+// LARGE-TYPE composition while describing the compact one. Mocking the hook
+// module (not the whole of react-native) keeps every other RN export real.
+// The recomposition itself is tested in ReportFlagModal.dynamicType.test.tsx.
+// ---------------------------------------------------------------------------
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({ width: 390, height: 844, scale: 3, fontScale: 1 })),
+}));
+
+// ---------------------------------------------------------------------------
 // Mock: @/theme/ThemeContext — minimal color stub
 // ---------------------------------------------------------------------------
 jest.mock('@/theme/ThemeContext', () => ({
@@ -309,15 +325,44 @@ const LOCATION = { lat: 49.28, lng: -123.12 };
 
 type User = { id: string };
 
+/**
+ * Q5 — the form no longer arrives pre-rated.
+ *
+ * `useState<FlagSeverity>(3)` became `useState<FlagSeverity | null>(null)`: a
+ * default on a judgment scale biased the data and skipped the moment the user
+ * is asked to rate. Every test below that walks the form to SUBMIT needs the
+ * report to be filable, which now takes a tap it used to get for free — so the
+ * render helpers do explicitly what the component used to do implicitly, and
+ * the assertions past this point are unchanged.
+ *
+ * Pass `severity: null` to stay unrated; that is what the Q5 block itself does.
+ */
+/** Drive the F4 recomposition threshold (the suite is pinned to 1 — see the
+ *  useWindowDimensions mock above). */
+const mockWindow = useWindowDimensions as unknown as jest.Mock;
+const setFontScale = (fontScale: number) =>
+  mockWindow.mockReturnValue({ width: 390, height: 844, scale: 3, fontScale });
+
+function rate(utils: ReturnType<typeof render>, level: number) {
+  // The live meaning line's own label also starts "Severity 3:" once a level is
+  // chosen, so match the DISC by its role rather than by prefix alone.
+  const disc = utils
+    .getAllByLabelText(new RegExp(`^Severity ${level}:`))
+    .find((el) => ['button', 'radio'].includes(el.props.accessibilityRole));
+  if (!disc) throw new Error(`no severity ${level} control`);
+  fireEvent.press(disc);
+}
+
 function renderAnon(
   props: Partial<{
     visible: boolean;
     location: typeof LOCATION | null;
     onClose: () => void;
+    severity: number | null;
   }> = {},
 ) {
   mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
-  return render(
+  const utils = render(
     withProvider(
       <ReportFlagModal
         visible={props.visible ?? true}
@@ -327,11 +372,17 @@ function renderAnon(
       />,
     ),
   );
+  const level = props.severity === undefined ? 3 : props.severity;
+  if (level !== null) rate(utils, level);
+  return utils;
 }
 
-function renderAuth(user: User = { id: 'user-abc' }, props: Partial<{ visible: boolean }> = {}) {
+function renderAuth(
+  user: User = { id: 'user-abc' },
+  props: Partial<{ visible: boolean; severity: number | null }> = {},
+) {
   mockUseAuth.mockReturnValue({ user } as ReturnType<typeof useAuth>);
-  return render(
+  const utils = render(
     withProvider(
       <ReportFlagModal
         visible={props.visible ?? true}
@@ -341,6 +392,9 @@ function renderAuth(user: User = { id: 'user-abc' }, props: Partial<{ visible: b
       />,
     ),
   );
+  const level = props.severity === undefined ? 3 : props.severity;
+  if (level !== null) rate(utils, level);
+  return utils;
 }
 
 /**
@@ -370,6 +424,7 @@ async function addPhoto(utils: ReturnType<typeof render>, uri: string) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  setFontScale(1);
   mockCheckAnonRateLimit.mockResolvedValue(undefined);
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
@@ -464,18 +519,33 @@ describe('anon form (user === null)', () => {
     expect(flagTitle).toBeUndefined();
   });
 
-  it('submit button accessibilityLabel is "Submit report anonymously" (S18: contains the visible "Submit report")', () => {
-    const { getByLabelText } = renderAnon();
-    expect(getByLabelText('Submit report anonymously')).toBeTruthy();
+  it('Q6: the visible word and the spoken name are one string (was two)', () => {
+    // S18 used to be satisfied the other way round — the visible label read
+    // "Submit report" while only the accessible name said "anonymously", so the
+    // contract was restated to screen-reader users and to nobody else. Q6 makes
+    // them the same string, which is the only shape that keeps WCAG 2.5.3 once
+    // the visible word changes at all.
+    const { getByLabelText, getByText, queryByLabelText } = renderAnon();
+    expect(getByLabelText('Submit anonymously')).toBeTruthy();
+    expect(getByText('Submit anonymously')).toBeTruthy();
+    expect(queryByLabelText('Submit report anonymously')).toBeNull();
   });
 
-  it('submit button says "Submit report" while the title still states anonymity', () => {
-    const { getByText, getAllByText } = renderAnon();
-    // S18 (L5-03 / WCAG 2.5.3): the action button is the verb-forward
-    // "Submit report" (was the 19-char "Report anonymously"), and its
-    // accessible name CONTAINS that visible text. Anonymity is still stated
-    // by the title and the anon banner — not the button.
-    expect(getByText('Submit report')).toBeTruthy();
+  it('does NOT show "Report a flag" title header', () => {
+    const { getAllByRole } = renderAnon();
+    const headers = getAllByRole('header');
+    const flagTitle = headers.find((el) => el.props.children === 'Report a flag');
+    expect(flagTitle).toBeUndefined();
+  });
+
+  it('the guest button restates the contract, and the title still does too', () => {
+    const { getByText, getAllByText, queryByText } = renderAnon();
+    // S18 (L5-03) kept the button verb-forward; Q6 keeps that and puts the
+    // contract back on it, where the store dossier thought it already was.
+    // The title and the anon banner still say it as well — the button is the
+    // third place, not the only one.
+    expect(getByText('Submit anonymously')).toBeTruthy();
+    expect(queryByText('Submit report')).toBeNull();
     expect(getAllByText('Report anonymously').length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -521,7 +591,7 @@ describe('auth form (user !== null)', () => {
 describe('submit routing — anon path', () => {
   it('calls checkAnonRateLimit before createAnonFlag on anon submit', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCheckAnonRateLimit).toHaveBeenCalledTimes(1);
@@ -535,7 +605,7 @@ describe('submit routing — anon path', () => {
 
   it('calls recordAnonSubmit after a successful createAnonFlag', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockRecordAnonSubmit).toHaveBeenCalledTimes(1);
@@ -544,7 +614,7 @@ describe('submit routing — anon path', () => {
 
   it('does NOT call createFlag on an anon submit', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalled();
@@ -554,7 +624,7 @@ describe('submit routing — anon path', () => {
 
   it('sends the correct lat/lng/category/severity to createAnonFlag', async () => {
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledWith(
@@ -574,7 +644,7 @@ describe('submit routing — anon path', () => {
     );
     const alertSpy = jest.spyOn(Alert, 'alert');
     const { getByLabelText } = renderAnon();
-    fireEvent.press(getByLabelText('Submit report anonymously'));
+    fireEvent.press(getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
@@ -758,6 +828,7 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
       withProvider(<ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
@@ -780,7 +851,8 @@ describe('live location prop (FIX C — fresh GPS read lands mid-form)', () => {
       withProvider(<ReportFlagModal visible location={FRESH} onClose={onClose} onCreated={onCreated} />),
     );
 
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledWith(
@@ -958,7 +1030,7 @@ describe('submitting state — L4 disable sweep', () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const utils = renderAnon();
 
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
@@ -970,7 +1042,7 @@ describe('submitting state — L4 disable sweep', () => {
 
     // The catch path must reset BOTH the F3 ref and the submitting state.
     expect(
-      utils.getByLabelText('Submit report anonymously').props.accessibilityState,
+      utils.getByLabelText('Submit anonymously').props.accessibilityState,
     ).toMatchObject({ disabled: false, busy: false });
     expect(
       utils.getByLabelText('Description of the accessibility issue').props.editable,
@@ -978,7 +1050,7 @@ describe('submitting state — L4 disable sweep', () => {
 
     // Functional proof: a second tap goes through (rate limit passes now —
     // the rejection above was mockRejectedValueOnce).
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
     await waitFor(() => {
       expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
     });
@@ -1083,7 +1155,8 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     // The insert is in flight and awaited (not aborted) — exactly one call.
     await waitFor(() => expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1));
@@ -1112,7 +1185,8 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
         withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
       );
 
-      fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+      rate(utils, 3); // Q5 — a report is not filable until it is rated
+      fireEvent.press(utils.getByLabelText('Submit anonymously'));
       // Flush the resolved rate-limit check so the insert is in flight.
       await act(async () => {
         await Promise.resolve();
@@ -1160,7 +1234,8 @@ describe('S10 — confirm the submit', () => {
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(mockSetLiveStatus).toHaveBeenCalledWith(
@@ -1181,6 +1256,7 @@ describe('S10 — confirm the submit', () => {
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={onCreated} />),
     );
 
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
@@ -1199,7 +1275,8 @@ describe('S10 — confirm the submit', () => {
       withProvider(<ReportFlagModal visible location={LOCATION} onClose={jest.fn()} onCreated={jest.fn()} />),
     );
 
-    fireEvent.press(utils.getByLabelText('Submit report anonymously'));
+    rate(utils, 3); // Q5 — a report is not filable until it is rated
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith("Couldn't submit your report", 'insert failed');
@@ -1395,7 +1472,7 @@ describe('SW-37 — there is a way out of the dead-end', () => {
     );
     // Under a denial, "Use my location" only re-asks a question the OS has
     // already answered, so the hint must name the other way out too.
-    const submit = getByLabelText('Submit report anonymously');
+    const submit = getByLabelText('Submit anonymously');
     expect(submit.props.accessibilityHint).toContain(PLACE);
   });
 });
@@ -1438,7 +1515,10 @@ describe('SW-52 — cancelling a report actually discards it', () => {
 
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
-    // The sheet never unmounted — this is the same component, reopened.
+    // The sheet never unmounted — this is the same component, reopened. Q5: the
+    // reset clears the RATING too, so the next report has to be rated again
+    // before it is filable. That is the point of the reset, not a wrinkle in it.
+    rate(utils, 3);
     fireEvent.press(utils.getByLabelText('Submit report'));
     await waitFor(() => {
       expect(mockCreateFlag).toHaveBeenCalledTimes(1);
@@ -1446,6 +1526,23 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     // The whole finding in one assertion: nothing was uploaded, because there
     // was nothing left to upload.
     expect(mockUploadFlagPhoto).not.toHaveBeenCalled();
+  });
+
+  it('clears the rating too, so the next report is re-judged (Q5)', () => {
+    const utils = renderAuth({ id: 'user-abc' }, { severity: 4 });
+    // Rated: the ask is gone and Submit is live.
+    expect(utils.queryByText('Choose how hard this makes the path to use.')).toBeNull();
+    expect(
+      utils.getByLabelText('Submit report').props.accessibilityState.disabled,
+    ).toBe(false);
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    // Back to the ask, and Submit is inert again.
+    expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+    expect(
+      utils.getByLabelText('Submit report').props.accessibilityState.disabled,
+    ).toBe(true);
   });
 
   it('clears the typed description too', async () => {
@@ -1532,7 +1629,7 @@ describe('SW-37 (guest half) — the block is explained, not just enforced', () 
         />,
       ),
     );
-    const hint = getByLabelText('Submit report anonymously').props.accessibilityHint as string;
+    const hint = getByLabelText('Submit anonymously').props.accessibilityHint as string;
     expect(hint).toContain('can only be filed where you are');
     // The whole point: after a denial, "Use my location" re-asks a settled question.
     expect(hint).not.toContain('Use my location');
@@ -1580,5 +1677,228 @@ describe('SW-37 (guest half) — the block is explained, not just enforced', () 
       ),
     );
     expect(queryByText(ANON_LINE)).toBeNull();
+  });
+});
+
+describe('Q17 — the location line says a human thing, the numbers are one tap away', () => {
+  // Raw renders: the location props are the thing under test, so the auth mock
+  // has to be set explicitly (the shared beforeEach clears calls, not returns).
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const LOC = { lat: 49.888, lng: -119.496 };
+
+  it('names the place in words, and does not print the coordinate by default', () => {
+    const { getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={LOC} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(getByText('At your current location')).toBeTruthy();
+    // The regression this closes: the coordinate WAS the second line of the sheet.
+    expect(queryByText('49.88800, -119.49600')).toBeNull();
+  });
+
+  it('says which answer it is when the user placed the pin themselves', () => {
+    const { getByText } = render(
+      withProvider(
+        <ReportFlagModal
+          visible
+          location={LOC}
+          locationSource="pin"
+          onClose={jest.fn()}
+          onCreated={jest.fn()}
+        />,
+      ),
+    );
+    expect(getByText('At the pin you placed')).toBeTruthy();
+  });
+
+  it('Show reveals the coordinate and a copy path; Hide puts it away', () => {
+    const { getByLabelText, getByText, queryByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={LOC} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    fireEvent.press(getByLabelText('Show coordinates'));
+    expect(getByText('49.88800, -119.49600')).toBeTruthy();
+    expect(
+      getByLabelText('Copy coordinates 49.88800 latitude, -119.49600 longitude'),
+    ).toBeTruthy();
+    fireEvent.press(getByLabelText('Hide coordinates'));
+    expect(queryByText('49.88800, -119.49600')).toBeNull();
+  });
+
+  it('WCAG 2.5.3: the toggle’s accessible name contains its visible word', () => {
+    const { getByLabelText, getByText } = render(
+      withProvider(
+        <ReportFlagModal visible location={LOC} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(getByText('Show')).toBeTruthy();
+    expect(getByLabelText('Show coordinates')).toBeTruthy();
+  });
+
+  it('offers no disclosure at all while there is no location to disclose', () => {
+    const { queryByLabelText } = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(queryByLabelText('Show coordinates')).toBeNull();
+  });
+});
+
+describe('Q5 — no default severity, so every report is a judgment', () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  it('arrives with nothing chosen — the five discs all read unselected', () => {
+    const utils = renderAnon({ severity: null });
+    for (const n of [1, 2, 3, 4, 5]) {
+      const disc = utils
+        .getAllByLabelText(new RegExp(`^Severity ${n}:`))
+        .find((el) => el.props.accessibilityRole === 'button');
+      expect(disc?.props.accessibilityState).toMatchObject({ selected: false });
+    }
+  });
+
+  it('the meaning line asks instead of stating a meaning nobody chose', () => {
+    const utils = renderAnon({ severity: null });
+    expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+  });
+
+  it('Submit is inert until a disc is chosen, and says why', () => {
+    const utils = renderAnon({ severity: null });
+    const submit = utils.getByLabelText('Submit anonymously');
+    expect(submit.props.accessibilityState.disabled).toBe(true);
+    expect(submit.props.accessibilityHint).toBe(
+      'Choose a severity from 1 to 5 to submit this report.',
+    );
+  });
+
+  it('pressing an unrated form’s Submit files nothing', async () => {
+    const utils = renderAnon({ severity: null });
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mockCreateAnonFlag).not.toHaveBeenCalled();
+  });
+
+  it('choosing a disc lights Submit, drops the hint, and states the meaning', () => {
+    const utils = renderAnon({ severity: null });
+    rate(utils, 4);
+    const submit = utils.getByLabelText('Submit anonymously');
+    expect(submit.props.accessibilityState.disabled).toBe(false);
+    expect(submit.props.accessibilityHint).toBeUndefined();
+    expect(utils.queryByText('Choose how hard this makes the path to use.')).toBeNull();
+    // The live region now carries the chosen level, spoken the same way it reads.
+    expect(
+      utils.getAllByLabelText(/^Severity 4:/).some((el) => el.props.accessibilityRole !== 'button'),
+    ).toBe(true);
+  });
+
+  it('the location block still wins the hint when there is no location either', () => {
+    const utils = render(
+      withProvider(
+        <ReportFlagModal visible location={null} onClose={jest.fn()} onCreated={jest.fn()} />,
+      ),
+    );
+    expect(utils.getByLabelText('Submit anonymously').props.accessibilityHint).toMatch(
+      /Waiting for your location/,
+    );
+  });
+
+  it('a template still fills the rating in one tap (the shortcut is unaffected)', () => {
+    // The suite mocks the template list to empty by default; give this one a
+    // real template so the shortcut path is actually exercised.
+    (validReportTemplates as jest.Mock).mockReturnValueOnce([
+      { id: 't1', label: 'Snow-blocked ramp', category: 'no_ramp', severity: 4 },
+    ]);
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null });
+    expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(utils.getByLabelText('Apply template: Snow-blocked ramp'));
+    expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(false);
+  });
+});
+
+// ===========================================================================
+// F4 / X7 — the picker recomposes at large type
+//
+// Five 44pt circles beside 40pt type read as a row of bullets: targets at the
+// floor rather than at the fit, and the app's one distinctive asset shrinking
+// RELATIVE to the text explaining it, at exactly the size where it should be
+// biggest. Past the shared threshold the picker becomes the Legend's rows —
+// the same object the user has already met, made selectable.
+// ===========================================================================
+
+describe('F4 / X7 — the picker becomes the Legend at large type', () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null } as ReturnType<typeof useAuth>);
+  });
+
+  const bySeverity = (utils: ReturnType<typeof render>, n: number, role: string) =>
+    utils
+      .getAllByLabelText(new RegExp(`^Severity ${n}:`))
+      .find((el) => el.props.accessibilityRole === role);
+
+  it('at the default size the five-across discs are buttons, with no radio group', () => {
+    setFontScale(1);
+    const utils = renderAnon({ severity: null });
+    expect(bySeverity(utils, 3, 'button')).toBeTruthy();
+    expect(utils.queryByLabelText('Severity')).toBeNull();
+  });
+
+  it('at 1.5x the same five become a labelled radio group', () => {
+    setFontScale(1.5);
+    const utils = renderAnon({ severity: null });
+    const group = utils.getByLabelText('Severity');
+    expect(group.props.accessibilityRole).toBe('radiogroup');
+    for (const n of [1, 2, 3, 4, 5]) {
+      const row = bySeverity(utils, n, 'radio');
+      expect(row).toBeTruthy();
+      expect(row?.props.accessibilityState).toMatchObject({ checked: false });
+    }
+    // The compact discs are gone, not stacked underneath.
+    expect(bySeverity(utils, 3, 'button')).toBeUndefined();
+  });
+
+  it('a row says exactly what the disc said — the name survives the recomposition', () => {
+    setFontScale(1);
+    const compact = renderAnon({ severity: null });
+    const discName = bySeverity(compact, 1, 'button')?.props.accessibilityLabel;
+    compact.unmount();
+
+    setFontScale(1.5);
+    const large = renderAnon({ severity: null });
+    // Same authored name (number, word, meaning), different composition — so a
+    // screen-reader user hears the identical thing at both text sizes.
+    expect(bySeverity(large, 1, 'radio')?.props.accessibilityLabel).toBe(discName);
+  });
+
+  it('the rows rate the form exactly as the discs do, and announce checked', () => {
+    setFontScale(1.5);
+    const utils = renderAnon({ severity: null });
+    fireEvent.press(bySeverity(utils, 5, 'radio')!);
+    expect(bySeverity(utils, 5, 'radio')?.props.accessibilityState).toMatchObject({
+      checked: true,
+    });
+    expect(
+      utils.getByLabelText('Submit anonymously').props.accessibilityState.disabled,
+    ).toBe(false);
+  });
+
+  it('the whole form still disables while a submit is in flight', async () => {
+    setFontScale(1.5);
+    mockCreateAnonFlag.mockImplementationOnce(() => new Promise(() => {}));
+    const utils = renderAnon({ severity: 3 });
+    fireEvent.press(utils.getByLabelText('Submit anonymously'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(bySeverity(utils, 1, 'radio')?.props.accessibilityState.disabled).toBe(true);
   });
 });

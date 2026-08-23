@@ -59,7 +59,16 @@ describe('SW-49 + SW-20 — the Settings push row', () => {
   });
 
   it('dims while it cannot act, using the same style SettingsRow uses', () => {
-    expect(src).toMatch(/styles\.pushRow, pushLocked && styles\.rowDisabled/);
+    // RE-PINNED (GSP-06, board 07). The push row no longer hand-copies the
+    // house treatment beside SettingsRow — it IS a SettingsRow, with the Switch
+    // in the component's trailing control slot. So the dim is not a style
+    // spelled out at the call site any more; it is the component's own
+    // `disabled` branch, reached by the same `pushBusy || pushLocked`
+    // expression this suite already pins below. That is SW-20/SW-49's actual
+    // remedy — "it missed the house treatment because it was not a house row" —
+    // made structural instead of repaired by hand.
+    expect(src).toMatch(/disabled=\{pushBusy \|\| pushLocked\}/);
+    expect(src).toMatch(/disabled && styles\.rowDisabled/);
     // Non-vacuity: that style must exist and actually be a dim.
     expect(src).toMatch(/rowDisabled: \{ opacity: 0\.6 \}/);
   });

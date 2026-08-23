@@ -232,7 +232,22 @@ export const color = {
   // Tokenizes the raw rgba literal used by milestone + tier progress bars
   // drawn on the blue hero background. Same semi-transparent white works for
   // both light and dark mode since the hero surface is always brand blue.
-  surfaceVariant: 'rgba(255,255,255,0.25)',
+  //
+  // ⚠ THAT PREMISE EXPIRED. The hero card is not brand blue any more — it is
+  // the pale row glass, and a 25%-white wash on a near-white card is invisible.
+  // Measured on the 17e (GSP-06, signed-in walk): the track reads **1.03:1**
+  // against the card in LIGHT and 2.30:1 in dark, so light-mode users saw a
+  // lone gold pill floating with no lane around it while dark-mode users saw a
+  // proper bar. Both palettes carried the identical white value; it was never
+  // forked.
+  //
+  // Light takes `borderStrong` — the house's strong-hairline ink, already the
+  // token for an inert structural line — which measures 1.42:1 there. That is
+  // a NAMED token rather than a number a builder picked: whether a progress
+  // lane wants to be deeper than a hairline is a colour-arbitration question,
+  // and it is flagged for Sky in build/06/BUILD_REPORT.md rather than decided
+  // here. Two call sites, both Profile's progress tracks.
+  surfaceVariant: '#d0d4dc',
 
   // Leaderboard podium row tints — rank 1/2/3.
   // Each is a very light wash; color.text (#333) on all three gives ≥ 12:1 contrast.
@@ -679,6 +694,16 @@ export const a11y = {
 export const size = {
   thumb: 80, // square photo thumbnail in FlagCard (TasksScreen)
   cardMin: 96, // minimum card height for no-photo FlagCards (density parity)
+  /**
+   * S6 ★ (art-direction 2026-08-21) — ONE list-row height.
+   *
+   * Settings pinned 64 in a local `SETTINGS_ROW_HEIGHT` const and the drawer
+   * pinned 56 inline: two surfaces one tap apart, wearing the same row recipe
+   * at two different heights. 64 is the survivor because it is the number that
+   * comfortably holds a two-line (title + subtitle) row above WCAG 2.5.5's 44pt
+   * floor, which is what both surfaces actually draw.
+   */
+  row: 64,
 };
 
 // -------------------------------------------------------------------------

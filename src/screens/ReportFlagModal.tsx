@@ -8,9 +8,11 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
@@ -20,6 +22,7 @@ import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
 import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
+import { SeverityDisc } from '@/components/SeverityDisc';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
 import { Accessibility, Brain, Camera, Check, Construction, Ear, Eye, Lock, MapPin } from 'lucide-react-native';
@@ -28,6 +31,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
+import { webShare } from '@/lib/webShare';
 import { notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
 import { useLegalSheets } from '@/components/LegalSheets';
@@ -72,7 +76,7 @@ import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
 import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
@@ -85,6 +89,21 @@ const DISABILITY_TAG_ICONS: Readonly<Record<DisabilityTag, DisabilityIconCmp>> =
   cognitive_load: Brain,
   temporary_closure: Construction,
 };
+
+/**
+ * Q6 — the button says what it does, out loud and on the glass.
+ *
+ * The contract used to be restated to screen-reader users only: the visible
+ * word was "Submit report" while the accessibleLabel said "Submit report
+ * anonymously". The store dossier (2026-08-05) praised that restatement — it
+ * was praising a label sighted users never got. One string now serves both
+ * channels, which is also the only shape that satisfies WCAG 2.5.3 once the
+ * visible word changes at all.
+ *
+ * PLACEHOLDER COPY: logged in build/COPY_LEDGER.md as SKY-WORDS-REQUIRED.
+ */
+const SUBMIT_LABEL_ANON = 'Submit anonymously';
+const SUBMIT_LABEL = 'Submit report';
 
 interface Props {
   visible: boolean;
@@ -116,39 +135,61 @@ interface Props {
    *  rule (it mirrors the long-press gate; see MapScreen). The control renders
    *  only when this and a null location are both present. */
   onPlaceOnMap?: () => void;
+  /** Q17: which answer the coordinate is. The sheet cannot work this out for
+   *  itself — the host passes either the user's GPS fix or the pin they placed,
+   *  and both arrive as the same `location` object. Without it the location line
+   *  would have to say "at 49.88800, -119.49600" (the engineer's answer to a
+   *  human question) or guess. Defaults to 'gps', which is what the FAB path is
+   *  and what every existing caller means. */
+  locationSource?: 'gps' | 'pin';
 }
 
-export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap }: Props) {
+export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap, locationSource = 'gps' }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
   // T14 (F2-07): the templates + category chip rails earn the overflow scent.
   const templatesFade = useHorizontalOverflowFade();
   const categoriesFade = useHorizontalOverflowFade();
+  // F4: one threshold for the whole app's recomposition — the same one Home,
+  // Tasks, SignIn, FlagCard and the map bar change shape on.
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   const { user } = useAuth();
   const isAnon = !user;
+
   /**
-   * SW-11 / SW-37 — why Submit is blocked, said out loud.
+   * Q17 — the coordinate, on demand.
    *
-   * Three different states used to share one sentence ("Waiting for your
-   * location…"), and for a guest who had DENIED location that sentence was both
-   * false and a dead end: it pointed at "Use my location", the one control that
-   * cannot help, because the OS has already answered. Guests are the case the
-   * finding was actually about, and manual placement is deliberately not open to
-   * them (see handleMapLongPress) — so the honest answer names the constraint
-   * and the way out of it, rather than leaving them to guess.
+   * The visible line answers "where is this?" in words; this is the escape
+   * hatch for the user who wants the numbers (to check them, or to send them
+   * somewhere). Mirrors FlagDetailModal's "Copy coordinates" link: the OS
+   * share sheet on native, the Web Share API with a clipboard fallback on web.
+   * A user cancel is silent on both, because a cancel is not an error.
    */
-  const blockedReason = (): string | undefined => {
-    if (location) return undefined;
-    if (onPlaceOnMap) {
-      return "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above.";
+  const formattedCoords = location
+    ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+    : '';
+  const handleCopyCoords = async () => {
+    if (!location) return;
+    if (Platform.OS === 'web') {
+      try {
+        await webShare({ title: 'Report location', text: formattedCoords });
+      } catch (e) {
+        const msg = errorMessage(e);
+        if (/cancel|dismiss|abort/i.test(msg)) return;
+        notify("Couldn't copy coordinates", msg);
+      }
+      return;
     }
-    if (locationDenied) {
-      return isAnon
-        ? 'Anonymous reports can only be filed where you are. Turn on location, or sign in to place the pin yourself.'
-        : 'Location is off for Flagstone. Turn it on to file this report.';
+    try {
+      await Share.share({ message: formattedCoords, title: 'Report location' });
+    } catch (e) {
+      const msg = errorMessage(e);
+      if (/cancel|dismiss/i.test(msg)) return;
+      notify("Couldn't copy coordinates", msg);
     }
-    return "Waiting for your location. Tap 'Use my location' above to try again.";
   };
+
   const reducedMotion = useReducedMotion();
   // Pull-to-dismiss gating (map-gestures SPEC §2.6). `atTop` is the half of the
   // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
@@ -176,7 +217,63 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // WCAG 2.4.3: move the screen-reader cursor onto the title when the modal opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const [category, setCategory] = useState<FlagCategory>('no_ramp');
-  const [severity, setSeverity] = useState<FlagSeverity>(3);
+  /**
+   * Q5 — no default severity.
+   *
+   * This was `useState<FlagSeverity>(3)`: three of five, pre-chosen, on a
+   * judgment scale. A default on a judgment scale biases the data (every hurried
+   * report becomes a 3) and quietly removes the moment where the user is asked
+   * to RATE — the one act that makes the severity ramp mean anything. Null until
+   * they choose; Submit does not light until they have.
+   */
+  const [severity, setSeverity] = useState<FlagSeverity | null>(null);
+  // Q17: the coordinates are the answer to a question nobody asked on this
+  // form. They stay one tap away rather than being the second line of the
+  // sheet — the place where, at accessibility sizes, the screen's least useful
+  // information was rendered at its most legible (X7). Reset with the form.
+  const [coordsShown, setCoordsShown] = useState(false);
+
+  /**
+   * SW-11 / SW-37 — why Submit is blocked, said out loud.
+   *
+   * Three different states used to share one sentence ("Waiting for your
+   * location…"), and for a guest who had DENIED location that sentence was both
+   * false and a dead end: it pointed at "Use my location", the one control that
+   * cannot help, because the OS has already answered. Guests are the case the
+   * finding was actually about, and manual placement is deliberately not open to
+   * them (see handleMapLongPress) — so the honest answer names the constraint
+   * and the way out of it, rather than leaving them to guess.
+   */
+  const blockedReason = (): string | undefined => {
+    // Q5: a rated report is now a precondition, so the hint has to be able to
+    // say so. Location comes first because a report with no place cannot be
+    // filed at all, while an unrated one is one tap from being filable.
+    // PLACEHOLDER COPY (SKY-WORDS-REQUIRED).
+    if (location) {
+      return severity === null
+        ? 'Choose a severity from 1 to 5 to submit this report.'
+        : undefined;
+    }
+    if (onPlaceOnMap) {
+      return "This report needs a location. Tap 'Use my location' or 'Place the pin on the map' above.";
+    }
+    if (locationDenied) {
+      return isAnon
+        ? 'Anonymous reports can only be filed where you are. Turn on location, or sign in to place the pin yourself.'
+        : 'Location is off for Flagstone. Turn it on to file this report.';
+    }
+    return "Waiting for your location. Tap 'Use my location' above to try again.";
+  };
+
+  /**
+   * Q5 — Submit is not a live control until the report is filable.
+   *
+   * Two preconditions now, not one: a place (unchanged) and a rating. Kept
+   * separate from `submitting` because they are different states wearing
+   * different clothes — blocked is inert and soft-tinted, busy is working and
+   * still brand-filled.
+   */
+  const submitBlocked = !location || severity === null;
   const [description, setDescription] = useState('');
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   // Per-photo VoiceOver descriptions, keyed by local uri. Optional; trimmed
@@ -237,8 +334,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // every render, and never fires if a photo is already attached.
   const prevHighRef = useRef(false);
   useEffect(() => {
-    const isHigh = severity >= 4 && photoUris.length === 0;
-    if (isHigh && !prevHighRef.current) {
+    const isHigh = severity !== null && severity >= 4 && photoUris.length === 0;
+    if (isHigh && severity !== null && !prevHighRef.current) {
       void AccessibilityInfo.announceForAccessibility(
         `Tip: adding a photo helps verify this ${SEVERITY_LABELS[severity].toLowerCase()} barrier without a site visit.`,
       );
@@ -263,8 +360,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
 
   const reset = () => {
     setCategory('no_ramp');
-    setSeverity(3);
+    setSeverity(null);
     setDescription('');
+    setCoordsShown(false);
     // L7: the drafts are gone for good once the form resets — release their
     // blob URLs. (SW-52: reset now also runs on an explicit CANCEL, not only
     // after a successful submit. A FAILED submit still does not reset, so the
@@ -453,6 +551,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       notify('No location', 'We need your location to place the flag.');
       return;
     }
+    // Q5: the button is already disabled while nothing is chosen. This is the
+    // same belt-and-braces the location check above is — and it is what narrows
+    // `severity` to FlagSeverity for the two create calls below.
+    if (severity === null) return;
     submittingRef.current = true;
     // L4: flip the STATE here too (not after the awaits below) so the whole
     // form — chips, pills, text input, photo gallery — disables for the
@@ -728,11 +830,29 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
+          {/* Q17: the location line says a human thing. It used to read "at
+              49.88800, -119.49600" — the coordinate as the SECOND LINE of the
+              form, on the one screen where the user most needs to feel "yes,
+              that is the place", and (X7) the least useful information on the
+              sheet rendered at its most legible size. The numbers are one tap
+              away instead, behind Show, with the copy path beside them.
+              PLACEHOLDER COPY: "At your current location" / "At the pin you
+              placed" / "Show" / "Hide" / "Copy" are logged in
+              build/COPY_LEDGER.md as SKY-WORDS-REQUIRED. */}
+          {/* One block, so the ScrollView's own row gap cannot open between the
+              sentence and the coordinate it reveals — on the device the pair
+              read as two unrelated lines. */}
+          <View style={styles.locationBlock}>
           <View style={styles.locationRow}>
             <MapPin size={13} color={color.textMuted} strokeWidth={2} {...decorativeProps} />
-            <AppText variant="mono" style={styles.location}>
+            {/* T1: mono is for numerals that are data. A sentence is not, so
+                the human line moved off the mono face; the coordinate below
+                keeps it. */}
+            <AppText variant={location ? 'bodyMedium' : 'mono'} style={styles.location}>
               {location
-                ? `at ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`
+                ? locationSource === 'pin'
+                  ? 'At the pin you placed'
+                  : 'At your current location'
                 // SW-11: "Waiting for location…" is true while the request is in
                 // flight and false the moment the user denies it — at which point
                 // it waited forever and never said why. A denial is a settled
@@ -741,6 +861,42 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   ? 'Location is off for Flagstone'
                   : 'Waiting for location…'}
             </AppText>
+            {location && (
+              <Pressable
+                onPress={() => setCoordsShown((v) => !v)}
+                style={({ pressed }) => [styles.coordsToggle, pressed && styles.chipPressed]}
+                accessibilityRole="button"
+                // WCAG 2.5.3: the name leads with the visible word, so a
+                // voice-control user saying "tap Show" reaches it.
+                accessibilityLabel={coordsShown ? 'Hide coordinates' : 'Show coordinates'}
+                {...a11yToggle({ expanded: coordsShown })}
+              >
+                <AppText variant="label" style={styles.coordsToggleText}>
+                  {coordsShown ? 'Hide' : 'Show'}
+                </AppText>
+              </Pressable>
+            )}
+          </View>
+          {location && coordsShown && (
+            <View style={styles.coordsRow}>
+              <AppText
+                variant="mono"
+                style={styles.coordsValue}
+                accessibilityLabel={`${location.lat.toFixed(5)} latitude, ${location.lng.toFixed(5)} longitude`}
+              >
+                {formattedCoords}
+              </AppText>
+              <Pressable
+                onPress={handleCopyCoords}
+                style={({ pressed }) => [styles.coordsToggle, pressed && styles.chipPressed]}
+                accessibilityRole="button"
+                accessibilityLabel={`Copy coordinates ${location.lat.toFixed(5)} latitude, ${location.lng.toFixed(5)} longitude`}
+                accessibilityHint="Opens share and copy options for these coordinates"
+              >
+                <AppText variant="label" style={styles.coordsToggleText}>Copy</AppText>
+              </Pressable>
+            </View>
+          )}
           </View>
           </TypeBlock>
           {/* S5 (L3-1): when no location has resolved yet — the common
@@ -935,6 +1091,79 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           </View>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Severity</AppText>
+          {/* F4 / X7 — at >=1.5x the five-across picker becomes the Legend's rows.
+              Five 44pt circles beside 40pt type read as a row of bullets: the
+              targets are at the floor rather than at the fit, and the one
+              distinctive asset in the app shrinks RELATIVE to the text that
+              explains it, at exactly the size where it should be biggest. The
+              Legend already draws the severity scale as disc 32 + word + meaning,
+              and a user who has met that surface meets the same object here — so
+              this is the same rhythm, made selectable, not a second grammar.
+              Announced as a radio group, because that is what a one-of-five
+              choice is; the compact row keeps its shipped button/toggle wiring so
+              nothing changes at default size. */}
+          {axRecompose ? (
+            <View
+              style={styles.sevList}
+              accessibilityRole="radiogroup"
+              accessibilityLabel="Severity"
+            >
+              {SEVERITY_ORDER.map((s) => {
+                const active = s === severity;
+                return (
+                  <Pressable
+                    key={s}
+                    onPressIn={() => hapticSelection()}
+                    onPress={() => {
+                      setSeverity(s);
+                      setAppliedTemplateId(null);
+                    }}
+                    disabled={submitting}
+                    style={({ pressed }) => [
+                      styles.sevListRow,
+                      active && styles.sevListRowActive,
+                      !active && pressed && styles.chipPressed,
+                      submitting && styles.chipDisabled,
+                    ]}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
+                    {...a11yToggle({ checked: active, disabled: submitting })}
+                  >
+                    {/* The Legend's atom, at the Legend's size. Decorative — the
+                        row above carries the whole authored label. */}
+                    <SeverityDisc severity={s} size={32} digitSize={font.size.base} />
+                    {/* T3, and the device caught this one. The word sat on
+                        `label` (cap 1.6) over a meaning on uncapped `body`, so
+                        at accessibility sizes "Minor" was drawn SMALLER than
+                        "Inconvenient but usable." — X6's inversion, reproduced
+                        inside the control built to fix X7. One content block
+                        over the pair, exactly as the Legend does it, so the
+                        word stays the word at every size. */}
+                    <TypeBlock cap={TYPE_BLOCK.content}>
+                    <View style={styles.sevListText}>
+                      <AppText variant="label" style={styles.sevListTitle}>
+                        {SEVERITY_LABELS[s]}
+                      </AppText>
+                      <AppText variant="body" style={styles.sevListDesc}>
+                        {SEVERITY_DESCRIPTIONS[s]}
+                      </AppText>
+                    </View>
+                    </TypeBlock>
+                    {/* WCAG 1.4.1: the selected row is signalled by the tint AND
+                        the ring AND this tick — the same three-signal selection
+                        the compact discs carry, kept rather than traded away. */}
+                    {active && (
+                      <Check
+                        size={18}
+                        color={color.inkSelect}
+                        strokeWidth={3} {...decorativeProps}
+                      />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
           <View style={styles.row}>
             {SEVERITY_ORDER.map((s) => {
               const active = s === severity;
@@ -993,6 +1222,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               );
             })}
           </View>
+          )}
 
           {/* Inline hint: updates as the user taps a severity level so
               they know what each number means before submitting.
@@ -1004,17 +1234,32 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               banner, the photo nudge, the submission explainer): that is reading
               content and stays uncapped, because capping body copy at 1.6 would
               stop it short of the 200% that WCAG 1.4.4 asks for. */}
+          {/* Q5: with nothing chosen there is no meaning to state, so the line
+              carries the ASK instead of a meaning nobody selected. The live
+              region is the same one — a screen-reader user hears the instruction
+              become the answer the moment they rate.
+              PLACEHOLDER COPY (SKY-WORDS-REQUIRED): the instruction sentence. */}
           <TypeBlock cap={TYPE_BLOCK.header}>
-          <AppText
-            variant="body"
-            style={styles.sevHint}
-            accessibilityLabel={`Severity ${severity}: ${SEVERITY_DESCRIPTIONS[severity]}`}
-            accessibilityLiveRegion="polite"
-          >
-            <AppText variant="bodyMedium" style={styles.sevHintLabel}>{SEVERITY_LABELS[severity]}</AppText>
-            {'  '}
-            {SEVERITY_DESCRIPTIONS[severity]}
-          </AppText>
+          {severity === null ? (
+            <AppText
+              variant="body"
+              style={styles.sevHint}
+              accessibilityLiveRegion="polite"
+            >
+              Choose how hard this makes the path to use.
+            </AppText>
+          ) : (
+            <AppText
+              variant="body"
+              style={styles.sevHint}
+              accessibilityLabel={`Severity ${severity}: ${SEVERITY_DESCRIPTIONS[severity]}`}
+              accessibilityLiveRegion="polite"
+            >
+              <AppText variant="bodyMedium" style={styles.sevHintLabel}>{SEVERITY_LABELS[severity]}</AppText>
+              {'  '}
+              {SEVERITY_DESCRIPTIONS[severity]}
+            </AppText>
+          )}
           </TypeBlock>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Description (optional)</AppText>
@@ -1266,7 +1511,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   node; the icon is decorative and screened out. The
                   accessibilityLiveRegion triggers the Android AT announcement;
                   iOS is handled by the useEffect above. */}
-              {severity >= 4 && photoUris.length === 0 && (
+              {severity !== null && severity >= 4 && photoUris.length === 0 && (
                 <View
                   style={styles.photoNudge}
                   accessible
@@ -1427,22 +1672,33 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             </Pressable>
             <Pressable
               onPress={handleSubmit}
-              disabled={submitting || !location}
+              disabled={submitting || submitBlocked}
               style={[
                 styles.actionBtn,
                 styles.submitBtn,
-                (submitting || !location) && styles.submitBtnDisabled,
+                // C5: ONE disabled grammar. A blocked fill wears the soft-tint
+                // pair (brandSoft/brandOnSoft) — the same grammar the rest of
+                // the estate's inert fills use — instead of a glowing brand
+                // gradient held at 0.6 opacity, which reads as a live button
+                // somebody dimmed. The BUSY state is not this: it keeps the
+                // gradient and the white ink, because a button mid-flight is
+                // working, not inert.
+                submitBlocked && styles.submitBtnBlocked,
+                submitting && styles.submitBtnDisabled,
               ]}
               accessibilityRole="button"
-              accessibilityLabel={isAnon ? 'Submit report anonymously' : 'Submit report'}
+              // Q6: one label, seen and spoken. The visible word and the
+              // accessible name are the SAME string now — see the label below.
+              accessibilityLabel={isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
               // SW-37: never point a blocked user at the ONE control that cannot
               // help them. Under a denial "Use my location" only re-asks a
               // question the OS has already answered.
               accessibilityHint={blockedReason()}
-              {...a11yToggle({ disabled: submitting || !location, busy: submitting })}
+              {...a11yToggle({ disabled: submitting || submitBlocked, busy: submitting })}
             >
               {({ pressed }) => (
                 <>
+                  {!submitBlocked && (
                   <LinearGradient
                     colors={gradient.brand}
                     start={{ x: 0, y: 0 }}
@@ -1450,6 +1706,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
                     pointerEvents="none"
                   />
+                  )}
                   {/* T4: pressed scrim ABOVE the gradient, BELOW the label — the
                       brand CTA answers the finger without dimming its white text. */}
                   {pressed && (
@@ -1463,7 +1720,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       <AppText variant="label" style={styles.submitText}>Filing your report…</AppText>
                     </View>
                   ) : (
-                    <AppText variant="label" style={styles.submitText}>Submit report</AppText>
+                    <AppText
+                      variant="label"
+                      style={[styles.submitText, submitBlocked && styles.submitTextBlocked]}
+                    >
+                      {isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
+                    </AppText>
                   )}
                 </>
               )}
@@ -1516,8 +1778,32 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textStrong,
       letterSpacing: -0.3,
     },
-    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight, marginBottom: spacing.xs },
-    location: { fontSize: font.size.xs, color: color.inkGlassMuted },
+    locationBlock: { marginTop: -spacing.xs },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
+    location: { fontSize: font.size.xs, color: color.inkGlassMuted, flexShrink: 1 },
+    // Q17: the Show/Hide disclosure and the Copy link beside the revealed
+    // coordinate. Same shape as FlagDetailModal's copyCoordsLink — an inkSelect
+    // text link carrying the 44pt box itself, never a bare glyph.
+    coordsToggle: {
+      minHeight: a11y.minTargetSize,
+      minWidth: a11y.minTargetSize,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xs,
+    },
+    coordsToggleText: {
+      fontSize: font.size.xs,
+      fontWeight: font.weight.semibold,
+      color: color.inkSelect,
+      textDecorationLine: 'underline',
+    },
+    coordsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.tight,
+      flexWrap: 'wrap',
+    },
+    coordsValue: { fontSize: font.size.xs, color: color.inkGlassMuted },
     // S5: in-sheet "Use my location" retry — 44pt, brand-soft tint mirroring the
     // anon banner; only rendered when no location has resolved.
     // SW-37: the muted explain-the-block line. Same ink as the other quiet
@@ -1604,6 +1890,37 @@ const makeStyles = (color: ColorTheme) =>
     // The redundant tick sits just above the number inside the 44pt circle.
     sevCheck: { marginBottom: -2 },
     sevText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.semibold },
+    // F4 / X7 — the large-type picker: the Legend's row rhythm, made selectable.
+    sevList: { gap: spacing.tight },
+    sevListRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.md,
+      // The whole row is the target: 32pt disc + two lines of type clears 56pt
+      // at every size this branch renders at, and the floor is pinned anyway.
+      minHeight: a11y.minTargetSize,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    sevListRowActive: {
+      backgroundColor: color.glassSelectedTint,
+      borderColor: color.textStrong,
+    },
+    sevListText: { flex: 1 },
+    sevListTitle: {
+      fontSize: font.size.base,
+      fontWeight: font.weight.semibold,
+      color: color.textStrong,
+    },
+    sevListDesc: {
+      fontSize: font.size.xs,
+      color: color.text,
+      fontFamily: font.family.bodyMedium,
+      marginTop: 1,
+    },
     // Bolder number when active — a second non-color weight cue on top of the
     // tick and ring (and legible white-on-fill, matching textOnBrand).
     sevTextActive: { color: color.textOnBrand, fontWeight: font.weight.bold },
@@ -1791,8 +2108,45 @@ const makeStyles = (color: ColorTheme) =>
     cancelBtn: { backgroundColor: color.surfaceNeutral },
     cancelText: { color: color.text, fontWeight: font.weight.semibold },
     submitBtn: { backgroundColor: color.brand, overflow: 'visible', ...shadow.glowBrand },
+    // Busy, not inert: the gradient and the white ink stay, the whole control
+    // just softens while the write is in flight.
     submitBtnDisabled: { opacity: 0.6 },
+    /**
+     * C5: the one disabled-fill grammar — the soft-tint pair, no gradient
+     * beneath it (the render skips it), and no brand glow, because a glowing
+     * inert button is a lie.
+     *
+     * THE OUTLINE IS NOT DECORATION, and the device is what found this.
+     * Measured off the 17e in both schemes:
+     *
+     *   light  inert #D9E7FD vs live #1F68DA  = 4.15:1   the fill carries it
+     *   dark   inert #0E4499 vs live #1F68DA  = 1.76:1   the fill does NOT
+     *
+     * A dark palette's "soft brand" is a dark blue, so it can never sit far in
+     * luminance from a mid brand blue: in dark the inert Submit read as an
+     * ordinary live button, which is the exact class SW-49 exists to stop ("an
+     * enabled-LOOKING control must never answer a tap with nothing"). Colour
+     * alone cannot carry the state there, so the state gets a second channel —
+     * the same 1.4.1 move the severity disc makes with its fill + tick + ring.
+     *
+     *   dark   outline #B4CFFA vs live fill  = 3.27:1   clears 1.4.11's floor
+     *   light  outline #0F53BE on the tint   = 5.60:1
+     *
+     * So in every scheme at least one channel is above 3:1, and the grammar is
+     * still one grammar. (The underlying finding — dark `brandSoft` sitting too
+     * close to `ctaFill` to signal a state — is logged for the design system in
+     * the build report; fixing the token itself would ripple across every chip,
+     * banner and avatar that reads it.)
+     */
+    submitBtnBlocked: {
+      backgroundColor: color.brandSoft,
+      borderWidth: 1.5,
+      borderColor: color.brandOnSoft,
+      shadowOpacity: 0,
+      elevation: 0,
+    },
     submitText: { color: color.textOnBrand, fontWeight: font.weight.bold },
+    submitTextBlocked: { color: color.brandOnSoft },
     // T9 (F5-09): spinner + "Filing your report…" sit side by side while pending.
     submitBusyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
     // T4 (F1-01): static pressed dim so every control in the sheet answers the

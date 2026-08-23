@@ -24,6 +24,8 @@ export type { InputProps } from './Input';
 
 export { Skeleton, SkeletonRow, SkeletonCard } from './Skeleton';
 export type { SkeletonProps } from './Skeleton';
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
 
 export { Sheet, SheetHeader } from './Sheet';
 export type { SheetProps, SheetHeaderProps } from './Sheet';

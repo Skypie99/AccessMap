@@ -51,13 +51,21 @@ describe('T4 — ReportFlagModal answers the finger (source contract)', () => {
     expect(chipPressedUses.length + 1).toBe(pressables.length);
   });
 
-  it('the selection tick fires on finger-DOWN — and ONLY from the two pickers', () => {
+  it('the selection tick fires on finger-DOWN — and ONLY from the pickers', () => {
+    // RE-PINNED 2 -> 3 (GSP-06, F4/X7). Still the SAME two pickers — category
+    // and severity — but severity now has two compositions: the five-across
+    // discs at default size, and the Legend's radio rows past the 1.5x
+    // recomposition threshold, where five 44pt circles beside 40pt type read as
+    // bullets. Only one of the two severity branches is ever mounted. The
+    // protected property is unchanged and is the second assertion: every
+    // hapticSelection() on this surface is a press-IN handler on a picker, so a
+    // release-time tick anywhere still fails here.
     const onPressIn = reportModal.match(/onPressIn=\{\(\) => hapticSelection\(\)\}/g) ?? [];
-    expect(onPressIn.length).toBe(2);
-    // The only two hapticSelection() CALLS are those press-in handlers; the
-    // import binding has no parens, so a stray release-time tick would show up.
+    expect(onPressIn.length).toBe(3);
+    // The only hapticSelection() CALLS are those press-in handlers; the import
+    // binding has no parens, so a stray release-time tick would show up.
     const calls = reportModal.match(/hapticSelection\(\)/g) ?? [];
-    expect(calls.length).toBe(2);
+    expect(calls.length).toBe(onPressIn.length);
   });
 
   it('Submit keeps its shipped success notify (untouched)', () => {

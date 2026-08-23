@@ -28,9 +28,10 @@
  *    feature without revisiting layout).
  */
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { EmptyState } from '@/components/ui/EmptyState';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -128,6 +129,9 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
   const [stats, setStats] = useState<UserReportStats>(EMPTY_USER_REPORT_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Board 10: a local retry tick, so the card can re-fire its own fetch without
+  // the Profile screen having to bump `refreshKey` on its behalf.
+  const [retryTick, setRetryTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,7 +163,7 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [userId, refreshKey]);
+  }, [userId, refreshKey, retryTick]);
 
   // Don't render anything until we have a userId (avoids a flash of
   // "0 reports" during the auth-loading window).
@@ -190,9 +194,43 @@ export default function ReportsBreakdownCard({ userId, refreshKey }: Props) {
     );
   }
 
-  // Error path — quietly skip the card. The Profile screen has its own
-  // load-error UX; we don't want to clutter it with a second banner.
-  if (error) return null;
+  // Board 10 — the error path used to `return null`: the card that was there a
+  // second ago simply vanished, taking the explanation with it. The rationale
+  // ("Profile has its own error UX") does not hold, because Profile's error UX
+  // never covered THIS fetch — it owns its own, and a silent disappearance is
+  // indistinguishable from "you have no reports". Say what happened and offer
+  // the way back.
+  // PLACEHOLDER COPY (SKY-WORDS-REQUIRED).
+  if (error) {
+    return (
+      <GlassSurface
+        variant="row"
+        forceEngineered
+        style={styles.card}
+        borderRadius={radius.lg}
+      >
+        <View style={styles.headerRow}>
+          <AppText variant="heading" style={styles.title} accessibilityRole="header">
+            Your reports
+          </AppText>
+        </View>
+        <EmptyState
+          live
+          title="Couldn't load your breakdown"
+          action={
+            <Pressable
+              onPress={() => setRetryTick((t) => t + 1)}
+              style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+            >
+              <AppText variant="label" style={styles.retryText}>Try again</AppText>
+            </Pressable>
+          }
+        />
+      </GlassSurface>
+    );
+  }
 
   // Empty state — first-time user with no reports yet. Render a tiny
   // hint so the card surface doesn't look broken.
@@ -344,6 +382,22 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.sm,
       color: color.inkGlassMuted, // on the row glass
       lineHeight: 20,
+    },
+    // The retry beside the error state — the house small-CTA recipe (ctaFill,
+    // white ink, 44pt box).
+    retryBtn: {
+      backgroundColor: color.ctaFill,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      minHeight: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    retryBtnPressed: { backgroundColor: color.ctaFillPressed },
+    retryText: {
+      color: color.textOnBrand,
+      fontWeight: font.weight.bold,
+      fontSize: font.size.sm,
     },
     // SW-51: wrap, so that at the largest Dynamic Type sizes the label takes the
     // row to itself and the track + count drop beneath it, instead of the label

@@ -27,7 +27,10 @@ import type { ContextTag } from '@/lib/contextTags';
 
 export interface ReportDraft {
   category: FlagCategory;
-  severity: FlagSeverity;
+  /** Q5: null until the user rates. A draft handed across the sign-in swap has
+   *  to be able to say "not answered yet" — restoring a 3 nobody chose would
+   *  reintroduce the default the form just removed. */
+  severity: FlagSeverity | null;
   description: string;
   photoUris: string[];
   contextTags: ContextTag[];

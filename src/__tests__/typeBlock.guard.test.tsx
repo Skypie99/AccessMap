@@ -219,7 +219,16 @@ describe('(3) adoption — the blocks are actually mounted, and nothing shrinks 
     // SeverityDisc pins its own cap in its own file (DISC_MAX_FONT_SCALE), which
     // is why the discs inside the Legend and Nearby content blocks do not appear
     // here — a fixed box should carry its cap with it, not at every call site.
-    expect(found).toEqual([]);
+    //
+    // RE-PINNED (GSP-06). ReportFlagModal joined this list when its large-type
+    // severity picker gained a content block (the Legend's rows, made
+    // selectable). The 1.3 it carries is NOT on anything inside that block: it
+    // is on the COMPACT picker's digit, in the other branch of the same
+    // ternary, which is a hand-rolled fixed 44x44 circle rather than a
+    // SeverityDisc — so it is precisely the fixed-box case this list exists to
+    // enumerate, and its rationale has been stated at that call site since the
+    // XXL review. The two branches are never mounted together.
+    expect(found).toEqual(['screens/ReportFlagModal.tsx:1.3']);
   });
 });
 

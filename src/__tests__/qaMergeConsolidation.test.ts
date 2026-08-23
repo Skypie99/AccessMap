@@ -30,9 +30,15 @@ function around(haystack: string, anchor: string, len = 500): string {
 
 describe('QA merge — MapScreen Report FAB combines Peter + Alex (the one overlap point)', () => {
   const map = read('screens/MapScreen.tsx');
-  // Window widened from 600 → 800: the hint now has a third (web) branch, which
-  // pushes the inner iconLabelRow View further down the FAB block.
-  const fab = around(map, 'accessibilityLabel="Report a flag here"', 800);
+  /**
+   * The window used to be a character count — 600, then 800, widened each time
+   * the hint grew another branch (web, then D26's locked-permission case). A
+   * guard that has to be re-measured every time the code it guards gets one
+   * line longer is measuring the wrong thing. Slice to the FAB's own closing
+   * tag instead: the window is now whatever the FAB is.
+   */
+  const fabStart = map.indexOf('accessibilityLabel="Report a flag here"');
+  const fab = map.slice(fabStart, map.indexOf('</PressableScale>', fabStart));
 
   it("keeps Alex's conditional accessibilityHint (disabled-state guidance)", () => {
     expect(fab).toMatch(/Dimmed until location is on/);

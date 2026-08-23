@@ -76,6 +76,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { Sheet } from '@/components/ui/Sheet';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
@@ -817,6 +818,12 @@ export default function TasksScreen() {
   // actually fires. An inline arrow in the SectionList prop creates a new
   // function reference on every parent render, bypassing memo and causing all
   // visible cards to re-check their props even when nothing changed.
+  // F40/F41, named. The gold celebration belongs to a genuinely empty,
+  // fully-loaded, unfiltered list — never to a failed load, a filtered page, or
+  // a page with more to come. The condition was spelled out twice inline
+  // (once for the disc tint, once for the glyph); it is one name now.
+  const isCaughtUp = !flagsError && !categoryFilter && !searchText.trim() && !hasMore;
+
   const renderFlagItem = useCallback(
     ({ item }: { item: FlagRow }) => (
       <TaskCard
@@ -1421,49 +1428,48 @@ export default function TasksScreen() {
             accessible
             accessibilityRole="text"
           >
-            <View
-              style={[
-                styles.emptyIcon,
-                // F40/F41: the gold disc celebrates only a genuinely empty,
-                // fully-loaded list (Civic Gold = gamification only).
-                flagsError || categoryFilter || searchText.trim() || hasMore
-                  ? styles.emptyIconNeutral
-                  : styles.emptyIconGold,
-              ]}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            >
-              {/* F40/F41 (re-sweep): never show the celebration icon when the
-                  list is empty because the LOAD FAILED or because more pages
-                  exist — celebrate only a genuinely empty, fully-loaded list. */}
-              {flagsError || categoryFilter || searchText.trim() || hasMore ? (
-                <Search size={36} color={color.textSubtle} strokeWidth={2} />
-              ) : (
-                <Sparkles size={36} color={color.goldAccent} strokeWidth={2} />
-              )}
-            </View>
-            <AppText variant="heading" style={styles.emptyTitle}>
-              {flagsError
-                ? "Couldn't load flags"
-                : categoryFilter
-                  ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
-                  : searchText.trim()
-                    ? 'No matches'
-                    : hasMore
-                      ? 'Nothing to triage yet'
-                      : 'All caught up'}
-            </AppText>
-            <AppText variant="bodyMedium" style={styles.emptyBody} maxFontSizeMultiplier={1.4}>
-              {flagsError
-                ? 'Reports could not be loaded. Pull down to retry, or tap the message above.'
-                : categoryFilter
-                  ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
-                  : searchText.trim()
-                    ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
-                    : hasMore
-                      ? 'None of the reports loaded so far need attention, but there are more to load. Use "Load more" below to keep looking.'
-                      : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."}
-            </AppText>
+            {/* W5: the house recipe. Every word here is the shipped word — all
+                five branches, both lines, verbatim. What changes is the MARK:
+                Search, the glyph that said nothing the heading was not already
+                saying, becomes the path.
+                F40/F41 survive as the one documented exception in EmptyState:
+                "All caught up" is a CELEBRATION, not an absence, so it keeps
+                the gold Sparkles disc — and keeps it only for a genuinely
+                empty, fully-loaded list, never for a failed load or a filtered
+                page with more to come. */}
+            <EmptyState
+              mark={
+                isCaughtUp ? (
+                  <View
+                    style={[styles.emptyIcon, styles.emptyIconGold]} {...decorativeProps}
+                  >
+                    <Sparkles size={36} color={color.goldAccent} strokeWidth={2} />
+                  </View>
+                ) : undefined
+              }
+              title={
+                flagsError
+                  ? "Couldn't load flags"
+                  : categoryFilter
+                    ? `No ${CATEGORY_LABELS[categoryFilter]} flags`
+                    : searchText.trim()
+                      ? 'No matches'
+                      : hasMore
+                        ? 'Nothing to triage yet'
+                        : 'All caught up'
+              }
+              body={
+                flagsError
+                  ? 'Reports could not be loaded. Pull down to retry, or tap the message above.'
+                  : categoryFilter
+                    ? `No open or verified ${CATEGORY_LABELS[categoryFilter].toLowerCase()} flags right now. Tap "All" above to see every category.`
+                    : searchText.trim()
+                      ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
+                      : hasMore
+                        ? 'None of the reports loaded so far need attention, but there are more to load. Use "Load more" below to keep looking.'
+                        : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."
+              }
+            />
           </GlassSurface>
         }
         renderItem={renderFlagItem}
@@ -2371,19 +2377,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       marginBottom: spacing.tight,
     },
     emptyIconGold: { backgroundColor: color.goldLight },
-    emptyIconNeutral: { backgroundColor: color.glassNeutralBtn },
-    emptyTitle: {
-      fontSize: font.size.xl,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
-      letterSpacing: -0.2,
-    },
-    emptyBody: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-      textAlign: 'center',
-      lineHeight: 19,
-    },
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',

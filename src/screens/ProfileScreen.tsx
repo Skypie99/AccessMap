@@ -29,6 +29,7 @@ import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { getInitials, updateUserProfile, uploadAvatar } from '@/lib/users';
+import { hapticSelection } from '@/lib/haptics';
 import { DEFAULT_TABS, getDefaultTab, setDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { useRealtimeEnabled } from '@/lib/realtimePrefs';
 import { clearOnboarded } from '@/lib/onboardingState';
@@ -80,7 +81,7 @@ import RecentlyViewedRow from '@/components/RecentlyViewedRow';
 import ReportsBreakdownCard from '@/components/ReportsBreakdownCard';
 import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { androidSwitchThumbOff, font, radius, shadow, spacing } from '@/theme';
+import { androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { Input } from '@/components/ui/Input';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -556,6 +557,11 @@ export default function ProfileScreen() {
 
   const handleSaveName = useCallback(async () => {
     if (!user) return;
+    // T4 (F1-08): the tick lands on the DECISION, so the control answers the
+    // press rather than the result. Profile's four commit controls were the
+    // last on the estate still silent under the finger — the drawer rows, the
+    // report pickers, the appearance segments and the filter chips all tick.
+    hapticSelection();
     setSavingName(true);
     try {
       const next = trimmedDraft.length > 0 ? trimmedDraft : null;
@@ -594,6 +600,7 @@ export default function ProfileScreen() {
 
   const handlePickAvatar = useCallback(async () => {
     if (!user) return;
+    hapticSelection();
     if (Platform.OS === 'web') {
       const input = document.createElement('input');
       input.type = 'file';
@@ -639,6 +646,7 @@ export default function ProfileScreen() {
   const handlePickTab = useCallback(
     async (tab: DefaultTab) => {
       if (!user || tab === defaultTab) return;
+      hapticSelection();
       setSavingTab(true);
       // Optimistic — show the new selection immediately, write to storage,
       // and rollback only if the write throws (it shouldn't, but defensive).
@@ -661,6 +669,7 @@ export default function ProfileScreen() {
   const handleRealtimeToggle = useCallback(
     async (value: boolean) => {
       if (savingRealtime) return;
+      hapticSelection();
       setSavingRealtime(true);
       try {
         await setRealtimeEnabled(value);
@@ -831,6 +840,23 @@ export default function ProfileScreen() {
       }).start();
     }
   }, [tierProgressValue, tierProgressAnim, reduceMotion]);
+  // The milestone bar's own driver — same shape, same gate. The two bars sit
+  // 46pt apart and used to move differently: one eased from 0, the other was
+  // simply drawn at its width. Under Reduce Motion they already agreed; the
+  // only state where they disagreed was the one with motion in it.
+  const milestoneProgressAnim = useRef(new Animated.Value(0)).current;
+  const milestoneProgressValue = milestoneProgress(profile?.points ?? 0).progress;
+  useEffect(() => {
+    if (reduceMotion) {
+      milestoneProgressAnim.setValue(milestoneProgressValue);
+    } else {
+      Animated.timing(milestoneProgressAnim, {
+        toValue: milestoneProgressValue,
+        duration: 600,
+        useNativeDriver: false, // width interpolation cannot use the native driver
+      }).start();
+    }
+  }, [milestoneProgressValue, milestoneProgressAnim, reduceMotion]);
 
   if (authLoading) {
     return (
@@ -855,7 +881,13 @@ export default function ProfileScreen() {
     // T19 stacks more into this !user block in BP17.
     return (
       <View style={styles.stageRoot}>
-        <ScreenStage />
+        {/* S3 — the stage has a volume knob. On a screen this sparse the two
+            brand pools stopped reading as atmosphere and became two blue
+            blotches (critic §10). Board 08 turns them down rather than off: the
+            base wash and the grain are the field itself and never move. The
+            arbiter measured every ink against the pools' DARKEST stops, so
+            lowering the volume can only lighten that worst case. */}
+        <ScreenStage strength={0.6} />
         <GuestProfile onSignInPress={() => setSignInOpen(true)} />
         <Modal
           visible={signInOpen}
@@ -873,9 +905,11 @@ export default function ProfileScreen() {
   const {
     next: nextMilestone,
     label: milestoneLabel,
-    progress,
     from: milestoneFrom,
   } = milestoneProgress(points);
+  // `progress` is not read here any more: the fill is driven by
+  // milestoneProgressAnim above (same value, same helper), so reading it twice
+  // would be two sources for one width.
   // T4: Reputation tier — pure derivation from `points`. Drives the
   // small pill beside the points number AND the explainer sheet.
   // `gap` is 0 at Platinum; UI uses that to swap the copy.
@@ -897,9 +931,14 @@ export default function ProfileScreen() {
   };
   const achievements = computeAchievements(achievementStats);
   const achievementCount = countEarned(achievementStats);
-  // Width-style for the progress bar. Use a fixed numeric (not %) string so
-  // the StyleSheet types stay happy on web's CSS engine.
-  const progressBarWidth = `${Math.round(progress * 100)}%` as `${number}%`;
+  /**
+   * One bar at a time, unless the two are genuinely pointing at different
+   * numbers. See the render comment beside the milestone bar, and
+   * profileProgressBars.guard.test.ts for why merging them would be wrong.
+   */
+  const showMilestoneBar =
+    nextMilestone !== null &&
+    (tier.nextThreshold === null || nextMilestone !== tier.nextThreshold);
 
   return (
     <>
@@ -1027,7 +1066,21 @@ export default function ProfileScreen() {
               the points number (per T4 spec). The pill is a Pressable
               with its own a11y label, focusable independently. */}
           <View style={styles.heroValueRow}>
-            <AppText variant="monoBold" style={styles.heroValue} accessibilityLabel={`${points} points`}>
+            {/* T1/T2: the signature numeral, on the type scale instead of
+                beside it. 56 was an off-scale size with a hand-computed 74pt
+                line box; `font.size.display` (48) and `font.lineHeight.display`
+                are the tokens that already exist for exactly this role, and the
+                size rides the PROP so AppText derives its tracking from it
+                rather than a literal -1.2 that only happened to suit 56.
+                Capped at 1.3 like any display numeral — the hero is a fixed
+                composition, not reading copy. */}
+            <AppText
+              variant="monoBold"
+              size={font.size.display}
+              maxFontSizeMultiplier={1.3}
+              style={styles.heroValue}
+              accessibilityLabel={`${points} points`}
+            >
               {points}
             </AppText>
             <Pressable
@@ -1048,7 +1101,13 @@ export default function ProfileScreen() {
               }
               hitSlop={8}
             >
-              <TierIcon tier={tier} size={font.size.lg} />
+              {/* The mark takes the pill's own ink rather than the tier's
+                  colour: bronze and silver on a gold tint are muddy, and the
+                  icon is decorative — the tier's identity is the WORD beside it
+                  (and the Gem-vs-Medal shape at Platinum), both of which
+                  survive. The full ladder in the explainer sheet still shows
+                  each tier in its own colour. */}
+              <TierIcon tier={tier} size={font.size.lg} color={color.goldDark} />
               <AppText variant="label" style={styles.tierPillLabel}>{tier.label}</AppText>
             </Pressable>
           </View>
@@ -1085,7 +1144,19 @@ export default function ProfileScreen() {
               </AppText>
             </>
           )}
-          {nextMilestone !== null ? (
+          {/* SW-41, kept and finished.
+              The walk saw two bars 46pt apart, both filled to ~90%, reading as
+              one bar drawn twice. The guard beside this file pins WHY they must
+              not be merged: tier cutoffs (100/500/1500) and badge cutoffs
+              (25/100/500/1000) coincide only in the 25-499 band, which is the
+              band the walk happened to observe. Two genuinely different tracks.
+              So: show the tier bar, and show the milestone bar only when it is
+              actually pointing somewhere else. In the coinciding band the user
+              sees one bar; outside it they see both, because outside it the two
+              answer different questions. Neither bar is deleted and neither
+              lies — the divergence the guard protects is the very thing this
+              condition reads. */}
+          {showMilestoneBar ? (
             <>
               <View
                 style={styles.progressTrack}
@@ -1099,8 +1170,20 @@ export default function ProfileScreen() {
                 // always got this right; this is the one that did not.
                 accessibilityValue={{ min: milestoneFrom, max: nextMilestone, now: points }}
               >
-                <View
-                  style={[styles.progressFill, { width: progressBarWidth }]} {...decorativeProps}
+                {/* Both bars now fill on the same driver, gated the same way:
+                    the tier bar animated from 0 and this one snapped, so under
+                    Reduce Motion they behaved identically and everywhere else
+                    they did not. One idiom, one gate. */}
+                <Animated.View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: milestoneProgressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    },
+                  ]} {...decorativeProps}
                 />
               </View>
               <AppText
@@ -1110,11 +1193,11 @@ export default function ProfileScreen() {
                 {nextMilestone - points} points to {milestoneLabel}
               </AppText>
             </>
-          ) : (
+          ) : nextMilestone === null ? (
             <AppText variant="label" style={styles.heroSubtitle}>
               You&apos;ve reached the top milestone — {TOP_MILESTONE_LABEL} earned.
             </AppText>
-          )}
+          ) : null}
         </GlassSurface>
 
         {/* Point history — always rendered. Shows an encouraging empty state
@@ -1187,8 +1270,10 @@ export default function ProfileScreen() {
           )}
         </GlassSurface>
 
-        <View
+        <GlassSurface
+          variant="row"
           style={styles.statsRow}
+          borderRadius={radius.lg}
           accessible
           accessibilityRole="summary"
           accessibilityLabel={
@@ -1204,7 +1289,7 @@ export default function ProfileScreen() {
           <Stat label="Reported" value={stats.reported} />
           <Stat label="Verified" value={stats.lifetime.verified} />
           <Stat label="Resolved" value={stats.lifetime.resolved} />
-        </View>
+        </GlassSurface>
 
         {/* Streak card — only renders once we have a real value (≥1)
             so we don't briefly flash a "0 day" card on first launch. */}
@@ -1380,6 +1465,16 @@ export default function ProfileScreen() {
             into the card's internals — it owns its own fetch. */}
         <ReportsBreakdownCard userId={user?.id ?? null} refreshKey={breakdownRefreshKey} />
 
+        {/* Board 08 — seven floating panes become two grouped cards.
+            Seven glass rows in a column, each with its own floor, edge and
+            shadow, read as seven separate objects; they are two lists. Same
+            Home-list grammar the Settings screen took in this build: the card
+            is the group, the hairline is the seam, the row is a row.
+            The rows' own labels, hints and handlers are untouched. */}
+        <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
+          Your reports
+        </AppText>
+        <GlassSurface variant="row" forceEngineered style={styles.navGroup}>
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={handleOpenAllReports}
@@ -1391,7 +1486,7 @@ export default function ProfileScreen() {
           }
           accessibilityHint="Opens a list of every flag you've submitted"
         >
-          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
+          <View style={styles.navRow}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>My Reports</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
@@ -1405,9 +1500,12 @@ export default function ProfileScreen() {
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
-          </GlassSurface>
+          </View>
         </Pressable>
 
+        <View
+          style={styles.navSep} {...decorativeProps}
+        />
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setWatchedOpen(true)}
@@ -1415,7 +1513,7 @@ export default function ProfileScreen() {
           accessibilityLabel="Watched Flags"
           accessibilityHint="Opens the list of flags you are tracking for status changes"
         >
-          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
+          <View style={styles.navRow}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Watched Flags</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
@@ -1427,9 +1525,12 @@ export default function ProfileScreen() {
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
-          </GlassSurface>
+          </View>
         </Pressable>
 
+        <View
+          style={styles.navSep} {...decorativeProps}
+        />
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setActivityOpen(true)}
@@ -1437,7 +1538,7 @@ export default function ProfileScreen() {
           accessibilityLabel="Recent Activity"
           accessibilityHint="Opens a chronological feed of recent flag activity, grouped by day"
         >
-          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
+          <View style={styles.navRow}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Recent Activity</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
@@ -1449,9 +1550,12 @@ export default function ProfileScreen() {
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
-          </GlassSurface>
+          </View>
         </Pressable>
 
+        <View
+          style={styles.navSep} {...decorativeProps}
+        />
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setAchievementsOpen(true)}
@@ -1459,7 +1563,7 @@ export default function ProfileScreen() {
           accessibilityLabel={`Achievements, ${achievementCount.earned} of ${achievementCount.total} earned`}
           accessibilityHint="Opens the full achievement catalog with your progress on each badge"
         >
-          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
+          <View style={styles.navRow}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>
               Achievements{' '}
@@ -1480,9 +1584,18 @@ export default function ProfileScreen() {
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
-          </GlassSurface>
+          </View>
         </Pressable>
 
+        </GlassSurface>
+
+        {/* PLACEHOLDER SECTION NAME (SKY-WORDS-REQUIRED). The split is by what
+            the row is ABOUT: the four above are your own record, these three
+            are everyone else's and your account. */}
+        <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
+          Community & account
+        </AppText>
+        <GlassSurface variant="row" forceEngineered style={styles.navGroup}>
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setLeaderboardOpen(true)}
@@ -1490,7 +1603,7 @@ export default function ProfileScreen() {
           accessibilityLabel="See leaderboard"
           accessibilityHint="Opens the top 20 contributors ranked by points"
         >
-          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
+          <View style={styles.navRow}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>See leaderboard</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
@@ -1502,9 +1615,12 @@ export default function ProfileScreen() {
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
-          </GlassSurface>
+          </View>
         </Pressable>
 
+        <View
+          style={styles.navSep} {...decorativeProps}
+        />
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setNotifPrefsOpen(true)}
@@ -1512,7 +1628,7 @@ export default function ProfileScreen() {
           accessibilityLabel="Updates"
           accessibilityHint="Opens settings for which flag changes appear in your updates"
         >
-          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
+          <View style={styles.navRow}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Updates</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
@@ -1524,9 +1640,12 @@ export default function ProfileScreen() {
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
-          </GlassSurface>
+          </View>
         </Pressable>
 
+        <View
+          style={styles.navSep} {...decorativeProps}
+        />
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
           onPress={() => setSharedModal('myFeedback')}
@@ -1534,7 +1653,7 @@ export default function ProfileScreen() {
           accessibilityLabel="My Feedback"
           accessibilityHint="Opens the list of feedback you've sent to the maintainer"
         >
-          <GlassSurface variant="row" forceEngineered style={styles.myReportsBtn}>
+          <View style={styles.navRow}>
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>My Feedback</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>See the messages you&apos;ve sent to the team.</AppText>
@@ -1544,8 +1663,9 @@ export default function ProfileScreen() {
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
-          </GlassSurface>
+          </View>
         </Pressable>
+        </GlassSurface>
 
         <View style={styles.section}>
           <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
@@ -2025,20 +2145,25 @@ export default function ProfileScreen() {
   );
 }
 
+/**
+ * One cell of the stat trio.
+ *
+ * Board 08: three glass cards became one card with three cells. Three panes
+ * side by side each carrying their own floor, edge and shadow read as three
+ * objects when what they are is one summary — and the row already announces
+ * itself as one `summary` node to a screen reader, so the material was saying
+ * something the semantics did not.
+ */
 function Stat({ label, value }: { label: string; value: number }) {
   const color = useColor();
   const styles = makeStyles(color);
   return (
-    <GlassSurface
-      variant="row"
-      style={styles.statCard}
-      borderRadius={radius.lg}
-    >
+    <View style={styles.statCell}>
       <AppText variant="monoBold" style={styles.statValue}>{value}</AppText>
       <AppText variant="label" style={styles.statLabel} adjustsFontSizeToFit numberOfLines={1}>
         {label}
       </AppText>
-    </GlassSurface>
+    </View>
   );
 }
 
@@ -2102,7 +2227,6 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.tight,
       ...shadow.e2,
     },
-    heroIcon: { fontSize: 32, marginBottom: 4 },
 
     // Avatar styles — circular tappable photo/initials element in heroCard
     avatarBtn: {
@@ -2130,10 +2254,10 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     avatarInitials: {
-      fontSize: 26,
-      fontWeight: '700',
+      fontSize: font.size.h2,
+      fontWeight: font.weight.bold,
       color: color.brandText,
-      letterSpacing: 0.5,
+      letterSpacing: font.tracking.loose,
     },
     avatarOverlay: {
       ...StyleSheet.absoluteFillObject,
@@ -2161,21 +2285,22 @@ const makeStyles = (color: ColorTheme) =>
       // below AA over the row floor on worst-case backdrops).
       color: color.inkGlassMuted,
       fontSize: font.size.base,
-      letterSpacing: 2.4,
+      letterSpacing: font.tracking.eyebrow,
       fontWeight: font.weight.bold,
       textTransform: 'uppercase',
     },
     heroValue: {
-      // The signature 56pt data-display number on the hero glass. inkDetailsGhost
+      // The signature data-display number on the hero glass. inkDetailsGhost
       // is the arbitrated brand-blue for row glass (light #1466E0 — visually the
       // same Wayfinder blue, 4.75:1; dark #84AEF6 — raw brand fails on dark glass).
+      // fontSize + letterSpacing live on the AppText `size` prop now (T2), so
+      // the tracking is derived rather than pinned to a number that suited 56.
       color: color.inkDetailsGhost,
-      fontSize: 56,
-      fontWeight: '800',
-      // 74 = JetBrains Mono's real line box (56 × 1.32) — 60 shaved the
-      // ascenders, worst on Android (sweep M5).
-      lineHeight: 74,
-      letterSpacing: -1.2,
+      // The token line box for display, which is the ×1.25 the scale documents.
+      // (The old 74 was 56 × 1.32, hand-computed against Android ascender
+      // clipping in sweep M5 — the ratio the token already encodes for this
+      // size class.)
+      lineHeight: font.lineHeight.display,
     },
     heroSubtitle: {
       color: color.inkGlassMuted,
@@ -2244,27 +2369,30 @@ const makeStyles = (color: ColorTheme) =>
     tierPill: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
+      gap: spacing.xs,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
       borderRadius: radius.circle,
-      // brand-soft tint (was white) so the pill reads on the now-white hero card
-      backgroundColor: color.brandSofter,
+      // C4: gold is gamification only, on ink. A tier is the gamification
+      // object on this screen and it was wearing the brand tint, which is the
+      // app's UTILITY colour — the same blue the CTA and every link uses. The
+      // gold pair is measured for text (goldDark on goldLight), and the bars
+      // below it are already goldAccent, so the hero now says one thing.
+      backgroundColor: color.goldLight,
       minHeight: 32,
       minWidth: 44,
       justifyContent: 'center',
       ...shadow.e1,
     },
     tierPillPressed: {
-      backgroundColor: color.brandSoft,
-      opacity: 0.95,
+      backgroundColor: color.goldLight,
+      opacity: 0.85,
     },
-    tierPillEmoji: { fontSize: 14 },
     tierPillLabel: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: color.brandText,
-      letterSpacing: 0.2,
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      color: color.goldDark,
+      letterSpacing: font.tracking.loose,
     },
     // T4: Tier-explainer modal. Mirrors AboutScreen's translucent backdrop
     // and rounded card; lives inline here because it's small and
@@ -2299,10 +2427,10 @@ const makeStyles = (color: ColorTheme) =>
       rowGap: spacing.tight,
     },
     tierHeaderTitle: {
-      fontSize: 18,
-      fontWeight: '700',
+      fontSize: font.size.xl,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
-      letterSpacing: -0.2,
+      letterSpacing: font.tracking.xl,
       // flexBasis deliberately UNWRITTEN (RN default 'auto') so the box measures
       // its own text; minWidth is the floor that makes the row's flexWrap fire.
       // 140 = "Reputation" at 18pt on the heading cap (1.5) ~= 135pt.
@@ -2317,15 +2445,15 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },    tierIntro: { fontSize: 13, color: color.text, lineHeight: 19 },
-    tierList: { gap: 8, marginTop: 4 },
+    },    tierIntro: { fontSize: font.size.sm, color: color.text, lineHeight: font.lineHeight.sm },
+    tierList: { gap: spacing.sm, marginTop: spacing.tight },
     tierRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 10,
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
       backgroundColor: color.surfaceMuted,
       minHeight: 48,
     },
@@ -2336,15 +2464,14 @@ const makeStyles = (color: ColorTheme) =>
       borderLeftWidth: 3,
       borderLeftColor: color.brand,
     },
-    tierRowEmoji: { fontSize: 22 },
     tierRowTextWrap: { flex: 1, gap: 2 },
-    tierRowLabel: { fontSize: 15, fontWeight: '700', color: color.text },
+    tierRowLabel: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.text },
     tierRowLabelCurrent: { color: color.brandText },
-    tierRowCurrentTag: { fontSize: 12, fontWeight: '600', color: color.brandText },
-    tierRowRange: { fontSize: 12, color: color.textMuted },
+    tierRowCurrentTag: { fontSize: font.size.xs, fontWeight: font.weight.semibold, color: color.brandText },
+    tierRowRange: { fontSize: font.size.xs, color: color.textMuted },
     tierFooter: {
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: font.size.sm,
+      fontWeight: font.weight.semibold,
       color: color.brandText,
       textAlign: 'center',
       marginTop: 4,
@@ -2434,10 +2561,9 @@ const makeStyles = (color: ColorTheme) =>
       borderLeftWidth: 3,
       borderLeftColor: color.accentOrange,
     },
-    streakIcon: { fontSize: 24 },
     streakTextWrap: { flex: 1, gap: 2 },
-    streakValue: { fontSize: 15, fontWeight: '700', color: color.warningFg },
-    streakSubtitle: { fontSize: 12, color: color.warningFg, opacity: 0.85 },
+    streakValue: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.warningFg },
+    streakSubtitle: { fontSize: font.size.xs, color: color.warningFg, opacity: 0.85 },
     // R9: Nearest-unresolved jump button. Pale-blue card to set it apart
     // from the orange streak card directly above; chevron hints at the
     // navigation action.
@@ -2447,51 +2573,51 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
       minHeight: 56,
     },
     nearestBtnPressed: {
       // opacity only — a bg swap is invisible under the banner glass.
       opacity: 0.9,
     },
-    nearestBtnIcon: { fontSize: 22 },
     nearestBtnTextWrap: { flex: 1, gap: 2 },
     // brandOnSoft is the arbitrated ink for the brand-tinted banner floor.
     // (No opacity on the subtitle — a translucent ink over glass hazes below AA.)
     nearestBtnTitle: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.brandOnSoft },
     nearestBtnSubtitle: { fontSize: font.size.xs, color: color.brandOnSoft },
     nearestBtnChevron: {
-      fontSize: 22,
+      fontSize: font.size.xxl,
       color: color.brand,
       paddingHorizontal: spacing.tight,
       fontWeight: font.weight.bold,
     },
-    statsRow: { flexDirection: 'row', gap: spacing.md },
-    statCard: {
-      // Material via <GlassSurface variant="row">; no bg here. flex/radius/
-      // padding/shadow stay on the outer style.
-      flex: 1,
+    // ONE card, three cells. Material via <GlassSurface variant="row">; no bg
+    // here. radius/padding/shadow stay on the outer style.
+    statsRow: {
+      flexDirection: 'row',
       borderRadius: radius.lg,
-      padding: spacing.lg,
-      alignItems: 'center',
+      paddingVertical: spacing.lg,
       ...shadow.e2,
     },
+    statCell: { flex: 1, alignItems: 'center', paddingHorizontal: spacing.sm },
     statValue: {
       // textStrong (near-black / near-white) reads high-contrast on the row
       // glass in both themes — arbiter-declared, not a muted ink.
-      fontSize: 28,
-      fontWeight: '700',
+      fontSize: font.size.h1,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
-      letterSpacing: -0.5,
+      letterSpacing: font.tracking.h1,
     },
     statLabel: {
-      fontSize: 11,
+      // Was an off-scale 10 elsewhere and 11 here; `caption` is the token for
+      // exactly this size.
+      fontSize: font.size.caption,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
       letterSpacing: font.tracking.section,
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
     },
     // Per-status pill row (open / verified / resolved / rejected). Uses
     // statusPalette (themed) for visual continuity with the badges in detail
@@ -2512,9 +2638,9 @@ const makeStyles = (color: ColorTheme) =>
       // minHeight guarantees the now-tappable pills meet the 44pt target
       // even before content; the count + label already push past it.
       minHeight: 44,
-      paddingVertical: 8,
-      paddingHorizontal: 10,
-      borderRadius: 10,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.md,
       alignItems: 'center',
       justifyContent: 'center',
       gap: 2,
@@ -2523,60 +2649,84 @@ const makeStyles = (color: ColorTheme) =>
     statusPillPressed: { opacity: 0.7 },
     // Zero-count pills fade so the eye lands on what's actually there.
     statusPillDimmed: { opacity: 0.55 },
-    statusPillCount: { fontSize: 18, fontWeight: '700' },
-    statusPillLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: font.tracking.loose },
-    myReportsBtn: {
-      // Material via <GlassSurface variant="row" forceEngineered> (engineered —
-      // outside the blur cluster, budget-free). No bg here; layout + shadow stay.
+    statusPillCount: { fontSize: font.size.xl, fontWeight: font.weight.bold },
+    statusPillLabel: {
+      // Was an off-scale 10 — `caption` (11) is the token for this role, and it
+      // is the smallest size the scale admits.
+      fontSize: font.size.caption,
+      fontWeight: font.weight.bold,
+      textTransform: 'uppercase',
+      letterSpacing: font.tracking.loose,
+    },
+    // The GROUP is the card now. Material via <GlassSurface variant="row"
+    // forceEngineered> (engineered — outside the blur cluster, budget-free).
+    // No bg here; radius + shadow + the clip stay. overflow:hidden so a row's
+    // press dim reaches the corner without escaping it.
+    navGroup: {
       borderRadius: radius.lg,
-      padding: 16,
+      overflow: 'hidden',
+      ...shadow.e1,
+    },
+    // A row inside that card — no material of its own.
+    navRow: {
+      padding: spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
-      ...shadow.e1,
-      minHeight: 64,
+      gap: spacing.md,
+      // S6: the shared list-row height (Settings and the drawer read the same
+      // token), well above WCAG 2.5.5's 44pt floor.
+      minHeight: size.row,
+    },
+    navSep: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: color.border,
+      marginLeft: spacing.lg,
     },
     // Press feedback is opacity only — a bg swap is invisible under glass.
     myReportsBtnPressed: { opacity: 0.85 },
     myReportsTextWrap: { flex: 1, gap: 2 },
     myReportsTitle: {
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: font.size.lg,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
-      letterSpacing: -0.1,
+      letterSpacing: font.tracking.heading,
     },
     // Inline "· X / N" count next to the Achievements title — muted so the
     // main title still reads as the link affordance.
-    achievementsCount: { fontWeight: '600', color: color.inkGlassMuted, fontSize: 14 },
-    myReportsSubtitle: { fontSize: 13, color: color.inkGlassMuted },
-    section: { gap: 8, marginTop: 8 },
+    achievementsCount: {
+      fontWeight: font.weight.semibold,
+      color: color.inkGlassMuted,
+      fontSize: font.size.base,
+    },
+    myReportsSubtitle: { fontSize: font.size.sm, color: color.inkGlassMuted },
+    section: { gap: spacing.sm, marginTop: spacing.sm },
     sectionLabel: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       // Section headers sit on the raw stage — inkOnStage (textMuted is below AA there).
       color: color.inkOnStage,
       textTransform: 'uppercase',
       letterSpacing: font.tracking.section,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
     },
-    nameRow: { flexDirection: 'row', gap: 8 },
+    nameRow: { flexDirection: 'row', gap: spacing.sm },
     nameInputWrap: { flex: 1 },
     saveBtn: {
       backgroundColor: color.ctaFill, // mode-independent brand fill (white on it is AA both themes)
-      paddingHorizontal: 16,
-      borderRadius: 8,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
       alignItems: 'center',
       justifyContent: 'center',
       minWidth: 72,
       minHeight: 44,
     },
     saveBtnDisabled: { opacity: 0.4 },
-    saveBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: 14 },
-    hint: { fontSize: 12, color: color.inkOnStage, lineHeight: 16 },
-    tabRow: { flexDirection: 'row', gap: 8 },
+    saveBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
+    hint: { fontSize: font.size.xs, color: color.inkOnStage, lineHeight: font.lineHeight.tight },
+    tabRow: { flexDirection: 'row', gap: spacing.sm },
     tabPill: {
       flex: 1,
-      paddingVertical: 12,
-      borderRadius: 8,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
       // Engineered chip tint on the stage (a control smaller than a row tints,
       // never blurs); the edge hairline gives it definition.
       backgroundColor: color.glassChipFill,
@@ -2590,21 +2740,21 @@ const makeStyles = (color: ColorTheme) =>
     // themes (dark brand + white = 3.4:1 fails). borderColor matches so the chip
     // edge disappears under the fill.
     tabPillSelected: { backgroundColor: color.ctaFill, borderColor: color.ctaFill },
-    tabPillText: { color: color.glassChipInk, fontWeight: '600', fontSize: 14 },
+    tabPillText: { color: color.glassChipInk, fontWeight: font.weight.semibold, fontSize: font.size.base },
     tabPillTextSelected: { color: color.textOnBrand },
     linkBtn: {
       // Engineered chip tint on the stage.
       backgroundColor: color.glassChipFill,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: color.glassChipEdge,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderRadius: 8,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
       alignItems: 'center',
       minHeight: 44,
       justifyContent: 'center',
     },
-    linkBtnText: { color: color.inkSelect, fontWeight: '600', fontSize: 14 },
+    linkBtnText: { color: color.inkSelect, fontWeight: font.weight.semibold, fontSize: font.size.base },
     // D4: realtime toggle row — label + hint on the left, Switch on the right.
     toggleRow: {
       flexDirection: 'row',
@@ -2616,8 +2766,8 @@ const makeStyles = (color: ColorTheme) =>
     },
     toggleRowBusy: { opacity: 0.6 },
     toggleTextWrap: { flex: 1, gap: 2 },
-    toggleLabel: { fontSize: 14, fontWeight: '600', color: color.textStrong },
-    toggleHint: { fontSize: 12, color: color.inkOnStage },
+    toggleLabel: { fontSize: font.size.base, fontWeight: font.weight.semibold, color: color.textStrong },
+    toggleHint: { fontSize: font.size.xs, color: color.inkOnStage },
     aboutRow: {
       // Material via <GlassSurface variant="row" forceEngineered>; no bg here.
       // marginTop stays on this outer style (the GlassSurface wrapper).
@@ -2636,7 +2786,7 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.lg,
       fontWeight: font.weight.bold,
       color: color.textStrong,
-      letterSpacing: -0.1,
+      letterSpacing: font.tracking.heading,
     },
     aboutSubtitle: { fontSize: font.size.sm, color: color.inkGlassMuted },
     signOutBtn: {
@@ -2649,7 +2799,7 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: 44,
       justifyContent: 'center',
     },
-    signOutText: { color: color.text, fontWeight: '600' },
+    signOutText: { color: color.text, fontWeight: font.weight.semibold },
     // Destructive button — text-only red, not a filled button, so it reads as
     // a secondary action well below the sign-out affordance.
     deleteAccountBtn: {
@@ -2688,20 +2838,20 @@ const makeStyles = (color: ColorTheme) =>
     // Spacing for the scrollable copy — mirrors the sheet gap inside the ScrollView.
     deleteScrollContent: { gap: 16 },
     deleteTitle: {
-      fontSize: 20,
-      fontWeight: '700',
+      fontSize: font.size.xxl,
+      fontWeight: font.weight.bold,
       color: color.textStrong,
-      letterSpacing: -0.3,
+      letterSpacing: font.tracking.heading,
     },
     deleteBody: {
-      fontSize: 15,
+      fontSize: font.size.md,
       color: color.text,
-      lineHeight: 22,
+      lineHeight: font.lineHeight.md,
     },
     deleteBodySecondary: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.textMuted,
-      lineHeight: 18,
+      lineHeight: font.lineHeight.sm,
       marginTop: -4,
     },
     deleteActions: {
@@ -2719,7 +2869,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     deleteCancelBtnPressed: { opacity: 0.75 },
-    deleteCancelText: { color: color.text, fontWeight: '600', fontSize: 15 },
+    deleteCancelText: { color: color.text, fontWeight: font.weight.semibold, fontSize: font.size.md },
     deleteConfirmBtn: {
       flex: 1,
       paddingVertical: 14,

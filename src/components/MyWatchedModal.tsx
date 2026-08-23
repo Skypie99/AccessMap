@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
@@ -40,7 +41,7 @@ import {
   type WatchedStatusFilter,
 } from '@/lib/watchedFlagsFilter';
 import { a11y, bulkGlassShadow, font, radius, spacing } from '@/theme';
-import { MapPin, RefreshCw, Search, Star, X } from 'lucide-react-native';
+import { MapPin, RefreshCw, Star, X } from 'lucide-react-native';
 import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
@@ -416,9 +417,16 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               error is now reserved for "nothing to show"; with rows on screen
               the failure renders as a banner above the (stale but useful)
               list instead. */}
+          {/* C6: a FAILED OPERATION is red, an informational notice is amber.
+              This banner shared the amber `missingBanner` with the notice two
+              blocks above it ("N flags have been removed by their author"),
+              so a failure and an FYI were the same object. MyReports and
+              ActivityFeed already render a load failure in errorBg; this
+              matches them. The stale list stays on screen either way — the
+              colour is about what HAPPENED, not about what remains. */}
           {loadError && flags.length > 0 && !loading && (
-            <View style={styles.missingBanner}>
-              <AppText variant="body" style={styles.missingText}>
+            <View style={styles.refreshErrorBanner}>
+              <AppText variant="body" style={styles.refreshErrorText}>
                 {`Couldn't refresh: ${loadError} Showing your last loaded list.`}
               </AppText>
             </View>
@@ -486,22 +494,23 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
                 </View>
               </View>
             ) : flags.length === 0 ? (
-              <View style={styles.center}>
-                <Star size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
-
-                <AppText variant="heading" style={styles.emptyTitle}>No watched flags yet</AppText>
-                <AppText variant="body" style={styles.emptySubtitle}>
-                  Open any flag on the map or in Tasks and tap <AppText variant="label" style={styles.emptyBold}>Watch</AppText> to track it here.
-                </AppText>
-              </View>
+              // W5: Star and Search, two glyphs for two flavours of the same
+              // nothing, become one mark. Every word is the shipped word,
+              // including the emphasis on the control's name.
+              <EmptyState
+                title="No watched flags yet"
+                body={
+                  <>
+                    Open any flag on the map or in Tasks and tap{' '}
+                    <AppText variant="label" style={styles.emptyBold}>Watch</AppText> to track it here.
+                  </>
+                }
+              />
             ) : displayFlags.length === 0 ? (
-              <View style={styles.center}>
-                {/* BP-7: the app's last emoji glyph → the Lucide Search its
-                    sibling empty states already use (AddressSearch/MyFeedback). */}
-                <Search size={32} color={color.inkGlassMuted} strokeWidth={2.2} {...decorativeProps} />
-                <AppText variant="heading" style={styles.emptyTitle}>No matches</AppText>
-                <AppText variant="body" style={styles.emptySubtitle}>Try a different search term or status filter.</AppText>
-              </View>
+              <EmptyState
+                title="No matches"
+                body="Try a different search term or status filter."
+              />
               ) : null}
             </ScrollView>
           )}
@@ -589,6 +598,10 @@ const makeStyles = (color: ColorTheme) =>
     clearBtnText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.error },
     missingBanner: { backgroundColor: color.warningBg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: color.accentOrange },
     missingText: { fontSize: font.size.sm, color: color.warningFg, lineHeight: 18 },
+    // Same geometry as missingBanner, the failure palette instead of the notice
+    // palette — the accent bar takes `error` so the left edge reads too.
+    refreshErrorBanner: { backgroundColor: color.errorBg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: color.error },
+    refreshErrorText: { fontSize: font.size.sm, color: color.errorFg, lineHeight: 18 },
     // SW-42: the non-list states' scroller. flexShrink:1 is the load-bearing
     // half — it is what lets the body absorb the card's shrink by scrolling
     // instead of letting overflow:'hidden' eat it (FeedbackModal `body`, the
@@ -604,8 +617,6 @@ const makeStyles = (color: ColorTheme) =>
     errorText: { color: color.errorFg, flex: 1, fontSize: font.size.sm, lineHeight: 18 },
     retryBtn: { paddingHorizontal: spacing.md + 2, paddingVertical: spacing.sm + 2, borderRadius: radius.md, backgroundColor: color.error, minHeight: 44, justifyContent: 'center' },
     retryText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.sm },
-    emptyTitle: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: color.textStrong },
-    emptySubtitle: { fontSize: font.size.base, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center', lineHeight: 20 },
     emptyBold: { fontWeight: font.weight.bold, color: color.textStrong },
     list: { paddingBottom: spacing.sm },
     separator: { height: 1, backgroundColor: color.borderSubtle },

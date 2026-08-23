@@ -10,8 +10,8 @@ import {
   Switch,
   View,
 } from 'react-native';
-import { ChevronRight, ClipboardCopy, Moon, PlayCircle, Smartphone, Sun } from 'lucide-react-native';
-import { androidSwitchThumbOff, font, radius, shadow, spacing } from '@/theme';
+import { ChevronRight, Moon, Smartphone, Sun } from 'lucide-react-native';
+import { androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/components/ui/AppText';
@@ -30,7 +30,9 @@ import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { useFeatureFlag } from '@/lib/featureFlags';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useBottomTabBarHeight, type BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
+import type { RootTabParamList } from '@/navigation/RootNavigator';
 import { CATEGORY_LABELS, listFlagsByUser } from '@/lib/flags';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
 import { formatDataExport } from '@/lib/dataExport';
@@ -70,6 +72,37 @@ import AboutScreen from '@/screens/AboutScreen';
 import OnboardingModal from '@/screens/OnboardingModal';
 import NotificationPreferencesScreen from '@/screens/NotificationPreferencesScreen';
 
+/**
+ * One grouped card per SECTION (board 07).
+ *
+ * Every row used to be its own glass card, so a screen of eleven rows was
+ * eleven floating panes with eleven shadows — the Home list's own grammar,
+ * which stacks rows INSIDE one card with hairline separators, said the
+ * opposite thing one tab away. The card is the section now; the rows are rows.
+ *
+ * `overflow: 'hidden'` is what lets a row's press wash reach the card's
+ * rounded corner without escaping it.
+ */
+function SettingsGroup({ children }: { children: React.ReactNode }) {
+  const color = useColor();
+  const styles = makeStyles(color);
+  const rows = React.Children.toArray(children).filter(Boolean);
+  return (
+    <GlassSurface variant="row" style={styles.group}>
+      {rows.map((row, i) => (
+        <View key={i}>
+          {i > 0 && (
+            <View
+              style={styles.groupSep} {...decorativeProps}
+            />
+          )}
+          {row}
+        </View>
+      ))}
+    </GlassSurface>
+  );
+}
+
 // One row in the settings list. We declare it locally instead of factoring
 // into its own file because it's only used here and the rest of the app
 // inlines small components the same way (see ProfileScreen's Stat helper).
@@ -79,7 +112,7 @@ function SettingsRow({
   onPress,
   accessibilityHint,
   destructive,
-  icon,
+  control,
   disabled,
   busy,
   role = 'button',
@@ -95,19 +128,30 @@ function SettingsRow({
   // convention on ResourcesScreen's link cards. Defaults to 'button' so every
   // existing row is byte-unchanged.
   role?: 'button' | 'link';
-  // Optional text glyph rendered at the leading edge of the row. Pure
-  // decoration — hidden from AT so a screen reader doesn't read out
-  // "clipboard emoji, Export my data". The row's accessibilityLabel
-  // already carries the meaning.
-  icon?: React.ReactNode;
+  /**
+   * I4: Settings rows carry NO leading icons — the drawer carries icons,
+   * Settings carries explanations. Two of eleven rows used to have one, which
+   * meant the glyph could not be signal (it marked nothing in common) and read
+   * as decoration nobody had decided on.
+   *
+   * What replaced the `icon` prop is this TRAILING slot: the control a row
+   * operates, when it is not a chevron. The push-notification row is the only
+   * caller — it hand-rolled its own pane, its own text wrap and its own busy
+   * treatment for exactly this reason, and drifted from the house row on all
+   * three (SW-20 / SW-49 had to re-apply them by hand). Passing the Switch in
+   * here is that fix made structural.
+   */
+  control?: React.ReactNode;
   // When the row is busy running its handler we soften the press affordance
   // and block re-entrancy (the handler also no-ops if it's busy, but the
   // visual cue helps sighted users).
   disabled?: boolean;
-  // When true, swap the trailing chevron for an ActivityIndicator so sighted
-  // users see that the row's handler is mid-flight (the 2-5s data-export
-  // fetch otherwise looks frozen). Also bumps accessibilityState.busy so
-  // screen readers announce the activity rather than a silent dead row.
+  // When true, swap the trailing affordance — chevron or control — for an
+  // ActivityIndicator so sighted users see that the row's handler is mid-flight
+  // (the 2-5s data-export fetch otherwise looks frozen). Also bumps
+  // accessibilityState.busy so screen readers announce the activity rather than
+  // a silent dead row. ONE busy idiom for the whole screen: the push row used
+  // to swap its Switch for a spinner through its own hand-written branch.
   busy?: boolean;
 }) {
   const color = useColor();
@@ -128,14 +172,9 @@ function SettingsRow({
       accessibilityHint={accessibilityHint}
       {...a11yToggle({ disabled: !!disabled, busy: !!busy })}
     >
-      <GlassSurface variant="row" style={styles.row}>
-        {icon ? (
-          <View
-            style={styles.rowIcon} {...decorativeProps}
-          >
-            {icon}
-          </View>
-        ) : null}
+      {/* The material moved up to SettingsGroup — this is a row inside a card
+          now, not a card of its own. */}
+      <View style={styles.row}>
         {/* T3 (X10): 16pt title on `label` capped at 1.6 -> 25.6pt, while the
             13pt subtitle on `bodyMedium` scaled uncapped past it. Every Settings
             row read title-under-subtitle above ~1.6x. One content block, one
@@ -152,17 +191,26 @@ function SettingsRow({
           ) : null}
         </View>
         </TypeBlock>
-        {/* Trailing affordance: a spinner while the row's handler runs, a
-            decorative chevron otherwise. Both are hidden from AT (the row's
-            accessibilityLabel + busy state carry the meaning). */}
+        {/* Trailing affordance, in one place for every row: a spinner while the
+            handler runs, otherwise the row's own control if it has one, else the
+            decorative chevron. The spinner and the chevron are hidden from AT
+            (the row's accessibilityLabel + busy state carry the meaning); a
+            control carries its own. */}
         {busy ? (
           <ActivityIndicator
             // + importantForAccessibility hide the
             // spinner from VoiceOver/TalkBack — the busy state on the parent
             // Pressable already announces "in progress".
             style={styles.rowSpinner}
-            color={color.textSubtle} {...decorativeProps}
+            // The push row's own spinner was already color.text, with a comment
+            // saying why: textSubtle (#999 light / #777 dark) is for
+            // non-essential text or 18pt+, which a thin spinner stroke is not.
+            // Merging the two busy idioms takes the measured value, not the
+            // one that happened to be on the component.
+            color={color.text} {...decorativeProps}
           />
+        ) : control ? (
+          control
         ) : (
           <ChevronRight
             size={18}
@@ -170,7 +218,7 @@ function SettingsRow({
             strokeWidth={2.2} {...decorativeProps}
           />
         )}
-      </GlassSurface>
+      </View>
     </Pressable>
   );
 }
@@ -236,12 +284,6 @@ export default function SettingsScreen() {
   const color = useColor();
   const styles = makeStyles(color);
   const tabBarHeight = useBottomTabBarHeight();
-  // Keep a stable reference for the push ActivityIndicator color — we can't
-  // call useColor() inside conditional JSX, so we capture it here at the
-  // top of the component. Use color.text (#333 light, #ddd dark) for ≥4.5:1
-  // contrast on spinner strokes. color.textSubtle (#999 light, #777 dark) is
-  // only for non-essential text or 18pt+, which thin spinners are not.
-  const pushSpinnerColor = color.text;
   // Help, Changelog, Feedback, and MyFeedback are all mounted ONCE at
   // the navigator level via <SharedModalsHost /> (see RootNavigator.tsx +
   // src/lib/sharedModalsContext.tsx). Settings just sets the shared
@@ -284,6 +326,9 @@ export default function SettingsScreen() {
   // `if (!user || pushBusy) return;` took the silent branch while the Switch
   // still rendered as a live control.
   const { user, loading: authLoading } = useAuth();
+  // Q15: the guest ACCOUNT row's destination. Same route the drawer's "Sign in"
+  // takes (RootNavigator's onSignIn) — the Profile tab hosts the sign-in modal.
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Settings'>>();
   const [exporting, setExporting] = useState(false);
 
   // Push notifications toggle state.
@@ -581,7 +626,11 @@ export default function SettingsScreen() {
             menu + Feedback circles and the display title now match every tab. */}
         <ScreenHeader
           style={styles.settingsHeader}
-          eyebrow="SETTINGS"
+          // Board 07: the eyebrow says whose settings these are instead of
+          // repeating the title one line below it — the one screen in the app
+          // where the eyebrow/title pair had nothing to add.
+          // PLACEHOLDER COPY (SKY-WORDS-REQUIRED).
+          eyebrow="FLAGSTONE"
           title="Settings"
           eyebrowColor={color.inkOnStage}
           subtitleColor={color.inkOnStage}
@@ -597,6 +646,7 @@ export default function SettingsScreen() {
           Notifications
         </AppText>
 
+        <SettingsGroup>
         <SettingsRow
           title="Update preferences"
           subtitle="Choose which flag changes appear in your updates."
@@ -611,14 +661,14 @@ export default function SettingsScreen() {
             Re-sweep FIX A: gated behind PUSH_NOTIF_TYPES_ENABLED (default
             false) — the screen's saved prefs aren't read by the push pipeline
             yet, so the row hides until the wiring lands. */}
-        {pushNotifTypesEnabled && (
+        {pushNotifTypesEnabled ? (
           <SettingsRow
               title="Push notification types"
             subtitle="Pick which push alerts you get: status changes, nearby flags, watched flags, and digests."
             accessibilityHint="Opens push notification category preferences"
             onPress={() => setNotifPrefsOpen(true)}
           />
-        )}
+        ) : null}
 
         {/* Push notifications toggle — Jordan condition 4.
             Uses a Switch so the current state is always visible without
@@ -629,27 +679,34 @@ export default function SettingsScreen() {
             reader. Previously role="switch" sat on the wrapper View (no press
             handler) with the Switch hidden, so VoiceOver/TalkBack could read
             but not flip it. Mirrors NotificationPrefsModal. */}
-        {/* SW-20/SW-49: this is the one row in the file that does not go through
-            SettingsRow, which is exactly why it missed both halves of the house
-            treatment — `disabled && styles.rowDisabled` and a subtitle that
-            says why. Applied here by hand, same opacity, same idea. */}
-        <GlassSurface
-          variant="row"
-          style={[styles.pushRow, pushLocked && styles.rowDisabled]}
-        >
-          <View style={styles.pushTextWrap}>
-            <AppText variant="label" style={styles.rowTitle}>Push notifications</AppText>
-            <AppText variant="bodyMedium" style={styles.rowSubtitle}>
-              {pushNeedsAccount
-                ? PUSH_SIGNED_OUT_SUBTITLE
-                : 'Get notified when your flag is verified or resolved.'}
-            </AppText>
-          </View>
-          {pushBusy ? (
-            <ActivityIndicator
-              color={pushSpinnerColor} {...decorativeProps}
-            />
-          ) : (
+        {/* SW-20/SW-49 closed structurally. This was the one row in the file
+            that did not go through SettingsRow, which is exactly why it missed
+            both halves of the house treatment (`rowDisabled` and a subtitle
+            that says why) and had them re-applied by hand afterwards. It is a
+            SettingsRow now: the disabled dim, the subtitle, the row height, the
+            text wrap and the busy spinner all come from the component, and the
+            Switch rides in the trailing control slot. The row's own press
+            toggles the switch too, so the whole 64pt row is the target.
+
+            The Switch keeps its OWN accessible identity (role, label, hint,
+            checked state): a screen reader must land on a switch it can flip,
+            not on a button that says "Push notifications". */}
+        <SettingsRow
+          title="Push notifications"
+          subtitle={
+            pushNeedsAccount
+              ? PUSH_SIGNED_OUT_SUBTITLE
+              : 'Get notified when your flag is verified or resolved.'
+          }
+          accessibilityHint={
+            pushNeedsAccount
+              ? PUSH_SIGNED_OUT_SUBTITLE
+              : 'Receive a push notification when your flag is verified or resolved'
+          }
+          onPress={() => handlePushToggle(!pushEnabled)}
+          disabled={pushBusy || pushLocked}
+          busy={pushBusy}
+          control={
             <Switch
               value={pushEnabled}
               onValueChange={handlePushToggle}
@@ -669,8 +726,9 @@ export default function SettingsScreen() {
                 Platform.OS === 'android' ? (pushEnabled ? color.brand : androidSwitchThumbOff) : undefined
               }
             />
-          )}
-        </GlassSurface>
+          }
+        />
+        </SettingsGroup>
 
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Appearance
@@ -682,6 +740,7 @@ export default function SettingsScreen() {
           Help & info
         </AppText>
 
+        <SettingsGroup>
         <SettingsRow
           title="Help & FAQ"
           subtitle="Common questions about reports, points, and accessibility."
@@ -729,18 +788,23 @@ export default function SettingsScreen() {
           onPress={() => setOpen('terms')}
         />
 
+        {/* I4: the leading PlayCircle is gone. Two of eleven rows carried a
+            glyph, which meant it marked nothing in common. The Replay tutorial
+            row's TITLE, SUBTITLE and HINT are guard-pinned (onboardingCoherence)
+            and are byte-unchanged. */}
         <SettingsRow
           title="Replay tutorial"
           subtitle="Re-show the welcome intro."
-          icon={<PlayCircle size={18} color={color.textMuted} strokeWidth={2.2} />}
           accessibilityHint="Opens the welcome intro"
           onPress={() => setTutorialOpen(true)}
         />
+        </SettingsGroup>
 
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Feedback
         </AppText>
 
+        <SettingsGroup>
         <SettingsRow
           title="Send feedback"
           subtitle="Tell the maintainer what's working or what's broken."
@@ -755,9 +819,25 @@ export default function SettingsScreen() {
           onPress={() => setOpen('myFeedback')}
         />
 
-        {/* HIGH-2 (§SKY-7, section pick S1). Sits in Feedback rather than Your
-            data because both neighbours are records of things you did, so the
-            three read as a set. */}
+        </SettingsGroup>
+
+        {/* Board 07 — MODERATION.
+            Hidden comments and Blocked people were filed under FEEDBACK
+            (HIGH-2, §SKY-7 section pick S1: "records of things you did", which
+            is true of all four). The critic's objection is about FINDING them:
+            a user looking for "who did I block" does not look under Feedback.
+            These two are the only rows on the screen that control what other
+            people's content can reach this device, which is a different KIND of
+            thing from telling the maintainer something.
+            ⚠ S1 was Sky's own section pick — this reverses it, on the board's
+            instruction. Flagged in the build report and the COPY_LEDGER.
+            SECTION NAME IS A PLACEHOLDER (SKY-WORDS-REQUIRED). The two rows'
+            own titles, subtitles and hints are untouched. */}
+        <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
+          Moderation
+        </AppText>
+
+        <SettingsGroup>
         <SettingsRow
           title={HIDDEN_COMMENTS_TITLE}
           subtitle={HIDDEN_COMMENTS_ROW_SUBTITLE}
@@ -791,34 +871,58 @@ export default function SettingsScreen() {
           onPress={handleUnblockAllPress}
           disabled={blockedCount === 0}
         />
+        </SettingsGroup>
 
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Your data
         </AppText>
 
+        <SettingsGroup>
+        {/* I4: the ClipboardCopy glyph is gone with the PlayCircle. §SKY-6's
+            export rule — the title, the subtitle, the hint and handleExportPress
+            itself — is untouched. */}
         <SettingsRow
           title="Export my data"
           subtitle="Copy your flags and feedback to your clipboard as plain text."
-          icon={<ClipboardCopy size={18} color={color.textMuted} strokeWidth={2.2} />}
           accessibilityHint="Copies your flags and feedback to your clipboard as plain text"
           onPress={handleExportPress}
           disabled={exporting}
           busy={exporting}
         />
+        </SettingsGroup>
 
         <AppText variant="label" style={styles.sectionLabel} accessibilityRole="header">
           Account
         </AppText>
 
-        <SettingsRow
-          title="Sign out"
-          subtitle="End your session on this device."
-          // Signal destructive intent via the hint as well as the red color —
-          // screen-reader users don't see the color cue.
-          accessibilityHint="Destructive. Confirms before signing out."
-          onPress={handleSignOutPress}
-          destructive
-        />
+        <SettingsGroup>
+        {/* Q15 — the one state this screen never addressed.
+            A guest was offered "Sign out". The drawer, one tap earlier, offered
+            "Sign in"; the same person met both in the same minute (dossier
+            COULD-9). Same row, same slot, the answer that matches who is
+            actually here. The red stays reserved for a member's real sign-out.
+            The guest route is the drawer's own: the Profile tab hosts the
+            sign-in modal, so this navigates there exactly as
+            RootNavigator's `onSignIn` does. */}
+        {user ? (
+          <SettingsRow
+            title="Sign out"
+            subtitle="End your session on this device."
+            // Signal destructive intent via the hint as well as the red color —
+            // screen-reader users don't see the color cue.
+            accessibilityHint="Destructive. Confirms before signing out."
+            onPress={handleSignOutPress}
+            destructive
+          />
+        ) : (
+          <SettingsRow
+            title="Sign in"
+            subtitle="Report with a photo, verify other reports, and earn points."
+            accessibilityHint="Opens the sign-in screen"
+            onPress={() => navigation.navigate('Profile')}
+          />
+        )}
+        </SettingsGroup>
         </ScrollView>
       </View>
 
@@ -863,12 +967,6 @@ export default function SettingsScreen() {
     </>
   );
 }
-
-// Named constant for the large touch-target row height used by SettingsRow and
-// pushRow. 64pt exceeds WCAG 2.5.5's 44pt minimum, giving comfortable tap area
-// for a two-line (title + subtitle) row. Replace with a spacing token when one
-// is added to src/theme.ts (e.g. spacing.touchTargetLg).
-const SETTINGS_ROW_HEIGHT = 64;
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
@@ -919,20 +1017,32 @@ const makeStyles = (color: ColorTheme) =>
       marginBottom: spacing.tight,
       marginLeft: spacing.tight,
     },
-    // Row-glass pane: variant="row" supplies the floor/edge/specular; only
-    // layout + radius + light-mode lift live here — NEVER a backgroundColor
-    // (the clip layer swallows it). Dark is luminosity-led (no drop shadow).
-    row: {
+    // Row-glass pane, now per SECTION rather than per row: variant="row"
+    // supplies the floor/edge/specular; only layout + radius + light-mode lift
+    // live here — NEVER a backgroundColor (the clip layer swallows it). Dark is
+    // luminosity-led (no drop shadow). overflow:hidden so a row's press wash
+    // reaches the corner without escaping it.
+    group: {
       borderRadius: radius.lg,
+      overflow: 'hidden',
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
+    },
+    // The Home list's separator, indented past the text column's left edge so
+    // the rows read as one card rather than as stacked slabs.
+    groupSep: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: color.border,
+      marginLeft: spacing.lg,
+    },
+    // A row inside the card — no material of its own any more.
+    row: {
       padding: spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
-      // Minimum 44pt touch target — already easily satisfied by the
-      // padding+text height, but pinned here so future copy changes can't
-      // accidentally shrink it under the WCAG floor.
-      minHeight: SETTINGS_ROW_HEIGHT,
-      ...(color.scheme === 'light' ? shadow.e1 : {}),
+      // S6: the shared list-row height, above WCAG 2.5.5's 44pt floor and
+      // pinned here so future copy changes can't shrink it under.
+      minHeight: size.row,
     },
     // Opacity dim only — a bg swap is invisible/illegal over the glass material.
     rowPressed: { opacity: 0.85 },
@@ -940,14 +1050,6 @@ const makeStyles = (color: ColorTheme) =>
     // guards re-entrancy in code, so this is purely a "don't tap me twice"
     // affordance.
     rowDisabled: { opacity: 0.6 },
-    // Decorative leading glyph. font.size.xl matches the chevron's visual
-    // weight so the row balances left-to-right.
-    rowIcon: {
-      fontSize: font.size.xl,
-      width: 28,
-      textAlign: 'center',
-      color: color.textMuted,
-    },
     rowTextWrap: { flex: 1, gap: 2 },
     rowTitle: {
       fontSize: font.size.lg,
@@ -970,21 +1072,6 @@ const makeStyles = (color: ColorTheme) =>
     rowSpinner: {
       width: 28,
     },
-    // Push notifications toggle row — same visual weight as SettingsRow but
-    // with a Switch in place of a chevron. Matches the row padding and
-    // shadow so the two control types look like siblings in the section.
-    // 11th row-tier pane — same row-glass material as SettingsRow (no bg here;
-    // variant="row" supplies it). Light-mode lift only.
-    pushRow: {
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      minHeight: SETTINGS_ROW_HEIGHT,
-      ...(color.scheme === 'light' ? shadow.e1 : {}),
-    },
-    pushTextWrap: { flex: 1, gap: 2 },
     // Appearance segmented control (Light / Dark / System). Recessed track with
     // a lifted white "selected pill" — the classic premium segmented look.
     // Engineered chip-tint track (no BlurView — the track sits directly on the

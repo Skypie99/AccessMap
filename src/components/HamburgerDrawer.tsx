@@ -36,7 +36,7 @@ import {
 } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
 import LogoMark from '@/components/LogoMark';
-import { font, motion, radius, shadow, spacing } from '@/theme';
+import { font, motion, radius, shadow, size, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
 import { useTriggerHandle } from '@/lib/drawerContext';
@@ -583,7 +583,9 @@ const makeItemStyles = (color: ColorTheme) =>
       paddingVertical: spacing.lg,
       paddingHorizontal: spacing.lg,
       gap: spacing.md,
-      minHeight: 56,
+      // S6: the shared list-row height. Was a local 56 while Settings pinned 64
+      // one tap away — the same row recipe at two heights.
+      minHeight: size.row,
     },
     itemPressed: {
       // Same neutral on-glass wash as the close button — the press reads as a

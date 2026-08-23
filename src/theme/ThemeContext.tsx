@@ -121,6 +121,10 @@ const darkColor = {
 
   // Progress bar track on brand-colored surfaces — same semi-transparent white
   // works on dark mode since the hero card is always brand blue.
+  // Dark KEEPS the white wash — measured 2.30:1 against the dark hero card on
+  // the 17e, which is the reading the light palette was failing to give. See
+  // the note in theme.ts: the two palettes carried the same value and only one
+  // of them worked.
   surfaceVariant: 'rgba(255,255,255,0.25)',
 
   // Leaderboard podium row tints — dark-mode equivalents.
