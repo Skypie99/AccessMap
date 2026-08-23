@@ -1,12 +1,13 @@
-import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, type Text, View } from 'react-native';
 // Expo Constants gives us the bundled app.json version at runtime so we
 // don't have to hard-code (and forget to bump) a string here.
 import Constants from 'expo-constants';
-import { bulkGlassShadow, font, radius, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
+import { ScreenStage } from '@/components/ui/ScreenStage';
+import { SheetGrabber } from '@/components/ui/Sheet';
 import LogoMark from '@/components/LogoMark';
 import { Map as MapIcon, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -35,16 +36,33 @@ const APP_VERSION =
   (Constants as any).nativeAppVersion ??
   '1.0.0';
 
+// Pre-measure fallback for the absolute chrome pane's height, in the one frame
+// before onLayout fires. Same device as its siblings; About's pane carries the
+// brand mark, so it runs a little taller than Resources' 84.
+const ABOUT_CHROME_FALLBACK = 88;
+
 /**
  * About Flagstone — meta page for the Settings tab. Shows version, the
  * "what is this thing" intro, credits, a stack note, and a plain-English
  * privacy summary so people can verify what data the app touches without
  * digging through a privacy policy.
  *
- * Rendered as a slide-up Modal from SettingsScreen. The app's navigation
- * is tab-only (no Stacks), so a Modal keeps the existing pattern. The
- * filename is *Screen* per the F3 spec, but at runtime it presents as a
- * sheet.
+ * Rendered as a Modal from SettingsScreen. The app's navigation is tab-only
+ * (no Stacks), so a Modal keeps the existing pattern. The filename is *Screen*
+ * per the F3 spec, but at runtime it presents as a sheet.
+ *
+ * ─── C15 / §S5: it is a PAGE SHEET, like its four siblings ────────────────
+ * About shipped as a transparent half-sheet while Nearby, Resources, How to
+ * help, Terms and Privacy were all UIKit pageSheets. That was the one
+ * inconsistency a user could feel rather than see: the other five swipe down
+ * to dismiss and this one did not, so the gesture that worked everywhere else
+ * silently failed here. §S5 names About in the pageSheet class; this is that
+ * move, using the same chrome-pane recipe the other four already share
+ * (SafeAreaView root, 60% stage, one absolute chrome pane carrying the grabber
+ * and the header, body scrolling beneath it on a measured top pad).
+ *
+ * The legal sheets still mount INSIDE this Modal, and still must — see the
+ * note at `useLegalSheets()` below. A pageSheet is still a presenting VC.
  */
 export default function AboutScreen({ visible, onClose }: Props) {
   const color = useColor();
@@ -52,10 +70,6 @@ export default function AboutScreen({ visible, onClose }: Props) {
   // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
   const titleRef = useFocusOnOpen<Text>(visible);
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // §SKY-6 wanted these to present OVER this card with About still open
   // beneath, so closing one returns here. They were routed through the shared
   // navigator-level host to get that — and on iOS it bought the opposite:
@@ -66,21 +80,51 @@ export default function AboutScreen({ visible, onClose }: Props) {
   // delivers the over-not-under behaviour §SKY-6 actually asked for.
   // See src/components/LegalSheets.tsx for the capture and the full why.
   const legal = useLegalSheets();
+  // Measured height of the absolute chrome glass pane; null until the first
+  // onLayout — the body hides for that one pass so its top pad never jumps.
+  const [chromeHeight, setChromeHeight] = useState<number | null>(null);
+  const chromeTopPad = (chromeHeight ?? ABOUT_CHROME_FALLBACK) + 10;
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} aria-label="About Flagstone">
-      <View style={styles.backdrop}>
-        {/* accessibilityViewIsModal traps VoiceOver focus inside this card so
-            it can't escape back to the underlying Settings screen while the
-            sheet is open. Belt-and-suspenders with the Modal itself, which
-            on iOS sometimes leaks focus to the parent. */}
-        <View style={styles.cardShadow}>
-        <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
+    <Modal
+      visible={visible}
+      animationType={reducedMotion ? 'none' : 'slide'}
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      // Native iOS sheet swipe — see NearbyFlagsModal for the full why. One
+      // gesture grammar across the pageSheet class; the Close button stays.
+      allowSwipeDismissal
+      aria-label="About Flagstone"
+    >
+      <SafeAreaView
+        style={styles.root}
+        // G1: a pageSheet is its own UIKit scene, so it correctly carries NO
+        // accessibilityViewIsModal — the scene boundary already provides
+        // containment. The escape gesture still needs a real View to land on,
+        // and this root is it.
+        onAccessibilityEscape={onClose}
+      >
+        {/* S3: a sheet plays the stage at 60%. */}
+        <ScreenStage strength={0.6} />
+        {/* ONE absolute i=24 chrome pane; content scrolls beneath it (onLayout
+            feeds the top reserve). SafeAreaView already owns the device top
+            inset, so the pane sits at top:0 below it. The pane's bottom
+            edge/lip replaces the old header hairline. */}
+        <GlassSurface
+          variant="chrome"
+          borderRadius={0}
+          style={styles.chromePane}
+          onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
+        >
+          {/* G3 (§SKY-6): the grabber sits ABOVE the title row, at the sheet's
+              actual top edge, which is where the platform puts it — and where
+              the other pageSheets put it too. */}
+          <SheetGrabber />
           <View style={styles.headerRow}>
             {/* T19 (F6-08): a small brand mark beside the title. Hidden from
                 screen readers — LogoMark bakes a "Flagstone" label and the
                 title already says "About Flagstone", so exposing it would
-                double-speak. Theme-aware so it holds contrast on the bulk sheet
-                in both modes. */}
+                double-speak. Theme-aware so it holds contrast on the chrome
+                material in both modes. */}
             <View {...decorativeProps}>
               <LogoMark size={22} variant={color.scheme === 'dark' ? 'white' : 'color'} />
             </View>
@@ -90,20 +134,25 @@ export default function AboutScreen({ visible, onClose }: Props) {
             <Pressable
               onPress={onClose}
               hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
+              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.headerBtnBgPressed }]}
               accessibilityRole="button"
               accessibilityLabel="Close about"
             >
-              <X size={18} color={color.text} strokeWidth={2.2} />
+              {/* inkGlassMuted, not textSubtle (forbidden on chrome ~2.69:1);
+                  arbitrated chrome-muted icon ink 4.81:1 light / 5.43:1 dark.
+                  Same size as the sibling pageSheets' X. */}
+              <X size={24} color={color.inkGlassMuted} strokeWidth={2.2} />
             </Pressable>
           </View>
+        </GlassSurface>
 
-          <ScrollView
-            style={styles.body}
-            contentContainerStyle={styles.bodyContent}
-            showsVerticalScrollIndicator={false}
-            contentInsetAdjustmentBehavior="automatic"
-          >
+        <ScrollView
+          style={chromeHeight === null && styles.bodyHidden}
+          contentContainerStyle={[styles.bodyContent, { paddingTop: chromeTopPad }]}
+          scrollIndicatorInsets={{ top: chromeTopPad }}
+          showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="automatic"
+        >
             <View style={styles.heroBadge}>
               {/* Decorative emoji — accessibilityElementsHidden hides it from
                   VoiceOver (iOS) and importantForAccessibility hides it from
@@ -207,10 +256,8 @@ export default function AboutScreen({ visible, onClose }: Props) {
                 {TERMS_LINK_LABEL}
               </AppText>
             </Pressable>
-          </ScrollView>
-        </GlassSurface>
-        </View>
-      </View>
+        </ScrollView>
+      </SafeAreaView>
       {/* Last child, and INSIDE this Modal on purpose: that is what makes the
           sheets present from About's view controller instead of the occupied
           root. Moving this outside <Modal> reinstates the dead-link bug. */}
@@ -221,49 +268,31 @@ export default function AboutScreen({ visible, onClose }: Props) {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
+    // The Deep Field stage's mid stop — any frame before ScreenStage mounts
+    // (and the safe-area inset strip above the stage) matches the field.
+    root: {
       flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
+      backgroundColor: color.stage1,
     },
-    // The sheet body is now BULK glass (GlassSurface variant="bulk" supplies the
-    // i=24 floor + top edge/specular + designed Reduce-Transparency state). No
-    // backgroundColor here (do/don't #2 — the variant owns the surface);
-    // overflow:'hidden' clips the square bottom and rounds the top to radius.xl.
-    // The elevation shadow can't live here (overflow swallows it) — see cardShadow.
-    card: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      overflow: 'hidden',
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl,
-      gap: spacing.md,
-      maxHeight: '90%',
-      // G6/SR-099: shrink into cardShadow's cap (see that block).
-      flexShrink: 1,
+    // The absolute chrome glass pane (variant="chrome" supplies i=24 blur +
+    // floor + bottom edge/lip — the old header hairline IS that edge now).
+    chromePane: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 50,
     },
-    // Bottom-sheet up-shadow on the OUTER wrapper (the one sanctioned do/don't #2
-    // deviation — the card's overflow:'hidden' would clip it). Negative height
-    // casts the shadow UP off the sheet's top edge. Dark keeps the single
-    // sanctioned Deep Field dark shadow (#000@0.35); light uses shadowTint@0.12.
-    cardShadow: {
-      // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage
-      // maxHeight resolves against the parent's *definite* height; this
-      // wrapper is content-sized, so the card's own `maxHeight:'90%'` never
-      // resolved. The card grew unbounded, `justifyContent:'flex-end'` pinned
-      // its bottom, and the 44pt close X ended up above the viewport
-      // (measured: About y=-65). The backdrop is `flex:1`, so it resolves here.
-      maxHeight: '90%',
-      flexShrink: 1,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
+    // Hides the body for the single pre-measure pass so its top pad never jumps.
+    bodyHidden: { opacity: 0 },
+    // Header content inside the pane — no border/background of its own
+    // (the chrome material supplies both).
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
     },
     title: {
       flex: 1,
@@ -271,21 +300,15 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.textStrong,
     },
+    // Same shape as the sibling pageSheets': no fill, the chrome pane is the
+    // surface behind it.
     closeBtn: {
       width: 44,
       height: 44,
-      borderRadius: radius.full,
-      backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: {
-      fontSize: font.size.lg,
-      color: color.text,
-      fontWeight: font.weight.bold,
-    },
-    body: { flexShrink: 1 },
-    bodyContent: { gap: spacing.md, paddingBottom: spacing.sm },
+    bodyContent: { gap: spacing.md, paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
     heroBadge: {
       alignSelf: 'flex-start',
       flexDirection: 'row',
