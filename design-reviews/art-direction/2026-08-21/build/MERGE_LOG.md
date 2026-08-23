@@ -38,3 +38,42 @@ git -C ~/AccessMap reset --hard 2c631e7
 
 Safe while unpushed: it returns `main` to phases 00 + 01 and leaves all four
 phase branches intact.
+
+---
+
+## 2026-08-22 · Phases 06 and 07 merged, on Sky's direct instruction
+
+`main` was `1984c3e` (00–05b). Both branches were **fast-forward-clean** — no
+conflict in source or in `COPY_LEDGER.md`, because 07 was branched off the 06
+tip rather than off `main` (see `build/07/BUILD_REPORT.md` §0).
+
+| Step | SHA | What |
+|---|---|---|
+| before | `1984c3e` | 00–05b |
+| after 06 | `c1212b5` | + report form · Settings · Profile · empty states |
+| **after 07** | **`b1020d1`** | + the modal estate · announcement parity · SW-36 · hygiene |
+
+**Gate re-run ON MERGED MAIN, not inherited from the branches:**
+typecheck 0 errors · jest **241 suites / 3600 passed / 32 todo / 0 failed** ·
+lint 0 errors / 82 warnings.
+
+**NOT PUSHED.** `origin/main` is still `e8e7610`; local `main` is **42 ahead**.
+Pushing is deliberately left until after the device gate (Prompt 08), so the
+material and title calls can be reversed cheaply if the phone disagrees.
+
+### Undo
+
+```bash
+git -C ~/AccessMap reset --hard 1984c3e   # drops BOTH 06 and 07
+git -C ~/AccessMap reset --hard c1212b5   # drops 07 only, keeps 06
+```
+
+Safe while unpushed. Both phase branches are intact
+(`design/gsp-06-forms-2026-08-22`, `design/gsp-07-modals-2026-08-22`).
+
+### Carried into main unratified, deliberately
+
+34 copy-ledger strings — 11 visible from Prompts 01/02/04, plus Phase 3's 22
+a11y strings and W-37. Prompt 08 step 25 says nothing merges with an unratified
+ledger; `origin/main` already shipped 00–04 the same way. See
+`build/COPY_LEDGER.md` §OUTSTANDING AT A GLANCE.
