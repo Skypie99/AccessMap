@@ -350,11 +350,24 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
+    // C10 / the SW-36 class. Four chips in a row that could not wrap: at large
+    // type the words grow, the row does not, and the last chip is pushed off
+    // the sheet's edge with no way to reach it.
+    //
+    // BOTH halves, because either alone is a change that looks like a fix and
+    // is not one. `flexWrap` gives the row somewhere to put the overflow, and
+    // `flexShrink: 0` on the chip is what makes the wrap FIRE — a chip that can
+    // shrink just gets narrower than its own word instead, which is the
+    // character-breaking defect SW-36 named. The chips size to their text
+    // (no flexBasis), so a row that fits still renders exactly as it did.
     filterRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
+      rowGap: spacing.sm,
       gap: spacing.sm,
     },
     filterChip: {
+      flexShrink: 0,
       paddingHorizontal: spacing.md + 2,
       paddingVertical: spacing.sm + 2,
       borderRadius: radius.circle,

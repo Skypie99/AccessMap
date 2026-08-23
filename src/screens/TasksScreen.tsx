@@ -1542,7 +1542,16 @@ export default function TasksScreen() {
           <AppText variant="label" style={styles.bulkCountText} accessibilityLiveRegion="polite">
             {`${liveSelectedCount} selected`}
           </AppText>
-          <View style={styles.bulkButtonRow}>
+          {/* The SW-36 class, on the one row in the app that could not escape
+              it. Four verbs share a row with `flexBasis: 0`, so each is sized
+              by what is left over rather than by its own word — and at large
+              type "Resolve" hit its 0.8 shrink floor and still clipped. The
+              fallback is the same STACK the cards take, at the same threshold
+              (`isCompactLayout`), so the screen changes shape all at once
+              instead of the bar and the cards disagreeing about how wide the
+              device is. `adjustsFontSizeToFit` stays for the row path; stacked,
+              each button is full width and never needs it. */}
+          <View style={compactActions ? styles.bulkButtonStack : styles.bulkButtonRow}>
             <Pressable
               onPress={() => {
                 void runBulkAction('verify');
@@ -1550,6 +1559,7 @@ export default function TasksScreen() {
               disabled={bulkBusy || selectedOpenCount === 0}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkVerifyBtn,
                 (bulkBusy || selectedOpenCount === 0) && styles.bulkBtnDisabled,
                 pressed && !bulkBusy && selectedOpenCount > 0 && styles.bulkBtnPressed,
@@ -1575,6 +1585,7 @@ export default function TasksScreen() {
               disabled={bulkBusy || liveSelectedCount === 0}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkResolveBtn,
                 (bulkBusy || liveSelectedCount === 0) && styles.bulkBtnDisabled,
                 pressed && !bulkBusy && liveSelectedCount > 0 && styles.bulkBtnPressed,
@@ -1600,6 +1611,7 @@ export default function TasksScreen() {
               disabled={bulkBusy || liveSelectedCount === 0 || !user}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkWatchBtn,
                 (bulkBusy || liveSelectedCount === 0 || !user) && styles.bulkBtnDisabled,
                 pressed &&
@@ -1629,6 +1641,7 @@ export default function TasksScreen() {
               disabled={bulkBusy}
               style={({ pressed }) => [
                 styles.bulkBtn,
+                compactActions && styles.bulkBtnFull,
                 styles.bulkCancelBtn,
                 bulkBusy && styles.bulkBtnDisabled,
                 pressed && !bulkBusy && styles.bulkBtnPressed,
@@ -2831,6 +2844,12 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       letterSpacing: 0.2,
     },
     bulkButtonRow: { flexDirection: 'row', gap: spacing.sm },
+    // The deliberate stack, matching cardActionsStack rather than inventing a
+    // second compact language. A column resets flexBasis' meaning (it becomes
+    // height), so `alignSelf: 'stretch'` on the button is what makes each one
+    // full width — exactly what actionBtnFull does for the cards.
+    bulkButtonStack: { gap: spacing.sm },
+    bulkBtnFull: { alignSelf: 'stretch' },
     bulkBtn: {
       flexGrow: 1,
       flexBasis: 0,
