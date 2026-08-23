@@ -29,19 +29,18 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Platform,
-  Switch,
   type Text,
   View,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { androidSwitchThumbOff, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
+import { bulkGlassShadow, font, radius, spacing } from '@/theme';
 import { X } from 'lucide-react-native';
 import { AppText } from '@/components/ui/AppText';
+import { PrefsRow } from '@/components/ui/PrefsRow';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   useNotificationPreferences,
   type NotificationPreferences,
@@ -81,7 +80,6 @@ const TOGGLE_ROWS: ToggleRowDef[] = [
   },
 ];
 
-const TOGGLE_ROW_HEIGHT = 64;
 
 /**
  * A single preference toggle row — label, subtitle, and a Switch.
@@ -91,41 +89,6 @@ const TOGGLE_ROW_HEIGHT = 64;
  * text alongside it — same shape as SettingsScreen's pushRow and
  * ProfileScreen's real-time toggle, the QA-validated Alex-1 fix pattern.
  */
-function ToggleRow({
-  label,
-  subtitle,
-  value,
-  onToggle,
-  color,
-}: {
-  label: string;
-  subtitle: string;
-  value: boolean;
-  onToggle: (v: boolean) => void;
-  color: ColorTheme;
-}) {
-  const styles = makeStyles(color);
-  return (
-    <View style={styles.toggleRow}>
-      <View style={styles.toggleTextWrap}>
-        <AppText variant="label" style={styles.toggleLabel}>{label}</AppText>
-        <AppText variant="body" style={styles.toggleSubtitle}>{subtitle}</AppText>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        accessibilityRole="switch"
-        accessibilityLabel={label}
-        accessibilityHint={subtitle}
-        {...a11yToggle({ checked: value })}
-        // BP-6: the estate Switch recipe — brand track, themed false-track.
-        trackColor={{ false: color.borderStrong, true: color.brand }}
-        thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
-      />
-    </View>
-  );
-}
-
 export default function NotificationPreferencesScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -204,13 +167,12 @@ export default function NotificationPreferencesScreen({ visible, onClose }: Prop
               showsVerticalScrollIndicator={false}
             >
               {TOGGLE_ROWS.map((row) => (
-                <ToggleRow
+                <PrefsRow
                   key={row.key}
-                  label={row.label}
+                  title={row.label}
                   subtitle={row.subtitle}
                   value={preferences[row.key]}
-                  onToggle={(v) => setPreference(row.key, v)}
-                  color={color}
+                  onValueChange={(v) => setPreference(row.key, v)}
                 />
               ))}
               <AppText variant="body" style={styles.footer}>
@@ -298,26 +260,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     list: { flexShrink: 1 },
     listContent: { gap: spacing.sm },
-    toggleRow: {
-      backgroundColor: color.surfaceMuted,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      minHeight: TOGGLE_ROW_HEIGHT,
-      ...shadow.e1,
-    },
-    toggleTextWrap: { flex: 1, gap: 2 },
-    toggleLabel: {
-      fontSize: font.size.lg,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
-    },
-    toggleSubtitle: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-    },
     footer: {
       fontSize: font.size.xs,
       // On-glass footnote → inkGlassMuted (GLASS §7.4 bans textMutedAlt on glass);

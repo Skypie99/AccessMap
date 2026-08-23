@@ -34,6 +34,10 @@ export type { SheetProps, SheetHeaderProps } from './Sheet';
 export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedCell, SegmentedControlProps } from './SegmentedControl';
 
+// D3 — one drawing of a preference row, for the two notification twins.
+export { PrefsRow } from './PrefsRow';
+export type { PrefsRowProps } from './PrefsRow';
+
 export { GlassSurface } from './GlassSurface';
 
 export { OverflowFade } from './OverflowFade';

@@ -9,9 +9,10 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
+import { PrefsRow } from '@/components/ui/PrefsRow';
 import { Sheet } from '@/components/ui/Sheet';
 import { STATUS_LABELS } from '@/lib/flags';
 import { StatusBadge } from './StatusBadge';
@@ -23,8 +24,8 @@ import {
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { androidSwitchThumbOff, font, radius, spacing } from '@/theme';
-import { a11yToggle, decorativeProps } from '@/lib/accessibility';
+import { font, radius, spacing } from '@/theme';
+import { decorativeProps } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -173,45 +174,23 @@ export default function NotificationPrefsModal({
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              {TOGGLES.map(({ status, prefKey, description }) => {
-                const value = prefs[prefKey];
-                return (
-                  // NOTE: do NOT add `accessible={true}` here. The row
-                  // contains an interactive <Switch>; collapsing children
-                  // with a parent label would steal focus from the Switch
-                  // and make it unreachable to screen readers. QA Pass-2 #4.
-                  // Instead, the Switch carries its own rich label + state,
-                  // and the two Text rows above remain individually
-                  // discoverable for users who scan the row.
-                  <View key={prefKey} style={styles.row}>
-                    {/* Badge is decorative here — the Switch already carries
-                        the full accessible label+state. Hidden from the a11y
-                        tree to avoid redundant "Flag status: X" announcements. */}
-                    <View {...decorativeProps}
-                    >
+              {TOGGLES.map(({ status, prefKey, description }) => (
+                <PrefsRow
+                  key={prefKey}
+                  title={`Notify on ${STATUS_LABELS[status]}`}
+                  subtitle={description}
+                  value={prefs[prefKey]}
+                  onValueChange={(v) => handleToggle(prefKey, v)}
+                  leading={
+                    /* Decorative — the Switch already carries the full
+                       accessible label + state, so announcing the badge would
+                       repeat "Flag status: X" on every row. */
+                    <View {...decorativeProps}>
                       <StatusBadge status={status} style={styles.statusBadge} />
                     </View>
-                    <View style={styles.rowText}>
-                      <AppText variant="label" style={styles.rowTitle}>Notify on {STATUS_LABELS[status]}</AppText>
-                      <AppText variant="body" style={styles.rowDesc}>{description}</AppText>
-                    </View>
-                    <Switch
-                      value={value}
-                      onValueChange={(v) => handleToggle(prefKey, v)}
-                      accessibilityRole="switch"
-                      accessibilityLabel={`Notify on ${STATUS_LABELS[status]}`}
-                      accessibilityHint={description}
-                      // Explicit state — RN's Switch usually reports its
-                      // own value, but pairing it with accessibilityState
-                      // is the documented contract (QA Pass-2 #5).
-                      {...a11yToggle({ checked: value })}
-                      // BP-6: the estate Switch recipe — brand track, themed false-track.
-                      trackColor={{ false: color.borderStrong, true: color.brand }}
-                      thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
-                    />
-                  </View>
-                );
-              })}
+                  }
+                />
+              ))}
               <AppText variant="body" style={styles.footer}>
                 Changes apply on your next Profile visit. Defaults to all statuses on.
               </AppText>
@@ -240,15 +219,6 @@ const makeStyles = (color: ColorTheme) =>
     // gap lives on contentContainerStyle — a ScrollView ignores gap on `style`.
     list: {},
     listContent: { gap: spacing.sm },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      padding: spacing.md,
-      backgroundColor: color.surfaceMuted,
-      borderRadius: radius.md,
-      minHeight: 56,
-    },
     statusBadge: {
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.tight,
@@ -256,9 +226,6 @@ const makeStyles = (color: ColorTheme) =>
       minWidth: 76,
       alignItems: 'center',
     },
-    rowText: { flex: 1, gap: 2 },
-    rowTitle: { fontSize: font.size.base, fontWeight: '600', color: color.textStrong },
-    rowDesc: { fontSize: font.size.xs, color: color.textMuted, lineHeight: font.lineHeight.tight },
     footer: {
       fontSize: font.size.xs,
       // On-glass footnote → inkGlassMuted (GLASS §7.4 bans textMutedAlt on glass);
