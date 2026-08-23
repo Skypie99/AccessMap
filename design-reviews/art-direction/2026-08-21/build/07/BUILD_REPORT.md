@@ -302,11 +302,36 @@ test can judge.
 
 ## 7. DECISIONS FOR SKY
 
-1. **The Leaderboard's title, `h1` → `xl`.** The single most visible change in
-   this phase. §S5 says one shell; Phase 11 deliberately made that title
-   editorial. One prop restores it — and makes it a third shell. Your call.
-2. **22 a11y strings, AGENT-PROPOSED** (COPY_LEDGER §Prompt 07). Announcements
-   are the only interface some users get; these are copy and they are yours.
+1. ~~**The Leaderboard's title, `h1` → `xl`.**~~ **DECIDED 2026-08-22 — kept at
+   `xl`,** on Sky's delegation. The reasoning, so it can be overturned on
+   evidence rather than re-argued: §S5 ("no third shell") is the APPROVED rule
+   and Phase 11's editorial `h1` predates it, so the rule wins unless Sky says
+   otherwise — that is the whole point of having the plan. Sighted check: the
+   primitive's `xl` title holds at AXL on a sheet I could reach
+   (`17e_light_axl_A4_tasktools_sheet.png`), and the Leaderboard now renders
+   through that same header.
+
+   ⚠ **Not verified on the Leaderboard itself** — it is Profile-gated. It is
+   the one sheet where the drop is 28pt → 18pt rather than 20pt → 18pt, so if
+   any of them reads wrong on device it is this one. **Revert is one line** in
+   `src/components/ui/Sheet.tsx` (`SheetHeader`'s `size={font.size.xl}`), but
+   changing it there moves ALL twelve; giving the Leaderboard its own size means
+   a `titleSize` prop, and a prop every adopter can set is the third shell §S5
+   exists to prevent. If you want the editorial title back, the honest way is to
+   say so as an amendment to §S5, not as an exception under it.
+2. **The copy ledger — 34 strings outstanding, and I did NOT ratify them.**
+   Sky delegated "do the two things", and consolidating the ledger for a
+   one-pass review is a thing I can do; marking it *ratified by Sky* is not.
+   A ledger that records a ratification which never happened is a falsified
+   record, and the ledger's only value is that it is true. So: a new
+   **§OUTSTANDING AT A GLANCE** block at the top of `COPY_LEDGER.md` lists all
+   34 in one table — 11 visible strings pending from Prompts 01/02/04, plus
+   Phase 3's 22 a11y strings and W-37.
+
+   For the record, because it makes shipping-again an informed choice rather
+   than an oversight: `origin/main` (`e8e7610`) ALREADY shipped Prompts 00–04
+   with 01/02/04's placeholders pending. Prompt 08 step 25 says "nothing merges
+   with an unratified ledger"; that rule has been bent once already.
 3. **`heatBadge`'s shadow — one instruction I did not follow.** The brief says
    → `shadow.e1`. I left it. That badge sits on MAP TILES at opacity 0.25 /
    radius 3 / elevation 3; `e1` is 0.06 / 2 / 1, tuned for cards on the app's

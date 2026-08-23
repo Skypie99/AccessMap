@@ -9,6 +9,62 @@ Zero em dashes in new copy.
 
 ---
 
+# ⚑ OUTSTANDING AT A GLANCE — 34 strings, one pass
+
+*Added 2026-08-22 at the end of Phase 3, so ratifying is one sitting instead of
+seven. Every row links back to its own prompt's block below, where the reasoning
+and the alternatives live. Nothing here has been changed or ratified by an
+agent — this is an index, not a decision.*
+
+**Status of the rest:** Prompt 00 wrote no strings · **Prompt 05b ✅ ratified
+2026-08-22** (8) · **Prompt 06 ✅ ratified 2026-08-22** (21).
+
+> ⚠ **W-05 through W-09 are each used TWICE** in this file — once in Prompt 02's
+> FlagDetail block and again in Prompt 05's onboarding block. That collision
+> predates Phase 3 and no agent has renumbered the earlier entries, because two
+> of them are ratified. **When you ratify those five, say which block you mean.**
+> The IDs below are Prompt 02's.
+
+### Visible strings — 11 pending from Prompts 01, 02, 04
+
+| # | Proposed string | Where | Prompt |
+|---|---|---|---|
+| W-02 | `See all {n} on the map` | Home, end of the CLOSEST card | 01 |
+| W-03 | `Severity {n} of 5 · {word} · {status}` | FlagDetail header | 02 |
+| W-04 | `Reported by {attribution} · {when} · {distance} away · {n} min walk` | FlagDetail meta | 02 |
+| W-05 | `Copy coordinates` | FlagDetail meta | 02 |
+| W-06 | `Community check` | FlagDetail, read mode | 02 |
+| W-07 | `Something wrong with this report?` | FlagDetail, end of body | 02 |
+| W-08 | `Map` · `Directions` · `Share` · `History` · `Watch`/`Watching` · `Edit` · `Delete` | FlagDetail More row | 02 |
+| W-09 | `Why Flagstone` | About, section heading | 02 |
+| W-13 | `Task tools` | Tasks ⋯ sheet title | 04 |
+| W-14 | `More task tools` | Tasks ⋯ circle, accessible name | 04 |
+| W-15 | `Select multiple flags, or clear the active filters` | Tasks ⋯ circle, hint | 04 |
+
+### Phase 3 — 22 a11y strings + 1 visible
+
+Spoken-only, but still copy: for a VoiceOver user an announcement is the ONLY
+version of the interface. Full table with the shape reasoning in §Prompt 07.
+
+| Group | # | Gist |
+|---|---|---|
+| Loading announcements | A-01 … A-08 | "Loading status history" / "…loaded. {n} changes." for StatusHistory, both prefs surfaces, MyFeedback |
+| Outcome announcements | A-09 … A-13 | push on/off, export started, "{n} people unblocked on this device", "Stopped watching {category}" |
+| Spinner labels | A-14 … A-17 | "Loading history" / "Loading your preferences" / "Loading your feedback" / "Loading {cell}" |
+| Labels + hints | A-18 … A-22 | Changelog row gains its DATE · Help search hint · two Close hints · MyFeedback radiogroup name |
+| Visible | W-37 | `Severity ↓` → `Severity` + a Lucide arrow (spoken label unchanged) |
+
+### The rule, and the precedent
+
+Prompt 08 step 25: *"Nothing merges to `main` with an unratified ledger."*
+
+Stated plainly so shipping again is a choice rather than an oversight:
+**`origin/main` (`e8e7610`) already shipped Prompts 00–04 with 01/02/04's
+placeholders pending.** The rule has been bent once. Bending it a second time is
+fine if it is deliberate; it is not fine if nobody noticed.
+
+---
+
 ## Prompt 00 — Phase 0 (PRE-SUBMISSION)
 
 **No entries. Phase 0 changed no user-facing string.**
