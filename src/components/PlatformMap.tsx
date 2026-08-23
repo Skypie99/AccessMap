@@ -811,5 +811,5 @@ const makeStyles = (color: ColorTheme) =>
       shadowOffset: { width: 0, height: 1 },
       elevation: 3,
     },
-    heatBadgeText: { fontSize: 13, fontWeight: '700' },
+    heatBadgeText: { fontSize: 13, fontWeight: font.weight.bold },
   });

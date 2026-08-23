@@ -109,7 +109,7 @@ const makeStyles = (color: ColorTheme) =>
       marginBottom: spacing.md,
     },
     // brandOnSoft (blue-200) reads AA on the banner's dark brand wash / blur.
-    text: { flex: 1, fontSize: font.size.base, color: color.brandOnSoft, fontWeight: '600' },
+    text: { flex: 1, fontSize: font.size.base, color: color.brandOnSoft, fontWeight: font.weight.semibold },
     viewBtn: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
@@ -122,7 +122,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     viewBtnPressed: { opacity: 0.85 },
-    viewBtnText: { color: color.textOnBrand, fontWeight: '700', fontSize: font.size.base },
+    viewBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold, fontSize: font.size.base },
     dismissBtn: {
       width: 44,
       height: 44,

@@ -430,7 +430,7 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       flex: 1,
       color: color.textStrong,
-      letterSpacing: -0.3,
+      letterSpacing: font.tracking.heading,
     },
     closeBtn: {
       width: 44,

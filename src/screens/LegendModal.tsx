@@ -303,7 +303,7 @@ const makeStyles = (color: ColorTheme) =>
     fontSize: font.size.xxl,
     fontWeight: font.weight.bold,
     color: color.textStrong,
-    letterSpacing: -0.3,
+    letterSpacing: font.tracking.heading,
   },
   subtitle: {
     fontSize: font.size.sm,

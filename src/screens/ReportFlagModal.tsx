@@ -1776,7 +1776,7 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xxl,
       fontWeight: font.weight.bold,
       color: color.textStrong,
-      letterSpacing: -0.3,
+      letterSpacing: font.tracking.heading,
     },
     locationBlock: { marginTop: -spacing.xs },
     locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.tight },
@@ -1819,7 +1819,7 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       alignSelf: 'flex-start',
       gap: spacing.tight,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 8,
@@ -1828,7 +1828,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     useLocationText: {
       fontSize: font.size.xs,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       color: color.brandOnSoft,
     },
     // S15: submit-moment caption — small muted line above the sticky footer.
@@ -1864,7 +1864,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       // 44pt is the Flagstone baseline touch target (Apple HIG + WCAG 2.5.5).
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     // A11Y-229 (M-52 grammar): small white pill labels — ctaFill, 5.24 both
@@ -1873,8 +1873,8 @@ const makeStyles = (color: ColorTheme) =>
     pillText: { color: color.text, fontSize: font.size.sm },
     pillTextActive: { color: color.textOnBrand, fontWeight: font.weight.semibold },
     sevBtn: {
-      width: 44,
-      height: 44,
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
@@ -1933,8 +1933,10 @@ const makeStyles = (color: ColorTheme) =>
       textAlignVertical: 'top',
       color: color.text,
       backgroundColor: color.surface,
-      fontSize: 14,
-      lineHeight: 19,
+      // Both were written out: 14 IS font.size.base, and 19 was a x1.36
+      // that the token rounds to 20.
+      fontSize: font.size.base,
+      lineHeight: font.lineHeight.base,
     },
     sevHint: {
       fontSize: 13,
@@ -1943,7 +1945,7 @@ const makeStyles = (color: ColorTheme) =>
       lineHeight: 18,
       marginTop: -4,
     },
-    sevHintLabel: { fontWeight: '700', color: color.textStrong },
+    sevHintLabel: { fontWeight: font.weight.bold, color: color.textStrong },
     charCounter: {
       fontSize: 12,
       color: color.inkGlassMuted,
@@ -1951,8 +1953,8 @@ const makeStyles = (color: ColorTheme) =>
       textAlign: 'right',
       marginTop: 2,
     },
-    charCounterAmber: { color: color.warningHint, fontWeight: '600' },
-    charCounterRed: { color: color.error, fontWeight: '700' },
+    charCounterAmber: { color: color.warningHint, fontWeight: font.weight.semibold },
+    charCounterRed: { color: color.error, fontWeight: font.weight.bold },
     // High-severity photo nudge card — amber-tinted, appears between the
     // "Photo" label and picker when severity ≥ 4 and no photo is attached.
     // warningBg (#fff7e6) / warningFg (#714b00): 8.3:1 contrast, WCAG AA.
@@ -2030,18 +2032,18 @@ const makeStyles = (color: ColorTheme) =>
     anonBannerBody: { flex: 1 },
     anonBannerTitle: {
       fontSize: 13,
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
       color: color.brandOnSoft,
     },
     anonBannerLink: {
       paddingHorizontal: 8,
       paddingVertical: 6,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     anonBannerLinkText: {
       fontSize: 13,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       color: color.brandOnSoft,
       textDecorationLine: 'underline',
     },
@@ -2080,7 +2082,7 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.md,
       borderRadius: radius.md,
       alignItems: 'center',
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     // D11: the nudge IS the control now, so it carries the 44pt floor — the
@@ -2098,7 +2100,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     anonPhotoNudgeLink: {
       color: color.brandText,
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
     },
     cancelBtn: { backgroundColor: color.surfaceNeutral },
     cancelText: { color: color.text, fontWeight: font.weight.semibold },
@@ -2186,7 +2188,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surface,
       borderWidth: 1,
       borderColor: color.brandText,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
       justifyContent: 'center',
     },
     tagChipActive: {
@@ -2228,7 +2230,7 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surface,
       borderWidth: 1,
       borderColor: color.brandText,
-      minHeight: 44,
+      minHeight: a11y.minTargetSize,
     },
     templateChipActive: {
       backgroundColor: color.brandText,

@@ -80,7 +80,7 @@ function AvatarCircle({
         img: { width: size, height: size },
         initials: {
           fontSize: size * 0.38,
-          fontWeight: '700',
+          fontWeight: font.weight.bold,
           color: color.brandOnSoft,
         },
       }),

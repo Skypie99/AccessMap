@@ -133,13 +133,14 @@ const makeStyles = (color: ColorTheme) =>
       fontWeight: font.weight.bold,
       color: color.textStrong,
       textAlign: 'center',
-      letterSpacing: -0.3,
+      letterSpacing: font.tracking.heading,
     },
     body: {
       fontSize: font.size.md,
       color: color.text,
       textAlign: 'center',
-      lineHeight: 22,
+      // Was 22 (x1.47). The token is x1.4 at font.size.md: 21.
+      lineHeight: font.lineHeight.md,
       maxWidth: 320,
     },
     btn: {

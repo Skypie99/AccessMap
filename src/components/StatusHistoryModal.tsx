@@ -259,7 +259,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     emptyTitle: {
       fontSize: font.size.md,
-      fontWeight: '700',
+      fontWeight: font.weight.bold,
       color: color.text,
     },
     emptyBody: {
@@ -306,7 +306,7 @@ const makeStyles = (color: ColorTheme) =>
     entryTextWrap: { flex: 1, gap: 2, paddingBottom: 14 },
     entryLine: {
       fontSize: font.size.md,
-      fontWeight: '600',
+      fontWeight: font.weight.semibold,
       color: color.textStrong,
     },
   });

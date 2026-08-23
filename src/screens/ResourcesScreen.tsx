@@ -289,7 +289,8 @@ const makeStyles = (color: ColorTheme) =>
       // On the raw stage — inkOnStage, not textMuted (forbidden there,
       // 4.10:1 over the pool's darkest stop). inkOnStage = 4.83:1 / 6.29:1.
       color: color.inkOnStage,
-      lineHeight: 22,
+      // Was 22 (x1.57). The token is x1.4 at font.size.base: 20.
+      lineHeight: font.lineHeight.base,
       marginBottom: spacing.xs,
     },
     // Row-glass card: layout + radius + lift live on the GlassSurface OUTER
@@ -334,7 +335,8 @@ const makeStyles = (color: ColorTheme) =>
     cardBlurb: {
       fontSize: font.size.sm,
       color: color.textMuted,
-      lineHeight: 20,
+      // Was 20 (x1.54). The token is x1.4 at font.size.sm: 18.
+      lineHeight: font.lineHeight.sm,
     },
     footnote: {
       fontSize: font.size.xs,

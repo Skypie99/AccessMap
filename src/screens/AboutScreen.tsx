@@ -367,6 +367,8 @@ const makeStyles = (color: ColorTheme) =>
       // glass also carries >=500 weight (the 400 face hazes) — bodyMedium.
       color: color.inkGlassMuted,
       fontFamily: font.family.bodyMedium,
-      lineHeight: 21,
+      // Was 21 (a hand-tuned x1.5). The token is the system's x1.4 formula at
+      // this size: 20. One point tighter, and now it tracks the size.
+      lineHeight: font.lineHeight.base,
     },
   });
