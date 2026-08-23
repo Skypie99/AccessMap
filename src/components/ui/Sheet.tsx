@@ -31,6 +31,7 @@ import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessi
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { GlassSurface } from './GlassSurface';
+import { SheetPull } from './SheetPull';
 
 export interface SheetHeaderProps {
   title: string;
@@ -232,6 +233,18 @@ export interface SheetProps {
   /** Let the card FILL the height the floor reserves instead of sitting at the
    *  top of it (SW-42 follow-up: without this a height floor becomes a gap). */
   fill?: boolean;
+  /** Gate for the pull gesture, for states where dismissing would be wrong —
+   *  mid-submit, keyboard up. Mirrors whatever guard the surface's Close
+   *  already uses. Default true. */
+  pullEnabled?: boolean;
+  /** Whether the sheet's scrollable body sits at its top. A sheet whose body
+   *  scrolls MUST wire this (`useAtTop()`), or a downward flick partway down
+   *  its content dismisses it instead of scrolling. Default true, which is
+   *  correct only for a sheet that does not scroll. */
+  atTop?: boolean;
+  /** The inner scrollable's ref, so the pan coexists with it instead of
+   *  stealing from it. */
+  scrollRef?: React.Ref<unknown>;
   /** Floor for the card's bottom pad, before the safe-area inset is compared
    *  against it. Default `spacing.sm`.
    *
@@ -262,6 +275,9 @@ export function Sheet({
   keyboardAvoiding = false,
   shrinkStyle,
   fill = false,
+  pullEnabled = true,
+  atTop = true,
+  scrollRef,
   minBottomPad = spacing.sm,
   showHandle = true,
   testID,
@@ -359,16 +375,34 @@ export function Sheet({
         onAccessibilityEscape={onClose}
         testID={testID}
       >
-        {keyboardAvoiding ? (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={[styles.kav, shrinkStyle]}
-          >
-            {card}
-          </KeyboardAvoidingView>
-        ) : (
-          card
-        )}
+        {/* THE GRABBER HAS TO MEAN SOMETHING.
+            `SheetHeader` draws the pill, and the pill's whole job is to
+            advertise a gesture — its own docblock says so. Before this the
+            primitive drew it and wired nothing, so on every `Sheet` consumer
+            the affordance was a promise the surface did not keep: a user pulled
+            the bar the app had just shown them and the sheet sat there.
+            One wrapper here covers every adopter, present and future, and it
+            routes through `onClose` — the same expression the Close button,
+            `onRequestClose` and `onAccessibilityEscape` already take, so the
+            focus-return choreography is inherited rather than forked. */}
+        <SheetPull
+          onDismiss={onClose}
+          enabled={pullEnabled}
+          atTop={atTop}
+          simultaneousHandlers={scrollRef}
+          style={styles.pull}
+        >
+          {keyboardAvoiding ? (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={[styles.kav, shrinkStyle]}
+            >
+              {card}
+            </KeyboardAvoidingView>
+          ) : (
+            card
+          )}
+        </SheetPull>
       </View>
     </Modal>
   );
@@ -405,6 +439,9 @@ const styles = StyleSheet.create({
   // The KAV is the definite-height child when it is present, so it — not the
   // shadow wrapper — carries the cap (and the SW-42 floor, when a caller
   // passes one through `shrinkStyle`). See the prop's docblock.
+  // The pull wrapper must not become a layout node of its own: the backdrop's
+  // flex-end anchor and the card's cap both depend on the chain above it.
+  pull: { width: '100%' },
   kav: { width: '100%', maxHeight: '90%', flexShrink: 1 },
   // `padded`: the CARD owns the gutter and the inter-child rhythm, so a
   // transplanted body keeps the geometry it was written against.

@@ -18,6 +18,7 @@ import {
 import { AppText } from '@/components/ui/AppText';
 import { PrefsRow } from '@/components/ui/PrefsRow';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { STATUS_LABELS } from '@/lib/flags';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -84,6 +85,11 @@ export default function NotificationPrefsModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   const { user } = useAuth();
   // Use the parent-provided initialPrefs if any — they're already up to
   // date from the screen's most recent refreshUpdateCount. Otherwise
@@ -166,6 +172,8 @@ export default function NotificationPrefsModal({
       padded
       shrinkStyle={styles.cap}
       minBottomPad={spacing.xxl}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="notificationPrefsModal-backdrop"
     >
           {!user ? (
@@ -186,6 +194,9 @@ export default function NotificationPrefsModal({
             // no way to reach them (sweep M8). Header stays pinned above.
             <ScrollView
               style={styles.list}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.listContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}

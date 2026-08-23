@@ -40,6 +40,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
@@ -93,6 +94,11 @@ const PLACEHOLDER_DEFAULTS = {
 export default function FilterPresetsModal({ visible, onClose, onApply }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
   const { user } = useAuth();
@@ -403,6 +409,8 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
       shrinkStyle={styles.kav}
       cardStyle={keyboardVisible ? styles.cardKeyboard : undefined}
       minBottomPad={spacing.xxl}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="filterPresetsModal-backdrop"
     >
 
@@ -510,6 +518,9 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           ) : (
             <FlatList
               data={presets}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
               removeClippedSubviews

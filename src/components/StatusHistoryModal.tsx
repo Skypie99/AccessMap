@@ -30,7 +30,7 @@
  * Both still render with `accessibilityViewIsModal` so VoiceOver doesn't leak
  * focus between them.
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState , useRef} from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -42,6 +42,7 @@ import {
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { STATUS_LABELS } from '@/lib/flags';
 import {
   STATUS_HISTORY_LOADING_ANNOUNCEMENT,
@@ -100,6 +101,11 @@ function statusDotColor(color: ColorTheme, s: string): string {
 export default function StatusHistoryModal({ visible, flagId, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   const [entries, setEntries] = useState<StatusHistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -167,10 +173,15 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
       padded
       shrinkStyle={styles.cap}
       minBottomPad={spacing.xxl}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="statusHistoryModal-backdrop"
     >
           <ScrollView
             style={styles.body}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
             contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >

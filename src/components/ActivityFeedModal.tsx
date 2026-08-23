@@ -27,6 +27,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useAuth } from '@/lib/auth';
@@ -58,6 +59,11 @@ interface Props {
 export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onViewOnMap }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -239,6 +245,8 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
       padded
       shrinkStyle={styles.cap}
       minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="activityFeedModal-backdrop"
     >
           {/* Filter chips — Mine/Watched are hidden when not signed in
@@ -289,6 +297,9 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
           ) : (
             <SectionList
               sections={sections}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
               accessibilityRole="list"

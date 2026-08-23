@@ -8,11 +8,12 @@
  * derivation on its own. That keeps the heavy lifting in Profile, which
  * already has the data.
  */
-import React, { useMemo } from 'react';
+import React, { useMemo , useRef} from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -129,6 +130,11 @@ const makeStyles = (color: ColorTheme) =>
 export default function AchievementsModal({ visible, onClose, achievements }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // Group by category preserving catalog order within each group.
   const grouped = useMemo(() => {
     const map = new Map<AchievementCategory, Achievement[]>();
@@ -157,9 +163,14 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
       padded
       shrinkStyle={styles.cap}
       minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="achievementsModal-backdrop"
     >
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}>
         {/* W5 — the empty state this sheet never had. `grouped` filters out
             every empty category, so a catalog that arrives empty (or a
             future build with achievements gated off) rendered a titled

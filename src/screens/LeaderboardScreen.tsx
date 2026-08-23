@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState , useRef} from 'react';
 import {
   FlatList,
   Pressable,
@@ -12,6 +12,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { decorativeProps } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
@@ -241,6 +242,11 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
 export default function LeaderboardScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // SW-45: this sheet ran flush to the screen bottom while the tab bar sits at
   // 861-914, so scrolled rows painted straight over a ghosted "Home / Tasks /
   // Profile" — the red Tasks badge showed through behind the 4th-place row's
@@ -334,6 +340,8 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       // `Math.max(floor, insets.bottom)` rather than replacing it, so the home
       // indicator is still cleared on a device with no tab bar above it.
       minBottomPad={Math.max(spacing.xxl, tabBarHeight)}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="leaderboardScreen-backdrop"
     >
       {/* UX #8: All-time / This Month. WCAG: each cell announces its state
@@ -412,6 +420,9 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           ) : (
             <FlatList
               data={entries}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(e) => e.id}
               renderItem={renderItem}
               style={styles.list}

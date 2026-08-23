@@ -11,6 +11,7 @@ import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import SearchInputRow from '@/components/SearchInputRow';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { a11yToggle, decorativeProps } from '@/lib/accessibility';
@@ -61,6 +62,11 @@ export default function MyReportsModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
   const { user } = useAuth();
@@ -304,6 +310,8 @@ export default function MyReportsModal({
       shrinkStyle={styles.kav}
       cardStyle={keyboardVisible ? styles.cardKeyboard : undefined}
       minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="myReportsModal-backdrop"
     >
           {/* Free-text search — only useful once the user has more than one
@@ -430,6 +438,8 @@ export default function MyReportsModal({
             // way MyWatched's empty state did.
             <ScrollView
               style={styles.stateBody}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.stateBodyContent}
               accessibilityLabel="Loading your reports"
               accessibilityLiveRegion="polite"
@@ -442,6 +452,9 @@ export default function MyReportsModal({
             <FlatList
               keyboardShouldPersistTaps="handled"
               data={displayFlags}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
               accessibilityRole="list"

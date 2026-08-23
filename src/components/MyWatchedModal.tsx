@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { confirm, notify } from '@/lib/confirm';
@@ -109,6 +110,11 @@ export function sortWatchedFlags(items: FlagRow[], mode: WatchedSort): FlagRow[]
 export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewOnMap, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  // The pull gesture must not fight the body's own scroll: `useAtTop`
+  // disables it whenever the content is scrolled away from its top, so a
+  // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
   const { user } = useAuth();
@@ -357,6 +363,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
       shrinkStyle={styles.kav}
       cardStyle={keyboardVisible ? styles.cardKeyboard : styles.cardRhythm}
       minBottomPad={spacing.xxl + 4}
+      atTop={atTop}
+      scrollRef={scrollRef}
       testID="myWatchedModal-backdrop"
     >
           <SearchInputRow
@@ -469,6 +477,9 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           {!loading && displayFlags.length > 0 ? (
             <FlatList
               data={displayFlags} keyExtractor={(item) => item.id} renderItem={renderItem}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.list}
               keyboardShouldPersistTaps="handled"
               ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -482,6 +493,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           ) : (
             <ScrollView
               style={styles.stateBody}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.stateBodyContent}
               keyboardShouldPersistTaps="handled"
             >
