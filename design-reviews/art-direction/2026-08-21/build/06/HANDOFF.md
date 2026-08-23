@@ -6,14 +6,19 @@
 
 ## ✅ RUN COMPLETE — Sky merges
 
-Ten commits, one device pass, all gates green. Report: `BUILD_REPORT.md`.
-Copy for ratification: `../COPY_LEDGER.md` §"Prompt 06" (21 placeholders, 0 shipped-as-final).
+Fourteen commits (ten of build, one source fix, three of evidence), one device
+pass, one signed-in walk, all gates green. Report: `BUILD_REPORT.md`.
+Copy: `../COPY_LEDGER.md` §"Prompt 06" — **all 21 strings RATIFIED 2026-08-22**
+(`ab8801f`); both reversals upheld. Nothing there is awaiting an answer.
 
 ## Gates
 | | baseline | final |
 |---|---|---|
 | typecheck | 0 errors | 0 errors |
 | jest | 237 / 3469 / 32 todo / 0 fail | **241 / 3560 / 32 todo / 0 fail** |
+
+Re-verified independently at `ab8801f` on a clean tree (2026-08-22): typecheck 0
+errors, jest 241 / 3560 / 32 todo / **0 fail** in 115s. Reproduces exactly.
 | lint | 0 err / 82 warn | 0 err / 82 warn |
 
 ## Commits
@@ -29,6 +34,8 @@ Copy for ratification: `../COPY_LEDGER.md` §"Prompt 06" (21 placeholders, 0 shi
 - `41da985` 6.6 device pass — 4 defects the green suite could not see
 - `b36edb5` 6.7 evidence (report, handoff, ledger, captures)
 - `0aaa5a1` 6.8 `surfaceVariant` forked — the progress track was invisible in LIGHT (1.03:1), found on the signed-in walk
+- `ddb8f1d` 6.9 evidence — the signed-in walk, its four captures, and what it changed
+- `ab8801f` 6.10 Sky ratifies the 21 strings and upholds both reversals (ledger only)
 
 ## Guards re-pinned (never deleted)
 `bp3TrustEngineGuards` · `inertControlVisual` · `flexBasisUnderLargeType` ·
@@ -69,9 +76,10 @@ second attempt on that alert; the first one lands but does not register.
 
 ## What Sky is left with
 1. **Merge** (rollback line in the report §2).
-2. **COPY_LEDGER §Prompt 06** — 21 placeholders, and two ⚠ decisions that want a
-   yes or no specifically: §SKY-7's section pick S1 being reversed, and §C6's
-   wording vs. the two failed-refresh banners.
+2. ~~**COPY_LEDGER §Prompt 06**~~ — **DONE** (`ab8801f`): 21 strings ratified,
+   §SKY-7's S1 reversal and §C6's red-banner reversal both upheld. One thing it
+   leaves behind: **§C6 in the design-system doc should gain a sentence** — amber
+   is an informational notice about the data, red is an operation that failed.
 3. **A design-system finding** (report §5): dark `brandSoft` sits 1.76:1 from
    `ctaFill`, too close to signal a state. Fixed locally with an outline; the
    token itself is your call.
@@ -84,5 +92,8 @@ second attempt on that alert; the first one lands but does not register.
 5. **NEEDS-DEVICE** — VoiceOver on the new radio group and the Show/Copy pair;
    Reduce Motion over both progress bars; a real iOS denial walked to
    `canAskAgain === false` (simctl cannot reproduce the OS's one-shot rule).
-6. **Two deliberate non-changes**, both one-liners in the ledger: the lock
-   banner's em dash, and "Update preferences" -> "Which updates to show".
+6. **Three things the ratification deliberately did not cover**, because they are
+   questions rather than proposed strings: the lock banner's em dash;
+   "Update preferences" -> "Which updates to show"; and the "YOUR REPORTS"
+   section heading, which is the same two words as `ReportsBreakdownCard`'s own
+   title a screen away. The first two are one-liners in the ledger.

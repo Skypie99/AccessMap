@@ -360,9 +360,11 @@ own title.
 ---
 
 
-This phase writes the most placeholders in the series. Nothing below is
-shipped-as-final: every row is a builder's draft awaiting Sky's ratification,
-and each one names the single place it changes.
+This phase writes the most placeholders in the series. Every row below was
+drafted as a builder's proposal, and each one names the single place it changes.
+**All 21 were ratified on 2026-08-22** — see the block above — so they now read
+as shipped copy, not as drafts. The three items listed there as still open are
+questions rather than proposed strings, and are not covered by that ratification.
 
 Guarded copy that was NOT touched, verified: Terms · Privacy · every moderation
 text (`HIDDEN_COMMENTS_*`, `BLOCKED_PEOPLE_*`, `UNBLOCK_ALL_LABEL`) · the

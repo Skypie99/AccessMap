@@ -5,7 +5,8 @@
 **Branch:** `design/gsp-06-forms-2026-08-22`
 **Base:** `1984c3e` (= local `main`; 9 commits ahead of `origin/main`)
 **Prerequisite check:** prompts 01, 02 and 04 are all ancestors of the base, as are 03, 05 and 05b. Verified with `git log`, not assumed.
-**Status:** complete. Ten commits. **STOP — Sky merges.**
+**Status:** complete. Fourteen commits — ten of build, four of evidence.
+**STOP — Sky merges.**
 
 ---
 
@@ -20,6 +21,11 @@
 +4 suites, +91 tests. The lint warning count is unchanged: four were introduced
 during the work (unused imports and styles left behind by adoptions) and all
 four were cleaned up rather than absorbed into the baseline.
+
+**Re-verified independently on 2026-08-22 at `ab8801f`, on a clean tree, not
+copied from the run above:** `npx tsc --noEmit` 0 errors ·
+`npx jest --ci -w 3` **241 suites · 3560 passed · 32 todo · 0 failed** (115s).
+The numbers below reproduce exactly.
 
 One flake seen and dismissed honestly: `ReportContentModal.test.tsx` failed once
 under `-w 3` at 20.7s, passed alone in 4.3s and passed on the next full run.
@@ -41,8 +47,17 @@ Not touched by this branch.
 | `06ade27` | 6.4 `EmptyState` + eight adoptions, scaled skeletons, C6 banners |
 | `9858f67` | 6.5 D26 — `Linking.openSettings()` on a denial the app cannot re-ask |
 | `41da985` | 6.6 device pass — four defects the gates could not see |
+| `b36edb5` | 6.7 evidence — this report, the handoff, the ledger, the first captures |
+| `0aaa5a1` | 6.8 `surfaceVariant` forked — the progress track was invisible in LIGHT (1.03:1), found on the signed-in walk |
+| `ddb8f1d` | 6.9 evidence — the signed-in walk, its four captures, and what it changed |
+| `ab8801f` | 6.10 Sky ratifies the 21 strings and upholds both reversals (ledger only) |
 
-31 files, +2581 / −560.
+The ten build commits end at 6.6. Everything after is evidence, with one
+exception: **6.8 is a source fix**, forced by what the signed-in walk showed.
+
+**50 files, +3191 / −561** across the branch; of those, **32 are source or test
+files** (+2601 / −561). The earlier figure in this table (31 files, +2581 / −560)
+was measured at 6.6 and did not yet include 6.8's two-file token fork.
 
 **Rollback (one line):**
 
@@ -305,9 +320,14 @@ was touched.
 `build/COPY_LEDGER.md` §"Prompt 06" — **21 new placeholder strings** (W-16 to
 W-36) and one format change (F-05), each naming the single place it changes.
 This phase writes the most placeholders in the series, as the prompt predicted.
-Nothing is ratified; nothing guarded was touched.
+Nothing guarded was touched.
 
-Two entries need reading before anything else:
+### ✅ RATIFIED 2026-08-22 (commit `ab8801f`)
+
+**Sky reviewed all 21 strings, the format change, and both ⚠ decisions below,
+and approved them.** They are the shipped copy now. Both reversals stand. The
+two entries below are kept as the record of what was decided and why — they are
+no longer open questions:
 
 1. **§SKY-7 section pick S1 is reversed** — Hidden comments and Blocked people
    move out of Feedback into their own Moderation section. Instructed by the
@@ -328,8 +348,14 @@ Two entries need reading before anything else:
 ## 8. What is left for Sky
 
 1. **Merge** (rollback line in §2).
-2. **Ratify the copy** — `build/COPY_LEDGER.md` §"Prompt 06", 21 strings.
-   The two ⚠ decisions above want a yes or a no specifically.
+2. ~~**Ratify the copy**~~ — **DONE 2026-08-22** (`ab8801f`). All 21 strings
+   ratified and both reversals upheld. What that ratification explicitly did
+   NOT cover, because they are questions and not proposed strings: the lock
+   banner's em dash, "Update preferences", and the "Your reports" heading that
+   duplicates `ReportsBreakdownCard`'s own title (item 6 and §6 item 4 below).
+   One consequence to carry forward: **§C6 in the design-system doc should gain
+   the sentence the ruling implies** — amber is an informational notice about
+   the data, red is an operation that failed.
 3. **The design-system finding in §5** — dark `brandSoft` vs `ctaFill`.
 4. ~~**NEEDS-SKY-SIGN-IN**~~ — **CLOSED 2026-08-22.** Sky signed the sim in and
    the walk ran; captures and the SW-41 confirmation are in §6. Two things were
