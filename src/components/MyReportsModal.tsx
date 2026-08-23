@@ -1,24 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  type Text,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
 import SearchInputRow from '@/components/SearchInputRow';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -34,8 +29,8 @@ import { severityA11y } from '@/lib/a11yText';
 import { filterMyReports } from '@/lib/myReportsFilter';
 import type { FlagRow, FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { a11y, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { MapPin, RefreshCw, X } from 'lucide-react-native';
+import { a11y, font, radius, shadow, spacing } from '@/theme';
+import { MapPin, RefreshCw } from 'lucide-react-native';
 
 const STATUS_FILTER_ORDER: FlagStatus[] = ['open', 'verified', 'resolved', 'rejected'];
 
@@ -66,15 +61,8 @@ export default function MyReportsModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -285,52 +273,39 @@ export default function MyReportsModal({
   };
 
   return (
-    <Modal aria-label="My Reports" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="My Reports"
+      closeLabel="Close My Reports"
+      closeHint="Returns to your Profile"
+      headerAccessory={
+        /* A11Y-222 (2.5.7): pull-to-refresh is a DRAG. This is the
+           single-pointer alternative, in the same 44pt circle recipe as
+           Close beside it — and it is discoverable, which close+reopen
+           was not. */
+        <Pressable
+          onPress={() => void load()}
+          hitSlop={12}
+          style={({ pressed }) => [styles.circleBtn, pressed && { backgroundColor: color.borderPressed }]}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh"
+          accessibilityHint="Reloads your reports without pulling down the list"
+          {...a11yToggle({ busy: loading })}
         >
-        <View style={styles.cardWrap}>
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          forceEngineered
-          style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xl, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              My Reports
-            </AppText>
-            {/* A11Y-222 (2.5.7): pull-to-refresh is a DRAG. This is the
-              single-pointer alternative, in the same 44pt circle recipe as
-              Close beside it — and it is discoverable, which close+reopen
-              was not. */}
-            <Pressable
-              onPress={() => void load()}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Refresh"
-              accessibilityHint="Reloads your reports without pulling down the list"
-              {...a11yToggle({ busy: loading })}
-            >
-              <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
-            </Pressable>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close My Reports"
-              accessibilityHint="Returns to your Profile"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
+          <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+        </Pressable>
+      }
+      glass
+      engineered
+      padded
+      fill
+      keyboardAvoiding
+      shrinkStyle={styles.kav}
+      cardStyle={keyboardVisible ? styles.cardKeyboard : undefined}
+      minBottomPad={spacing.xl}
+      testID="myReportsModal-backdrop"
+    >
           {/* Free-text search — only useful once the user has more than one
               report. Filters across description, category label, and status
               via filterMyReports. Multi-token AND, NFC-normalized, case-
@@ -511,39 +486,15 @@ export default function MyReportsModal({
               }
             />
           )}
-        </GlassSurface>
-        </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    card: {
-      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
-      // the surface + top edge/specular + designed Reduce-Transparency state — no
-      // backgroundColor here (the variant owns it). overflow:hidden clips the
-      // square material to the rounded top; the up-shadow moves to cardWrap
-      // (an overflow:hidden view clips its own shadow — GlassSurface contract).
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl,
-      gap: spacing.md,
-      maxHeight: '85%',
-      overflow: 'hidden',
-      // SW-42 follow-up: fill whatever the KAV resolves to, so the floor
-      // becomes sheet HEIGHT rather than dead space above the tab bar.
-      flexGrow: 1,
-    },
+    // Keyboard up: the pad drops to `md` and does NOT take the safe-area inset,
+    // because the keyboard is covering it. Shipped behaviour, made explicit.
+    cardKeyboard: { paddingBottom: spacing.md },
     // G6/SR-099 — THE CAP LIVES HERE. The card's own '85%' resolves against a content-sized
     // cardWrap and is inert; only the flex:1 backdrop is definite, so the cap
     // sits on the KAV and cardWrap/card shrink into it.
@@ -571,28 +522,8 @@ const makeStyles = (color: ColorTheme) =>
       maxHeight: '85%',
       flexShrink: 1,
     },
-    cardWrap: {
-      flexShrink: 1,
-      // SW-42 follow-up: fill whatever the KAV resolves to, so the floor
-      // becomes sheet HEIGHT rather than dead space above the tab bar.
-      flexGrow: 1,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    title: {
-      fontSize: font.size.xxl,
-      fontWeight: font.weight.bold,
-      flex: 1,
-      color: color.textStrong,
-      letterSpacing: -0.3,
-    },
-    closeBtn: {
+    // Refresh, in the same 44pt circle recipe as the primitive's Close.
+    circleBtn: {
       width: 44,
       height: 44,
       borderRadius: radius.circle,

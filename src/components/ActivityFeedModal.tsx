@@ -17,23 +17,20 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Modal,
   Pressable,
   RefreshControl,
   SectionList,
   StyleSheet,
-  type Text,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { errorMessage } from '@/lib/errors';
 import {
   CATEGORY_LABELS,
@@ -45,8 +42,8 @@ import { relativeTime } from '@/lib/relativeTime';
 import { loadWatched } from '@/lib/watchedFlags';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { a11y, bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { MapPin, RefreshCw, X } from 'lucide-react-native';
+import { a11y, font, radius, shadow, spacing } from '@/theme';
+import { MapPin, RefreshCw } from 'lucide-react-native';
 import { StatusBadge } from '@/components/StatusBadge';
 
 type FeedFilter = 'all' | 'mine' | 'watched';
@@ -61,13 +58,6 @@ interface Props {
 export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onViewOnMap }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -221,48 +211,36 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
   ];
 
   return (
-    <Modal aria-label="Recent Activity" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.cardWrap}>
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          forceEngineered
-          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Recent Activity"
+      closeLabel="Close recent activity"
+      closeHint="Returns to your Profile"
+      headerAccessory={
+        /* A11Y-222 (2.5.7): pull-to-refresh is a DRAG. This is the
+           single-pointer alternative, in the same 44pt circle recipe as
+           Close beside it — and it is discoverable, which close+reopen
+           was not. */
+        <Pressable
+          onPress={() => void load()}
+          hitSlop={12}
+          style={({ pressed }) => [styles.circleBtn, pressed && { backgroundColor: color.borderPressed }]}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh"
+          accessibilityHint="Reloads recent activity without pulling down the list"
+          {...a11yToggle({ busy: loading })}
         >
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              Recent Activity
-            </AppText>
-            {/* A11Y-222 (2.5.7): pull-to-refresh is a DRAG. This is the
-              single-pointer alternative, in the same 44pt circle recipe as
-              Close beside it — and it is discoverable, which close+reopen
-              was not. */}
-            <Pressable
-              onPress={() => void load()}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Refresh"
-              accessibilityHint="Reloads recent activity without pulling down the list"
-              {...a11yToggle({ busy: loading })}
-            >
-              <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
-            </Pressable>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close recent activity"
-              accessibilityHint="Returns to your Profile"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
+          <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+        </Pressable>
+      }
+      glass
+      engineered
+      padded
+      shrinkStyle={styles.cap}
+      minBottomPad={spacing.xl}
+      testID="activityFeedModal-backdrop"
+    >
           {/* Filter chips — Mine/Watched are hidden when not signed in
               because they'd always be empty. */}
           <View style={styles.filterRow} accessibilityLabel="Filter activity">
@@ -354,60 +332,25 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               }
             />
           )}
-        </GlassSurface>
-        </View>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    card: {
-      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
-      // the surface + top edge/specular + designed Reduce-Transparency state — no
-      // backgroundColor here (the variant owns it; drops the surfaceMuted wash).
-      // overflow:hidden clips the square material to the rounded top; the
-      // up-shadow moves to cardWrap (GlassSurface contract).
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl,
-      gap: spacing.md,
-      maxHeight: '85%',
-      overflow: 'hidden',
-    },
-    cardWrap: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    title: {
-      fontSize: font.size.xxl,
-      fontWeight: font.weight.bold,
-      flex: 1,
-      color: color.textStrong,
-      letterSpacing: -0.3,
-    },
-    closeBtn: {
+    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at 85%.
+    cap: { maxHeight: '85%' },
+    // The Refresh circle in the header. Same 44pt recipe the primitive's Close
+    // uses, so the pair reads as one control set.
+    circleBtn: {
       width: 44,
       height: 44,
       borderRadius: radius.circle,
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },    filterRow: {
+    },
+    filterRow: {
       flexDirection: 'row',
       gap: spacing.sm,
     },

@@ -9,11 +9,10 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, type Text, View } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
 import { STATUS_LABELS } from '@/lib/flags';
 import { StatusBadge } from './StatusBadge';
 import {
@@ -24,9 +23,8 @@ import {
 } from '@/lib/notificationPrefs';
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { androidSwitchThumbOff, bulkGlassShadow, font, radius, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
-import { X } from 'lucide-react-native';
+import { androidSwitchThumbOff, font, radius, spacing } from '@/theme';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -138,55 +136,23 @@ export default function NotificationPrefsModal({
   );
 
   // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   // Bottom-anchored sheet clears the home indicator (M15 family recipe).
   // Non-throwing context read — render tests mount without a provider.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   return (
-    <Modal
-      aria-label="Updates"
+    <Sheet
       visible={visible}
-      animationType={reducedMotion ? 'none' : 'slide'}
-      transparent
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Updates"
+      subtitle="Choose which flag updates surface on your Profile."
+      closeLabel="Close updates settings"
+      closeHint="Closes the update preferences panel"
+      glass
+      engineered
+      padded
+      shrinkStyle={styles.cap}
+      minBottomPad={spacing.xxl}
+      testID="notificationPrefsModal-backdrop"
     >
-      <View style={styles.backdrop}>
-        <View style={styles.cardWrap}>
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          forceEngineered
-          style={[styles.card, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.headerRow}>
-            <View style={styles.titleWrap}>
-              <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-                Updates
-              </AppText>
-              <AppText variant="body" style={styles.subtitle}>
-                Choose which flag updates surface on your Profile.
-              </AppText>
-            </View>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close updates settings"
-              accessibilityHint="Closes the update preferences panel"
-            >
-              <X
-                size={18}
-                color={color.text}
-                strokeWidth={2.2} {...decorativeProps}
-              />
-            </Pressable>
-          </View>
-
           {!user ? (
             <View style={styles.notice}>
               <AppText variant="body" style={styles.noticeText}>Sign in to save update preferences.</AppText>
@@ -251,51 +217,16 @@ export default function NotificationPrefsModal({
               </AppText>
             </ScrollView>
           )}
-        </GlassSurface>
-        </View>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    card: {
-      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies
-      // the surface + top edge/specular + designed Reduce-Transparency state — no
-      // backgroundColor here (the variant owns it). overflow:hidden clips the square
-      // material to the rounded top; the up-shadow moves to cardWrap.
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xxl,
-      gap: spacing.md,
-      maxHeight: '85%',
-      overflow: 'hidden',
-    },
-    cardWrap: {
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      ...bulkGlassShadow(color),
-    },
-    headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    titleWrap: { flex: 1, gap: 2 },
-    title: { fontSize: font.size.xxl, fontWeight: '700', color: color.textStrong },
-    subtitle: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
-    closeBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at 85%.
+    // C13: the corner radius came with the primitive — this sheet was the one
+    // at `lg` while the whole family sat at `xl`.
+    cap: { maxHeight: '85%' },
     notice: {
       backgroundColor: color.warningBg,
       borderRadius: radius.sm,

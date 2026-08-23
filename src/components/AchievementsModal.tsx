@@ -9,14 +9,12 @@
  * already has the data.
  */
 import React, { useMemo } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, type Text, View } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { GlassSurface } from '@/components/ui/GlassSurface';
-import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { Sheet } from '@/components/ui/Sheet';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
-import { bulkGlassShadow, font, radius, spacing } from '@/theme';
+import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import {
   Award,
@@ -31,7 +29,6 @@ import {
   Sparkles,
   Star,
   Trophy,
-  X,
 } from 'lucide-react-native';
 
 // Achievement icon name (from achievements.ts) → Lucide component.
@@ -68,52 +65,11 @@ const CATEGORY_ORDER: AchievementCategory[] = ['reporting', 'resolution', 'point
 // Defined before both components so AchievementRow can call it without a hoisting issue.
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    card: {
-      // Bulk-glass sheet: GlassSurface variant="bulk" (forceEngineered) supplies the
-      // surface + top edge/specular + designed Reduce-Transparency state — no
-      // backgroundColor here (the variant owns it; drops the surfaceMuted wash so
-      // Achievements shares the one sheet material). overflow:hidden clips the square
-      // material to the rounded top; the up-shadow moves to cardWrap (GlassSurface contract).
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl,
-      gap: spacing.md,
-      maxHeight: '85%',
-      overflow: 'hidden',
-    },
-    cardWrap: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    titleWrap: { flex: 1, gap: 2 },
-    title: {
-      fontSize: font.size.xxl,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
-      letterSpacing: -0.3,
-    },
-    subtitle: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
-    closeBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },    scroll: { paddingBottom: spacing.md, gap: spacing.lg },
+    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at
+    // 85% and its content is a long scroller, so the tighter cap is content,
+    // not chrome, and it comes with the sheet rather than replacing it.
+    cap: { maxHeight: '85%' },
+    scroll: { paddingBottom: spacing.md, gap: spacing.lg },
     section: { gap: spacing.sm },
     sectionHeader: {
       fontSize: font.size.sm,
@@ -175,13 +131,6 @@ const makeStyles = (color: ColorTheme) =>
 export default function AchievementsModal({ visible, onClose, achievements }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   // Group by category preserving catalog order within each group.
   const grouped = useMemo(() => {
     const map = new Map<AchievementCategory, Achievement[]>();
@@ -198,74 +147,46 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
   const totalEarned = achievements.filter((a) => a.earned).length;
 
   return (
-    <Modal aria-label="Achievements" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.cardWrap}>
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          forceEngineered
-          style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.headerRow}>
-            <View style={styles.titleWrap}>
-              <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-                Achievements
-              </AppText>
-              <AppText
-                variant="body"
-                style={styles.subtitle}
-                accessibilityLabel={`${totalEarned} of ${achievements.length} achievements earned`}
-              >
-                {totalEarned} of {achievements.length} earned
-              </AppText>
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Achievements"
+      subtitle={`${totalEarned} of ${achievements.length} earned`}
+      subtitleLabel={`${totalEarned} of ${achievements.length} achievements earned`}
+      closeLabel="Close achievements"
+      glass
+      engineered
+      padded
+      shrinkStyle={styles.cap}
+      minBottomPad={spacing.xl}
+      testID="achievementsModal-backdrop"
+    >
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* W5 — the empty state this sheet never had. `grouped` filters out
+            every empty category, so a catalog that arrives empty (or a
+            future build with achievements gated off) rendered a titled
+            sheet with nothing under it and no explanation. Every sibling
+            list in the estate answers that case; this one just went blank.
+            PLACEHOLDER COPY (SKY-WORDS-REQUIRED). */}
+        {grouped.length === 0 ? (
+          <EmptyState
+            title="No badges to show yet"
+            body="Report, verify and resolve barriers to start earning them."
+          />
+        ) : (
+          grouped.map(({ cat, items }) => (
+            <View key={cat} style={styles.section}>
+              <AppText variant="heading" style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</AppText>
+              <View style={styles.list}>
+                {items.map((a) => (
+                  <AchievementRow key={a.id} achievement={a} />
+                ))}
+              </View>
             </View>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close achievements"
-            >
-              <X
-                size={18}
-                color={color.text}
-                strokeWidth={2.2} {...decorativeProps}
-              />
-            </Pressable>
-          </View>
-
-          <ScrollView contentContainerStyle={styles.scroll}>
-            {/* W5 — the empty state this sheet never had. `grouped` filters out
-                every empty category, so a catalog that arrives empty (or a
-                future build with achievements gated off) rendered a titled
-                sheet with nothing under it and no explanation. Every sibling
-                list in the estate answers that case; this one just went blank.
-                PLACEHOLDER COPY (SKY-WORDS-REQUIRED). */}
-            {grouped.length === 0 ? (
-              <EmptyState
-                title="No badges to show yet"
-                body="Report, verify and resolve barriers to start earning them."
-              />
-            ) : (
-              grouped.map(({ cat, items }) => (
-                <View key={cat} style={styles.section}>
-                  <AppText variant="heading" style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</AppText>
-                  <View style={styles.list}>
-                    {items.map((a) => (
-                      <AchievementRow key={a.id} achievement={a} />
-                    ))}
-                  </View>
-                </View>
-              ))
-            )}
-          </ScrollView>
-        </GlassSurface>
-        </View>
-      </View>
-    </Modal>
+          ))
+        )}
+      </ScrollView>
+    </Sheet>
   );
 }
 

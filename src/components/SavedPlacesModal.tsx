@@ -14,25 +14,20 @@
  * state with a "Sign in to save places" hint shows when there's no user.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import {
   AccessibilityInfo,
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   StyleSheet,
-  type Text,
   TextInput,
   View,
 } from 'react-native';
 import { useAuth } from '@/lib/auth';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
 import { SkeletonRow } from '@/components/ui/Skeleton';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
@@ -74,11 +69,8 @@ export default function SavedPlacesModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  const reducedMotion = useReducedMotion();
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
   const { user } = useAuth();
   const [places, setPlaces] = useState<SavedPlace[]>([]);
   const [loading, setLoading] = useState(false);
@@ -266,45 +258,21 @@ export default function SavedPlacesModal({
 
   // Bottom-anchored sheet clears the home indicator (M15 family recipe).
   // Non-throwing context read — render tests mount without a provider.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
 
   return (
-    <Modal aria-label="Saved Places" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        {/* A11Y-228: KAV lifts the sheet above the keyboard the autoFocus
-            place-name input opens — the AddressSearchModal recipe. iOS
-            'padding'; Android resizes (adjustResize default). width:100%
-            (not flex:1) preserves the backdrop's flex-end anchor. */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
-        >
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xxl, insets.bottom) }]}
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-        >
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              Saved Places
-            </AppText>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close saved places"
-            >
-              <X
-                size={18}
-                color={color.text}
-                strokeWidth={2.2} {...decorativeProps}
-              />
-            </Pressable>
-          </View>
-
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Saved Places"
+      closeLabel="Close saved places"
+      glass
+      padded
+      keyboardAvoiding
+      shrinkStyle={styles.kav}
+      cardStyle={keyboardVisible ? styles.cardKeyboard : undefined}
+      minBottomPad={spacing.xxl}
+      testID="savedPlacesModal-backdrop"
+    >
           {!user ? (
             <View style={styles.notice}>
               <AppText variant="body" style={styles.noticeText}>
@@ -450,58 +418,19 @@ export default function SavedPlacesModal({
               keyboardShouldPersistTaps="handled"
             />
           )}
-        </GlassSurface>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage maxHeight
-    // only resolves against a parent with a *definite* height; the card's own
-    // '85%' resolves against the content-sized KAV and is inert. Only the
-    // flex:1 backdrop is definite, so the cap sits on the KAV and the card
-    // shrinks into it. Same stack as FeedbackModal (the reference).
+    // Keyboard up: the pad drops to `md` and does NOT take the safe-area inset,
+    // because the keyboard is covering it. Shipped behaviour, made explicit.
+    cardKeyboard: { paddingBottom: spacing.md },
     kav: {
       width: '100%',
       maxHeight: '85%',
       flexShrink: 1,
-    },
-    card: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xxl,
-      gap: spacing.md,
-      maxHeight: '85%',
-      // G6/SR-099: shrink into the KAV's cap (see the kav block).
-      flexShrink: 1,
-      // The bulk variant owns the surface; clip it to the rounded top.
-      overflow: 'hidden',
-    },
-    headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    title: {
-      fontSize: font.size.xxl,
-      fontWeight: font.weight.bold,
-      flex: 1,
-      color: color.textStrong,
-      letterSpacing: -0.3,
-    },
-    closeBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     notice: {
       backgroundColor: color.warningBg,

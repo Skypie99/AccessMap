@@ -232,6 +232,14 @@ export interface SheetProps {
   /** Let the card FILL the height the floor reserves instead of sitting at the
    *  top of it (SW-42 follow-up: without this a height floor becomes a gap). */
   fill?: boolean;
+  /** Floor for the card's bottom pad, before the safe-area inset is compared
+   *  against it. Default `spacing.sm`.
+   *
+   *  This is a PROP and not a `cardStyle` override on purpose: the pad is
+   *  `Math.max(floor, insets.bottom)`, so a flat paddingBottom in cardStyle
+   *  would silently drop the inset and put content under the home indicator on
+   *  every inset device. */
+  minBottomPad?: number;
   showHandle?: boolean;
   testID?: string;
 }
@@ -254,6 +262,7 @@ export function Sheet({
   keyboardAvoiding = false,
   shrinkStyle,
   fill = false,
+  minBottomPad = spacing.sm,
   showHandle = true,
   testID,
 }: SheetProps) {
@@ -287,7 +296,7 @@ export function Sheet({
   const padPair = [
     padded && styles.cardPadded,
     fill && styles.cardFill,
-    { paddingBottom: Math.max(spacing.sm, insets.bottom) },
+    { paddingBottom: Math.max(minBottomPad, insets.bottom) },
     cardStyle,
   ];
   const card = glass ? (

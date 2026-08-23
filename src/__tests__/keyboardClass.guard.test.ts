@@ -170,15 +170,93 @@ function hasCap(styleText: string, fileSrc: string): boolean {
   if (pct.test(styleText)) return true;
   // (b) a named style — resolve `styles.NAME` against the file's StyleSheet
   for (const m of styleText.matchAll(/styles\.(\w+)/g)) {
-    const block = new RegExp(`\\b${m[1]}:\\s*\\{([\\s\\S]*?)\\n\\s{4}\\},`).exec(fileSrc);
-    if (block && pct.test(block[1])) return true;
+    const block = styleBlock(fileSrc, m[1]);
+    if (block && pct.test(block)) return true;
   }
   return false;
+}
+
+/**
+ * The body of `NAME: { … }` inside a StyleSheet, brace-balanced.
+ *
+ * ⚠ This used to be a regex anchored on `\n\s{4}\},` — a block that closes on
+ * its own line at exactly four spaces. That is how most of this codebase writes
+ * a style, so it worked; but a ONE-LINE block (`kav: { maxHeight: '90%' },`)
+ * never matched, and the resolver returned "no cap" for a style that has one.
+ * A false negative here is the dangerous direction — it reads as a missing
+ * mechanism — and it fired the moment the shared Sheet primitive wrote its KAV
+ * style on one line (2026-08-22). Balancing braces removes the formatting
+ * dependency entirely, so neither layout can fool it.
+ */
+function styleBlock(src: string, name: string): string | null {
+  const at = new RegExp(`\\b${name}:\\s*\\{`).exec(src);
+  if (!at) return null;
+  let depth = 0;
+  let j = at.index + at[0].length - 1;
+  const start = j + 1;
+  for (; j < src.length; j++) {
+    if (src[j] === '{') depth++;
+    else if (src[j] === '}') {
+      depth--;
+      if (depth === 0) return src.slice(start, j);
+    }
+  }
+  return null;
 }
 
 function iosPadding(tag: string): boolean {
   return /behavior=\{[^}]*'padding'/.test(tag);
 }
+
+/**
+ * RECIPE D — DELEGATED (added 2026-08-22, art-direction Phase 3).
+ *
+ * Four input-hosting sheets moved their chrome into `components/ui/Sheet.tsx`
+ * and now opt into the mechanism with `keyboardAvoiding` instead of mounting a
+ * KAV of their own. Scanning their files for `<KeyboardAvoidingView` therefore
+ * finds nothing, and the old rule read that as "no mechanism at all" — which is
+ * the guard doing its job, because from where it stood that is exactly what it
+ * looked like.
+ *
+ * The re-pin does NOT just wave those four through. Delegation is only as good
+ * as the thing delegated to, so this pairs two checks:
+ *   (a) the consumer really opts in (`keyboardAvoiding` on its <Sheet> tag), and
+ *   (b) the PRIMITIVE really implements Recipe F — iOS padding behavior and a
+ *       resolvable percentage cap on the KAV it mounts.
+ *
+ * (b) is new coverage. Before the move, nothing in this suite looked at the
+ * primitive at all; four separate implementations were each checked, and the
+ * shared one that replaced them was invisible. So the class is now guarded in
+ * one more place than it was, not one fewer.
+ */
+const SHEET_PRIMITIVE = 'components/ui/Sheet.tsx';
+const DELEGATED_PROP = 'keyboardAvoiding';
+
+/** Every `<Sheet ...>` open tag's attribute text in a consumer file. */
+function sheetTags(src: string): string[] {
+  const out: string[] = [];
+  const open = `${LT}Sheet`;
+  let i = src.indexOf(open);
+  while (i !== -1) {
+    // Skip `<SheetHeader`, `<SheetPull` and friends — word boundary only.
+    if (/[\s>/]/.test(src[i + open.length] ?? '')) {
+      let depth = 0;
+      let j = i + open.length;
+      for (; j < src.length; j++) {
+        const c = src[j];
+        if (c === '{') depth++;
+        else if (c === '}') depth--;
+        else if (c === '>' && depth === 0) break;
+      }
+      out.push(src.slice(i, j));
+    }
+    i = src.indexOf(open, i + open.length);
+  }
+  return out;
+}
+
+const delegates = (src: string) =>
+  sheetTags(src).some((t) => new RegExp(`\\b${DELEGATED_PROP}\\b`).test(t));
 
 // ---------------------------------------------------------------------------
 
@@ -203,6 +281,7 @@ describe('THE KEYBOARD CLASS — every input-hosting surface carries a mechanism
     '%s — input-hosting sheet carries Recipe F (capped KAV) or Recipe S',
     (rel, info) => {
       if (info.src.includes(INSETS_PROP)) return; // Recipe S satisfies it outright.
+      if (info.rel !== SHEET_PRIMITIVE && delegates(info.src)) return; // Recipe D — proven below.
 
       const tags = kavTags(info.src);
       expect(tags.length).toBeGreaterThan(0); // no mechanism at all
@@ -234,6 +313,41 @@ describe('THE KEYBOARD CLASS — every input-hosting surface carries a mechanism
     } else {
       expect(kavTags(info!.src).some(iosPadding)).toBe(true);
     }
+  });
+
+  it('Recipe D — the primitive every delegate leans on really implements Recipe F', () => {
+    // The other half of the delegation. Without this, `keyboardAvoiding` could
+    // become a no-op in the primitive and four sheets would go silently
+    // unprotected while this suite stayed green.
+    const primitive = all.find((f) => f.rel === SHEET_PRIMITIVE);
+    expect(primitive).toBeDefined();
+    // It has to actually take the prop, or a consumer's opt-in means nothing.
+    expect(primitive!.src).toContain(`${DELEGATED_PROP}?: boolean;`);
+    const tags = kavTags(primitive!.src);
+    expect(tags.length).toBe(1);
+    expect(iosPadding(tags[0])).toBe(true);
+    const style = styleExpr(tags[0]);
+    expect(style).not.toBeNull();
+    expect(hasCap(style!, primitive!.src)).toBe(true);
+  });
+
+  it('Recipe D — every delegate is a real, live consumer (the list drains)', () => {
+    // Same drain discipline as the dismissal standard's ALLOWED: a file that
+    // stops delegating must stop being counted, and the count itself is the
+    // tripwire against a silent mass opt-out.
+    const found = all
+      .filter((f) => f.rel !== SHEET_PRIMITIVE && delegates(f.src))
+      .map((f) => f.rel)
+      .sort();
+    expect(found).toEqual([
+      'components/FilterPresetsModal.tsx',
+      'components/MyReportsModal.tsx',
+      'components/MyWatchedModal.tsx',
+      'components/ReportContentModal.tsx',
+      'components/SavedPlacesModal.tsx',
+    ]);
+    // And each one really hosts an input — otherwise the prop is cargo.
+    for (const rel of found) expect(all.find((f) => f.rel === rel)!.hostsInput).toBe(true);
   });
 
   it('every exemption carries a written reason', () => {
