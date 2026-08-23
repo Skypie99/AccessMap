@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { SheetGrabber } from '@/components/ui/Sheet';
@@ -1302,32 +1303,26 @@ export default function FlagDetailModal({
           <AppText variant="label" style={styles.sectionLabel}>Community check</AppText>
         ) : null}
         {segmentCells.length > 0 ? (
-          <View style={[styles.segment, axRecompose && styles.segmentStacked]}>
-            {segmentCells.map((cell, i) => (
-              <Pressable
-                key={cell.key}
-                onPress={cell.onPress}
-                disabled={busy}
-                style={({ pressed }) => [
-                  styles.segmentCell,
-                  axRecompose && styles.segmentCellStacked,
-                  i > 0 && (axRecompose ? styles.segmentCellStackedDivider : styles.segmentCellDivider),
-                  pressed && styles.segmentCellPressed,
-                  busy && styles.btnDisabled,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={cell.a11yLabel}
-                accessibilityHint={cell.hint}
-                {...a11yToggle({ disabled: busy, busy })}
-              >
-                {busy ? (
-                  <ActivityIndicator size="small" color={color.inkSelect} />
-                ) : (
-                  <AppText variant="label" style={styles.segmentCellText}>{cell.label}</AppText>
-                )}
-              </Pressable>
-            ))}
-          </View>
+          // The control is the shared primitive now. It was BUILT here in
+          // Phase 1b and lifted in Phase 3 — the ghost variant is this recipe
+          // verbatim, inks included (a cell over the worst bulk backdrop reads
+          // 5.22:1 light / 7.80:1 dark, build/02/gsp-bulk-arbiter.txt). F4's
+          // stacking threshold stays the CALLER's, because it is a property of
+          // this column, not of the control.
+          <SegmentedControl
+            variant="ghost"
+            groupLabel="Community check"
+            stacked={axRecompose}
+            cells={segmentCells.map((cell) => ({
+              key: cell.key,
+              label: cell.label,
+              a11yLabel: cell.a11yLabel,
+              hint: cell.hint,
+              onPress: cell.onPress,
+              disabled: busy,
+              busy,
+            }))}
+          />
         ) : null}
         {showDispute ? (
           <Pressable
@@ -2668,42 +2663,6 @@ const makeStyles = (color: ColorTheme) =>
 
     // ── (6) THE SIBLING VERBS ───────────────────────────────────────────────
     communityCheck: { gap: spacing.sm, marginTop: spacing.md },
-    // ONE ghost segmented control where three pills in three fills used to be.
-    // `glassGhostEdge` is the shipped ghost-pill hairline and `inkSelect` the
-    // arbitrated select ink — no new pair, so no new fork. Both were re-measured
-    // on the dense bulk floor anyway: a cell over the worst backdrop reads
-    // 5.22:1 light / 7.80:1 dark (build/02/gsp-bulk-arbiter.txt).
-    segment: {
-      flexDirection: 'row',
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: color.glassGhostEdge,
-      overflow: 'hidden',
-    },
-    // F4 — at 1.5x the cells stop sharing a row rather than squeezing below
-    // their 44pt box.
-    segmentStacked: { flexDirection: 'column' },
-    segmentCell: {
-      flexGrow: 1,
-      flexBasis: 0,
-      minHeight: a11y.minTargetSize,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.sm,
-    },
-    // Stacked, a cell is a full-width row: `flexBasis: 0` in a column would
-    // have three cells share whatever height the container happened to have.
-    segmentCellStacked: { flexBasis: 'auto', alignSelf: 'stretch' },
-    segmentCellDivider: { borderLeftWidth: 1, borderLeftColor: color.glassGhostEdge },
-    segmentCellStackedDivider: { borderTopWidth: 1, borderTopColor: color.glassGhostEdge },
-    segmentCellPressed: { backgroundColor: color.borderPressed },
-    segmentCellText: {
-      color: color.inkSelect,
-      fontWeight: font.weight.semibold,
-      fontSize: font.size.base,
-      textAlign: 'center',
-    },
     // The pinned foot for a triage arrival. A hairline, not a second material —
     // a bar inside a bulk sheet would be the third surface S2 forbids.
     pinnedFoot: {

@@ -15,6 +15,7 @@ import { androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/th
 import { type ColorTheme, type ThemeMode, useColor, useThemeMode } from '@/theme/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppText } from '@/components/ui/AppText';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -226,8 +227,6 @@ function SettingsRow({
 // Light / Dark / System appearance picker — a 3-segment control writing through
 // useThemeMode() (persisted in ThemeContext). 'System' follows the OS setting.
 function AppearanceControl() {
-  const color = useColor();
-  const styles = makeStyles(color);
   const { mode, setMode } = useThemeMode();
   const options: { key: ThemeMode; label: string; Icon: typeof Sun }[] = [
     { key: 'light', label: 'Light', Icon: Sun },
@@ -235,34 +234,30 @@ function AppearanceControl() {
     { key: 'system', label: 'System', Icon: Smartphone },
   ];
   return (
-    <View style={styles.segmentRow} accessibilityRole="radiogroup" accessibilityLabel="Appearance">
-      {options.map(({ key, label, Icon }) => {
-        const selected = mode === key;
-        // Selected pill is opaque (color.surface) -> brandText; unselected sits
-        // on the engineered chip-tint track -> glassChipInk (textMuted forbidden
-        // on the tint/stage).
-        const fg = selected ? color.brandText : color.glassChipInk;
-        return (
-          <Pressable
-            key={key}
-            onPress={() => {
-              setMode(key);
-              hapticSelection();
-            }}
-            style={[styles.segment, selected && styles.segmentActive]}
-            accessibilityRole="radio"
-            {...a11yToggle({ selected })}
-            accessibilityLabel={label}
-            accessibilityHint={`Use ${label.toLowerCase()} appearance`}
-          >
-            <Icon size={18} color={fg} strokeWidth={2.2} />
-            <AppText variant="label" size={font.size.sm} color={fg}>
-              {label}
-            </AppText>
-          </Pressable>
-        );
-      })}
-    </View>
+    // The control itself is the shared primitive (2026-08-22): this was one of
+    // four hand-rolled drawings of one widget. `surface="stage"` is the
+    // arbitrated stage palette this screen was built against in Phase 2c —
+    // glassChipFill/glassChipEdge track, opaque `surface` selected pill,
+    // brandText selected / glassChipInk unselected (textMuted is forbidden on
+    // the tint/stage). Nothing about the ink moved; it moved FILES.
+    <SegmentedControl
+      variant="track"
+      surface="stage"
+      groupRole="radiogroup"
+      groupLabel="Appearance"
+      cellRole="radio"
+      cells={options.map(({ key, label, Icon }) => ({
+        key,
+        label,
+        hint: `Use ${label.toLowerCase()} appearance`,
+        selected: mode === key,
+        onPress: () => {
+          setMode(key);
+          hapticSelection();
+        },
+        renderIcon: (fg: string) => <Icon size={18} color={fg} strokeWidth={2.2} />,
+      }))}
+    />
   );
 }
 
@@ -1071,33 +1066,5 @@ const makeStyles = (color: ColorTheme) =>
     // glyph width — keeps the layout calm.
     rowSpinner: {
       width: 28,
-    },
-    // Appearance segmented control (Light / Dark / System). Recessed track with
-    // a lifted white "selected pill" — the classic premium segmented look.
-    // Engineered chip-tint track (no BlurView — the track sits directly on the
-    // stage; chips/controls tint, they don't blur): glassChipFill + glassChipEdge.
-    // The selected pill (segmentActive) stays opaque surface — a real lifted pill.
-    segmentRow: {
-      flexDirection: 'row',
-      backgroundColor: color.glassChipFill,
-      borderWidth: 1,
-      borderColor: color.glassChipEdge,
-      borderRadius: radius.lg,
-      padding: spacing.tight,
-      gap: spacing.tight,
-    },
-    segment: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.xs,
-      paddingVertical: spacing.sm + 2,
-      borderRadius: radius.md,
-      minHeight: 44,
-    },
-    segmentActive: {
-      backgroundColor: color.surface,
-      ...shadow.e1,
     },
   });

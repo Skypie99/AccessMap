@@ -131,14 +131,34 @@ describe('SW-49 class — FlagDetailModal shares one `busy` across sixteen contr
     //
     // RE-PINNED 2026-08-21 (GSP-02 §2.1). Five pills in four fills became one
     // filled primary (`primaryBtn`), one ghost segmented control whose cells
-    // are generated from a list (`segmentCell`), and a Delete that moved to the
+    // are generated from a list, and a Delete that moved to the
     // More row. The style NAMES moved; the rule did not, and all three of these
     // still swap in an ActivityIndicator while `busy`.
-    for (const name of ['primaryBtn', 'segmentCell', 'deleteBtn']) {
+    for (const name of ['primaryBtn', 'deleteBtn']) {
       const idx = src.indexOf(`styles.${name},`);
       expect(`${name} found: ${idx > -1}`).toBe(`${name} found: true`);
       expect(src.slice(idx, idx + 900)).toContain('ActivityIndicator');
     }
+
+    /*
+     * RE-PINNED AGAIN 2026-08-22 (GSP-07 §7.1). The third verb carrier — the
+     * segmented cells — moved into `components/ui/SegmentedControl.tsx`. The
+     * rule is unchanged and is now checked in BOTH places, because it takes two
+     * facts to be true:
+     *   (a) this sheet still hands the control its `busy`, and
+     *   (b) the control still answers `busy` with a SPINNER, not just a dim.
+     * (b) is the half that matters. A primitive that quietly dropped the
+     * ActivityIndicator would downgrade every consumer at once, and checking
+     * only this file could never see it.
+     */
+    expect(src).toContain('<SegmentedControl');
+    expect(src).toMatch(/disabled: busy,\s*\n\s*busy,/);
+    const segmented = read('components/ui/SegmentedControl.tsx');
+    const cellIdx = segmented.indexOf('cell.busy ? (');
+    expect(`SegmentedControl busy branch found: ${cellIdx > -1}`).toBe(
+      'SegmentedControl busy branch found: true',
+    );
+    expect(segmented.slice(cellIdx, cellIdx + 400)).toContain('ActivityIndicator');
   });
 });
 
