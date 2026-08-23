@@ -27,21 +27,24 @@ interface ReleaseNote {
 // CMS / no markdown parser to drag in for a 30-line feature.
 const RELEASES: ReleaseNote[] = [
   {
-    // v4.1.1 — drafted 2026-08-22 from what actually shipped in the Flagstone
+    // v4.1.1 — written from what actually shipped in the Flagstone
     // art-direction series (build phases 00-07) and the sim-walk waves.
-    // SKY-EDITABLE, and NOT YET RATIFIED: confirm every bullet and set `date`
-    // to the real public release date before this goes to the App Store. The
-    // version string itself is read from app.json, not from here — this entry
-    // only has to TELL THE TRUTH about what changed.
-    date: '2026-08-22',
+    // WORDING DELEGATED BY SKY 2026-08-23 ("make it whatever you think").
+    // Recorded as delegated, not as ratified — she chose not to write these
+    // herself, which is a different thing from having approved each line.
+    // Every bullet describes something that really shipped; anything that
+    // could not be stated plainly was left out rather than softened.
+    // `date` is the entry's public release date — move it if the App Store
+    // release slips. The version string itself comes from app.json.
+    date: '2026-08-23',
     title: 'v4.1.1 — One flag, read the same way everywhere',
     items: [
       'One consistent flag card across Home, Nearby and Tasks, so a barrier reads the same wherever you meet it',
       'A rebuilt barrier detail sheet: severity, what it means, and the description come first, with one clear main action instead of a wall of buttons',
       'Large text sizes are properly supported throughout — headings stay above body text, descriptions stop clipping, and the report form shows severity as a readable list instead of five small circles',
-      'Every sheet in the app now behaves the same way and can be pulled down to dismiss',
+      'Sheets across the app now behave the same way, and can be pulled down to dismiss',
       'A clearer report form, with the submit button staying disabled until you have picked a severity',
-      'Better VoiceOver support: screens announce when they finish loading, and actions announce their outcome',
+      'Better VoiceOver support: screens announce when they have finished loading, and actions announce their outcome',
       'Reduce Motion and Reduce Transparency are respected across the app — sheets go solid and still look like the same app',
       'A refreshed onboarding walkthrough that matches the rest of the app',
       'Clearer empty states that tell you what to do next instead of just saying there is nothing here',
