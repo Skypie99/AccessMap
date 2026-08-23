@@ -14,7 +14,16 @@
  */
 
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View, type Text, type ViewStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  type Text,
+  type ViewStyle,
+} from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
@@ -32,6 +41,20 @@ export interface SheetHeaderProps {
   closeLabel?: string;
   /** Optional node rendered in place of the close button (e.g. an action). */
   right?: React.ReactNode;
+  /** Optional node rendered BESIDE the close button, before it. The refresh
+   *  circles the list sheets carry (A11Y-222) are this, not `right` — they sit
+   *  next to Close, they do not replace it. */
+  accessory?: React.ReactNode;
+  /** Second line under the title, inside the header block (T3: one container,
+   *  one multiplier). Achievements' "N of M earned" is this. */
+  subtitle?: string;
+  /** Spoken form of `subtitle` when the written one is abbreviated. */
+  subtitleLabel?: string;
+  /** Hint on the close button, for the sheets whose siblings carry one. */
+  closeHint?: string;
+  /** Drop the header's own horizontal gutter, because the CARD owns it.
+   *  `Sheet padded` sets this; a standalone caller normally does not. */
+  flush?: boolean;
   /** When set, screen-reader focus moves to the title on open (WCAG 2.4.3).
    *  `Sheet` wires this automatically; standalone callers can pass their own. */
   titleRef?: React.Ref<Text>;
@@ -87,22 +110,53 @@ export function SheetGrabber() {
   );
 }
 
-export function SheetHeader({ title, onClose, showHandle = true, closeLabel, right, titleRef }: SheetHeaderProps) {
+export function SheetHeader({
+  title,
+  onClose,
+  showHandle = true,
+  closeLabel,
+  closeHint,
+  right,
+  accessory,
+  subtitle,
+  subtitleLabel,
+  flush,
+  titleRef,
+}: SheetHeaderProps) {
   const color = useColor();
   return (
     <>
       {showHandle ? <SheetGrabber /> : null}
-      <View style={styles.headerRow}>
-        <AppText
-          ref={titleRef}
-          variant="heading"
-          size={font.size.xl}
-          color={color.textStrong}
-          style={styles.title}
-          accessibilityRole="header"
-        >
-          {title}
-        </AppText>
+      <View style={[styles.headerRow, flush && styles.headerRowFlush]}>
+        <View style={styles.titleWrap}>
+          <AppText
+            ref={titleRef}
+            variant="heading"
+            size={font.size.xl}
+            color={color.textStrong}
+            style={styles.title}
+            accessibilityRole="header"
+            // T4 — a sheet title shrinks to 0.8 and then WRAPS. It never
+            // clamps to one line, which is what the Leaderboard's own header
+            // did before it moved in here (D: title numberOfLines).
+            adjustsFontSizeToFit
+            numberOfLines={2}
+            minimumFontScale={0.8}
+          >
+            {title}
+          </AppText>
+          {subtitle ? (
+            <AppText
+              variant="body"
+              size={font.size.sm}
+              color={color.inkGlassMuted}
+              accessibilityLabel={subtitleLabel}
+            >
+              {subtitle}
+            </AppText>
+          ) : null}
+        </View>
+        {accessory}
         {right ?? (
           <Pressable
             onPress={onClose}
@@ -113,6 +167,7 @@ export function SheetHeader({ title, onClose, showHandle = true, closeLabel, rig
             ]}
             accessibilityRole="button"
             accessibilityLabel={closeLabel ?? `Close ${title}`}
+            accessibilityHint={closeHint}
           >
             <X size={18} color={color.text} strokeWidth={2.2} />
           </Pressable>
@@ -131,10 +186,52 @@ export interface SheetProps {
   cardStyle?: ViewStyle;
   /** Optional right-side header accessory (replaces the close button). */
   headerRight?: React.ReactNode;
+  /** Optional control BESIDE Close (the list sheets' Refresh circle). */
+  headerAccessory?: React.ReactNode;
+  /** Second header line, and its spoken form. */
+  subtitle?: string;
+  subtitleLabel?: string;
+  /** Close button label + hint, when the default `Close {title}` is not the
+   *  wording the surface already ships. */
+  closeLabel?: string;
+  closeHint?: string;
   /** Render the card as bulk-glass (the ratified modal material) instead of an
    *  opaque surface. Default false — the opaque path is byte-identical to prior
    *  behavior, so every non-glass consumer is unchanged (B4, GLASS.md). */
   glass?: boolean;
+  /** Forward `forceEngineered` to the bulk GlassSurface — the engineered
+   *  micro-gradient instead of a true BlurView on iOS.
+   *
+   *  ⚠ THIS IS A MATERIAL CHOICE, NOT A STYLE ONE, and it is per-adopter on
+   *  purpose. Ten of the sheets that moved in here (2026-08-22) shipped
+   *  engineered and three shipped true blur; flattening either way would have
+   *  changed how the estate reads on device, and the bulk floor is an open
+   *  NEEDS-DEVICE row (D8). So each adopter keeps exactly what it had, and this
+   *  prop is the seam that lets it. Do not default it.
+   */
+  engineered?: boolean;
+  /** The CARD owns the gutter: paddingHorizontal `xl` + `gap md`, and the
+   *  header drops its own horizontal padding so the two do not stack.
+   *
+   *  Every sheet that moved in here was already built this way — its body
+   *  children carry no padding of their own and rely on the card's. `padded`
+   *  is what let those bodies transplant unchanged. */
+  padded?: boolean;
+  /** Wrap the card in a KeyboardAvoidingView (the input-hosting sheets).
+   *
+   *  ⚠ WHERE THE CAP LIVES (G6/SR-099). A percentage height resolves only
+   *  against a parent with a DEFINITE height. The backdrop's `flex:1` is the
+   *  only definite one in the stack, so with a KAV present the cap has to sit
+   *  ON THE KAV — a maxHeight below it is inert. `shrinkStyle` therefore lands
+   *  on whichever node is the definite-height child: the KAV when there is one,
+   *  the shadow wrapper when there is not. */
+  keyboardAvoiding?: boolean;
+  /** Extra style for that definite-height node — a different cap, or the SW-42
+   *  floor (`minHeight`) the two list sheets carry. */
+  shrinkStyle?: ViewStyle;
+  /** Let the card FILL the height the floor reserves instead of sitting at the
+   *  top of it (SW-42 follow-up: without this a height floor becomes a gap). */
+  fill?: boolean;
   showHandle?: boolean;
   testID?: string;
 }
@@ -146,7 +243,17 @@ export function Sheet({
   children,
   cardStyle,
   headerRight,
+  headerAccessory,
+  subtitle,
+  subtitleLabel,
+  closeLabel,
+  closeHint,
   glass = false,
+  engineered = false,
+  padded = false,
+  keyboardAvoiding = false,
+  shrinkStyle,
+  fill = false,
   showHandle = true,
   testID,
 }: SheetProps) {
@@ -161,9 +268,65 @@ export function Sheet({
   const titleRef = useFocusOnOpen<Text>(visible);
   const inner = (
     <>
-      <SheetHeader title={title} onClose={onClose} showHandle={showHandle} right={headerRight} titleRef={titleRef} />
+      <SheetHeader
+        title={title}
+        onClose={onClose}
+        showHandle={showHandle}
+        right={headerRight}
+        accessory={headerAccessory}
+        subtitle={subtitle}
+        subtitleLabel={subtitleLabel}
+        closeLabel={closeLabel}
+        closeHint={closeHint}
+        flush={padded}
+        titleRef={titleRef}
+      />
       {children}
     </>
+  );
+  const padPair = [
+    padded && styles.cardPadded,
+    fill && styles.cardFill,
+    { paddingBottom: Math.max(spacing.sm, insets.bottom) },
+    cardStyle,
+  ];
+  const card = glass ? (
+    // Bulk-glass card: the variant owns the surface, and overflow:hidden
+    // clips it to the rounded top — so (per GlassSurface's contract) the
+    // up-shadow lives on the outer wrapper, since an overflow:hidden view
+    // clips its own shadow. Recipe identical to FeedbackModal/AboutScreen.
+    <View
+      style={[
+        styles.cardShadow,
+        bulkGlassShadow(color),
+        fill && styles.cardFill,
+        // With a KAV present the cap belongs to the KAV, not here.
+        keyboardAvoiding ? null : shrinkStyle,
+      ]}
+    >
+      <GlassSurface
+        variant="bulk"
+        borderRadius={0}
+        forceEngineered={engineered}
+        // Inset pad sits BEFORE cardStyle so a caller's documented
+        // paddingBottom override still wins (sweep finding #4).
+        style={[styles.card, styles.cardGlass, ...padPair]}
+      >
+        {inner}
+      </GlassSurface>
+    </View>
+  ) : (
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: color.surface },
+        shadow.e3,
+        ...padPair,
+        keyboardAvoiding ? null : shrinkStyle,
+      ]}
+    >
+      {inner}
+    </View>
   );
   return (
     <Modal
@@ -187,34 +350,15 @@ export function Sheet({
         onAccessibilityEscape={onClose}
         testID={testID}
       >
-        {glass ? (
-          // Bulk-glass card: the variant owns the surface, and overflow:hidden
-          // clips it to the rounded top — so (per GlassSurface's contract) the
-          // up-shadow lives on the outer wrapper, since an overflow:hidden view
-          // clips its own shadow. Recipe identical to FeedbackModal/AboutScreen.
-          <View style={[styles.cardShadow, bulkGlassShadow(color)]}>
-            <GlassSurface
-              variant="bulk"
-              borderRadius={0}
-              // Inset pad sits BEFORE cardStyle so a caller's documented
-              // paddingBottom override still wins (sweep finding #4).
-              style={[styles.card, styles.cardGlass, { paddingBottom: Math.max(spacing.sm, insets.bottom) }, cardStyle]}
-            >
-              {inner}
-            </GlassSurface>
-          </View>
-        ) : (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: color.surface },
-              shadow.e3,
-              { paddingBottom: Math.max(spacing.sm, insets.bottom) },
-              cardStyle,
-            ]}
+        {keyboardAvoiding ? (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={[styles.kav, shrinkStyle]}
           >
-            {inner}
-          </View>
+            {card}
+          </KeyboardAvoidingView>
+        ) : (
+          card
         )}
       </View>
     </Modal>
@@ -249,6 +393,16 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
   },
+  // The KAV is the definite-height child when it is present, so it — not the
+  // shadow wrapper — carries the cap (and the SW-42 floor, when a caller
+  // passes one through `shrinkStyle`). See the prop's docblock.
+  kav: { width: '100%', maxHeight: '90%', flexShrink: 1 },
+  // `padded`: the CARD owns the gutter and the inter-child rhythm, so a
+  // transplanted body keeps the geometry it was written against.
+  cardPadded: { paddingHorizontal: spacing.xl, gap: spacing.md },
+  // SW-42 follow-up: fill the height a floor reserves rather than sitting at
+  // the top of it, which would turn a height floor into a gap.
+  cardFill: { flexGrow: 1 },
   handleWrap: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.tight },
   handle: { width: 36, height: 4, borderRadius: radius.full },
   headerRow: {
@@ -259,7 +413,11 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     paddingBottom: spacing.sm,
   },
+  titleWrap: { flex: 1, gap: 2 },
   title: { flex: 1 },
+  // `padded` case: the card already supplies the gutter, so the header must
+  // not add a second one.
+  headerRowFlush: { paddingHorizontal: 0 },
   closeBtn: {
     // 44 — the app's circle-button visual standard (HeaderActions,
     // SearchInputRow, UpdateBanner are all 44). This was the one shared

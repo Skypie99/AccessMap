@@ -30,6 +30,10 @@ export type { EmptyStateProps } from './EmptyState';
 export { Sheet, SheetHeader } from './Sheet';
 export type { SheetProps, SheetHeaderProps } from './Sheet';
 
+// One drawing of a segmented control (2026-08-22, art-direction Phase 3).
+export { SegmentedControl } from './SegmentedControl';
+export type { SegmentedCell, SegmentedControlProps } from './SegmentedControl';
+
 export { GlassSurface } from './GlassSurface';
 
 export { OverflowFade } from './OverflowFade';
