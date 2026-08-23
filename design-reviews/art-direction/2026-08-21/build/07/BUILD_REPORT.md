@@ -283,8 +283,20 @@ region, the iOS gate, the string's home in `copy.ts`. It cannot prove the
 utterance, its timing, or that the loading and completion announcements do not
 tread on each other. That is a VoiceOver session on a real device.
 
-**The pull gesture's FEEL** on the other eleven consumers. I verified one. The
-threshold, the spring and the interaction with each list are a device pass.
+**The pull gesture's FEEL** on the other eleven consumers. I verified one by
+hand — but the CORRECTNESS chain is closed by tests at both ends, which is
+better than this section first said:
+
+| Link | Proven by |
+|---|---|
+| `useAtTop` flips false on scroll, true at top, and counts iOS rubber-band overscroll as "at top" | `SheetPull.test.tsx` (pre-existing) |
+| every `<Sheet>` with a scroller in its body passes `atTop` | `sheetPull.guard` (new, this phase) |
+| `SheetPull` arms only when `enabled && atTop` | `SheetPull.test.tsx` (pre-existing) |
+
+So "a downward drag dismisses when the user meant to scroll" is covered, not
+merely guarded. What is left for a device is the THRESHOLD and the SPRING — how
+far and how fast a pull has to be before it commits, on each list — which no
+test can judge.
 
 ---
 

@@ -557,7 +557,16 @@ what the app did.
 
 | # | Change | Surface | Why |
 |---|---|---|---|
-| W-07 | `Severity ↓` -> `Severity` + a Lucide arrow icon | MyWatched sort chips | I1/I3. U+2193 rendered in whatever the body face had for it, did not scale or tint with the label, and sat in the VISIBLE string while the SPOKEN label said "Sort by highest severity first" — the two versions of one control disagreed. The spoken label is unchanged. |
+| W-37 | `Severity ↓` -> `Severity` + a Lucide arrow icon | MyWatched sort chips | I1/I3. U+2193 rendered in whatever the body face had for it, did not scale or tint with the label, and sat in the VISIBLE string while the SPOKEN label said "Sort by highest severity first" — the two versions of one control disagreed. The spoken label is unchanged. |
+
+> ⚠ **A NUMBERING NOTE, because you ratify by ID.** This entry was first written
+> as `W-07` and is renumbered to **W-37** (the next free number globally). While
+> renumbering it I found that `W-05` through `W-09` are ALREADY used twice in
+> this ledger — once in Prompt 02's FlagDetail block and again in Prompt 05's
+> onboarding block. That collision predates Phase 3 and I have not touched the
+> earlier entries, because they are other prompts' records and two of them are
+> ratified. **When you ratify by ID, say which prompt's block you mean for
+> W-05..W-09.**
 
 ### NOT CHANGED, and worth stating
 
