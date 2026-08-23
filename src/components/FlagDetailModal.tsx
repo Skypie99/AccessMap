@@ -2474,7 +2474,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: { fontSize: font.size.lg, color: color.text, fontWeight: font.weight.bold },
     body: { flexShrink: 1 },
     bodyContent: { gap: spacing.sm, paddingBottom: spacing.tight },
     // The pinned foot floats over the body's last inch. X4 banked that as
@@ -2877,10 +2876,6 @@ const makeStyles = (color: ColorTheme) =>
     commentsSpinner: {
       marginTop: spacing.sm,
       alignSelf: 'center',
-    },
-    commentsEmptyText: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
     },
     commentsList: {
       gap: spacing.tight,

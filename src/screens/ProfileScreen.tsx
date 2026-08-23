@@ -2587,12 +2587,6 @@ const makeStyles = (color: ColorTheme) =>
     // (No opacity on the subtitle — a translucent ink over glass hazes below AA.)
     nearestBtnTitle: { fontSize: font.size.md, fontWeight: font.weight.bold, color: color.brandOnSoft },
     nearestBtnSubtitle: { fontSize: font.size.xs, color: color.brandOnSoft },
-    nearestBtnChevron: {
-      fontSize: font.size.xxl,
-      color: color.brand,
-      paddingHorizontal: spacing.tight,
-      fontWeight: font.weight.bold,
-    },
     // ONE card, three cells. Material via <GlassSurface variant="row">; no bg
     // here. radius/padding/shadow stay on the outer style.
     statsRow: {

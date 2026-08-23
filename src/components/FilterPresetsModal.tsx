@@ -638,12 +638,6 @@ const makeStyles = (color: ColorTheme) =>
       color: color.textOnBrand,
       fontWeight: font.weight.bold,
     },
-    center: { alignItems: 'center', padding: spacing.xxl, gap: spacing.sm },
-    subtitle: {
-      fontSize: font.size.sm,
-      color: color.inkGlassMuted,
-      fontFamily: font.family.bodyMedium,
-    },
     emptyWrap: {
       alignItems: 'center',
       gap: spacing.sm,

@@ -177,5 +177,4 @@ const makeStyles = (color: ColorTheme) =>
     justifyContent: 'center',
   },
   closeBtnPressed: { backgroundColor: color.overlayBtnPressed },
-  closeBtnText: { fontSize: font.size.xl, color: color.surface, fontWeight: '700' },
 });

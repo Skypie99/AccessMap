@@ -401,11 +401,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: {
-      fontSize: font.size.lg,
-      color: color.text,
-      fontWeight: font.weight.bold,
-    },
     // Chip row sits below the header and above the list. Layout mirrors
     // the NearbyFlagsModal chip bar so the two share a visual language —
     // same height, same pill radius, same active fill colour.

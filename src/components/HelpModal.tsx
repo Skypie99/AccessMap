@@ -301,11 +301,6 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    closeBtnText: {
-      fontSize: font.size.lg,
-      color: color.text,
-      fontWeight: font.weight.bold,
-    },
     body: { flexShrink: 1 },
     bodyContent: {
       gap: spacing.sm,

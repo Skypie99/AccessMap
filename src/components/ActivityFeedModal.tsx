@@ -417,13 +417,6 @@ const makeStyles = (color: ColorTheme) =>
       padding: spacing.xxl,
       gap: spacing.sm,
     },
-    subtitle: {
-      fontSize: font.size.sm,
-      color: color.inkGlassMuted,
-      fontFamily: font.family.bodyMedium,
-      textAlign: 'center',
-      lineHeight: 19,
-    },
     list: { paddingTop: spacing.tight, paddingBottom: spacing.md },
     sectionHeader: {
       flexDirection: 'row',
@@ -476,7 +469,6 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     viewOnMapBtnPressed: { opacity: 0.6, backgroundColor: color.borderPressed },
-    viewOnMapGlyph: { fontSize: font.size.base },
     rowBody: { flexDirection: 'row', gap: spacing.md },
     thumb: {
       width: 56,

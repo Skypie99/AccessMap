@@ -527,7 +527,6 @@ function makeStyles(color: ColorTheme) {
       textAlign: 'right',
     },
     stateWrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: spacing.xl },
-    stateIcon: { fontSize: 40, marginBottom: spacing.sm },
     stateText: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center' },
     stateHint: {
       fontSize: font.size.xs,

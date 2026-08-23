@@ -131,5 +131,4 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     dismissBtnPressed: { backgroundColor: color.brandSoft },
-    dismissText: { fontSize: font.size.base, color: color.brandTextAlt, fontWeight: '700' },
   });

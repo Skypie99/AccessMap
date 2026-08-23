@@ -384,12 +384,6 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     removeDiscPressed: { backgroundColor: 'rgba(0,0,0,0.82)' },
-    removeIcon: {
-      color: color.textOnBrand,
-      fontSize: font.size.sm,
-      fontWeight: font.weight.bold,
-      lineHeight: 15,
-    },
     addThumb: {
       alignItems: 'center',
       justifyContent: 'center',
@@ -421,7 +415,6 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       gap: 4,
     },
-    emptyIcon: { fontSize: 22 },
     emptyLabel: {
       fontSize: font.size.xs,
       color: color.textMuted,
@@ -483,5 +476,4 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     lightboxClosePressed: { backgroundColor: color.overlayBtnPressed },
-    lightboxCloseText: { fontSize: font.size.xl, color: color.textOnBrand, fontWeight: font.weight.bold },
   });

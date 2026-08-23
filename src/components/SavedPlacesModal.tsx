@@ -485,7 +485,6 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.brandSoft,
     },
     addBtnDisabled: { opacity: 0.55 },
-    addBtnGlyph: { fontSize: font.size.xl },
     addBtnText: {
       fontSize: font.size.base,
       color: color.brandTextAlt,
@@ -526,8 +525,6 @@ const makeStyles = (color: ColorTheme) =>
     saveBtn: { backgroundColor: color.brand },
     saveBtnDisabled: { opacity: 0.6 },
     saveBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold },
-    center: { alignItems: 'center', padding: spacing.xxl, gap: spacing.sm },
-    subtitle: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium },
     emptyWrap: {
       alignItems: 'center',
       gap: spacing.sm,
@@ -566,7 +563,6 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.surfaceMuted,
       opacity: 0.92,
     },
-    rowGlyph: { fontSize: 22 },
     rowText: { flex: 1, gap: 2 },
     rowName: {
       fontSize: font.size.lg,
@@ -583,9 +579,4 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     removeBtnPressed: { opacity: 0.7 },
-    removeBtnText: {
-      fontSize: font.size.lg,
-      color: color.error,
-      fontWeight: font.weight.bold,
-    },
   });

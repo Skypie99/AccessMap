@@ -2272,7 +2272,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     },
     errorBannerBusy: { opacity: 0.85 },
     errorBannerPressed: { backgroundColor: color.errorPressed },
-    errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
     errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     // Offline data notice — uses warning tokens so it's visually distinct from
     // the red error banner but still draws the eye. Wraps `warningBg`/`warningFg`
@@ -2289,7 +2288,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       alignItems: 'center',
       minHeight: 44,
     },
-    offlineBannerIcon: { fontSize: font.size.lg },
     offlineBannerText: {
       color: color.warningFg,
       fontSize: font.size.sm,
@@ -2411,7 +2409,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // It inherits the header's size, tracking and ink — it is part of the same
     // label, not a second object with its own voice.
     sectionCount: { fontVariant: ['tabular-nums'] },
-    title: { fontSize: font.size.xl, fontWeight: font.weight.semibold },
     // The card is a pane of ROW GLASS (variant="row": i=12 blur + 0.70 floor +
     // specular top hairline + edge — GlassSurface supplies all of it). The
     // Pressable outer owns margins + press feedback; this style is the pane's
@@ -2644,20 +2641,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       gap: spacing.sm,
       // No fill — the row sits on the chrome pane's glass.
     },
-    mineChip: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm - 1,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    mineChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    mineChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk },
-    mineChipTextActive: { color: color.textOnBrand },
     // BP11 one press vocabulary: the neutral pressed fill shared by the mine /
     // category / sort chips. Inactive chips only (active chips keep their ctaFill);
     // glassChipInk stays full opacity and AA on borderPressed in both schemes.
@@ -2722,20 +2705,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       justifyContent: 'center',
       borderRadius: radius.circle,
     },
-    catChip: {
-      minHeight: 44, // WCAG 2.5.5: was 36pt (below 44pt project standard)
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    catChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    catChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.glassChipInk, flexShrink: 0 },
-    catChipTextActive: { color: color.textOnBrand },
     // Sort row — mirrors sevFilterRow's look, with an explicit "Sort:" label
     // before the chips so sighted users get a hint distinguishing it from
     // the severity row above. The label is a11y-hidden because the chip
@@ -2756,22 +2725,6 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       color: color.inkGlassMuted,
       marginRight: 2,
     },
-    sortChip: {
-      flexGrow: 1,
-      flexBasis: 0,
-      minHeight: 44,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.sm,
-      borderRadius: radius.circle,
-      backgroundColor: chipFill,
-      borderWidth: 1,
-      borderColor: chipEdge,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    sortChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
-    sortChipText: { fontSize: font.size.sm, fontWeight: font.weight.bold, color: color.glassChipInk },
-    sortChipTextActive: { color: color.textOnBrand },
     // Bulk-select entry — a discoverable button for SR users and anyone
     // unfamiliar with the long-press gesture. Tinted to match the sort chip's
     // accent.

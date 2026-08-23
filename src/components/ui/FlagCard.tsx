@@ -216,8 +216,6 @@ export function MonoDistance({
 // Declared apart from makeStyles: this pair is theme-independent, and
 // MonoDistance is used by screens that build their own StyleSheet.
 const styles_mono = StyleSheet.create({
-  // T1: TABULAR figures, so a column of distances stays a column instead of
-  // shuffling sideways as 1s and 8s trade places. The face alone would not.
   tabular: { fontVariant: ['tabular-nums'] },
 });
 

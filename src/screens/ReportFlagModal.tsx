@@ -1970,10 +1970,6 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.sm,
       marginBottom: spacing.xs,
     },
-    photoNudgeIcon: {
-      fontSize: font.size.xl,
-      lineHeight: 22,
-    },
     photoNudgeBody: {
       flex: 1,
       fontSize: font.size.xs,
@@ -2031,7 +2027,6 @@ const makeStyles = (color: ColorTheme) =>
       flexShrink: 1,
       flexBasis: '60%',
     },
-    anonBannerIcon: { fontSize: 16 },
     anonBannerBody: { flex: 1 },
     anonBannerTitle: {
       fontSize: 13,
@@ -2270,9 +2265,5 @@ const makeStyles = (color: ColorTheme) =>
     disabilityTagChipActive: {
       backgroundColor: color.brandText,
       borderColor: color.brandText,
-    },
-    disabilityTagIcon: {
-      fontSize: font.size.md,
-      lineHeight: 19,
     },
   });

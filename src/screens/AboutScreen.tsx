@@ -319,7 +319,6 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: spacing.xs,
       borderRadius: radius.full,
     },
-    heroBadgeIcon: { fontSize: font.size.lg },
     heroBadgeText: {
       color: color.brandOnSoft,
       fontWeight: font.weight.bold,

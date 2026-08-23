@@ -3818,7 +3818,6 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.glassChipEdge,
     },
     sevPillText: { fontSize: font.size.sm, color: color.glassChipInk, fontWeight: font.weight.bold },
-    sevPillTextActive: { color: color.textOnBrand },
     statusHint: { fontSize: font.size.caption, color: color.warningFg, marginTop: spacing.tight },
     banner: {
       alignSelf: 'center',
@@ -3879,7 +3878,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     errorBannerBusy: { opacity: 0.85 },
     errorBannerPressed: { backgroundColor: color.errorPressed },
-    errorBannerIcon: { color: color.textOnBrand, fontSize: font.size.xl, fontWeight: font.weight.bold },
     errorBannerText: { color: color.textOnBrand, fontSize: font.size.sm, fontWeight: font.weight.semibold, flex: 1 },
     emptyCard: {
       // Row-tier Deep Field material (GlassSurface variant="row" forceEngineered

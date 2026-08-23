@@ -101,8 +101,6 @@ const makeStyles = (color: ColorTheme) =>
     },
     iconCircleEarned: { backgroundColor: color.achievementEarnedBg }, // earned-state amber wash — token carries a dark-mode variant (#3D2A00)
     iconCircleLocked: { backgroundColor: color.surfaceNeutral },
-    icon: { fontSize: font.size.xxl - 2 },
-    iconDimmed: { opacity: 0.55 },
     rowText: { flex: 1, gap: 2 },
     rowTitle: {
       fontSize: font.size.md,

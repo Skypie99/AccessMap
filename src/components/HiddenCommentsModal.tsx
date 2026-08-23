@@ -465,7 +465,6 @@ const makeStyles = (color: ColorTheme) =>
       borderLeftColor: color.error,
     },
     noticeText: { fontSize: font.size.sm, color: color.errorFg, lineHeight: 18 },
-    center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     list: { paddingBottom: spacing.sm },
     separator: { height: 1, backgroundColor: color.borderSubtle },
     row: {

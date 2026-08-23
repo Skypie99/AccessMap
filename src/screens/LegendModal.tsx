@@ -337,7 +337,6 @@ const makeStyles = (color: ColorTheme) =>
     alignItems: 'center',
     justifyContent: 'center',
   },
-  catIconText: { fontSize: font.size.lg },
   // Status legend swatches — miniature pin representations (decorative; the
   // meaning is carried by the row text). The double ring = anonymous provenance;
   // the checkmark = resolved. Both keep the severity fill (S1 / L8-7).
