@@ -5,7 +5,7 @@ import { errorMessage } from './errors';
  * Where user feedback goes. Single source of truth — change here if the
  * owner email ever moves.
  */
-export const FEEDBACK_EMAIL = 'skylerhalisky@gmail.com';
+export const FEEDBACK_EMAIL = 'support@skypistudio.com';
 
 /**
  * Feedback categories. The user picks one in the modal; we tag the

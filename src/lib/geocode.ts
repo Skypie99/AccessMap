@@ -25,7 +25,7 @@ const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
 // Identifies the app for Nominatim's logs per their policy. Includes the
 // maintainer's email as a contact in case usage gets flagged. Bump the
 // version when changing geocoding behavior so logs can be correlated.
-const USER_AGENT = 'Flagstone/1.0 (skylerhalisky@gmail.com)';
+const USER_AGENT = 'Flagstone/1.0 (support@skypistudio.com)';
 
 /**
  * fetch() against Nominatim with an 8s hard timeout, combined with the caller's

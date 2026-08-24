@@ -37,7 +37,7 @@ describe('FEEDBACK_EMAIL', () => {
   it('points at the maintainer inbox', () => {
     // If this assertion ever flips, every feedback message in the app
     // would silently redirect — make the change loud.
-    expect(FEEDBACK_EMAIL).toBe('skylerhalisky@gmail.com');
+    expect(FEEDBACK_EMAIL).toBe('support@skypistudio.com');
   });
 });
 

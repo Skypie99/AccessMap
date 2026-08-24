@@ -768,7 +768,7 @@ export const TERMS_SECTIONS = [
   },
   {
     heading: 'Contact.',
-    body: 'Questions or concerns? Reach me at skylerhalisky@gmail.com. Flagstone is made in Canada and operates under the laws of British Columbia.',
+    body: 'Questions or concerns? Reach me at support@skypistudio.com. Flagstone is made in Canada and operates under the laws of British Columbia.',
   },
 ] as const;
 
@@ -845,7 +845,7 @@ export const PRIVACY_EFFECTIVE = 'Effective 2026-07-29 · v1.0';
 export const PRIVACY_SECTIONS = [
   {
     heading: 'Who runs this.',
-    body: 'Flagstone is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email skylerhalisky@gmail.com and it comes straight to me.',
+    body: 'Flagstone is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email support@skypistudio.com and it comes straight to me.',
   },
   {
     heading: 'The short version.',
@@ -893,7 +893,7 @@ export const PRIVACY_SECTIONS = [
   },
   {
     heading: 'Your rights.',
-    body: "Under Canadian privacy law (PIPEDA) you can ask what I hold about you, ask for a copy, and ask me to correct or delete it. Email skylerhalisky@gmail.com and I'll sort it out.",
+    body: "Under Canadian privacy law (PIPEDA) you can ask what I hold about you, ask for a copy, and ask me to correct or delete it. Email support@skypistudio.com and I'll sort it out.",
   },
   {
     heading: 'Changes.',

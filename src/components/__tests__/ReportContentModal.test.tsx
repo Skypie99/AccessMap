@@ -28,7 +28,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import ReportContentModal from '../ReportContentModal';
 import { SharedModalsProvider } from '@/lib/sharedModalsContext';
 import { buildReportBody, type ReportTarget, type SubmitReportResult } from '@/lib/reports';
-import type { SendFeedbackResult } from '@/lib/feedback';
+import { FEEDBACK_EMAIL, type SendFeedbackResult } from '@/lib/feedback';
 import {
   REPORT_CATEGORIES,
   REPORT_FAILED_TITLE,
@@ -360,7 +360,7 @@ describe('ReportContentModal — the submit ladder', () => {
     await waitFor(() => expect(mockNotify).toHaveBeenCalled());
     expect(mockNotify).toHaveBeenCalledWith(
       REPORT_FAILED_TITLE,
-      reportFailedBody('skylerhalisky@gmail.com'),
+      reportFailedBody(FEEDBACK_EMAIL),
     );
     // Staying open is the point: the typed reason is still recoverable.
     expect(onClose).not.toHaveBeenCalled();

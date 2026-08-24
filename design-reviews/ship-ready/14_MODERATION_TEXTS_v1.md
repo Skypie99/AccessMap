@@ -28,7 +28,7 @@ Flagstone Terms & Community Guidelines Effective 2026-07-27 · v1.0
 
 **Changes.** If these terms ever change, the new version will live right here with a new date at the top.
 
-**Contact.** Questions or concerns? Reach me at skylerhalisky@gmail.com. Flagstone is made in Canada and operates under the laws of British Columbia.
+**Contact.** Questions or concerns? Reach me at support@skypistudio.com. Flagstone is made in Canada and operates under the laws of British Columbia.
 
 ## 2 · Content filter: policy + copy (leg 1.2(a))
 
@@ -66,7 +66,7 @@ Mission statement RATIFIED (v1, Sky's words): "The goal of AccessMap is to
   everyone's benefit, because accessibility benefits everyone."
   Lives in: About page, App Store description, README. Voice: Sky's, always.
 ToS & Community Guidelines v1.0: RATIFIED per accessmap_moderation_texts_v1.md
-  (contact = skylerhalisky@gmail.com; account-deletion wording
+  (contact = support@skypistudio.com; account-deletion wording
   matches live SET NULL behavior per SR-117)
 Filter (1.2a): seed = LDNOOBW English + Sky-editable additions file;
   rejection copy ratified as drafted

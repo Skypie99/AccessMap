@@ -9,7 +9,7 @@ Drafted by Claude with Sky. Requires Sky's ratification before it ships. Plain-l
 **Flagstone Privacy Policy**
 Effective 2026-07-29 · v1.0
 
-**Who runs this.** Flagstone is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email skylerhalisky@gmail.com and it comes straight to me.
+**Who runs this.** Flagstone is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email support@skypistudio.com and it comes straight to me.
 
 **The short version.** Flagstone collects as little as it can. You can report a barrier without making an account at all. There is no advertising, no analytics, no crash reporting, and nothing is sold or shared with anyone. [V: no analytics/crash SDK active, confirmed 2026-07-29]
 
@@ -35,7 +35,7 @@ Effective 2026-07-29 · v1.0
 
 **Where your data lives.** On servers run by my hosting provider. Data may be stored or processed outside Canada.
 
-**Your rights.** Under Canadian privacy law (PIPEDA) you can ask what I hold about you, ask for a copy, and ask me to correct or delete it. Email skylerhalisky@gmail.com and I'll sort it out.
+**Your rights.** Under Canadian privacy law (PIPEDA) you can ask what I hold about you, ask for a copy, and ask me to correct or delete it. Email support@skypistudio.com and I'll sort it out.
 
 **Changes.** If this policy changes, the new version appears here with a new date.
 
