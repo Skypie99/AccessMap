@@ -50,12 +50,21 @@ describe('B-2 (SR-002) — the policy is reachable in-app on all three surfaces'
     expect(read(rel)).toContain('PRIVACY_POLICY_LINK_LABEL');
   });
 
-  it.each(SURFACES)('%s no longer sends the user to a browser', (_name, rel) => {
+  it.each(SURFACES)('%s no longer sends the user to a browser for the privacy policy', (_name, rel) => {
     // The ban, not merely the absence of a requirement. The hosted copy at that
     // URL is the DRIFTED v1.1 text B-3 exists to replace — a surface that
     // reopened it would quietly serve the wrong policy again.
+    //
+    // Narrowed 2026-08-24: this used to also ban the bare string
+    // 'openExternalUrl' from appearing at all, back when PRIVACY_POLICY_URL
+    // was its only caller anywhere in the app. AboutScreen now legitimately
+    // calls it for the Accessibility Statement and Support links, which have
+    // no in-app equivalent to route to instead — a real, different reason to
+    // open a browser, not a regression of this one. The invariant that
+    // actually matters — PRIVACY_POLICY_URL is never referenced, let alone
+    // opened, on these three surfaces — is still fully covered by the
+    // constant-name ban below.
     const code = stripComments(read(rel));
-    expect(code).not.toContain('openExternalUrl');
     expect(code).not.toContain('PRIVACY_POLICY_URL');
   });
 

@@ -14,12 +14,14 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   MISSION_STATEMENT,
+  OPENS_IN_BROWSER_HINT,
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
   TERMS_LINK_HINT,
   TERMS_LINK_LABEL,
 } from '@/lib/copy';
 import { useLegalSheets } from '@/components/LegalSheets';
+import { ACCESSIBILITY_STATEMENT_URL, openExternalUrl, SUPPORT_URL } from '@/lib/links';
 
 interface Props {
   visible: boolean;
@@ -254,6 +256,35 @@ export default function AboutScreen({ visible, onClose }: Props) {
             >
               <AppText variant="bodyMedium" style={styles.link}>
                 {TERMS_LINK_LABEL}
+              </AppText>
+            </Pressable>
+
+            {/* Accessibility Statement and Support have no in-app equivalent
+                (unlike Privacy/Terms just above, which render natively), so
+                these two genuinely leave the app — role="link" and
+                OPENS_IN_BROWSER_HINT are honest here, unlike on the two rows
+                above them. */}
+            <Pressable
+              onPress={() => openExternalUrl(ACCESSIBILITY_STATEMENT_URL)}
+              style={({ pressed }) => (pressed ? styles.linkPressed : null)}
+              accessibilityRole="link"
+              accessibilityLabel="Accessibility Statement"
+              accessibilityHint={OPENS_IN_BROWSER_HINT}
+            >
+              <AppText variant="bodyMedium" style={styles.link}>
+                Accessibility Statement
+              </AppText>
+            </Pressable>
+
+            <Pressable
+              onPress={() => openExternalUrl(SUPPORT_URL)}
+              style={({ pressed }) => (pressed ? styles.linkPressed : null)}
+              accessibilityRole="link"
+              accessibilityLabel="Support"
+              accessibilityHint={OPENS_IN_BROWSER_HINT}
+            >
+              <AppText variant="bodyMedium" style={styles.link}>
+                Support
               </AppText>
             </Pressable>
         </ScrollView>
