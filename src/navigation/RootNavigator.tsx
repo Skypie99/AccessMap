@@ -1,6 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { AppText } from '@/components/ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -20,6 +19,7 @@ import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReduceTransparency } from '@/lib/accessibility';
 import { TabBarButton } from './TabBarButton';
+import { TabBarGlass, liquidTabInk } from './TabBarGlass';
 import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -144,27 +144,6 @@ const tabIcon =
   function TabIcon({ color: tintColor, size }: { color: string; size: number }) {
     return <Icon size={size} color={tintColor} strokeWidth={2.2} />;
   };
-
-/**
- * Frosted-glass background for the bottom tab bar (native only — Phase 7a).
- * Rendered behind the bar's buttons via screenOptions.tabBarBackground. The
- * bar is positioned absolute + transparent on native so this blur shows the
- * content scrolling underneath. Honors Reduce Transparency (opaque fallback,
- * no blur) — mirrors GlassSurface's accessibility contract.
- */
-function TabBarGlass() {
-  const color = useColor();
-  const reduceTransparency = useReduceTransparency();
-  if (reduceTransparency) {
-    return <View style={[StyleSheet.absoluteFill, { backgroundColor: color.tabBarBg }]} />;
-  }
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={24} tint={color.tabBarBlurTint as 'light' | 'dark'} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: color.tabBarGlassFloor }]} />
-    </View>
-  );
-}
 
 interface Props {
   // Which tab to open on first render. Used by App.tsx to honor the user's
@@ -291,6 +270,12 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   const styles = makeStyles(color);
   const insets = useSafeAreaInsets();
   const isAdmin = useIsAdmin();
+  const reduceTransparency = useReduceTransparency();
+  const usesLiquidTabBar = Platform.OS === 'ios' && !reduceTransparency;
+  // The crystal floor is intentionally less opaque than the legacy tab floor.
+  // These existing high-contrast inks keep labels and icons legible over map
+  // detail; fallbacks retain their established tab-specific inks.
+  const { active: activeTabInk, inactive: inactiveTabInk } = liquidTabInk(color, reduceTransparency);
 
   const { flags } = useFlags();
   const tasksBadge = computeTasksBadge(flags);
@@ -319,7 +304,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           <ErrorBoundary variant="screen">{children}</ErrorBoundary>
         </ScreenInertLayer>
       )}
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerStyle: {
           backgroundColor: color.headerBg,
           borderBottomWidth: 1,
@@ -341,17 +326,26 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         headerTintColor: color.headerFg,
         headerTitleAlign: 'center',
         headerRight: renderHeaderRight,
-        tabBarActiveTintColor: color.tabBarActiveTint,
-        tabBarInactiveTintColor: color.tabBarInactiveTint,
-        // BP11 / T3: every tab answers the hand — selection haptic + the
-        // nav-chrome pressed dim, a11y props forwarded. Hidden routes override
-        // this per-screen with `tabBarButton: () => null`.
-        tabBarButton: (props) => <TabBarButton {...props} />,
-        // Native: a frosted-glass background behind the bar (Phase 7a). On web
-        // we keep the CSS backdropFilter path in tabBarStyle instead.
+        tabBarActiveTintColor: activeTabInk,
+        tabBarInactiveTintColor: inactiveTabInk,
+        // BP11 / T3: every tab answers the hand with a selection haptic while
+        // keeping its a11y props forwarded and visual contrast stable. Hidden
+        // routes override this per-screen with `tabBarButton: () => null`.
+        tabBarButton: (props) => (
+          <TabBarButton
+            {...props}
+            activeInk={activeTabInk}
+            dividerInk={color.navBorder}
+            showDivider={route.name === 'Home' || route.name === 'Tasks'}
+          />
+        ),
+        // Native: TabBarGlass supplies liquid glass on normal iOS and preserves
+        // opaque fallback material paths. Web keeps its CSS backdrop filter.
         tabBarBackground: Platform.OS === 'web' ? undefined : () => <TabBarGlass />,
         tabBarStyle: {
-          borderTopWidth: 1,
+          // The native edge lives on the capsule; a full-width line would turn
+          // the transparent safe-area remainder into a second visual bar.
+          borderTopWidth: Platform.OS === 'web' || !usesLiquidTabBar ? 1 : 0,
           borderTopColor: color.navBorder,
           // Grow by the bottom safe-area inset so the home indicator never
           // overlaps the tab labels. 68 (was 62) gives the label's real line
@@ -385,7 +379,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           marginTop: 2,
           letterSpacing: 0.2,
         },
-      }}
+      })}
     >
       {/* Visible tabs: Home · Tasks · Profile (Phase 7a 3-tab layout). */}
       <Tab.Screen

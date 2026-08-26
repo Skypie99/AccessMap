@@ -1,7 +1,9 @@
 import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { PlatformPressable } from '@react-navigation/elements';
 import { type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { hapticSelection } from '@/lib/haptics';
+import { decorativeProps } from '@/lib/accessibility';
 
 /**
  * Custom bottom-tab button (BP11 / T3): the tab bar joins the one press
@@ -33,16 +35,76 @@ import { hapticSelection } from '@/lib/haptics';
  * Extracted from RootNavigator so it can be unit-tested in isolation without
  * pulling the whole screen/provider graph.
  */
-export function TabBarButton({ onPress, ...rest }: BottomTabBarButtonProps) {
+interface TabBarButtonProps extends BottomTabBarButtonProps {
+  /** Decorative divider after this segment (Home and Tasks only). */
+  showDivider?: boolean;
+  /** Mirrors the navigator's contrast-safe active ink for the underline. */
+  activeInk?: string;
+  /** Keeps the crystal divider on the navigation token, not a raw color. */
+  dividerInk?: string;
+}
+
+export function TabBarButton({
+  onPress,
+  children,
+  style,
+  showDivider = false,
+  activeInk,
+  dividerInk,
+  ...rest
+}: TabBarButtonProps) {
+  const selected = rest['aria-selected'] === true || rest.accessibilityState?.selected === true;
   return (
-    <PlatformPressable
-      {...rest}
-      pressOpacity={1}
-      pressColor="transparent"
-      onPress={(e) => {
-        hapticSelection();
-        onPress?.(e);
-      }}
-    />
+    <View style={[styles.segment, style]}>
+      <PlatformPressable
+        {...rest}
+        style={styles.pressable}
+        pressOpacity={1}
+        pressColor="transparent"
+        onPress={(e) => {
+          hapticSelection();
+          onPress?.(e);
+        }}
+      >
+        {children}
+      </PlatformPressable>
+      {showDivider ? (
+        <View
+          pointerEvents="none"
+          style={[styles.divider, dividerInk ? { borderRightColor: dividerInk } : null]}
+          {...decorativeProps}
+          testID="tab-segment-divider"
+        />
+      ) : null}
+      {selected ? (
+        <View
+          pointerEvents="none"
+          style={[styles.selectedUnderline, activeInk ? { borderTopColor: activeInk } : null]}
+          {...decorativeProps}
+          testID="tab-segment-underline"
+        />
+      ) : null}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  segment: { flex: 1, position: 'relative' },
+  pressable: { flex: 1 },
+  divider: {
+    position: 'absolute',
+    top: 12,
+    bottom: 12,
+    right: 0,
+    width: 0,
+    borderRightWidth: StyleSheet.hairlineWidth,
+  },
+  selectedUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderTopWidth: 2,
+  },
+});

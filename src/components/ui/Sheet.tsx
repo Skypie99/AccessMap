@@ -185,6 +185,13 @@ export interface SheetProps {
   children: React.ReactNode;
   /** Override the card style (e.g. a different surface or paddingTop). */
   cardStyle?: ViewStyle;
+  /**
+   * `standard` keeps the existing content-sized sheet geometry. `expanded`
+   * fills from the safe area's top edge (plus the smallest shared gutter) to
+   * the existing bottom-safe-area pad, without changing the header or pull
+   * mechanics. No current screen opts in during Wave 1.
+   */
+  presentation?: 'standard' | 'expanded';
   /** Optional right-side header accessory (replaces the close button). */
   headerRight?: React.ReactNode;
   /** Optional control BESIDE Close (the list sheets' Refresh circle). */
@@ -263,6 +270,7 @@ export function Sheet({
   title,
   children,
   cardStyle,
+  presentation = 'standard',
   headerRight,
   headerAccessory,
   subtitle,
@@ -288,6 +296,8 @@ export function Sheet({
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
+  const expanded = presentation === 'expanded';
+  const expandedTopMargin = insets.top + spacing.sm;
   // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
   // title so it doesn't stay on the control behind the sheet.
   const titleRef = useFocusOnOpen<Text>(visible);
@@ -312,6 +322,8 @@ export function Sheet({
   const padPair = [
     padded && styles.cardPadded,
     fill && styles.cardFill,
+    expanded && styles.cardFill,
+    expanded && styles.cardExpanded,
     { paddingBottom: Math.max(minBottomPad, insets.bottom) },
     cardStyle,
   ];
@@ -325,6 +337,9 @@ export function Sheet({
         styles.cardShadow,
         bulkGlassShadow(color),
         fill && styles.cardFill,
+        expanded && styles.cardFill,
+        expanded && styles.cardShadowExpanded,
+        expanded && { marginTop: expandedTopMargin },
         // With a KAV present the cap belongs to the KAV, not here.
         keyboardAvoiding ? null : shrinkStyle,
       ]}
@@ -347,6 +362,7 @@ export function Sheet({
         { backgroundColor: color.surface },
         shadow.e3,
         ...padPair,
+        expanded && { marginTop: expandedTopMargin },
         keyboardAvoiding ? null : shrinkStyle,
       ]}
     >
@@ -390,12 +406,12 @@ export function Sheet({
           enabled={pullEnabled}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
-          style={styles.pull}
+          style={expanded ? styles.pullExpanded : styles.pull}
         >
           {keyboardAvoiding ? (
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={[styles.kav, shrinkStyle]}
+              style={[styles.kav, expanded && styles.kavExpanded, shrinkStyle]}
             >
               {card}
             </KeyboardAvoidingView>
@@ -442,13 +458,19 @@ const styles = StyleSheet.create({
   // The pull wrapper must not become a layout node of its own: the backdrop's
   // flex-end anchor and the card's cap both depend on the chain above it.
   pull: { width: '100%' },
+  pullExpanded: { width: '100%', flexGrow: 1 },
   kav: { width: '100%', maxHeight: '90%', flexShrink: 1 },
+  kavExpanded: { maxHeight: '100%', flexGrow: 1 },
   // `padded`: the CARD owns the gutter and the inter-child rhythm, so a
   // transplanted body keeps the geometry it was written against.
   cardPadded: { paddingHorizontal: spacing.xl, gap: spacing.md },
   // SW-42 follow-up: fill the height a floor reserves rather than sitting at
   // the top of it, which would turn a height floor into a gap.
   cardFill: { flexGrow: 1 },
+  // Expanded fills the existing safe-area-backed sheet footprint; its dynamic
+  // top margin is supplied at render time from `insets.top + spacing.sm`.
+  cardExpanded: { maxHeight: '100%', flexShrink: 1 },
+  cardShadowExpanded: { maxHeight: '100%', flexShrink: 1 },
   handleWrap: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.tight },
   handle: { width: 36, height: 4, borderRadius: radius.full },
   headerRow: {

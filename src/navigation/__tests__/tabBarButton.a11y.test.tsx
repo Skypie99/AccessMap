@@ -11,7 +11,7 @@
  * stopped announcing which tab was active. This test would have caught it.
  */
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { TabBarButton } from '../TabBarButton';
@@ -83,5 +83,38 @@ describe('TabBarButton — a11y + press vocabulary', () => {
     const { getByTestId } = renderTab({ onLongPress });
     fireEvent(getByTestId('tab-Home'), 'longPress');
     expect(onLongPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a decorative crystal divider without putting it in the tab order', () => {
+    const { UNSAFE_getByProps } = renderTab({ showDivider: true, dividerInk: '#123456' });
+    // Hidden decorative elements are deliberately invisible to the normal
+    // a11y-aware query path, so inspect the host prop directly.
+    const divider = UNSAFE_getByProps({ testID: 'tab-segment-divider' });
+    expect(divider.props.accessibilityElementsHidden).toBe(true);
+    expect(divider.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(StyleSheet.flatten(divider.props.style)).toMatchObject({
+      top: 12,
+      bottom: 12,
+      right: 0,
+      borderRightColor: '#123456',
+    });
+  });
+
+  it('draws a 2pt underline across the selected segment only', () => {
+    const { UNSAFE_getByProps } = renderTab({ 'aria-selected': true, activeInk: '#abcdef' });
+    const underline = UNSAFE_getByProps({ testID: 'tab-segment-underline' });
+    expect(underline.props.accessibilityElementsHidden).toBe(true);
+    expect(StyleSheet.flatten(underline.props.style)).toMatchObject({
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 2,
+      borderTopColor: '#abcdef',
+    });
+  });
+
+  it('does not render the selected underline for an unselected tab', () => {
+    const { queryByTestId } = renderTab({ 'aria-selected': false });
+    expect(queryByTestId('tab-segment-underline')).toBeNull();
   });
 });
