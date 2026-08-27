@@ -26,18 +26,6 @@ interface AuthContextValue {
   consumePendingPushEducation: () => Promise<void>;
 }
 
-// Best-effort push token refresh after the caller has established that push is
-// already enabled. Never throws and never presents education.
-async function refreshPushToken(userId: string, isCurrent: () => boolean): Promise<void> {
-  try {
-    const token = await requestExpoPushToken();
-    if (!token || !isCurrent()) return;
-    await savePushToken(userId, token);
-  } catch {
-    // Push registration is best-effort — never surface errors to the user.
-  }
-}
-
 const AuthContext = createContext<AuthContextValue>({
   session: null,
   user: null,
@@ -54,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // which is enough for rapid tab presses or a sign-out during a permission
   // surface to duplicate or misattribute token work.
   const activeUserIdRef = useRef<string | null>(null);
+  const providerGenerationRef = useRef(0);
   const handledCycleUserIdRef = useRef<string | null>(null);
   const pendingPushUserIdRef = useRef<string | null>(null);
 
@@ -62,36 +51,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPushEducationPending(false);
   }, []);
 
-  const refreshEnabledPushForCurrentUser = useCallback(async (userId: string) => {
-    const isCurrent = () => activeUserIdRef.current === userId;
+  const isCurrentForGeneration = useCallback(
+    (userId: string, operationGeneration: number) => {
+      return (
+        providerGenerationRef.current === operationGeneration &&
+        activeUserIdRef.current === userId
+      );
+    },
+    [],
+  );
+
+  const refreshPushToken = useCallback(async (userId: string, operationGeneration: number) => {
     try {
-      const enabled = await getPushEnabled(userId);
-      if (!enabled || !isCurrent()) return;
-      await refreshPushToken(userId, isCurrent);
+      const token = await requestExpoPushToken();
+      if (!token || !isCurrentForGeneration(userId, operationGeneration)) return;
+      await savePushToken(userId, token);
     } catch {
       // Push registration is best-effort — never surface errors to the user.
     }
-  }, []);
+  }, [isCurrentForGeneration]);
 
-  const preparePushForSignedInCycle = useCallback(async (userId: string) => {
-    const isCurrent = () => activeUserIdRef.current === userId;
+  const refreshEnabledPushForCurrentUser = useCallback(async (userId: string) => {
+    const operationGeneration = providerGenerationRef.current;
     try {
       const enabled = await getPushEnabled(userId);
-      if (!isCurrent()) return;
+      if (!enabled || !isCurrentForGeneration(userId, operationGeneration)) return;
+      await refreshPushToken(userId, operationGeneration);
+    } catch {
+      // Push registration is best-effort — never surface errors to the user.
+    }
+  }, [isCurrentForGeneration, refreshPushToken]);
+
+  const preparePushForSignedInCycle = useCallback(async (userId: string) => {
+    const operationGeneration = providerGenerationRef.current;
+    try {
+      const enabled = await getPushEnabled(userId);
+      if (!isCurrentForGeneration(userId, operationGeneration)) return;
       if (enabled) {
-        await refreshPushToken(userId, isCurrent);
+        await refreshPushToken(userId, operationGeneration);
         return;
       }
+
+      if (!isCurrentForGeneration(userId, operationGeneration)) return;
       pendingPushUserIdRef.current = userId;
       setPushEducationPending(true);
     } catch {
       // A failed preference read must not turn into an unexpected OS prompt.
     }
-  }, []);
+  }, [isCurrentForGeneration, refreshPushToken]);
 
   const consumePendingPushEducation = useCallback(async () => {
+    const operationGeneration = providerGenerationRef.current;
     const userId = pendingPushUserIdRef.current;
-    if (!userId || activeUserIdRef.current !== userId) return;
+    if (!userId || !isCurrentForGeneration(userId, operationGeneration)) return;
 
     // Spend the opportunity before any async work. A second tab press, queued
     // interaction callback, or foreground transition now observes no pending
@@ -99,19 +111,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     pendingPushUserIdRef.current = null;
     setPushEducationPending(false);
 
-    const isCurrent = () => activeUserIdRef.current === userId;
     try {
       // Settings may have completed enablement while this opportunity waited.
       // In that case its token path already ran, so education has nothing to do.
       if (await getPushEnabled(userId)) return;
-      if (!isCurrent()) return;
+      if (!isCurrentForGeneration(userId, operationGeneration)) return;
       const confirmed = await showPushExplanation();
-      if (!confirmed || !isCurrent()) return;
-      await refreshPushToken(userId, isCurrent);
+      if (!confirmed || !isCurrentForGeneration(userId, operationGeneration)) return;
+      await refreshPushToken(userId, operationGeneration);
     } catch {
       // Education and registration are best-effort; Settings remains available.
     }
-  }, []);
+  }, [isCurrentForGeneration, refreshPushToken]);
 
   useEffect(() => {
     // Always flip `loading` off — even if getSession rejects (offline at
@@ -153,9 +164,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      providerGenerationRef.current += 1;
       subscription.subscription.unsubscribe();
     };
-  }, [clearPendingPushEducation, preparePushForSignedInCycle, refreshEnabledPushForCurrentUser]);
+  }, [
+    clearPendingPushEducation,
+    preparePushForSignedInCycle,
+    refreshEnabledPushForCurrentUser,
+  ]);
 
   // Memoize the context value so consumers re-render only for auth/loading or
   // pending-education changes (user derives from session; consume is stable).
