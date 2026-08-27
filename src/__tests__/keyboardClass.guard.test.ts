@@ -340,6 +340,7 @@ describe('THE KEYBOARD CLASS — every input-hosting surface carries a mechanism
       .map((f) => f.rel)
       .sort();
     expect(found).toEqual([
+      'components/FeedbackModal.tsx',
       'components/FilterPresetsModal.tsx',
       'components/MyReportsModal.tsx',
       'components/MyWatchedModal.tsx',
