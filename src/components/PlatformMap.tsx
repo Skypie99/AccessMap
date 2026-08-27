@@ -7,7 +7,7 @@ import { Check } from 'lucide-react-native';
 import ClusteredMapView from 'react-native-map-clustering';
 import { Callout, Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import type MapView from 'react-native-maps';
-import { a11y, font, heatmapSeverity as severityTokens, radius, shadow, spacing } from '@/theme';
+import { a11y, font, heatmapSeverity as severityTokens, motion, radius, shadow, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { CATEGORY_LABELS, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
@@ -170,6 +170,12 @@ export interface PlatformMapProps {
    * popup autoPan padding + the Reduce-Motion instant cut.
    */
   chromeInsetTop?: number;
+  /** Fires at the first direct touch on the map surface. The parent uses this
+   *  to retire its one-time arrival fit before a user gesture can be overridden. */
+  onMapInteractionStart?: () => void;
+  /** Fires only after a map region settles. Kept separate from the uncontrolled
+   *  map so parents can refresh refs without per-frame state updates. */
+  onRegionSettled?: (region: PlatformMapRegion) => void;
 }
 
 const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function PlatformMap(
@@ -184,6 +190,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     heatCells = [],
     heatmapMode = 'gradient',
     chromeInsetTop,
+    onMapInteractionStart,
+    onRegionSettled,
   },
   ref,
 ) {
@@ -195,7 +203,30 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
   // Ref to ClusteredMapView — cast to MapView for animateToRegion calls
   // (ClusteredMapView wraps MapView internally and delegates map methods)
   const mapRef = useRef<MapView | null>(null);
+  // The last known map region is deliberately a ref: the map remains
+  // uncontrolled and rapid zoom taps can compound synchronously without a
+  // render or a per-frame region state update.
+  const settledRegionRef = useRef<PlatformMapRegion>(initialRegion);
   const markerRefs = useRef<Record<string, InstanceType<typeof Marker> | null>>({});
+
+  const animateToRegion = useCallback((region: PlatformMapRegion, duration: number) => {
+    // Imperative camera moves optimistically become the zoom source of truth;
+    // onRegionChangeComplete replaces this with the native settled result.
+    settledRegionRef.current = region;
+    mapRef.current?.animateToRegion(region, duration);
+  }, []);
+
+  const handleMapTouchStart = useCallback(() => {
+    onMapInteractionStart?.();
+  }, [onMapInteractionStart]);
+
+  const handleRegionSettled = useCallback(
+    (region: PlatformMapRegion) => {
+      settledRegionRef.current = region;
+      onRegionSettled?.(region);
+    },
+    [onRegionSettled],
+  );
 
   // When a flag is resolved/rejected it drops out of the list. React's ref
   // callback is called with null on unmount, but the key stays in this dict
@@ -239,7 +270,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
           // corrupt animateToRegion. Fall back to the standard focus zoom.
           const latSpan = bounds.northEast.latitude - bounds.southWest.latitude;
           const lngSpan = bounds.northEast.longitude - bounds.southWest.longitude;
-          mapRef.current?.animateToRegion(
+          animateToRegion(
             biasRegionForCallout(
               {
                 ...coord,
@@ -254,7 +285,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         })
         .catch(() => {});
     },
-    [chromeInsetTop, windowHeight, reducedMotion],
+    [animateToRegion, chromeInsetTop, windowHeight, reducedMotion],
   );
 
   useImperativeHandle(
@@ -273,7 +304,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
               latitudeDelta: r.latitudeDelta ?? 0.005,
               longitudeDelta: r.longitudeDelta ?? 0.005,
             };
-        mapRef.current?.animateToRegion(
+        animateToRegion(
           target,
           // Instant jump when "Reduce Motion" is on (WCAG 2.3.3).
           reducedMotion ? 0 : 600,
@@ -309,24 +340,25 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         }
       },
       zoomBy: (delta) => {
-        const map = mapRef.current;
-        if (!map) return;
-        // Read the current camera, step its zoom, and animate at the RM-gated
-        // duration (instant under Reduce Motion, WCAG 2.3.3).
-        void map
-          .getCamera()
-          .then((cam) => {
-            map.animateCamera(
-              { ...cam, zoom: (cam.zoom ?? 12) + delta },
-              { duration: reducedMotion ? 0 : 300 },
-            );
-          })
-          // Same guard as handlePinPress: a detached/unmounted native map
-          // rejects, and a zoom tap must not surface an unhandled rejection.
-          .catch(() => {});
+        if (delta === 0) return;
+        // Native camera-zoom reads are not reliable for the wrapped map instance.
+        // Keep the interaction in region-space instead: every tap uses the ref
+        // updated by the prior tap before native animation settles, so rapid
+        // +/- presses compound immediately rather than reading stale camera data.
+        const scale = delta > 0 ? 0.5 ** delta : 2 ** Math.abs(delta);
+        const current = settledRegionRef.current;
+        animateToRegion(
+          {
+            latitude: current.latitude,
+            longitude: current.longitude,
+            latitudeDelta: current.latitudeDelta * scale,
+            longitudeDelta: current.longitudeDelta * scale,
+          },
+          reducedMotion ? 0 : motion.duration.base,
+        );
       },
       snapToRegion: (r) => {
-        mapRef.current?.animateToRegion(
+        animateToRegion(
           {
             latitude: r.latitude,
             longitude: r.longitude,
@@ -340,7 +372,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         );
       },
     }),
-    [reducedMotion, chromeInsetTop, windowHeight],
+    [animateToRegion, reducedMotion, chromeInsetTop, windowHeight],
   );
 
   return (
@@ -373,6 +405,8 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       // Google/Android arm and the web (Leaflet/CartoDB) arm are unaffected.
       // PlatformMap is shared, so the Home peek inherits this in the same edit.
       showsPointsOfInterest={false}
+      onTouchStart={handleMapTouchStart}
+      onRegionChangeComplete={handleRegionSettled}
       // PINCH-ZOOM IS THE PLATFORM'S, NOT OURS (map-gestures SPEC §1). Apple
       // Maps already gives spread-to-zoom-in / pinch-to-zoom-out focused under
       // the fingers, simultaneous with one-finger pan, and this map is

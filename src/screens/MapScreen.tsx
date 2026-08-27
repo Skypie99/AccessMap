@@ -667,10 +667,10 @@ export default function MapScreen() {
 
   // D4 Safeguard #1 — Viewport geofence for realtime flag events.
   //
-  // Tracks the latest known map region so the D4 payload handler can discard
+  // Tracks the latest SETTLED map region so the D4 payload handler can discard
   // flags whose lat/lng fall outside what the user is currently viewing.
-  // Seeded from DEFAULT_REGION on mount; updated when `location` resolves
-  // (see useEffect below that syncs with `initialRegion`).
+  // Seeded from DEFAULT_REGION; PlatformMap refreshes it only after native map
+  // motion settles, never through a controlled region prop or per-frame state.
   //
   // We use a ref (not state) because the viewport gate callback is a closure
   // over this ref — no re-render needed when the region changes.
@@ -1502,14 +1502,6 @@ export default function MapScreen() {
     [location],
   );
 
-  // Keep the viewport ref in sync with the resolved initial region. This fires
-  // once when `location` becomes non-null, giving the gate an accurate starting
-  // region rather than the fallback DEFAULT_REGION.
-  useEffect(() => {
-    currentRegionRef.current = initialRegion;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
-
   // T7 (F4-03 / F5-03): the honest no-location arrival's TRUE FRAME. With no usable
   // location, a hardcoded San-Francisco viewport under a confident "Showing N flags"
   // pill is the inverted-honesty shape S4/S6 killed. So on the FIRST flags-load while
@@ -1540,6 +1532,13 @@ export default function MapScreen() {
   // the frame exactly once: `didInitialFitRef` now means "the FINAL frame is
   // claimed" and only the located fit (or an intent arrival) sets it.
   const didFallbackFitRef = useRef(false);
+  // Search, saved places, and a direct map touch all take ownership of the
+  // viewport. Keep this as a ref so retiring one-time arrival fits neither
+  // controls the native map nor causes a render while a gesture is in flight.
+  const retireArrivalFits = useCallback(() => {
+    didInitialFitRef.current = true;
+    didFallbackFitRef.current = true;
+  }, []);
   useEffect(() => {
     if (didInitialFitRef.current) return; // one-time
     // A CAMERA-MOVING intent arrival (Tasks focusFlag / deep-link flagId) owns the
@@ -1563,12 +1562,6 @@ export default function MapScreen() {
     // the question is still being asked?
     let isFinalFrame: boolean;
     if (location) {
-      // M2, the LOCATED frame. No-gesture proxy by object identity: `initialRegion`
-      // is memoized on `location` alone and the sync effect above assigns that exact
-      // object, so `=== initialRegion` means "still the seed". Anything that has
-      // since claimed the camera — an address search, a saved-place jump — reassigns
-      // this ref at its own call site, and the fit stands down.
-      if (currentRegionRef.current !== initialRegion) return;
       // The user dot is a MEMBER of the fit, not just its origin: a viewer standing
       // just outside a tight cluster would otherwise lose their own dot off the edge.
       const fitted = regionForNearestFlags(location, flags);
@@ -1582,11 +1575,6 @@ export default function MapScreen() {
       // finally, and the arrival effect clears it when permission is not granted.
       if (locating) return;
       if (didFallbackFitRef.current) return; // the placeholder paints once
-      // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
-      // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
-      // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
-      // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
-      if (currentRegionRef.current !== DEFAULT_REGION) return;
       region = regionForFlags(flags);
       isFinalFrame = false;
     }
@@ -1615,7 +1603,6 @@ export default function MapScreen() {
       // paints once without locking out the located fit behind it.
       if (isFinalFrame) didInitialFitRef.current = true;
       else didFallbackFitRef.current = true;
-      currentRegionRef.current = region; // keep the viewport gate honest post-fit
       mapRef.current.snapToRegion(region);
     };
     commitFit(10);
@@ -1624,10 +1611,20 @@ export default function MapScreen() {
     loadingFlags,
     locating,
     location,
-    initialRegion,
     route.params?.focusFlag,
     route.params?.flagId,
   ]);
+
+  const handleMapInteractionStart = useCallback(() => {
+    // A direct touch is the user taking control. Retire both the final and
+    // provisional one-time fits before native panning/pinching can settle, so
+    // no delayed arrival effect snaps the viewport back beneath their fingers.
+    retireArrivalFits();
+  }, [retireArrivalFits]);
+
+  const handleMapRegionSettled = useCallback((region: PlatformMapRegion) => {
+    currentRegionRef.current = region;
+  }, []);
 
 
   // The pin callout's "Open details" — the one path where the surface being
@@ -1870,6 +1867,8 @@ export default function MapScreen() {
         focusedFlagId={focusedFlagId}
         showsUserLocation
         reducedMotion={reducedMotion}
+        onMapInteractionStart={handleMapInteractionStart}
+        onRegionSettled={handleMapRegionSettled}
         onLongPressMap={handleMapLongPress}
         onOpenDetails={handleOpenDetails} // S3: pin callout "Open details" → detail sheet
         heatCells={heatCells}
@@ -2813,7 +2812,7 @@ export default function MapScreen() {
         </View>
 
         {/* Bottom bar: legend (left, conditional) + FABs (right) */}
-        <View style={styles.bottomBar}>
+        <View style={styles.bottomBar} pointerEvents="box-none">
           {/* Flex slot reserves the left half so HeatmapLegend wraps against the
               true remaining width beside the intrinsic-width fabColumn, instead
               of overlapping the FABs at narrow widths (G6). */}
@@ -2869,7 +2868,7 @@ export default function MapScreen() {
               </View>
             </PressableScale>
           </View>
-          <View style={styles.fabColumn}>
+          <View style={styles.fabColumn} pointerEvents="box-none">
             {/* Recenter — demoted from the old top tray into the FAB column, at the
                 top of the stack (Direction B, matches the governing mockup). A
                 crystal circle: the engineered crystal material sits behind a
@@ -3204,12 +3203,9 @@ export default function MapScreen() {
             latitudeDelta: 0.02,
             longitudeDelta: 0.02,
           };
-          // M2: a searched centre OWNS the camera. Recording it here is what the
-          // one-time first-frame fit reads as "something already claimed this" —
-          // without it, a search that lands before the first flags-load would be
-          // yanked back to the fitted frame a moment later. It also keeps the D4
-          // viewport geofence pointed where the user is actually looking.
-          currentRegionRef.current = searched;
+          // M2: a searched centre owns the camera. Retire arrival fits before
+          // the imperative move; the viewport ref updates only after settle.
+          retireArrivalFits();
           mapRef.current?.animateTo(searched);
         }}
       />
@@ -3240,8 +3236,8 @@ export default function MapScreen() {
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           };
-          // M2: a saved-place jump OWNS the camera, same claim as a search.
-          currentRegionRef.current = jumped;
+          // M2: a saved-place jump owns the camera, same claim as a search.
+          retireArrivalFits();
           mapRef.current?.animateTo(jumped);
         }}
       />

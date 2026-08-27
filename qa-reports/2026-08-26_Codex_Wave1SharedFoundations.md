@@ -1,26 +1,18 @@
 # Codex Report — Wave 1 Shared Foundations — 2026-08-26
 
-## DECISIONS FOR SKY
+## Historic Authorization Record — Resolved
 
-- [ ] **Authorize the location-sensitive Map foundation and Explore Simulator QA** — PlatformMap/MapScreen region, gesture, and arrival-fit behavior is privacy-sensitive under the estate rule.
-  - Option A (Recommended) — Explicitly authorize the already-approved Wave 1 Map foundation and local/synthetic-data Explore Simulator QA after this warning.
-  - Option B — Defer the Map foundation and its Simulator checkpoint to a separate Sky-directed task.
-  - Impact — Until Option A, the settled-region/zoom/interaction-retired-fit changes and the required visual Explore proof in light and dark mode cannot be completed.
-  - Rollback — No Map or MapScreen files were changed in this commit.
-  - Owner — Codex.
+- [x] **Authorize the location-sensitive Map foundation and Explore Simulator QA** — Sky supplied narrow written authorization in the follow-up task. The resulting work is recorded in the addendum below.
 
-## BLOCKERS / FAIL_FAST
+## Historic Blocker — Resolved for Implementation
 
-- **BLOCKER** — The requested Map foundation touches location-sensitive behavior in `src/components/PlatformMap.tsx` and `src/screens/MapScreen.tsx`.
-  - The estate's global Rule 5 requires Sky's explicit decision after warning; the attempted scoped patch was refused by that safety control.
-  - Quarantined? Yes. Navigation and Sheet work proceeded; Map/MapScreen and their tests remain untouched.
-  - Recommended path — Approve Option A in `## DECISIONS FOR SKY`, then resume only the blocked Map checkpoint and Explore Simulator QA.
+- The requested Map foundation touched location-sensitive behavior in `src/components/PlatformMap.tsx` and `src/screens/MapScreen.tsx`. The estate's global Rule 5 required explicit authorization, which Sky supplied before the scoped patch was made. The remaining visual-acceptance limitation is an environment issue, not an authorization issue.
 
 ## Summary
 
 The independent Wave 1 foundations are implemented on `codex/presubmission-ui-polish` at implementation commit `8410d72`. The bottom navigation now has a true iOS liquid-glass capsule, refined decorative segment treatment, preserved Android/Reduce Transparency material fallbacks, and focused accessibility/material tests. `Sheet` now supports an opt-in expanded presentation while every existing screen remains on unchanged standard geometry.
 
-The Map foundation, its targeted tests, and the required Explore light/dark Simulator comparison are not complete because of the privacy-sensitive location blocker above. Wave 2 was not started; no dependency, EAS, merge, push, or production action occurred.
+At this original-report snapshot, the Map foundation was still blocked. The authorized implementation, its tests, and the Simulator availability result are recorded in the addendum below. Wave 2 was not started; no dependency, EAS, merge, push, or production action occurred.
 
 ## What Shipped (Checkpoints)
 
@@ -44,9 +36,9 @@ The Map foundation, its targeted tests, and the required Explore light/dark Simu
 - 🟢 The liquid path uses the existing contrast-safe `brandTextAlt`/`inkSelect` active inks and `textStrong` inactive ink; fallbacks retain their existing tab inks.
 - 🟡 Device visual contrast and map-interaction evidence is outstanding only because the Explore Simulator checkpoint is blocked.
 
-### Privacy
+### Privacy (original snapshot)
 
-- 🔴 Map callbacks, region tracking, and Explore Simulator work were not performed. See the blocker and Sky decision above.
+- ⚪ Map callbacks, region tracking, and Explore Simulator work were still pending. See the addendum for the authorized completion and the remaining visual acceptance limitation.
 
 ### Tests / CI
 
@@ -94,6 +86,57 @@ cd /Users/skypie/AccessMap-codex/presubmission-ui-polish
 npx --no-install jest --ci -w 3
 ```
 
-## Next Recommended Action
+## Next Recommended Action (superseded)
 
-Sky should decide whether to authorize the blocked location-sensitive Map work; otherwise review and merge only the independently complete navigation and Sheet foundation commit.
+See the addendum's current `## DECISIONS FOR SKY` entry.
+
+---
+
+## Addendum — Authorized Map Foundation Execution
+
+Sky supplied narrow written authorization for the location-sensitive portion of the already-approved Wave 1 plan. That resolves the earlier authorization blocker only; the implementation below does not change location permission, collection, persistence, transmission, backend, authentication, or map architecture.
+
+### What changed
+
+- `src/components/PlatformMap.tsx`
+  - Replaced native `getCamera().zoom` reads with an uncontrolled settled-region ref seeded from `initialRegion`.
+  - Every imperative region movement updates that ref before calling `animateToRegion`; `zoomBy` scales both deltas by 0.5/2 and uses `motion.duration.base`, or `0` under Reduce Motion.
+  - Added direct-map-touch and settled-region callbacks. Native `onRegionChangeComplete` replaces the optimistic ref with the settled native region.
+- `src/screens/MapScreen.tsx`
+  - Retires the one-time initial/fallback arrival fits immediately on a direct map touch, search, or saved-place move.
+  - Updates `currentRegionRef` only from the settled-region callback: no controlled `region`, per-frame state, or custom gesture handler was introduced.
+  - Made only transparent bottom/FAB layout wrappers `pointerEvents="box-none"`; the legend and FAB controls retain their own touch targets.
+- `src/components/__tests__/PlatformMapNative.reduceMotion.test.tsx` and `src/screens/__tests__/MapScreen.arrival.test.ts`
+  - Added coverage for region-space zoom, rapid compounding +/- taps, motion durations, callback forwarding, settled-region use, direct-interaction fit retirement, and touch-through wrappers.
+
+### Gates run after the authorized Map changes
+
+- 🟢 Targeted Map checkpoint:
+  ```bash
+  npx --no-install jest --ci -w 3 src/components/__tests__/PlatformMapNative.reduceMotion.test.tsx src/components/__tests__/PlatformMapNative.calloutClear.test.tsx src/components/__tests__/PlatformMapCluster.reduceMotion.test.tsx src/screens/__tests__/MapScreen.arrival.test.ts src/screens/__tests__/MapScreen.headerActions.test.ts src/screens/__tests__/MapScreen.legendButton.test.tsx
+  ```
+  Result: 6 suites, 59 tests passed.
+- 🟢 `npm run typecheck` — passed.
+- 🟢 `npm run lint` — passed with the existing 83 warnings and no errors.
+- 🟢 `npx --no-install jest --ci -w 3` — passed (exit 0). Watchman emitted a non-fatal host warning for a protected Apple Maps container; Jest also emitted existing test-console warnings. No test suite failed.
+
+### Simulator evidence
+
+- ⚪ No production service, real account, or real location was used.
+- ⚪ The supported iPhone 17 Pro (`C2D22684-2D71-44DC-90A7-AFC826429A54`) could not boot: its local Simulator data migration failed.
+- ⚪ The alternate iPhone 17e (`9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC`) booted, but `simctl listapps` found neither Expo Go nor a current Flagstone development build. This managed Expo checkout has no checked-in `ios/` directory. I did not generate an unreviewed native project or substitute a stale release binary, and I did not start the app against any backend.
+- ⚪ Consequently, current-branch visual validation of Explore gestures and the liquid-glass light/dark checkpoint could not be performed in this environment. It is not represented as passed.
+
+## DECISIONS FOR SKY — Addendum
+
+- [ ] **Complete the required visual acceptance before merge.**
+  - Recommendation — Run the current `codex/presubmission-ui-polish` branch in a fresh local development build (or Expo Go, if installed) on a healthy iPhone Simulator or a real iPhone, with local/synthetic data only.
+  - Why — Automated Map behavior and all repository gates are green, but the required Explore light/dark visual comparison needs the current binary. The available Simulator device either failed data migration or lacked a current compatible runtime.
+  - Alternative — Merge based on the automated gates alone.
+  - Impact — The alternative leaves the approved liquid-glass visual direction and physical gesture-path acceptance unproven; it does not meet the stated Simulator acceptance requirement.
+  - Rollback — Revert only the forthcoming scoped Map commit if review finds a problem; no privacy architecture or backend change is involved.
+  - Owner — Sky.
+
+## Current handoff
+
+Implementation and automated Wave 1 gates are complete on `codex/presubmission-ui-polish`; Wave 2 was not started. The only outstanding acceptance item is the current-branch iPhone visual run described above. No EAS build, merge, push, dependency change, or production action occurred.

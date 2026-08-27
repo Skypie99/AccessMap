@@ -126,9 +126,10 @@ describe('T7 (BP13) — the undetermined no-location voice + true frame', () => 
     expect(fitScope).not.toContain('route.params?.openReport'); // not READ (the comment may name it)
     // RACE GUARD (adversarial-verify catch): an intent arrival RETIRES the fit (marks
     // didInitialFitRef), so the deep-link's ~800ms flagId self-clear can't re-run the
-    // effect and yank the viewport off the linked flag. didInitialFitRef is set in
-    // exactly TWO places: the intent-retire branch AND the fit itself.
-    expect((map.match(/didInitialFitRef\.current = true/g) || []).length).toBe(2);
+    // effect and yank the viewport off the linked flag. A direct map touch now
+    // retires the same fit before panning/pinching begins, so this remains a
+    // bounded three-site contract: route intent, direct touch, and final fit.
+    expect((map.match(/didInitialFitRef\.current = true/g) || []).length).toBe(3);
   });
 
   it('regionForFlags falls back to DEFAULT_REGION when empty and reuses BP1 instant path (snapToRegion)', () => {
@@ -140,6 +141,24 @@ describe('T7 (BP13) — the undetermined no-location voice + true frame', () => 
     const web = read('../components/PlatformMap.web.tsx');
     expect(web).toContain('snapToRegion:');
     expect(web).toContain('instantCut('); // reuses the shared zero-motion setView path
+  });
+
+  it('retires initial and fallback fits at direct-map interaction, then updates the viewport ref only on settle', () => {
+    expect(map).toContain('const handleMapInteractionStart = useCallback');
+    expect(map).toContain('retireArrivalFits();');
+    expect(map).toContain('const handleMapRegionSettled = useCallback');
+    expect(map).toContain('onMapInteractionStart={handleMapInteractionStart}');
+    expect(map).toContain('onRegionSettled={handleMapRegionSettled}');
+    // Search, saved places, and fits retire their latches; only native settle
+    // becomes the D4 viewport value, so no optimistic MapScreen region fights
+    // a user gesture or turns the map into a controlled component.
+    expect((map.match(/currentRegionRef\.current =/g) ?? []).length).toBe(1);
+    expect(map).toContain('currentRegionRef.current = region;');
+  });
+
+  it('keeps transparent bottom/FAB layout wrappers out of the map gesture path', () => {
+    expect(map).toContain('<View style={styles.bottomBar} pointerEvents="box-none">');
+    expect(map).toContain('<View style={styles.fabColumn} pointerEvents="box-none">');
   });
 });
 

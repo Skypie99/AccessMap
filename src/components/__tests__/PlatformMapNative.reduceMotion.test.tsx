@@ -2,8 +2,8 @@
  * B5 (L4-05 / L4-02-native) — Reduce-Motion guard for the NATIVE map camera.
  *
  * PlatformMap.tsx's imperative handle jumps the camera instantly under Reduce
- * Motion (WCAG 2.3.3): animateToRegion(region, 0) and animateCamera(cfg,
- * { duration: 0 }). This is the native analog of the Leaflet falsy-zero trap
+ * Motion (WCAG 2.3.3): animateToRegion(region, 0). This is the native analog
+ * of the Leaflet falsy-zero trap
  * S12 fixed on web (PlatformMapWeb.reduceMotion.test.tsx) — but the native side
  * had NO automated guard. This file pins the RM branch for both states so a
  * regression that re-animates (or drops the gate) is caught in CI.
@@ -26,21 +26,33 @@ import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import PlatformMap, { type PlatformMapHandle } from '../PlatformMap';
 import type { FlagRow } from '@/types/database';
+import { motion } from '@/theme';
 
 // The underlying (fake) react-native-maps instance the imperative handle drives.
 const mockMap: { current: any } = {
   current: {
     animateToRegion: jest.fn(),
-    animateCamera: jest.fn(),
-    getCamera: jest.fn(),
   },
 };
+
+const mockMapProps: {
+  current: {
+    onTouchStart?: () => void;
+    onRegionChangeComplete?: (region: {
+      latitude: number;
+      longitude: number;
+      latitudeDelta: number;
+      longitudeDelta: number;
+    }) => void;
+  } | null;
+} = { current: null };
 
 jest.mock('react-native-map-clustering', () => ({
   __esModule: true,
   // Hand PlatformMap's `mapRef` callback the underlying map instance so the
   // animateTo / zoomBy handle can reach it (the real ClusteredMapView does this).
   default: (props: any) => {
+    mockMapProps.current = props;
     props.mapRef?.(mockMap.current);
     return null;
   },
@@ -68,9 +80,13 @@ const REGION = {
   longitudeDelta: 0.05,
 };
 
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
-
-function renderMap(reducedMotion: boolean): React.RefObject<PlatformMapHandle | null> {
+function renderMap(
+  reducedMotion: boolean,
+  callbacks: {
+    onMapInteractionStart?: () => void;
+    onRegionSettled?: (region: typeof REGION) => void;
+  } = {},
+): React.RefObject<PlatformMapHandle | null> {
   const ref = React.createRef<PlatformMapHandle>();
   render(
     <PlatformMap
@@ -79,6 +95,7 @@ function renderMap(reducedMotion: boolean): React.RefObject<PlatformMapHandle | 
       flags={[] as FlagRow[]}
       focusedFlagId={null}
       reducedMotion={reducedMotion}
+      {...callbacks}
     />,
   );
   return ref;
@@ -87,8 +104,7 @@ function renderMap(reducedMotion: boolean): React.RefObject<PlatformMapHandle | 
 describe('B5 — the native map camera is gated by reduce-motion', () => {
   beforeEach(() => {
     mockMap.current.animateToRegion.mockClear();
-    mockMap.current.animateCamera.mockClear();
-    mockMap.current.getCamera.mockReset().mockResolvedValue({ zoom: 12, center: {} });
+    mockMapProps.current = null;
   });
 
   it('animateTo jumps instantly (duration 0) under Reduce Motion', () => {
@@ -110,24 +126,57 @@ describe('B5 — the native map camera is gated by reduce-motion', () => {
     expect(duration).toBe(600);
   });
 
-  it('zoomBy uses duration 0 under Reduce Motion', async () => {
+  it('zoomBy uses duration 0 and region deltas under Reduce Motion', () => {
     const ref = renderMap(true);
-    await act(async () => {
+    act(() => {
       ref.current?.zoomBy(1);
-      await flush();
     });
-    expect(mockMap.current.animateCamera).toHaveBeenCalledTimes(1);
-    const [, opts] = mockMap.current.animateCamera.mock.calls[0];
-    expect(opts).toEqual({ duration: 0 });
+    expect(mockMap.current.animateToRegion).toHaveBeenCalledTimes(1);
+    const [region, duration] = mockMap.current.animateToRegion.mock.calls[0];
+    expect(region).toEqual({ ...REGION, latitudeDelta: 0.025, longitudeDelta: 0.025 });
+    expect(duration).toBe(0);
   });
 
-  it('zoomBy uses duration 300 when Reduce Motion is off', async () => {
+  it('zoomBy uses motion.duration.base when Reduce Motion is off', () => {
     const ref = renderMap(false);
-    await act(async () => {
+    act(() => {
       ref.current?.zoomBy(1);
-      await flush();
     });
-    const [, opts] = mockMap.current.animateCamera.mock.calls[0];
-    expect(opts).toEqual({ duration: 300 });
+    const [, duration] = mockMap.current.animateToRegion.mock.calls[0];
+    expect(duration).toBe(motion.duration.base);
+  });
+
+  it('compounds rapid +/- zoom taps from the optimistic settled-region ref', () => {
+    const ref = renderMap(false);
+    act(() => {
+      ref.current?.zoomBy(1);
+      ref.current?.zoomBy(1);
+      ref.current?.zoomBy(-1);
+    });
+    expect(mockMap.current.animateToRegion.mock.calls.map(([region]: [typeof REGION]) => region)).toEqual([
+      { ...REGION, latitudeDelta: 0.025, longitudeDelta: 0.025 },
+      { ...REGION, latitudeDelta: 0.0125, longitudeDelta: 0.0125 },
+      { ...REGION, latitudeDelta: 0.025, longitudeDelta: 0.025 },
+    ]);
+  });
+
+  it('forwards direct-map touch and settles its region before the next zoom', () => {
+    const onMapInteractionStart = jest.fn();
+    const onRegionSettled = jest.fn();
+    const ref = renderMap(false, { onMapInteractionStart, onRegionSettled });
+    const settled = { latitude: 49.2827, longitude: -123.1207, latitudeDelta: 0.08, longitudeDelta: 0.16 };
+
+    act(() => {
+      mockMapProps.current?.onTouchStart?.();
+      mockMapProps.current?.onRegionChangeComplete?.(settled);
+      ref.current?.zoomBy(1);
+    });
+
+    expect(onMapInteractionStart).toHaveBeenCalledTimes(1);
+    expect(onRegionSettled).toHaveBeenCalledWith(settled);
+    expect(mockMap.current.animateToRegion).toHaveBeenLastCalledWith(
+      { ...settled, latitudeDelta: 0.04, longitudeDelta: 0.08 },
+      motion.duration.base,
+    );
   });
 });
