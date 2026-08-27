@@ -325,7 +325,7 @@ export default function HomeScreen() {
       <ScreenStage />
       <LinearGradient
         colors={[color.stage0, `${color.stage0}00`]}
-        style={styles.statusLedge}
+        style={[styles.statusLedge, { height: insets.top }]}
         pointerEvents="none"
         {...decorativeProps}
       />
@@ -338,15 +338,16 @@ export default function HomeScreen() {
           onState={setProbeState}
         />
       )}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: bottomInset + 108 }}
-        showsVerticalScrollIndicator={false}
-        // Pull-to-refresh parity with Tasks/Profile. `refreshing` stays false:
-        // the SWR store renders its own inline banners for stale/failed
-        // reloads, so a pinned spinner would double-report.
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void refresh()} />}
-      >
+      <View style={[styles.scrollViewport, { paddingTop: insets.top }]}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={{ paddingBottom: bottomInset + 108 }}
+          showsVerticalScrollIndicator={false}
+          // Pull-to-refresh parity with Tasks/Profile. `refreshing` stays false:
+          // the SWR store renders its own inline banners for stale/failed
+          // reloads, so a pinned spinner would double-report.
+          refreshControl={<RefreshControl refreshing={false} onRefresh={() => void refresh()} />}
+        >
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
         <ScreenHeader
           eyebrow={eyebrow}
@@ -699,7 +700,8 @@ export default function HomeScreen() {
             </PressableScale>
           </GlassSurface>
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {/* Report pill — floats over the scroll. */}
       <PressableScale
@@ -730,6 +732,9 @@ export default function HomeScreen() {
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: color.stage1 },
+    // The status safe area belongs to this fixed viewport, never to content
+    // that can scroll away beneath the system clock.
+    scrollViewport: { flex: 1 },
     scroll: { flex: 1 },
     headerBtn: {
       width: 44,
@@ -857,10 +862,9 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.warningBg,
     },
     offlineText: { flex: 1, fontSize: font.size.sm, color: color.warningFg },
-    // F4: the status-bar ledge. Home and Settings scroll their content under a
-    // transparent status bar, so a scrolled row could sit directly behind the
-    // clock. A 47pt wash from stage0 down to the SAME COLOUR at zero alpha keeps
-    // the bar legible without painting an opaque header over the stage.
+    // F4: the status-bar ledge. Its height comes from the device inset at the
+    // call site, so the wash covers the real system-chrome band without a
+    // fixed-device guess or an opaque header over the stage.
     //
     // The second stop is `${color.stage0}00`, never the string 'transparent'.
     // 'transparent' is rgba(0,0,0,0), so the gradient interpolates through BLACK
@@ -874,7 +878,6 @@ const makeStyles = (color: ColorTheme) =>
       top: 0,
       left: 0,
       right: 0,
-      height: 47,
       zIndex: 2,
     },
     sectionLabel: {

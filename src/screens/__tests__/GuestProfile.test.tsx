@@ -9,12 +9,16 @@
  * text/label presence below.
  */
 import React from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GuestProfile } from '@/screens/GuestProfile';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { MISSION_STATEMENT } from '@/lib/copy';
+import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
+import { spacing } from '@/theme';
 
 // HeaderActions also reads useDrawerTrigger (D2/C3 focus return). This module
 // stub replaces the whole module, so it has to carry both — a bare
@@ -32,13 +36,16 @@ const METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
+const TAB_BAR_HEIGHT = 102;
 
 function renderGuest(onSignInPress: () => void = jest.fn()) {
   (useDrawer as jest.Mock).mockReturnValue({ open: false, setOpen: mockSetDrawerOpen });
   (useSharedModals as jest.Mock).mockReturnValue({ open: null, setOpen: mockSetSharedModal });
   return render(
     <SafeAreaProvider initialMetrics={METRICS}>
-      <GuestProfile onSignInPress={onSignInPress} />
+      <BottomTabBarHeightContext.Provider value={TAB_BAR_HEIGHT}>
+        <GuestProfile onSignInPress={onSignInPress} />
+      </BottomTabBarHeightContext.Provider>
     </SafeAreaProvider>,
   );
 }
@@ -76,6 +83,15 @@ describe('GuestProfile — the signed-out editorial family (T10 / F2-04)', () =>
     const { getByLabelText } = renderGuest(onSignInPress);
     fireEvent.press(getByLabelText('Sign in to your account'));
     expect(onSignInPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the status inset outside the scroll and clears the floating tab bar', () => {
+    const { UNSAFE_getByType } = renderGuest();
+    const scroll = UNSAFE_getByType(ScrollView);
+    expect(StyleSheet.flatten(scroll.props.contentContainerStyle)).toMatchObject({
+      paddingTop: spacing.sm,
+      paddingBottom: getFloatingTabBarContentInset(TAB_BAR_HEIGHT, METRICS.insets.bottom),
+    });
   });
 });
 

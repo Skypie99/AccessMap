@@ -12,6 +12,7 @@ import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { MISSION_STATEMENT } from '@/lib/copy';
 import { decorativeProps } from '@/lib/accessibility';
+import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { font, icon as iconSize, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 
@@ -76,13 +77,17 @@ export function GuestProfile({ onSignInPress }: { onSignInPress: () => void }) {
   const { setOpen: setSharedModal } = useSharedModals();
   const styles = makeStyles(color);
   return (
-    <ScrollView
-      style={styles.guestScroll}
-      contentContainerStyle={[
-        styles.guestBody,
-        { paddingTop: insets.top + spacing.sm, paddingBottom: tabBarHeight + spacing.xl },
-      ]}
-    >
+    <View style={[styles.guestViewport, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.guestScroll}
+        contentContainerStyle={[
+          styles.guestBody,
+          {
+            paddingTop: spacing.sm,
+            paddingBottom: getFloatingTabBarContentInset(tabBarHeight, insets.bottom),
+          },
+        ]}
+      >
       {/* T19 (F6-08) is retired here. The brand mark was the ONLY place the
           logo appeared at this scale in the light app, it led nowhere, and it
           sat outside the header's grid with its own margin — decoration on the
@@ -169,12 +174,15 @@ export function GuestProfile({ onSignInPress }: { onSignInPress: () => void }) {
           </View>
         ))}
       </GlassSurface>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
+    // The signed-out Profile shares ProfileScreen's fixed status-bar exclusion.
+    guestViewport: { flex: 1 },
     // Transparent so the caller's ScreenStage shows through.
     guestScroll: { flex: 1, backgroundColor: 'transparent' },
     // Top-anchored editorial column. paddingHorizontal spacing.xxl mirrors the

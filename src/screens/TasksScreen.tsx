@@ -19,6 +19,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { useAuth } from '@/lib/auth';
 import { formatDistance, formatWalkingEta, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { confirm, notify } from '@/lib/confirm';
@@ -1385,7 +1386,9 @@ export default function TasksScreen() {
           // cross-platform (contentInset is iOS-only).
           {
             paddingTop: chromeTopPad,
-            paddingBottom: tabBarHeight + 16 + (selection.active ? bulkBarHeight : 0),
+            paddingBottom:
+              getFloatingTabBarContentInset(tabBarHeight, insets.bottom) +
+              (selection.active ? bulkBarHeight : 0),
           },
         ]}
         stickySectionHeadersEnabled={false}

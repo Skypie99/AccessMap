@@ -28,17 +28,30 @@ describe('Wave 2 — expanded modal adoption', () => {
   });
 });
 
-describe('Wave 2 — top spacing and Tasks field ownership', () => {
+describe('Wave 2 + R1 — primary-tab geometry and Tasks field ownership', () => {
   const home = source('screens/HomeScreen.tsx');
   const tasks = source('screens/TasksScreen.tsx');
   const profile = source('screens/ProfileScreen.tsx');
   const guest = source('screens/GuestProfile.tsx');
 
-  it('sets only the approved per-screen safe-area top spacing', () => {
-    expect(home).toContain('paddingTop: insets.top, paddingBottom: bottomInset + 108');
+  it('keeps the status-bar exclusion fixed while primary-tab content scrolls', () => {
+    expect(home).toContain('style={[styles.scrollViewport, { paddingTop: insets.top }]}');
+    expect(home).toContain('contentContainerStyle={{ paddingBottom: bottomInset + 108 }}');
+    expect(home).toContain('style={[styles.statusLedge, { height: insets.top }]}');
+    expect(home).not.toContain('contentContainerStyle={{ paddingTop: insets.top');
+
     expect(tasks).toContain('style={[styles.chromePane, { paddingTop: insets.top }]}');
-    expect(profile).toContain('paddingTop: insets.top + spacing.sm, paddingBottom: tabBarHeight + 16');
-    expect(guest).toContain('paddingTop: insets.top + spacing.sm, paddingBottom: tabBarHeight + spacing.xl');
+    expect(tasks).toContain('getFloatingTabBarContentInset(tabBarHeight, insets.bottom)');
+
+    expect(profile).toContain('style={[styles.scrollViewport, { paddingTop: insets.top }]}');
+    expect(profile).toContain('paddingTop: spacing.sm');
+    expect(profile).toContain('paddingBottom: getFloatingTabBarContentInset(tabBarHeight, insets.bottom)');
+    expect(profile).not.toContain('paddingTop: insets.top + spacing.sm');
+
+    expect(guest).toContain('style={[styles.guestViewport, { paddingTop: insets.top }]}');
+    expect(guest).toContain('paddingTop: spacing.sm');
+    expect(guest).toContain('paddingBottom: getFloatingTabBarContentInset(tabBarHeight, insets.bottom)');
+    expect(guest).not.toContain('paddingTop: insets.top + spacing.sm');
   });
 
   it('makes the search field, not its TextInput, own normal-flow visual geometry', () => {

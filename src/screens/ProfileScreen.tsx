@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { HeaderActions } from '@/components/ui/HeaderActions';
 import { GuestProfile } from './GuestProfile';
+import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
 import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
@@ -948,6 +949,7 @@ export default function ProfileScreen() {
           in-flow ScreenHeader scrolls (mirrors Wave-1 Settings). */}
       <View style={styles.stageRoot}>
         <ScreenStage />
+      <View style={[styles.scrollViewport, { paddingTop: insets.top }]}>
       <ScrollView
         // Recipe S (the FlagDetailModal A11Y-228 precedent): the display-name
         // field sits low on this scroll, so on small phones the keyboard used
@@ -957,9 +959,12 @@ export default function ProfileScreen() {
         style={styles.screen}
         contentContainerStyle={[
           styles.container,
-          // S8: headerShown:false now, so clear the status bar / notch ourselves
-          // (mirrors the headerless Home/Tasks). Overrides the container's top pad.
-          { paddingTop: insets.top + spacing.sm, paddingBottom: tabBarHeight + 16 },
+          // The fixed viewport owns the status bar / notch; content keeps only
+          // the original editorial rhythm below it and one shared tab reserve.
+          {
+            paddingTop: spacing.sm,
+            paddingBottom: getFloatingTabBarContentInset(tabBarHeight, insets.bottom),
+          },
         ]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
       >
@@ -1894,6 +1899,7 @@ export default function ProfileScreen() {
         </Pressable>
       </ScrollView>
       </View>
+      </View>
 
       {/* Account-deletion confirmation. Two-button destructive pattern:
           Cancel (neutral) + Delete Account (red). The Delete button shows a
@@ -2172,6 +2178,8 @@ const makeStyles = (color: ColorTheme) =>
     // Deep Field stage root — bg stage1 so any pre-mount frame matches the
     // ScreenStage gradient behind the transparent scroll (GLASS.md rollout §1).
     stageRoot: { flex: 1, backgroundColor: color.stage1 },
+    // Keeps the status-bar exclusion zone fixed while profile content scrolls.
+    scrollViewport: { flex: 1 },
     // Transparent so the stage shows through; the cards float on it as glass.
     screen: { flex: 1, backgroundColor: 'transparent' },
     center: {
