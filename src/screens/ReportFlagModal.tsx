@@ -32,7 +32,7 @@ import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
 import { webShare } from '@/lib/webShare';
-import { notify } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
 import { useLegalSheets } from '@/components/LegalSheets';
 import {
@@ -142,6 +142,38 @@ interface Props {
    *  human question) or guess. Defaults to 'gps', which is what the FAB path is
    *  and what every existing caller means. */
   locationSource?: 'gps' | 'pin';
+}
+
+interface ReportDraftBaseline {
+  category: FlagCategory;
+  severity: FlagSeverity | null;
+  description: string;
+  photoUris: string[];
+  photoAlts: Record<string, string>;
+  contextTags: ContextTag[];
+  location: Props['location'];
+  locationSource: NonNullable<Props['locationSource']>;
+}
+
+function normalizePhotoAlts(photoUris: readonly string[], photoAlts: Record<string, string>) {
+  return Object.fromEntries(
+    photoUris.map((uri) => [uri, photoAlts[uri]?.trim() ?? '']),
+  );
+}
+
+function sameStringArray(a: readonly string[], b: readonly string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+function samePhotoAlts(a: Record<string, string>, b: Record<string, string>) {
+  const aKeys = Object.keys(a).sort();
+  const bKeys = Object.keys(b).sort();
+  return sameStringArray(aKeys, bKeys) && aKeys.every((key) => a[key] === b[key]);
+}
+
+function sameLocation(a: Props['location'], b: Props['location']) {
+  if (a === null || b === null) return a === b;
+  return a.lat === b.lat && a.lng === b.lng;
 }
 
 export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap, locationSource = 'gps' }: Props) {
@@ -281,6 +313,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // shift a description onto the wrong photo.
   const [photoAlts, setPhotoAlts] = useState<Record<string, string>>({});
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
+  // A persistent modal can temporarily hide for pin placement, so the baseline
+  // belongs to a report session rather than every visible prop transition.
+  const baselineRef = useRef<ReportDraftBaseline | null>(null);
+  const reportSessionActiveRef = useRef(false);
+  const locationChangeRequestedRef = useRef(false);
+  const confirmingCloseRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   // S11: a WRITE that outruns this threshold surfaces an in-sheet "still
   // trying" overlay while the insert CONTINUES (never aborted — a
@@ -306,6 +344,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // hint instead of letting the user pick tags that get silently dropped.
   const [tagsCapability, setTagsCapability] = useState<ContextTagsCapability>('unknown');
   useEffect(() => subscribeContextTagsCapability(setTagsCapability), []);
+
+  // Capture defaults before the consume-once sign-in draft restores below. A
+  // restored draft is user-authored work and must therefore still be protected.
+  useEffect(() => {
+    if (!visible || reportSessionActiveRef.current) return;
+    reportSessionActiveRef.current = true;
+    baselineRef.current = {
+      category,
+      severity,
+      description: description.trim(),
+      photoUris: [...photoUris],
+      photoAlts: normalizePhotoAlts(photoUris, photoAlts),
+      contextTags: [...contextTags],
+      location,
+      locationSource,
+    };
+  }, [category, contextTags, description, location, locationSource, photoAlts, photoUris, severity, visible]);
 
   // A11Y-226 (WCAG 3.3.7): rehydrate a stashed guest draft when the form
   // opens. The stash is written by the anon banner's "Sign in" press below —
@@ -372,35 +427,49 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     setPhotoAlts({});
     setContextTags([]);
     setAppliedTemplateId(null);
+    baselineRef.current = null;
+    reportSessionActiveRef.current = false;
+    locationChangeRequestedRef.current = false;
   };
 
   /**
-   * SW-52 — an explicit cancel must not leave the draft loaded.
+   * R2-F3 — every explicit close path asks before it discards meaningful work.
    *
-   * This modal is a persistent `visible`-prop component: it never unmounts, so
-   * every field survives a close. `reset()` only ran after a SUCCESSFUL submit,
-   * which meant cancelling left the whole form populated for the next session —
-   * including the photos. Proven live on 2026-08-20: a library photo was
-   * attached, the report was cancelled, and a LATER, unrelated report submitted
-   * without the picker ever being opened carried that photo onto the public map.
-   * The points feed corroborated it independently, awarding "Earned 3 points:
-   * Added a photo" for a report in which no photo was ever chosen.
-   *
-   * A user can attach something personal, think better of it, cancel — and have
-   * it published anyway, attached to a report they filed somewhere else. EXIF is
-   * stripped on upload so coordinates do not leak, but the image does.
-   *
-   * Bound to the explicit cancel doors ONLY (the Cancel button, onRequestClose,
-   * and the pull-to-dismiss, which the comment above already calls the same
-   * door). Deliberately NOT bound to visibility or to onDismiss, because two
-   * other paths hide this sheet and both MUST keep the draft:
-   *   - the "Sign in" handoff, which saves the draft explicitly and announces
-   *     that it kept it, and
-   *   - the SW-37 "place the pin on the map" round trip, which hides the sheet
-   *     without closing it precisely so the user does not lose their typing on
-   *     the way to fixing their location.
+   * The baseline is scoped to the current report session. Background GPS
+   * resolution stays clean; only an explicit location replacement can make the
+   * effective location part of the draft. Sign-in and pin-placement continue to
+   * use their intentional preservation paths without calling this guard.
    */
-  const handleCancel = () => {
+  const requestClose = async () => {
+    if (submittingRef.current || confirmingCloseRef.current) return;
+    const baseline = baselineRef.current;
+    const dirty =
+      baseline !== null &&
+      (
+        category !== baseline.category ||
+        severity !== baseline.severity ||
+        description.trim() !== baseline.description ||
+        !sameStringArray(photoUris, baseline.photoUris) ||
+        !samePhotoAlts(normalizePhotoAlts(photoUris, photoAlts), baseline.photoAlts) ||
+        !sameStringArray(contextTags, baseline.contextTags) ||
+        (
+          locationChangeRequestedRef.current &&
+          (!sameLocation(location, baseline.location) || locationSource !== baseline.locationSource)
+        )
+      );
+
+    if (dirty) {
+      confirmingCloseRef.current = true;
+      const discard = await confirm(
+        'Discard report?',
+        'Your unsent report will be lost.',
+        'Discard',
+        true,
+      );
+      confirmingCloseRef.current = false;
+      if (!discard) return;
+    }
+
     reset();
     onClose();
   };
@@ -759,7 +828,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the same thing was correctly inert. S11 escalates-never-aborts, so the
     // insert continues after the close and a re-filled resubmit duplicates it.
     // This removes the asymmetry; it does not invent a new trap.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) handleCancel(); }} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => void requestClose()} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
@@ -774,13 +843,13 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         >
         {/* Pull-down-to-dismiss. The card is the drag target; the containment
             node, the escape handler and the 88%-cap chain below are untouched —
-            SheetPull only adds a transform wrapper. `onDismiss={onClose}` is the
-            same handler the Cancel button and onRequestClose use, so the swipe
-            inherits the focus-return contract instead of forking a second
+            SheetPull only adds a transform wrapper. `onDismiss={requestClose}`
+            is the same guard the Cancel button and onRequestClose use, so the
+            swipe inherits the focus-return contract instead of forking a second
             dismissal path. Guarded by !submitting exactly like Cancel: the
             gesture must never be the one door that closes a submitting sheet. */}
         <SheetPull
-          onDismiss={handleCancel}
+          onDismiss={() => void requestClose()}
           enabled={!submitting && !keyboardVisible}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
@@ -797,9 +866,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           // used to be one there anyway (SR-116 / A11Y-209), with this comment
           // pointing at a line number that had since drifted; the dead prop is
           // now gone rather than annotated.
-          onAccessibilityEscape={() => {
-            if (!submitting) handleCancel();
-          }}
+          onAccessibilityEscape={() => void requestClose()}
         >
           {/* The drag affordance. Every other sheet wearing this pill now backs
               it with a real gesture; this one had no pill at all. AT-hidden by
@@ -848,7 +915,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             {/* T1: mono is for numerals that are data. A sentence is not, so
                 the human line moved off the mono face; the coordinate below
                 keeps it. */}
-            <AppText variant={location ? 'bodyMedium' : 'mono'} style={styles.location}>
+            <AppText variant="bodyMedium" style={styles.location}>
               {location
                 ? locationSource === 'pin'
                   ? 'At the pin you placed'
@@ -906,7 +973,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               denied), so this one control drives the whole recover loop. */}
           {!location && onRequestLocation && (
             <Pressable
-              onPress={onRequestLocation}
+              onPress={() => {
+                locationChangeRequestedRef.current = true;
+                onRequestLocation();
+              }}
               style={({ pressed }) => [styles.useLocationBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="Use my location"
@@ -926,7 +996,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               screen where the user is actually stuck. */}
           {!location && onPlaceOnMap && (
             <Pressable
-              onPress={onPlaceOnMap}
+              onPress={() => {
+                locationChangeRequestedRef.current = true;
+                onPlaceOnMap();
+              }}
               style={({ pressed }) => [styles.useLocationBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="Place the pin on the map"
@@ -1661,7 +1734,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               so Cancel/Submit clear the home indicator on notched devices. */}
           <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
             <Pressable
-              onPress={handleCancel}
+              onPress={() => void requestClose()}
               disabled={submitting}
               style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"

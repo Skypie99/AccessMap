@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { SharedModalsProvider } from '@/lib/sharedModalsContext';
-import { AccessibilityInfo, Alert, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Alert, Modal, StyleSheet } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // Mocked below — jest.mock calls are hoisted above all imports, so this
 // resolves to the mock module. Imported here (not mid-file) to keep
@@ -24,12 +24,22 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
 
+const mockConfirm = jest.fn().mockResolvedValue(true);
+
+jest.mock('@/lib/confirm', () => ({
+  ...jest.requireActual('@/lib/confirm'),
+  confirm: (...args: unknown[]) => mockConfirm(...args),
+}));
+
 // ---------------------------------------------------------------------------
 // Import component (after all mocks are registered)
 // ---------------------------------------------------------------------------
 import ReportFlagModal from '../ReportFlagModal';
+import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SheetPull } from '@/components/ui/SheetPull';
 import { takeReportDraft } from '@/lib/reportDraft';
 import { validReportTemplates } from '@/lib/reportTemplates';
+import { font } from '@/theme';
 import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 
 // ---------------------------------------------------------------------------
@@ -211,11 +221,13 @@ jest.mock('@/lib/contextTags', () => ({
   CONTEXT_TAG_LABELS: {},
   DISABILITY_TAGS: [],
   DISABILITY_TAG_LABELS: {},
-  SEASONAL_TAGS: [],
-  SEASONAL_TAG_LABELS: {},
+  SEASONAL_TAGS: ['icy_winter'],
+  SEASONAL_TAG_LABELS: { icy_winter: 'Icy in winter' },
   MAX_CONTEXT_TAGS: 5,
-  toggleTag: jest.fn((curr: unknown[]) => curr),
-  isSeasonalTag: jest.fn(() => false),
+  toggleTag: jest.fn((curr: string[], tag: string) => (
+    curr.includes(tag) ? curr.filter((value) => value !== tag) : [...curr, tag]
+  )),
+  isSeasonalTag: jest.fn((tag: string) => tag === 'icy_winter'),
   isDisabilityTag: jest.fn(() => false),
 }));
 
@@ -379,16 +391,28 @@ function renderAnon(
 
 function renderAuth(
   user: User = { id: 'user-abc' },
-  props: Partial<{ visible: boolean; severity: number | null }> = {},
+  props: Partial<{
+    visible: boolean;
+    severity: number | null;
+    location: typeof LOCATION | null;
+    locationSource: 'gps' | 'pin';
+    onClose: () => void;
+    onRequestLocation: () => void;
+    onPlaceOnMap: () => void;
+  }> = {},
 ) {
   mockUseAuth.mockReturnValue({ user } as ReturnType<typeof useAuth>);
+  const location = props.location === undefined ? LOCATION : props.location;
   const utils = render(
     withProvider(
       <ReportFlagModal
         visible={props.visible ?? true}
-        location={LOCATION}
-        onClose={jest.fn()}
+        location={location}
+        locationSource={props.locationSource}
+        onClose={props.onClose ?? jest.fn()}
         onCreated={jest.fn()}
+        onRequestLocation={props.onRequestLocation}
+        onPlaceOnMap={props.onPlaceOnMap}
       />,
     ),
   );
@@ -424,6 +448,11 @@ async function addPhoto(utils: ReturnType<typeof render>, uri: string) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // clearAllMocks preserves queued mockResolvedValueOnce results. Reset this
+  // local confirmation mock as well so a prior simulated Cancel cannot alter
+  // the next dismissal contract case in the full suite.
+  mockConfirm.mockReset();
+  mockConfirm.mockResolvedValue(true);
   setFontScale(1);
   mockCheckAnonRateLimit.mockResolvedValue(undefined);
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
@@ -1297,7 +1326,7 @@ describe('S10 — confirm the submit', () => {
 // ---------------------------------------------------------------------------
 
 describe('A11Y-226 — guest draft survives the sign-in handoff', () => {
-  it('press "Sign in" → draft stashed + announced + closed; a fresh mount restores and announces', () => {
+  it('press "Sign in" → draft stashed + announced + closed; a fresh mount restores, announces, and protects it', async () => {
     const announceSpy = jest
       .spyOn(AccessibilityInfo, 'announceForAccessibility')
       .mockImplementation(() => {});
@@ -1318,13 +1347,25 @@ describe('A11Y-226 — guest draft survives the sign-in handoff', () => {
     announceSpy.mockClear();
 
     // …and the form's next mount (signed-in world) restores the draft.
-    const second = renderAuth();
+    const onClose = jest.fn();
+    const second = renderAuth({ id: 'user-abc' }, { onClose });
     expect(
       second.getByDisplayValue('Broken curb cut at 5th and Main'),
     ).toBeTruthy();
     expect(announceSpy).toHaveBeenCalledWith(
       expect.stringContaining('draft was restored'),
     );
+
+    mockConfirm.mockResolvedValueOnce(false);
+    fireEvent.press(second.getByLabelText('Cancel and close'));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledWith(
+      'Discard report?',
+      'Your unsent report will be lost.',
+      'Discard',
+      true,
+    ));
+    expect(second.getByDisplayValue('Broken curb cut at 5th and Main')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
 
     second.unmount();
     announceSpy.mockRestore();
@@ -1515,6 +1556,10 @@ describe('SW-52 — cancelling a report actually discards it', () => {
 
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
+    await waitFor(() => {
+      expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+    });
+
     // The sheet never unmounted — this is the same component, reopened. Q5: the
     // reset clears the RATING too, so the next report has to be rated again
     // before it is filable. That is the point of the reset, not a wrinkle in it.
@@ -1528,7 +1573,7 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     expect(mockUploadFlagPhoto).not.toHaveBeenCalled();
   });
 
-  it('clears the rating too, so the next report is re-judged (Q5)', () => {
+  it('clears the rating too, so the next report is re-judged (Q5)', async () => {
     const utils = renderAuth({ id: 'user-abc' }, { severity: 4 });
     // Rated: the ask is gone and Submit is live.
     expect(utils.queryByText('Choose how hard this makes the path to use.')).toBeNull();
@@ -1539,10 +1584,12 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
     // Back to the ask, and Submit is inert again.
-    expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
-    expect(
-      utils.getByLabelText('Submit report').props.accessibilityState.disabled,
-    ).toBe(true);
+    await waitFor(() => {
+      expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+      expect(
+        utils.getByLabelText('Submit report').props.accessibilityState.disabled,
+      ).toBe(true);
+    });
   });
 
   it('clears the typed description too', async () => {
@@ -1555,9 +1602,14 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     );
     expect(utils.getByDisplayValue('Abandoned draft')).toBeTruthy();
 
+    mockConfirm.mockResolvedValue(true);
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
-    expect(utils.queryByDisplayValue('Abandoned draft')).toBeNull();
+    await waitFor(() => {
+      expect(
+        utils.getByLabelText('Description of the accessibility issue').props.value,
+      ).toBe('');
+    });
   });
 
   it('a FAILED submit still keeps the draft (this must not regress)', async () => {
@@ -1577,6 +1629,198 @@ describe('SW-52 — cancelling a report actually discards it', () => {
       expect(mockCreateFlag).toHaveBeenCalled();
     });
     expect(utils.getByDisplayValue('Survives a failure')).toBeTruthy();
+  });
+});
+
+describe('R2-F3 — a meaningful Report draft is protected before dismissal', () => {
+  it('closes an untouched form without prompting; the default category is not dirty', () => {
+    const onClose = jest.fn();
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats whitespace-only description as clean but protects meaningful description', async () => {
+    const cleanClose = jest.fn();
+    const clean = renderAuth({ id: 'user-abc' }, { severity: null, onClose: cleanClose });
+    fireEvent.changeText(clean.getByLabelText('Description of the accessibility issue'), '  \n ');
+    fireEvent.press(clean.getByLabelText('Cancel and close'));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(cleanClose).toHaveBeenCalledTimes(1);
+
+    const onClose = jest.fn();
+    mockConfirm.mockResolvedValueOnce(false);
+    const dirty = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+    fireEvent.changeText(dirty.getByLabelText('Description of the accessibility issue'), 'Keep this report');
+    fireEvent.press(dirty.getByLabelText('Cancel and close'));
+
+    await waitFor(() => {
+      expect(mockConfirm).toHaveBeenCalledWith(
+        'Discard report?',
+        'Your unsent report will be lost.',
+        'Discard',
+        true,
+      );
+    });
+    expect(dirty.getByDisplayValue('Keep this report')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(mockCreateFlag).not.toHaveBeenCalled();
+  });
+
+  it('returns to clean when the only editable change is reverted', () => {
+    const onClose = jest.fn();
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+    const description = utils.getByLabelText('Description of the accessibility issue');
+
+    fireEvent.changeText(description, 'Temporary wording');
+    fireEvent.changeText(description, '');
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('protects category, severity, seasonal context, staged photos, and quick-fill changes', async () => {
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null });
+    fireEvent.press(utils.getByLabelText('Category: Broken sidewalk'));
+    rate(utils, 4);
+    fireEvent.press(utils.getByLabelText('Icy in winter'));
+    await addPhoto(utils, 'file:///staged.jpg');
+    fireEvent.changeText(
+      utils.getByLabelText('Photo description for screen reader users'),
+      'A raised edge blocks the curb ramp.',
+    );
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+
+    const templates = validReportTemplates as unknown as jest.Mock;
+    templates.mockReturnValueOnce([
+      {
+        id: 'winter-ramp',
+        label: 'Winter ramp',
+        category: 'no_ramp',
+        severity: 3,
+        description: 'Template text',
+      },
+    ]);
+    const quickFill = renderAuth({ id: 'user-abc' }, { severity: null });
+    fireEvent.press(quickFill.getByLabelText('Apply template: Winter ramp'));
+    fireEvent.press(quickFill.getByLabelText('Cancel and close'));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(2));
+  });
+
+  it('routes request-close, accessibility escape, and pull dismissal through the guard', async () => {
+    const routes = [
+      {
+        name: 'request-close',
+        invoke: (utils: ReturnType<typeof render>) =>
+          utils.UNSAFE_getByType(Modal).props.onRequestClose(),
+      },
+      {
+        name: 'accessibility escape',
+        invoke: (utils: ReturnType<typeof render>) =>
+          utils.UNSAFE_getByType(GlassSurface).props.onAccessibilityEscape(),
+      },
+      {
+        name: 'pull dismissal',
+        invoke: (utils: ReturnType<typeof render>) =>
+          utils.UNSAFE_getByType(SheetPull).props.onDismiss(),
+      },
+    ];
+
+    for (const route of routes) {
+      const onClose = jest.fn();
+      mockConfirm.mockResolvedValueOnce(false);
+      const utils = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+      fireEvent.changeText(
+        utils.getByLabelText('Description of the accessibility issue'),
+        `Keep this report after ${route.name}`,
+      );
+
+      route.invoke(utils);
+
+      await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+      expect(onClose).not.toHaveBeenCalled();
+      expect(
+        utils.getByDisplayValue(`Keep this report after ${route.name}`),
+      ).toBeTruthy();
+      utils.unmount();
+      mockConfirm.mockClear();
+    }
+  });
+
+  it('protects an explicitly requested location replacement', async () => {
+    const onClose = jest.fn();
+    mockConfirm.mockResolvedValueOnce(false);
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+
+    function LocationHarness() {
+      const [location, setLocation] = React.useState<typeof LOCATION | null>(null);
+      return (
+        <SharedModalsProvider>
+          <ReportFlagModal
+            visible
+            location={location}
+            onClose={onClose}
+            onCreated={jest.fn()}
+            onRequestLocation={() => setLocation(LOCATION)}
+          />
+        </SharedModalsProvider>
+      );
+    }
+
+    const utils = render(<LocationHarness />);
+    fireEvent.press(utils.getByLabelText('Use my location'));
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps passive GPS arrival in the opening state', () => {
+    const onClose = jest.fn();
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+
+    function PassiveLocationHarness() {
+      const [location, setLocation] = React.useState<typeof LOCATION | null>(null);
+      React.useEffect(() => setLocation(LOCATION), []);
+      return (
+        <SharedModalsProvider>
+          <ReportFlagModal
+            visible
+            location={location}
+            onClose={onClose}
+            onCreated={jest.fn()}
+          />
+        </SharedModalsProvider>
+      );
+    }
+
+    const utils = render(<PassiveLocationHarness />);
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the product body role for the location warning and keeps coordinates monospace', () => {
+    const utils = renderAuth(
+      { id: 'user-abc' },
+      { location: null, severity: null },
+    );
+    expect(utils.getByText('Waiting for location…').props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontFamily: font.family.bodyMedium })]),
+    );
+
+    const withLocation = renderAuth();
+    fireEvent.press(withLocation.getByLabelText('Show coordinates'));
+    expect(withLocation.getByText('49.28000, -123.12000').props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontFamily: font.family.mono })]),
+    );
   });
 });
 
