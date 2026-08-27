@@ -1,5 +1,5 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -39,6 +39,10 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { computeTasksBadge, applySceneInert } from '@/navigation/perceptionHelpers';
 import { createLinking, type TakePendingUrl } from './linking';
 import { ScreenFallback } from './ScreenFallback';
+import {
+  schedulePushEducationAfterTabPress,
+  type CancellableInteractionTask,
+} from './postSignInPushGate';
 
 // Settings + Admin are reached ONLY from the hamburger drawer (Admin is also
 // gated by is_admin), so they never appear on first paint. Code-split them out
@@ -269,7 +273,9 @@ function ScreenInertLayer({ children }: { children: React.ReactNode }) {
  * the provider — useSharedModals would see no context).
  */
 function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamList }) {
-  const { setOpen } = useSharedModals();
+  const { open: sharedModalOpen, setOpen } = useSharedModals();
+  const { open: drawerOpen } = useDrawer();
+  const { pushEducationPending, consumePendingPushEducation } = useAuth();
   const color = useColor();
   const styles = makeStyles(color);
   const insets = useSafeAreaInsets();
@@ -283,6 +289,45 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
 
   const { flags } = useFlags();
   const tasksBadge = computeTasksBadge(flags);
+
+  // Keep tab-press scheduling stable while every eligibility value remains
+  // live. The callback is intentionally driven only by an explicit tab press;
+  // mounting, foregrounding, and modal dismissal never call it themselves.
+  const pushGateStateRef = useRef({
+    pending: pushEducationPending,
+    appState: AppState.currentState,
+    sharedModalOpen,
+    drawerOpen,
+  });
+  pushGateStateRef.current = {
+    pending: pushEducationPending,
+    appState: AppState.currentState,
+    sharedModalOpen,
+    drawerOpen,
+  };
+  const consumePushRef = useRef(consumePendingPushEducation);
+  consumePushRef.current = consumePendingPushEducation;
+  const pushTasksRef = useRef(new Set<CancellableInteractionTask>());
+
+  const handleVisibleTabPress = useCallback(() => {
+    let task: CancellableInteractionTask | null = null;
+    task = schedulePushEducationAfterTabPress(
+      () => ({ ...pushGateStateRef.current, appState: AppState.currentState }),
+      () => consumePushRef.current(),
+      () => {
+        if (task) pushTasksRef.current.delete(task);
+      },
+    );
+    if (task) pushTasksRef.current.add(task);
+  }, []);
+
+  useEffect(
+    () => () => {
+      for (const task of pushTasksRef.current) task.cancel();
+      pushTasksRef.current.clear();
+    },
+    [],
+  );
 
   const renderHeaderRight = () => (
     <Pressable
@@ -300,6 +345,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   return (
     <Tab.Navigator
       initialRouteName={initialRouteName}
+      screenListeners={{ tabPress: handleVisibleTabPress }}
       // Per-screen safety net: a render crash in one tab shows an in-place
       // "Try again" fallback instead of bubbling to the app-level boundary and
       // blanking the whole app. The tab bar and other tabs stay usable.

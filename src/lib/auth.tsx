@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import {
@@ -12,21 +20,18 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  /** A first-time push explanation is waiting for a safe signed-in interaction. */
+  pushEducationPending: boolean;
+  /** Atomically consumes the pending explanation for the current sign-in cycle. */
+  consumePendingPushEducation: () => Promise<void>;
 }
 
-// Best-effort push token registration. Never throws — all failures are silent.
-// promptIfNew: true on active sign-in (may show PIPEDA explanation);
-//              false on session restore (never prompts, re-registers silently if previously enabled).
-async function registerPushToken(userId: string, promptIfNew: boolean): Promise<void> {
+// Best-effort push token refresh after the caller has established that push is
+// already enabled. Never throws and never presents education.
+async function refreshPushToken(userId: string, isCurrent: () => boolean): Promise<void> {
   try {
-    const alreadyEnabled = await getPushEnabled(userId);
-    if (!alreadyEnabled) {
-      if (!promptIfNew) return;
-      const confirmed = await showPushExplanation();
-      if (!confirmed) return;
-    }
     const token = await requestExpoPushToken();
-    if (!token) return;
+    if (!token || !isCurrent()) return;
     await savePushToken(userId, token);
   } catch {
     // Push registration is best-effort — never surface errors to the user.
@@ -37,11 +42,76 @@ const AuthContext = createContext<AuthContextValue>({
   session: null,
   user: null,
   loading: true,
+  pushEducationPending: false,
+  consumePendingPushEducation: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pushEducationPending, setPushEducationPending] = useState(false);
+  // Refs are the authority for async auth work. State alone can lag one render,
+  // which is enough for rapid tab presses or a sign-out during a permission
+  // surface to duplicate or misattribute token work.
+  const activeUserIdRef = useRef<string | null>(null);
+  const handledCycleUserIdRef = useRef<string | null>(null);
+  const pendingPushUserIdRef = useRef<string | null>(null);
+
+  const clearPendingPushEducation = useCallback(() => {
+    pendingPushUserIdRef.current = null;
+    setPushEducationPending(false);
+  }, []);
+
+  const refreshEnabledPushForCurrentUser = useCallback(async (userId: string) => {
+    const isCurrent = () => activeUserIdRef.current === userId;
+    try {
+      const enabled = await getPushEnabled(userId);
+      if (!enabled || !isCurrent()) return;
+      await refreshPushToken(userId, isCurrent);
+    } catch {
+      // Push registration is best-effort — never surface errors to the user.
+    }
+  }, []);
+
+  const preparePushForSignedInCycle = useCallback(async (userId: string) => {
+    const isCurrent = () => activeUserIdRef.current === userId;
+    try {
+      const enabled = await getPushEnabled(userId);
+      if (!isCurrent()) return;
+      if (enabled) {
+        await refreshPushToken(userId, isCurrent);
+        return;
+      }
+      pendingPushUserIdRef.current = userId;
+      setPushEducationPending(true);
+    } catch {
+      // A failed preference read must not turn into an unexpected OS prompt.
+    }
+  }, []);
+
+  const consumePendingPushEducation = useCallback(async () => {
+    const userId = pendingPushUserIdRef.current;
+    if (!userId || activeUserIdRef.current !== userId) return;
+
+    // Spend the opportunity before any async work. A second tab press, queued
+    // interaction callback, or foreground transition now observes no pending
+    // user and is an idempotent no-op.
+    pendingPushUserIdRef.current = null;
+    setPushEducationPending(false);
+
+    const isCurrent = () => activeUserIdRef.current === userId;
+    try {
+      // Settings may have completed enablement while this opportunity waited.
+      // In that case its token path already ran, so education has nothing to do.
+      if (await getPushEnabled(userId)) return;
+      if (!isCurrent()) return;
+      const confirmed = await showPushExplanation();
+      if (!confirmed || !isCurrent()) return;
+      await refreshPushToken(userId, isCurrent);
+    } catch {
+      // Education and registration are best-effort; Settings remains available.
+    }
+  }, []);
 
   useEffect(() => {
     // Always flip `loading` off — even if getSession rejects (offline at
@@ -61,27 +131,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
-      if (next?.user) {
-        if (event === 'SIGNED_IN') {
-          // Active sign-in: show PIPEDA explanation if first time, then register.
-          void registerPushToken(next.user.id, true);
-        } else if (event === 'INITIAL_SESSION') {
-          // App restart with persisted session: re-register silently if previously enabled.
-          void registerPushToken(next.user.id, false);
-        }
+      const userId = next?.user.id ?? null;
+      activeUserIdRef.current = userId;
+
+      if (!userId) {
+        handledCycleUserIdRef.current = null;
+        clearPendingPushEducation();
+      } else if (event === 'INITIAL_SESSION') {
+        // A persisted session owns the current cycle and is always silent. Mark
+        // it handled so a duplicate SIGNED_IN event cannot create education.
+        handledCycleUserIdRef.current = userId;
+        clearPendingPushEducation();
+        void refreshEnabledPushForCurrentUser(userId);
+      } else if (event === 'SIGNED_IN' && handledCycleUserIdRef.current !== userId) {
+        // Record the cycle before starting async work so duplicate auth events
+        // for the same user cannot race into two prompts or token refreshes.
+        handledCycleUserIdRef.current = userId;
+        clearPendingPushEducation();
+        void preparePushForSignedInCycle(userId);
       }
     });
 
     return () => {
       subscription.subscription.unsubscribe();
     };
-  }, []);
+  }, [clearPendingPushEducation, preparePushForSignedInCycle, refreshEnabledPushForCurrentUser]);
 
-  // Memoize the context value so consumers don't re-render on every AuthProvider
-  // render — only when session or loading actually changes (user derives from session).
+  // Memoize the context value so consumers re-render only for auth/loading or
+  // pending-education changes (user derives from session; consume is stable).
   const value = useMemo(
-    () => ({ session, user: session?.user ?? null, loading }),
-    [session, loading],
+    () => ({
+      session,
+      user: session?.user ?? null,
+      loading,
+      pushEducationPending,
+      consumePendingPushEducation,
+    }),
+    [session, loading, pushEducationPending, consumePendingPushEducation],
   );
 
   return (
