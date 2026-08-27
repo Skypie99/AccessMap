@@ -15,6 +15,12 @@ import { StyleSheet, Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { TabBarButton } from '../TabBarButton';
+import {
+  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
+  FLOATING_TAB_BAR_CAPSULE_RADIUS,
+  FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+  FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+} from '../tabBarGeometry';
 
 jest.mock('@/lib/haptics', () => ({
   hapticSelection: jest.fn(),
@@ -107,10 +113,37 @@ describe('TabBarButton — a11y + press vocabulary', () => {
     expect(StyleSheet.flatten(underline.props.style)).toMatchObject({
       left: 0,
       right: 0,
-      bottom: 0,
+      bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
       height: 2,
       borderTopColor: '#abcdef',
     });
+  });
+
+  it('clips a leading selected indicator to the rounded liquid capsule without shrinking the tab', () => {
+    const { UNSAFE_getByProps } = renderTab({ capsuleEdge: 'start' });
+    const mask = UNSAFE_getByProps({ testID: 'tab-segment-underline-mask' });
+    expect(mask.props.accessibilityElementsHidden).toBe(true);
+    expect(StyleSheet.flatten(mask.props.style)).toMatchObject({
+      left: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+      bottom: -FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+      height: FLOATING_TAB_BAR_CAPSULE_HEIGHT,
+      overflow: 'hidden',
+      borderBottomLeftRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
+    });
+  });
+
+  it('mirrors clipping at the trailing capsule edge and leaves an internal segment untrimmed', () => {
+    const trailing = renderTab({ capsuleEdge: 'end' }).UNSAFE_getByProps({
+      testID: 'tab-segment-underline-mask',
+    });
+    expect(StyleSheet.flatten(trailing.props.style)).toMatchObject({
+      right: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+      overflow: 'hidden',
+      borderBottomRightRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
+    });
+
+    const internal = renderTab().UNSAFE_getByProps({ testID: 'tab-segment-underline-mask' });
+    expect(StyleSheet.flatten(internal.props.style).overflow).toBeUndefined();
   });
 
   it('does not render the selected underline for an unselected tab', () => {

@@ -4,6 +4,13 @@ import { PlatformPressable } from '@react-navigation/elements';
 import { type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { hapticSelection } from '@/lib/haptics';
 import { decorativeProps } from '@/lib/accessibility';
+import {
+  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
+  FLOATING_TAB_BAR_CAPSULE_RADIUS,
+  FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+  FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+  type FloatingTabBarCapsuleEdge,
+} from './tabBarGeometry';
 
 /**
  * Custom bottom-tab button (BP11 / T3): the tab bar joins the one press
@@ -42,6 +49,8 @@ interface TabBarButtonProps extends BottomTabBarButtonProps {
   activeInk?: string;
   /** Keeps the crystal divider on the navigation token, not a raw color. */
   dividerInk?: string;
+  /** Clips only an outside selected edge to the liquid-glass capsule. */
+  capsuleEdge?: FloatingTabBarCapsuleEdge;
 }
 
 export function TabBarButton({
@@ -51,6 +60,7 @@ export function TabBarButton({
   showDivider = false,
   activeInk,
   dividerInk,
+  capsuleEdge,
   ...rest
 }: TabBarButtonProps) {
   const selected = rest['aria-selected'] === true || rest.accessibilityState?.selected === true;
@@ -79,10 +89,21 @@ export function TabBarButton({
       {selected ? (
         <View
           pointerEvents="none"
-          style={[styles.selectedUnderline, activeInk ? { borderTopColor: activeInk } : null]}
+          style={[
+            styles.underlineMask,
+            capsuleEdge === 'start' && styles.underlineMaskStart,
+            capsuleEdge === 'end' && styles.underlineMaskEnd,
+          ]}
           {...decorativeProps}
-          testID="tab-segment-underline"
-        />
+          testID="tab-segment-underline-mask"
+        >
+          <View
+            pointerEvents="none"
+            style={[styles.selectedUnderline, activeInk ? { borderTopColor: activeInk } : null]}
+            {...decorativeProps}
+            testID="tab-segment-underline"
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -99,9 +120,31 @@ const styles = StyleSheet.create({
     width: 0,
     borderRightWidth: StyleSheet.hairlineWidth,
   },
+  // The tab item's bottom sits one control-padding above the capsule edge.
+  // Extending this mask into that padding aligns its rounded outer corner with
+  // TabBarGlass without shrinking the pressable or changing its hit frame.
+  underlineMask: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: -FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+    height: FLOATING_TAB_BAR_CAPSULE_HEIGHT,
+  },
+  underlineMaskStart: {
+    left: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+    overflow: 'hidden',
+    borderTopLeftRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
+    borderBottomLeftRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
+  },
+  underlineMaskEnd: {
+    right: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+    overflow: 'hidden',
+    borderTopRightRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
+    borderBottomRightRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
+  },
   selectedUnderline: {
     position: 'absolute',
-    bottom: 0,
+    bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
     left: 0,
     right: 0,
     height: 2,

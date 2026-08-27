@@ -20,6 +20,10 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReduceTransparency } from '@/lib/accessibility';
 import { TabBarButton } from './TabBarButton';
 import { TabBarGlass, liquidTabInk } from './TabBarGlass';
+import {
+  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
+  FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+} from './tabBarGeometry';
 import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -337,6 +341,15 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
             activeInk={activeTabInk}
             dividerInk={color.navBorder}
             showDivider={route.name === 'Home' || route.name === 'Tasks'}
+            capsuleEdge={
+              usesLiquidTabBar
+                ? route.name === 'Home'
+                  ? 'start'
+                  : route.name === 'Profile'
+                    ? 'end'
+                    : undefined
+                : undefined
+            }
           />
         ),
         // Native: TabBarGlass supplies liquid glass on normal iOS and preserves
@@ -351,8 +364,8 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           // overlaps the tab labels. 68 (was 62) gives the label's real line
           // box room — at 62 the shrinkable label wrapper was squeezed to ~7px
           // and clipped "Home / Tasks / Profile" in half.
-          height: 68 + insets.bottom,
-          paddingBottom: 8 + insets.bottom,
+          height: FLOATING_TAB_BAR_CAPSULE_HEIGHT + insets.bottom,
+          paddingBottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + insets.bottom,
           paddingTop: 6,
           ...(Platform.OS === 'web'
             ? {

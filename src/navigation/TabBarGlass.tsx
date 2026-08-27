@@ -2,9 +2,14 @@ import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { radius, spacing } from '@/theme';
+import { spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReduceTransparency } from '@/lib/accessibility';
+import {
+  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
+  FLOATING_TAB_BAR_CAPSULE_RADIUS,
+  FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+} from './tabBarGeometry';
 
 /**
  * Floating glass background for the native bottom tab bar. The 68pt control
@@ -51,11 +56,11 @@ export const tabBarGlassStyles = StyleSheet.create({
   capsule: {
     position: 'absolute',
     top: 0,
-    left: spacing.md,
-    right: spacing.md,
-    height: 68,
+    left: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+    right: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
+    height: FLOATING_TAB_BAR_CAPSULE_HEIGHT,
     overflow: 'hidden',
-    borderRadius: radius.xl,
+    borderRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
     borderWidth: StyleSheet.hairlineWidth,
   },
   highlight: {
