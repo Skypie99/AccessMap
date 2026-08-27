@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshPushToken = useCallback(async (userId: string, operationGeneration: number) => {
     try {
+      if (!isCurrentForGeneration(userId, operationGeneration)) return;
       const token = await requestExpoPushToken();
       if (!token || !isCurrentForGeneration(userId, operationGeneration)) return;
       await savePushToken(userId, token);
