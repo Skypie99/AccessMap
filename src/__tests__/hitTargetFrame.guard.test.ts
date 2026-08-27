@@ -17,7 +17,7 @@
  *
  * ─── WHY THE REPO DID NOT ALREADY CATCH THIS ──────────────────────────────
  * The house small-target idiom is "small glyph box + hitSlop = 44 effective"
- * (MapScreen.tsx `heatNoticeClose`, HeatmapLegend.tsx `close`), and it is a
+ * (MapScreen.tsx `heatNoticeClose`), and it is a
  * legitimate way to meet WCAG 2.5.5/2.5.8, which are about the POINTER target.
  *
  * But hitSlop does not appear in the accessibility frame. Proven on the tier
@@ -236,18 +236,15 @@ describe('bordered TextInputs need headroom the census can see', () => {
   //   TasksScreen  "Search flags"  minHeight 44  ->  census 43
   //   FeedbackModal "Reply email"  minHeight 44  ->  census 42
   //
-  // Both already carried the project's 44 and both still missed, because iOS
+  // Both raw fields already carried the project's 44 and still missed, because iOS
   // insets the native field INSIDE a bordered TextInput's own border. A plain
   // View is unaffected — the row titles fixed in this same wave land on exactly
   // 44 — so this applies only where a TextInput draws its own border.
   //
-  // NOTE the `Input` primitive is NOT in this group: its border is on the
-  // wrapper `row`, and the TextInput inside it is borderless, so its 44 is a
-  // real 44. (Corrected here — an earlier commit message in this wave claimed
-  // the Input edit also covered these two fields. It did not: they are raw
-  // TextInputs, and `Input` has exactly one call site in the whole app.)
+  // Tasks now follows that safe wrapper pattern: its TextInput is borderless
+  // and the `searchField` owns the visual 46pt box. It is intentionally not in
+  // the raw bordered-input census below.
   it.each([
-    ['screens/TasksScreen.tsx', 'searchInput'],
     ['components/FeedbackModal.tsx', 'contactInput'],
     // Measured 308x43 while verifying SW-32 — same class, same fix. Serves both
     // of MapScreen's name dialogs ("Name this preset" and "Name this filter").
@@ -258,6 +255,16 @@ describe('bordered TextInputs need headroom the census can see', () => {
     expect(`${file}: ${/minHeight: a11y\.minTargetSize \+ 2/.test(block)}`).toBe(
       `${file}: true`,
     );
+  });
+});
+
+describe('Tasks search field — wrapper-owned hit target', () => {
+  it('owns the border and real 46pt floor on the normal-flow wrapper', () => {
+    const block = styleBlock(read('screens/TasksScreen.tsx'), 'searchField');
+    expect(block).toContain('borderWidth: 1');
+    expect(block).toContain('minHeight: a11y.minTargetSize + 2');
+    expect(block).toMatch(/minWidth:\s*\d+/);
+    expect(styleBlock(read('screens/TasksScreen.tsx'), 'searchInput')).not.toContain('borderWidth');
   });
 });
 
@@ -326,28 +333,6 @@ describe('SW-50 — the remove badge sat inside the lightbox target, and its slo
   });
 });
 
-describe('SW-35 — the legend close spent 10pt of its slop outside the GlassSurface', () => {
-  const src = read('components/HeatmapLegend.tsx');
-
-  it('the touch box is a real 44 anchored inside the surface', () => {
-    const block = styleBlock(src, 'close');
-    expect(block).toContain('top: 0');
-    expect(block).toContain('right: 0');
-    expect(/width: a11y\.minTargetSize/.test(block)).toBe(true);
-    expect(/height: a11y\.minTargetSize/.test(block)).toBe(true);
-  });
-
-  it('the glyph did not move — a 24pt box at 2pt of padding', () => {
-    expect(styleBlock(src, 'close')).toContain('padding: 2');
-    expect(styleBlock(src, 'closeGlyph')).toContain('width: 24');
-  });
-
-  it('the out-of-bounds hitSlop is gone', () => {
-    const start = src.indexOf('accessibilityLabel="Collapse heat map legend"');
-    expect(start).toBeGreaterThan(-1);
-    expect(src.slice(Math.max(0, start - 400), start)).not.toContain('hitSlop');
-  });
-});
 
 describe('D11 — the report form\'s guest "Sign in" was an inline text span', () => {
   const src = read('screens/ReportFlagModal.tsx');
@@ -391,14 +376,14 @@ describe('D11 — the report form\'s guest "Sign in" was an inline text span', (
   });
 });
 
-describe('the sibling that stays on the house idiom — must NOT be "fixed" by reflex', () => {
-  it('MapScreen heatNoticeClose keeps its 24pt box + hitSlop 10', () => {
-    // In-bounds, so the idiom holds here. Sky ruled on 2026-08-20 that the
-    // documented slop controls stay as they are; this pins that decision so a
-    // later sweep does not quietly convert them.
+describe('Explore close targets', () => {
+  it('MapScreen heat notice close controls are real 44pt targets', () => {
     const src = read('screens/MapScreen.tsx');
-    expect(styleBlock(src, 'heatNoticeClose')).toContain('width: 24');
+    const close = styleBlock(src, 'heatNoticeClose');
+    expect(close).toContain('width: a11y.minTargetSize');
+    expect(close).toContain('height: a11y.minTargetSize');
     expect(src).toMatch(/accessibilityLabel="Dismiss heat map notice"/);
+    expect(src).toMatch(/accessibilityLabel="Dismiss empty heat map notice"/);
   });
 
   it('HomeScreen clear-search keeps hitSlop={14} (A11Y-223)', () => {

@@ -4,22 +4,19 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  type Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { a11y, bulkGlassShadow, font, radius, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion, useReduceTransparency } from '@/lib/accessibility';
+import { a11y, font, radius, spacing } from '@/theme';
+import { a11yToggle, decorativeProps, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
+import { confirm } from '@/lib/confirm';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { useAuth } from '@/lib/auth';
 import {
   FEEDBACK_CATEGORIES,
@@ -57,10 +54,6 @@ interface Props {
 export default function FeedbackModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // Engineered chip tint (mirrors TasksScreen): the sheet blurs, the chip tints.
   // Under Reduce Transparency the chips fall back to the solid neutral pair; the
   // selected chip keeps the mode-independent CTA fill (categoryChipSelected).
@@ -79,13 +72,18 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   // is going into a tracker.
   const [category, setCategory] = useState<FeedbackCategory>('idea');
   const [sending, setSending] = useState(false);
+  const initialContactRef = useRef('');
+  const scrollRef = useRef<ScrollView>(null);
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
 
   // Re-prefill contact whenever the modal opens — covers sign-out/sign-in
   // edge case. Body and category are preserved so the user doesn't lose
   // what they typed/picked if they close and reopen.
   useEffect(() => {
     if (visible) {
-      setContact(user?.email ?? '');
+      const initialContact = user?.email ?? '';
+      initialContactRef.current = initialContact;
+      setContact(initialContact);
     }
   }, [visible, user?.email]);
 
@@ -133,6 +131,25 @@ export default function FeedbackModal({ visible, onClose }: Props) {
   const contactInvalid = trimmedContact.length > 0 && !isPlausibleEmail(trimmedContact);
   const canSend =
     body.trim().length > 0 && body.length <= MAX_FEEDBACK_LEN && !contactInvalid && !sending;
+  const dirty = body.trim().length > 0 || contact !== initialContactRef.current;
+
+  const requestClose = async () => {
+    if (sending) return;
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    const discard = await confirm(
+      'Discard feedback?',
+      'Your unsent feedback will be lost.',
+      'Discard',
+      true,
+    );
+    if (!discard) return;
+    setBody('');
+    setContact(initialContactRef.current);
+    onClose();
+  };
 
   const handleSend = async () => {
     if (!canSend) return;
@@ -182,66 +199,43 @@ export default function FeedbackModal({ visible, onClose }: Props) {
     Alert.alert("Couldn't open email", result.message);
   };
 
-  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
-
   return (
-    <Modal
-      aria-label="Send feedback"
+    <Sheet
       visible={visible}
-      animationType={reducedMotion ? 'none' : 'slide'}
-      transparent
-      onRequestClose={() => {
-        if (!sending) onClose();
-      }}
-    >
-      {/* accessibilityViewIsModal — VoiceOver treats everything behind
-          this view as inert while the modal is up. Same pattern as
-          HelpModal; see that file for the longer comment. Alex P5. */}
-      <View
-        style={styles.backdrop}
-        accessibilityViewIsModal
-        // G1: same `!sending` guard as onRequestClose — a scrub mid-send must
-        // no-op exactly like the disabled X does.
-        onAccessibilityEscape={() => {
-          if (!sending) onClose();
-        }}
-        testID="feedbackModal-backdrop"
-      >
-        {/* KAV nests INSIDE the backdrop — the backdrop keeps
-            accessibilityViewIsModal + testID (pinned by the sharedModalsContext
-            test) and the KAV lifts the card above the iOS keyboard. Same recipe
-            as AddressSearchModal (G9). */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+      onClose={() => void requestClose()}
+      title="Send feedback"
+      closeLabel="Close feedback"
+      presentation="expanded"
+      glass
+      padded
+      keyboardAvoiding
+      minBottomPad={kbVisible ? spacing.md : spacing.xl}
+      pullEnabled={!sending}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="feedbackModal-backdrop"
+      headerRight={
+        <Pressable
+          onPress={() => void requestClose()}
+          disabled={sending}
+          hitSlop={12}
+          style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
+          accessibilityRole="button"
+          accessibilityLabel="Close feedback"
+          {...a11yToggle({ disabled: sending })}
         >
-          <View style={styles.cardWrap}>
-          <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: kbVisible ? spacing.md : Math.max(spacing.xl, insets.bottom) }]}>
-            <View style={styles.headerRow}>
-              <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-                Send feedback
-              </AppText>
-              <Pressable
-                onPress={onClose}
-                disabled={sending}
-                hitSlop={12}
-                style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-                accessibilityRole="button"
-                accessibilityLabel="Close feedback"
-                {...a11yToggle({ disabled: sending })}
-              >
-                <X size={18} color={color.text} strokeWidth={2.2} />
-              </Pressable>
-            </View>
-
-            {/* Body scrolls when the card is bound (maxHeight 90%) on short
-                viewports / large type; headerRow above and actionsRow below stay
-                pinned so the ✕ and Cancel/Send never scroll away (G9). */}
+          <X size={18} color={color.text} strokeWidth={2.2} />
+        </Pressable>
+      }
+    >
+      {/* Sheet owns containment, focus-on-open, safe-area geometry, keyboard
+          lift, and the pull gesture. The body and action row stay local so the
+          feedback form keeps its pinned send controls. */}
             <ScrollView
               style={styles.body}
+              ref={scrollRef}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.bodyContent}
               keyboardShouldPersistTaps="handled"
             >
@@ -355,7 +349,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
 
             <View style={styles.actionsRow}>
               <Pressable
-                onPress={onClose}
+                onPress={() => void requestClose()}
                 disabled={sending}
                 style={({ pressed }) => [styles.btn, styles.btnCancel, pressed && { backgroundColor: color.borderPressed }]}
                 accessibilityRole="button"
@@ -383,62 +377,12 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 )}
               </Pressable>
             </View>
-          </GlassSurface>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: color.scrim,
-      justifyContent: 'flex-end',
-    },
-    // Bulk-glass sheet material lives on the GlassSurface (variant="bulk" supplies
-    // the floor + top edge/specular + designed RT state). No backgroundColor here
-    // (the variant owns it); overflow:'hidden' + top radius round the sheet top;
-    // maxHeight bounds it so the body ScrollView can shrink (G9). Shadow lives on
-    // cardWrap (overflow would clip it).
-    card: {
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      overflow: 'hidden',
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.xl,
-      gap: spacing.sm,
-      maxHeight: '90%',
-      // G6/SR-099: shrink into cardWrap's cap (see that block).
-      flexShrink: 1,
-    },
-    // Bottom-sheet up-shadow on the OUTER wrapper — identical to AboutScreen
-    // (the two sheets are siblings). Negative height casts it UP off the top
-    // edge. Dark keeps the one sanctioned Deep Field dark shadow (#000@0.35);
-    // light uses shadowTint@0.12. (do/don't #2 deviation — card overflow clips it.)
-    // G6/SR-099 — THE CAP LIVES HERE. This surface has one more layer than its
-    // siblings: backdrop → KAV → cardWrap → card. A percentage maxHeight only
-    // resolves against a parent with a *definite* height, and both the KAV and
-    // cardWrap are content-sized — so the card's own `maxHeight:'90%'` never
-    // resolved and the card could grow unbounded, exactly as About/Help do
-    // live (X measured at y=-65 / y=-53). Only the KAV's parent (the `flex:1`
-    // backdrop) is definite, so the cap must sit on the KAV; cardWrap and card
-    // just need permission to shrink into it. Latent rather than live here
-    // only because the feedback form is short.
-    kav: {
-      width: '100%',
-      maxHeight: '90%',
-      flexShrink: 1,
-    },
-    cardWrap: {
-      flexShrink: 1,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      ...bulkGlassShadow(color),
-    },
     // Scrollable body between the pinned header and actions. flexShrink lets it
     // give up height so the card honors maxHeight and the body scrolls (G9).
     body: {
@@ -447,17 +391,6 @@ const makeStyles = (color: ColorTheme) =>
     bodyContent: {
       gap: spacing.sm,
       paddingBottom: spacing.tight,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-    },
-    title: {
-      flex: 1,
-      fontSize: font.size.xl,
-      fontWeight: font.weight.bold,
-      color: color.textStrong,
     },
     closeBtn: {
       width: 44,

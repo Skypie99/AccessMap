@@ -299,7 +299,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
       glass
       padded
       keyboardAvoiding
-      shrinkStyle={styles.kav}
+      presentation="expanded"
       cardStyle={styles.cardRhythm}
       minBottomPad={spacing.xl}
       atTop={atTop}
@@ -319,9 +319,9 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                   </AppText>
                 </View>
               ) : (
-                // Scrolls under the 90% cap so the field stays reachable at
-                // large dynamic type with the keyboard up (WCAG 1.4.4). Header
-                // and actions stay pinned.
+                // Scrolls through the expanded safe-area geometry so the field
+                // stays reachable at large dynamic type with the keyboard up
+                // (WCAG 1.4.4). Header and actions stay pinned.
                 <ScrollView
                   style={styles.body}
               ref={scrollRef}
@@ -487,12 +487,6 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // The cap that actually resolves — see the J2-5 note at the call site.
-    kav: {
-      width: '100%',
-      maxHeight: '90%',
-      flexShrink: 1,
-    },
     // The sheet's inter-child rhythm. `padded` supplies `md`; this surface
     // shipped tighter (its rows are radio lines, not cards).
     cardRhythm: { gap: spacing.sm },

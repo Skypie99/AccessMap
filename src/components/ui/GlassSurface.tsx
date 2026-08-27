@@ -6,7 +6,7 @@
  * 1. LEGACY (no `variant`) — the 2026-06-17 map-overlay material, byte-stable:
  *    a translucent blurred surface with a solid `overlayGlass` contrast floor
  *    over the blur, dropping to an opaque `overlay` fill under Reduce
- *    Transparency. MapScreen / HomeScreen / HeatmapLegend consume this path;
+ *    Transparency. MapScreen and HomeScreen consume this path;
  *    its behavior (defaults intensity 24, tint 'light') is pinned by tests.
  *
  * 2. VARIANTS (`variant="row" | "chrome" | "banner" | "bulk"`) — the "Deep

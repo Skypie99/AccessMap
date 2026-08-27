@@ -959,7 +959,7 @@ export default function ProfileScreen() {
           styles.container,
           // S8: headerShown:false now, so clear the status bar / notch ourselves
           // (mirrors the headerless Home/Tasks). Overrides the container's top pad.
-          { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + 16 },
+          { paddingTop: insets.top + spacing.sm, paddingBottom: tabBarHeight + 16 },
         ]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
       >

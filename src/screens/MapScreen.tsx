@@ -108,7 +108,6 @@ import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, isAxRecompose, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
-import HeatmapLegend from '@/components/HeatmapLegend';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
@@ -425,6 +424,10 @@ export default function MapScreen() {
     lng: number;
   } | null>(null);
   const [legendOpen, setLegendOpen] = useState(false);
+  // The compact legend shortcut is session-local: a dismissal survives tab
+  // navigation while this mounted screen remains alive, but is intentionally
+  // not written to storage and resets on the next app launch.
+  const [legendDismissed, setLegendDismissed] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
@@ -597,6 +600,9 @@ export default function MapScreen() {
   // Q1 (Sky): the Art. 7 heat notice gains a session-dismiss X, re-shown on
   // every heat re-enable (the reset effect lives just after the persist effect).
   const [heatNoticeDismissed, setHeatNoticeDismissed] = useState(false);
+  // The outcome notice is also a session-local choice. Re-enabling the layer
+  // gives the user its explanation again, without introducing persistence.
+  const [emptyHeatNoticeDismissed, setEmptyHeatNoticeDismissed] = useState(false);
   const [heatmapHydrated, setHeatmapHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(new Set());
   const [minSeverity, setMinSeverity] = useState<FlagSeverity>(1);
@@ -819,7 +825,10 @@ export default function MapScreen() {
   // Q1: re-show the heat notice whenever the heat layer is (re-)enabled. Keyed
   // on the toggle only, so a dismiss sticks until the user turns heat off and on.
   useEffect(() => {
-    if (heatmapEnabled) setHeatNoticeDismissed(false);
+    if (heatmapEnabled) {
+      setHeatNoticeDismissed(false);
+      setEmptyHeatNoticeDismissed(false);
+    }
   }, [heatmapEnabled]);
 
   // Apply a saved set: copy its filter triple over the active filters.
@@ -2790,34 +2799,45 @@ export default function MapScreen() {
             which reads as broken. This complementary line names the outcome so
             "on + empty" ≠ "broken". (heatCells is the global loaded set, not a
             viewport query, so the copy stays honest about coverage, not "view".) */}
-        {heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0 && (
+        {heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0 && (
           <GlassSurface
-            style={styles.heatNotice}
+            style={styles.emptyHeatNotice}
             borderRadius={radius.md}
             tint="light"
             tintColor="rgba(255,255,255,0.65)"
             solidColor="rgba(255,255,255,0.95)"
           >
-            <AppText
-              variant="body"
-              style={styles.heatNoticeText}
-              accessible
-              accessibilityRole="text"
-              accessibilityLiveRegion="polite"
-            >
-              No heat zones qualify yet — coverage grows as more reports come in.
-            </AppText>
+            <View style={styles.heatNoticeRow}>
+              <AppText
+                variant="body"
+                style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
+                accessible
+                accessibilityRole="text"
+                accessibilityLiveRegion="polite"
+              >
+                No heat zones qualify yet — coverage grows as more reports come in.
+              </AppText>
+              <Pressable
+                style={styles.heatNoticeClose}
+                onPress={() => setEmptyHeatNoticeDismissed(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss empty heat map notice"
+              >
+                <X size={16} color="#414B5A" strokeWidth={2.4} />
+              </Pressable>
+            </View>
           </GlassSurface>
         )}
         </View>
 
         {/* Bottom bar: legend (left, conditional) + FABs (right) */}
         <View style={styles.bottomBar} pointerEvents="box-none">
-          {/* Flex slot reserves the left half so HeatmapLegend wraps against the
-              true remaining width beside the intrinsic-width fabColumn, instead
-              of overlapping the FABs at narrow widths (G6). */}
+          {/* The compact Legend door reserves the left half beside the intrinsic
+              FAB column. The full explanation remains one tap away in
+              LegendModal; no large on-map key competes with map detail. */}
           <View style={styles.legendSlot} pointerEvents="box-none">
-            {heatmapEnabled ? <HeatmapLegend /> : null}
+            {!legendDismissed ? (
+            <View style={styles.legendShortcut}>
             {/* M4 (Q10): the Legend is ONE tap. It was two — ⋯ then a row filed
                 under a "?" icon — and the legend is the product's TEACHING
                 surface: five colours, five numbers, five human sentences. The
@@ -2829,7 +2849,7 @@ export default function MapScreen() {
                 liteColors = engineered gradient, so this adds ZERO blur panes to
                 the budget — the command bar's single live pane is still the only
                 one on this screen). The ⋯ row stays where it is for muscle
-                memory; HeatmapLegend above is a different object and untouched. */}
+                memory; the full modal remains the detailed teaching surface. */}
             <PressableScale
               ref={legendTrigger.ref}
               style={styles.fabCrystalPill}
@@ -2867,6 +2887,16 @@ export default function MapScreen() {
                 <AppText variant="label" style={styles.fabCrystalText}>Legend</AppText>
               </View>
             </PressableScale>
+            <Pressable
+              onPress={() => setLegendDismissed(true)}
+              style={styles.legendDismissBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss map legend shortcut"
+            >
+              <X size={16} color={color.textStrong} strokeWidth={2.4} />
+            </Pressable>
+            </View>
+            ) : null}
           </View>
           <View style={styles.fabColumn} pointerEvents="box-none">
             {/* Recenter — demoted from the old top tray into the FAB column, at the
@@ -3960,7 +3990,7 @@ const makeStyles = (color: ColorTheme) =>
     // bottom bar so it's visible whenever the heat layer is on, regardless
     // of whether the filter panel is open. Semi-transparent so it doesn't
     // fully obscure the map edge, muted font so it reads as informational
-    // (not an error) and doesn't compete with the HeatmapLegend swatches.
+    // (not an error) and doesn't compete with the map’s primary controls.
     // Heat notice (both the Art. 7 rule + the "no zones qualify" outcome). The
     // #1a1a1a black slab is retired for a translucent always-light 0.65 pin (the
     // GlassSurface owns the surface — no backgroundColor here). #222 ink at ≥500
@@ -3972,6 +4002,17 @@ const makeStyles = (color: ColorTheme) =>
       paddingVertical: 7,
       marginBottom: 8,
     },
+    // The empty-state explanation is deliberately quieter than the mandatory
+    // k-anonymity notice, while retaining the same independent 44pt dismiss
+    // affordance and readable pinned-light ink.
+    emptyHeatNotice: {
+      alignSelf: 'stretch',
+      borderRadius: radius.md,
+      paddingLeft: 12,
+      paddingRight: spacing.xs,
+      paddingVertical: spacing.xs,
+      marginBottom: 8,
+    },
     heatNoticeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
     heatNoticeText: {
       fontSize: font.size.caption,
@@ -3981,30 +4022,37 @@ const makeStyles = (color: ColorTheme) =>
     },
     // In the dismissible (row) form the text grows so the X pins to the right.
     heatNoticeTextGrow: { flex: 1 },
-    // 24pt glyph box + hitSlop 10 = 44 effective (the house small-target idiom).
+    // A genuine 44pt box, rather than a smaller glyph with a virtual target,
+    // keeps the independently reachable dismissal reliable for touch and
+    // assistive technology.
     heatNoticeClose: {
-      width: 24,
-      height: 24,
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: -1,
+      marginVertical: -spacing.xs,
     },
     bottomBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-end',
     },
-    // Left half of the bottom bar. flex:1 makes it claim the space beside the
-    // intrinsic-width fabColumn, giving HeatmapLegend a definite bounding width
-    // so its internal flexWrap wraps instead of pushing into the FABs (G6).
+    // Left half of the bottom bar, with a definite bound beside the intrinsic
+    // fabColumn so the shortcut and its dismissal do not overlap the controls.
     legendSlot: {
       flex: 1,
       marginRight: spacing.sm,
       alignItems: 'flex-start',
-      // The heat legend (when on) stacks ABOVE the persistent Legend pill, so
-      // the pill keeps the bottom line with the List pill opposite it. Same
-      // gap as fabColumn so the two sides of the bottom bar breathe alike.
-      gap: 10,
+    },
+    legendShortcut: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    legendDismissBtn: {
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
+      borderRadius: radius.circle,
+      backgroundColor: color.surfaceNeutral,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     // The three discs the button explains. Tight gap: they read as one glyph,
     // not as three controls.

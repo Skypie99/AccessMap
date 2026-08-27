@@ -890,7 +890,7 @@ export default function TasksScreen() {
       <GlassSurface
         variant="chrome"
         borderRadius={0}
-        style={[styles.chromePane, { paddingTop: insets.top + spacing.sm }]}
+        style={[styles.chromePane, { paddingTop: insets.top }]}
         onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
       >
       {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback folded in. */}
@@ -1003,40 +1003,41 @@ export default function TasksScreen() {
           {/* The magnifier is what carries the field's meaning once the
               placeholder is gone at large type. Decorative: the TextInput
               beside it owns the accessible name in both states. */}
-          <Search
-            size={18}
-            color={color.glassPlaceholder}
-            strokeWidth={2.2}
-            style={styles.searchIcon} {...decorativeProps}
-          />
-          <TextInput
-            value={searchText}
-            onChangeText={setSearchText}
-            // Icon-only at the recomposition point: at large type the
-            // placeholder is the longest string in the chrome and it truncated
-            // mid-word. The field keeps its width and its function; only the
-            // hint text goes, and `accessibilityLabel` still names it, so
-            // nothing is lost to a screen reader or to voice control.
-            placeholder={axRecompose ? '' : 'Search by description or category…'}
-            placeholderTextColor={color.glassPlaceholder}
-            autoCorrect={false}
-            autoCapitalize="none"
-            returnKeyType="search"
-            style={styles.searchInput}
-            accessibilityLabel="Search flags"
-            accessibilityHint="Filter the list by matching description or category"
-          />
-          {searchText.length > 0 && (
-            <Pressable
-              onPress={() => setSearchText('')}
-              style={({ pressed }) => [styles.searchClearBtn, pressed && { opacity: 0.7 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-              hitSlop={8}
-            >
-              <X size={18} color={color.textMuted} strokeWidth={2.2} />
-            </Pressable>
-          )}
+          <View style={styles.searchField}>
+            <Search
+              size={18}
+              color={color.glassPlaceholder}
+              strokeWidth={2.2}
+              {...decorativeProps}
+            />
+            <TextInput
+              value={searchText}
+              onChangeText={setSearchText}
+              // Icon-only at the recomposition point: at large type the
+              // placeholder is the longest string in the chrome and it truncated
+              // mid-word. The field keeps its width and its function; only the
+              // hint text goes, and `accessibilityLabel` still names it, so
+              // nothing is lost to a screen reader or to voice control.
+              placeholder={axRecompose ? '' : 'Search by description or category…'}
+              placeholderTextColor={color.glassPlaceholder}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              style={styles.searchInput}
+              accessibilityLabel="Search flags"
+              accessibilityHint="Filter the list by matching description or category"
+            />
+            {searchText.length > 0 && (
+              <Pressable
+                onPress={() => setSearchText('')}
+                style={({ pressed }) => [styles.searchClearBtn, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <X size={18} color={color.textMuted} strokeWidth={2.2} />
+              </Pressable>
+            )}
+          </View>
           {/* The filter circle. Same sheet, same handler, same expanded state
               as the chip it replaces; the active fill moves from a chip's
               background to the circle's, which is the map's grammar. */}
@@ -2663,39 +2664,31 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       paddingBottom: spacing.sm,
       gap: spacing.xs,
     },
-    searchInput: {
+    searchField: {
       flex: 1,
+      flexBasis: 0,
       // T5: the floor that makes searchRow's flexWrap fire (see that style).
       minWidth: 200,
-      // WCAG 2.5.5: was 40pt (4pt below 44pt project standard).
-      // Measured on device 2026-08-20 (Wave 3): a BORDERED TextInput reports an
-      // accessibility frame INSIDE its own border, because iOS insets the native
-      // field within the RN view. minHeight 44 measured 43 here and 42 on
-      // FeedbackModal's reply field — so no 44 written on a bordered input can
-      // ever satisfy a 44 census. The + 2 is 2 x borderWidth below, not a fudge:
-      // remove the border and it should come off with it. (Plain Views are
-      // unaffected — the row titles fixed in this same wave land on 44 exactly.)
+      // The wrapper owns the field geometry and visible material. Its 46pt
+      // height is a real field, not an input border whose accessibility frame
+      // shrinks inside the native control.
       minHeight: a11y.minTargetSize + 2,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: chipFill,
       borderWidth: 1,
       borderColor: chipEdge,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingLeft: spacing.md,
+      paddingRight: spacing.xs,
+    },
+    searchInput: {
+      flex: 1,
       color: color.glassChipInk,
       fontSize: font.size.base,
-    },
-    // The magnifier rides INSIDE the field's left padding rather than beside
-    // it, so the pill stays one object and the input keeps its own border —
-    // which is what hitTargetFrame's bordered-TextInput rule measures. It is
-    // laid out absolutely against the row and given the field's own height, so
-    // it stays centred on the input even when the row wraps and the row grows.
-    searchIcon: {
-      position: 'absolute',
-      left: spacing.lg + spacing.md,
-      top: spacing.sm,
-      height: a11y.minTargetSize + 2,
-      zIndex: 1,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: 0,
     },
     searchClearBtn: {
       minWidth: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)

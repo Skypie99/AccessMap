@@ -16,7 +16,7 @@ import * as path from 'path';
 
 const map = fs.readFileSync(path.join(__dirname, '..', 'MapScreen.tsx'), 'utf8');
 
-function around(haystack: string, anchor: string, len = 700): string {
+function around(haystack: string, anchor: string, len = 1400): string {
   const i = haystack.indexOf(anchor);
   if (i < 0) throw new Error(`anchor not found: ${anchor}`);
   return haystack.slice(i, i + len);
@@ -27,18 +27,27 @@ describe('B7-A — heat "no zones qualify yet" companion', () => {
     // filteredFlags.length > 0 scopes it to the "data exists but blank" case —
     // an empty dataset has its own broader empty state.
     expect(map).toContain(
-      'heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0',
+      'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0',
     );
   });
 
   it('states the outcome (complements, not duplicates, the k-rule disclaimer)', () => {
-    const block = around(map, 'heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0');
+    const block = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0');
     expect(block).toContain('No heat zones qualify yet');
     expect(block).toContain('coverage grows as more reports come in');
   });
 
   it('is announced as a polite live region', () => {
-    const block = around(map, 'heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0');
+    const block = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0');
     expect(block).toContain('accessibilityLiveRegion="polite"');
+  });
+
+  it('has its own accessible 44pt dismissal and resets when heat is re-enabled', () => {
+    const block = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0');
+    expect(block).toContain('accessibilityLabel="Dismiss empty heat map notice"');
+    expect(block).toContain('setEmptyHeatNoticeDismissed(true)');
+    expect(map).toContain('setEmptyHeatNoticeDismissed(false)');
+    expect(map).toContain('width: a11y.minTargetSize');
+    expect(map).toContain('height: a11y.minTargetSize');
   });
 });

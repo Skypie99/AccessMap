@@ -288,11 +288,11 @@ describe('T5 / D24 — the two Tasks chrome rows had no escape', () => {
 
   it('searchRow may wrap AND the field carries the floor that makes it fire', () => {
     expect(styleBlock(src, 'searchRow')).toContain("flexWrap: 'wrap'");
-    const input = styleBlock(src, 'searchInput');
-    expect(input).toContain('minHeight: a11y.minTargetSize + 2'); // non-vacuity
+    const field = styleBlock(src, 'searchField');
+    expect(field).toContain('minHeight: a11y.minTargetSize + 2'); // non-vacuity
     // flex:1 is basis 0 — without a floor the non-shrinking sibling button can
     // squeeze the field to a sliver instead of being pushed to its own line.
-    expect(input).toMatch(/minWidth:\s*\d+/);
+    expect(field).toMatch(/minWidth:\s*\d+/);
   });
 });
 

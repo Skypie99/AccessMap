@@ -171,7 +171,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
       glass
       engineered
       padded
-      shrinkStyle={styles.cap}
+      presentation="expanded"
       minBottomPad={spacing.xxl}
       atTop={atTop}
       scrollRef={scrollRef}
@@ -251,9 +251,6 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at
-    // 80% and it is a short audit trail, so the tighter cap is content.
-    cap: { maxHeight: '80%' },
     body: { flexShrink: 1 },
     bodyContent: { gap: spacing.md, paddingBottom: spacing.sm, paddingTop: spacing.tight },
     center: {

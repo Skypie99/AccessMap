@@ -1364,6 +1364,7 @@ export default function FlagDetailModal({
             enabled={!busy && !keyboardVisible}
             atTop={atTop}
             simultaneousHandlers={bodyScrollRef}
+            style={styles.pullExpanded}
           >
           <GlassSurface
             variant="bulk"
@@ -1375,7 +1376,13 @@ export default function FlagDetailModal({
             // judge a stronger blur against a denser gradient on the phone; the
             // other two arms keep the shipped engineered path exactly.
             forceEngineered={BULK_FLOOR_CANDIDATE !== 'blur40'}
-            style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
+            style={[
+              styles.card,
+              {
+                marginTop: insets.top + spacing.sm,
+                paddingBottom: Math.max(spacing.xl, insets.bottom),
+              },
+            ]}
             accessibilityViewIsModal
             onAccessibilityEscape={onClose}
           >
@@ -2428,8 +2435,11 @@ const makeStyles = (color: ColorTheme) =>
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.md,
-      maxHeight: '90%',
+      maxHeight: '100%',
+      flexGrow: 1,
+      flexShrink: 1,
     },
+    pullExpanded: { width: '100%', flexGrow: 1 },
     headerRow: {
       flexDirection: 'row',
       // flex-start, not center: the block is three lines tall now, and the

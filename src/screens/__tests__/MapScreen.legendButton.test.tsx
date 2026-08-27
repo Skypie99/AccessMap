@@ -132,8 +132,13 @@ describe('M4 — the source invariants behind that pill', () => {
     expect(MAP).toContain('<View style={styles.legendSlot} pointerEvents="box-none">');
   });
 
-  it('HeatmapLegend is a different object and is left alone', () => {
+  it('uses a session-local dismissible shortcut instead of rendering a large heat key', () => {
     const slot = MAP.slice(MAP.indexOf('styles.legendSlot'), MAP.indexOf('styles.fabColumn'));
-    expect(slot).toContain('{heatmapEnabled ? <HeatmapLegend /> : null}');
+    expect(slot).toContain('!legendDismissed');
+    expect(slot).toContain('accessibilityLabel="Dismiss map legend shortcut"');
+    expect(slot).not.toContain('HeatmapLegend');
+    expect(MAP).toContain("const [legendDismissed, setLegendDismissed] = useState(false);");
+    const stateBlock = MAP.slice(MAP.indexOf('const [legendDismissed'), MAP.indexOf('const [nearbyOpen'));
+    expect(stateBlock).not.toContain('save');
   });
 });

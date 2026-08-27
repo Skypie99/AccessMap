@@ -340,7 +340,7 @@ export default function HomeScreen() {
       )}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: bottomInset + 108 }}
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: bottomInset + 108 }}
         showsVerticalScrollIndicator={false}
         // Pull-to-refresh parity with Tasks/Profile. `refreshing` stays false:
         // the SWR store renders its own inline banners for stale/failed

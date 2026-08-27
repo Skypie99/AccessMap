@@ -80,7 +80,7 @@ export function GuestProfile({ onSignInPress }: { onSignInPress: () => void }) {
       style={styles.guestScroll}
       contentContainerStyle={[
         styles.guestBody,
-        { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + spacing.xl },
+        { paddingTop: insets.top + spacing.sm, paddingBottom: tabBarHeight + spacing.xl },
       ]}
     >
       {/* T19 (F6-08) is retired here. The brand mark was the ONLY place the
