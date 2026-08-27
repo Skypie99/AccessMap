@@ -3848,15 +3848,18 @@ const makeStyles = (color: ColorTheme) =>
     },
     sevPillText: { fontSize: font.size.sm, color: color.glassChipInk, fontWeight: font.weight.bold },
     statusHint: { fontSize: font.size.caption, color: color.warningFg, marginTop: spacing.tight },
+    // The denied banner has a sentence plus an optional Settings route. Stack
+    // them so both receive the banner's full inner width and can reflow at
+    // accessibility sizes instead of overflowing a centered horizontal row.
     banner: {
-      alignSelf: 'center',
+      alignSelf: 'stretch',
       backgroundColor: color.overlaySoft,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.md,
-      flexDirection: 'row',
+      flexDirection: 'column',
       gap: spacing.sm,
-      alignItems: 'center',
+      alignItems: 'stretch',
     },
     // Frosted variant of `banner` for the NEUTRAL "Finding your location…" info
     // banner only. Identical layout, but no solid backgroundColor — <GlassSurface>

@@ -68,6 +68,14 @@ describe('the three controls that were pointing at a closed door', () => {
     expect(map).toMatch(/bannerLink: \{[\s\S]{0,240}?minHeight: a11y\.minTargetSize/);
   });
 
+  it('stacks the complete denied-location message and Settings route inside the viewport', () => {
+    expect(map).toContain('Location is off, so the map shows the most recent flags, not ones near you. Turn on');
+    expect(map).toContain('<AppText variant="label" style={styles.bannerLinkText}>Open Settings</AppText>');
+    expect(map).toMatch(
+      /banner: \{[\s\S]{0,300}?alignSelf: 'stretch',[\s\S]{0,300}?flexDirection: 'column',[\s\S]{0,160}?alignItems: 'stretch',/,
+    );
+  });
+
   it('the recenter button stops pretending it can recenter', () => {
     expect(map).toMatch(
       /permissionLocked && canOpenSettings\s*\n\s*\? \(\) => void Linking\.openSettings\(\)\s*\n\s*: requestLocation/,
