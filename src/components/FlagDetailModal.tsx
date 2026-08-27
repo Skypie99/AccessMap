@@ -129,6 +129,8 @@ interface Props {
   // showing pre-edit values and the owner believed the save was lost.
   onEdited?: (updated: FlagRow) => void;
   onViewOnMap: (flag: FlagRow) => void;
+  /** Host-owned route to the canonical Profile sign-in entry for guest review. */
+  onSignInToReview?: () => void;
   // SW-28: the dismissal-COMPLETE event, not the close INTENT. RN core fires a
   // Modal's onDismiss on iOS ONLY — which is exactly the platform that needs it,
   // because only there does presenting this sheet detach the presenter's view.
@@ -164,6 +166,7 @@ export default function FlagDetailModal({
   onDeleted,
   onEdited,
   onViewOnMap,
+  onSignInToReview,
   onDismiss,
   primaryIntent = 'read',
   distanceKm,
@@ -699,11 +702,13 @@ export default function FlagDetailModal({
   // verified has no community verb to lead with, whichever door you came
   // through, so the sheet falls back to the reader's verb rather than showing a
   // filled button that is not offered.
-  const primaryIsVerify = primaryIntent === 'triage' && canVerify;
+  const primaryIsVerify = !!user && primaryIntent === 'triage' && canVerify;
+  const primaryIsGuestSignIn = !user && primaryIntent === 'triage';
+  const primaryLeadsReview = primaryIsVerify || primaryIsGuestSignIn;
   // Pinned whenever the sheet was opened TO TRIAGE — including on a flag that
   // is already verified, where the pair is Resolved / Reject. Coming from the
   // queue, the verbs stay in reach however long the body runs.
-  const pinnedVerbs = primaryIntent === 'triage';
+  const pinnedVerbs = !!user && primaryIntent === 'triage';
 
   // ── The header's census line (F2) ────────────────────────────────────────
   //
@@ -1268,7 +1273,7 @@ export default function FlagDetailModal({
       a11yLabel: 'Verify this flag',
       hint: 'Marks this report as confirmed',
       onPress: () => runStatusChange('verified', 'verify'),
-      show: canVerify && !primaryIsVerify,
+      show: !!user && canVerify && !primaryIsVerify,
     },
     {
       key: 'resolve',
@@ -1276,7 +1281,7 @@ export default function FlagDetailModal({
       a11yLabel: 'Mark this flag resolved',
       hint: 'Marks the accessibility issue as fixed',
       onPress: () => runStatusChange('resolved', 'resolve'),
-      show: canResolve,
+      show: !!user && canResolve,
     },
     {
       key: 'reject',
@@ -1284,7 +1289,7 @@ export default function FlagDetailModal({
       a11yLabel: 'Reject this flag',
       hint: 'Marks this report as invalid or spam',
       onPress: handleReject,
-      show: canReject,
+      show: !!user && canReject,
     },
   ].filter((cell) => cell.show);
 
@@ -1293,7 +1298,27 @@ export default function FlagDetailModal({
   // §SKY-3c is on the record correcting an agent for collapsing the two. It
   // keeps its own outlined treatment for the same reason.
   const showDispute = canDispute && disputeNotice === null;
-  const siblingVerbs =
+  const guestReviewBoundary = !user && primaryIntent === 'read' ? (
+    <View style={styles.communityCheck}>
+      <AppText variant="label" style={styles.sectionLabel}>Community check</AppText>
+      <Pressable
+        onPress={onSignInToReview}
+        disabled={busy || !onSignInToReview}
+        style={({ pressed }) => [
+          styles.signInReviewBtn,
+          pressed && styles.signInReviewBtnPressed,
+          (busy || !onSignInToReview) && styles.btnDisabled,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Sign in to review"
+        accessibilityHint="Opens the Profile tab, where you can sign in"
+        {...a11yToggle({ disabled: busy || !onSignInToReview })}
+      >
+        <AppText variant="label" style={styles.signInReviewBtnText}>Sign in to review</AppText>
+      </Pressable>
+    </View>
+  ) : null;
+  const siblingVerbs = !user ? guestReviewBoundary :
     segmentCells.length > 0 || showDispute ? (
       <View style={styles.communityCheck}>
         {/* The label belongs to the INLINE placement only. Pinned to the foot
@@ -1710,21 +1735,44 @@ export default function FlagDetailModal({
                   the answer now, and which verb it is follows the door you came
                   through (Q2 = C). */}
               <Pressable
-                onPress={primaryIsVerify ? () => runStatusChange('verified', 'verify') : () => void handleDirections()}
-                disabled={busy}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: color.ctaFillPressed }, busy && styles.btnDisabled]}
-                accessibilityRole="button"
-                accessibilityLabel={primaryIsVerify ? 'Verify this flag' : 'Get directions to this flag'}
-                accessibilityHint={
-                  primaryIsVerify ? 'Marks this report as confirmed' : 'Opens your maps app with directions'
+                onPress={
+                  primaryIsGuestSignIn
+                    ? onSignInToReview
+                    : primaryIsVerify
+                      ? () => runStatusChange('verified', 'verify')
+                      : () => void handleDirections()
                 }
-                {...a11yToggle({ disabled: busy, busy: busy && primaryIsVerify })}
+                disabled={busy || (primaryIsGuestSignIn && !onSignInToReview)}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: color.ctaFillPressed }, (busy || (primaryIsGuestSignIn && !onSignInToReview)) && styles.btnDisabled]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  primaryIsGuestSignIn
+                    ? 'Sign in to review'
+                    : primaryIsVerify
+                      ? 'Verify this flag'
+                      : 'Get directions to this flag'
+                }
+                accessibilityHint={
+                  primaryIsGuestSignIn
+                    ? 'Opens the Profile tab, where you can sign in'
+                    : primaryIsVerify
+                      ? 'Marks this report as confirmed'
+                      : 'Opens your maps app with directions'
+                }
+                {...a11yToggle({
+                  disabled: busy || (primaryIsGuestSignIn && !onSignInToReview),
+                  busy: busy && primaryIsVerify,
+                })}
               >
                 {busy && primaryIsVerify ? (
                   <ActivityIndicator color={color.textOnBrand} />
                 ) : (
                   <AppText variant="label" size={font.size.lg} style={styles.primaryBtnText}>
-                    {primaryIsVerify ? 'Verify' : 'Directions'}
+                    {primaryIsGuestSignIn
+                      ? 'Sign in to review'
+                      : primaryIsVerify
+                        ? 'Verify'
+                        : 'Directions'}
                   </AppText>
                 )}
               </Pressable>
@@ -1756,7 +1804,7 @@ export default function FlagDetailModal({
                   </View>
                   <AppText variant="label" style={styles.moreLabel}>Map</AppText>
                 </Pressable>
-                {primaryIsVerify && (
+                {primaryLeadsReview && (
                   <Pressable
                     onPress={() => void handleDirections()}
                     disabled={busy}
@@ -2669,6 +2717,21 @@ const makeStyles = (color: ColorTheme) =>
       marginTop: spacing.lg,
     },
     primaryBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold },
+    signInReviewBtn: {
+      minHeight: 44,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: color.glassGhostEdge,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    signInReviewBtnPressed: { backgroundColor: color.borderPressed },
+    signInReviewBtnText: {
+      color: color.inkSelect,
+      fontWeight: font.weight.semibold,
+    },
 
     // ── (6) THE SIBLING VERBS ───────────────────────────────────────────────
     communityCheck: { gap: spacing.sm, marginTop: spacing.md },

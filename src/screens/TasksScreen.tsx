@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  InteractionManager,
   Platform,
   Pressable,
   RefreshControl,
@@ -415,19 +416,28 @@ export default function TasksScreen() {
   // state via accessibilityState.
   const announcedBarRef = useRef(false);
   useEffect(() => {
-    if (selection.active && !announcedBarRef.current) {
+    if (user && selection.active && !announcedBarRef.current) {
       announcedBarRef.current = true;
       AccessibilityInfo.announceForAccessibility(
         `Selection mode. ${selectionCount(selection)} selected.`,
       );
-    } else if (!selection.active) {
+    } else if (!user || !selection.active) {
       announcedBarRef.current = false;
     }
-  }, [selection]);
+  }, [user, selection]);
 
   const exitSelection = useCallback(() => {
     setSelection((s) => clearSelection(s));
   }, []);
+
+  // Authentication can disappear while Tasks is mounted (sign-out from the
+  // drawer or session removal). Guest presentation must never inherit a stale
+  // bulk-review state or an already-open tool sheet that only held Select.
+  useEffect(() => {
+    if (user) return;
+    exitSelection();
+    setToolSheetOpen(false);
+  }, [user, exitSelection]);
 
   // Clear selection on tab blur — without this, leaving Tasks mid-selection
   // and coming back leaves the user staring at a stale selection bar with
@@ -446,19 +456,21 @@ export default function TasksScreen() {
   // already picked. If we're already in selection mode, long-press just
   // toggles (mirrors the tap behavior so muscle memory works either way).
   const handleCardLongPress = useCallback((flag: FlagRow) => {
+    if (!user) return;
     hapticSelection();
     setSelection((s) => (s.active ? toggleId(s, flag.id) : enterSelectionWith(flag.id)));
-  }, []);
+  }, [user]);
 
   // SR-accessible entry into selection mode — a button at the top of the
   // screen because long-press is hard to discover (and hard to perform)
   // with a screen reader. Starts the selection empty so SR users can pick
   // cards via the checkbox role we wire up below.
   const enterSelectionEmpty = useCallback(() => {
+    if (!user) return;
     hapticSelection();
     setSelection({ active: true, selectedIds: [] });
     AccessibilityInfo.announceForAccessibility('Selection mode. Tap cards to select.');
-  }, []);
+  }, [user]);
 
   // Track the flash-banner timer in a ref so we can cancel it on unmount or
   // when a new flash arrives — otherwise leaving the tab mid-flash triggers
@@ -799,6 +811,37 @@ export default function TasksScreen() {
     setSelectedFlag(flag);
   }, []);
 
+  const handleCardSignInToReview = useCallback(() => {
+    navigation.navigate('Profile');
+  }, [navigation]);
+
+  // iOS does not safely hand navigation to another tab until the presented
+  // detail modal has finished dismissing. Other platforms do not emit
+  // Modal.onDismiss, so they spend the same handoff after interactions settle.
+  const pendingDetailSignInRef = useRef(false);
+  const detailSignInTaskRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
+  const completeDetailSignIn = useCallback(() => {
+    if (!pendingDetailSignInRef.current) return;
+    pendingDetailSignInRef.current = false;
+    navigation.navigate('Profile');
+  }, [navigation]);
+  const handleDetailSignInToReview = useCallback(() => {
+    pendingDetailSignInRef.current = true;
+    setSelectedFlag(null);
+    if (Platform.OS !== 'ios') {
+      detailSignInTaskRef.current?.cancel();
+      detailSignInTaskRef.current = InteractionManager.runAfterInteractions(
+        completeDetailSignIn,
+      );
+    }
+  }, [completeDetailSignIn]);
+  useEffect(
+    () => () => {
+      detailSignInTaskRef.current?.cancel();
+    },
+    [],
+  );
+
   // Stable tap handler, hoisted out of renderFlagItem. Inline, its identity would
   // change on every selection toggle (renderFlagItem depends on `selection`),
   // handing a fresh onPress to every FlagCard and defeating its React.memo.
@@ -806,7 +849,7 @@ export default function TasksScreen() {
   // object keeps it stable while toggling cards within select mode.
   const handleCardPress = useCallback(
     (flag: FlagRow) => {
-      if (selection.active) {
+      if (user && selection.active) {
         hapticSelection();
         setSelection((s) => toggleId(s, flag.id));
       } else {
@@ -814,7 +857,7 @@ export default function TasksScreen() {
         handleViewOnMap(flag);
       }
     },
-    [selection.active, handleViewOnMap],
+    [user, selection.active, handleViewOnMap],
   );
 
   // Memoized renderItem — extracted from inline JSX so React.memo on FlagCard
@@ -834,25 +877,29 @@ export default function TasksScreen() {
         isBusy={busyId === item.id}
         isOwn={item.user_id === userId}
         userLocation={userLocation}
-        selectionActive={selection.active}
-        selected={isSelected(selection, item.id)}
+        canReview={!!user}
+        selectionActive={!!user && selection.active}
+        selected={!!user && isSelected(selection, item.id)}
         compactActions={compactActions}
         onPress={handleCardPress}
-        onLongPress={handleCardLongPress}
+        onLongPress={user ? handleCardLongPress : undefined}
         onSetStatus={setStatus}
         onShowDetails={showDetails}
+        onSignInToReview={handleCardSignInToReview}
       />
     ),
     [
       busyId,
       userId,
       userLocation,
+      user,
       selection,
       compactActions,
       handleCardPress,
       handleCardLongPress,
       setStatus,
       showDetails,
+      handleCardSignInToReview,
     ],
   );
 
@@ -1066,13 +1113,17 @@ export default function TasksScreen() {
               two rows inside it are gated — "Select multiple" on not already
               selecting, "Clear filters" on something actually filtering — and
               a ⋯ that opens an empty drawer is worse than no ⋯ at all. */}
-          {(!selection.active || tasksFiltersActive) && (
+          {((!!user && !selection.active) || tasksFiltersActive) && (
             <Pressable
               onPress={() => { setFilterSheetOpen(false); setToolSheetOpen(true); }}
               style={({ pressed }) => [styles.toolTriggerBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="More task tools"
-              accessibilityHint="Select multiple flags, or clear the active filters"
+              accessibilityHint={
+                user
+                  ? 'Select multiple flags, or clear the active filters'
+                  : 'Clear the active filters'
+              }
               {...a11yToggle({ expanded: toolSheetOpen })}
             >
               <MoreHorizontal size={22} color={color.glassChipInk} strokeWidth={2.2} />
@@ -1234,7 +1285,7 @@ export default function TasksScreen() {
           user opens when they went looking for the control rather than
           noticing the chip above. */}
       <Sheet
-        visible={toolSheetOpen}
+        visible={toolSheetOpen && (!!user || tasksFiltersActive)}
         onClose={() => setToolSheetOpen(false)}
         title="Task tools"
         glass={false}
@@ -1255,7 +1306,7 @@ export default function TasksScreen() {
             is inside that wrapper) AND not already selecting. Re-entering
             selection mode from here would call enterSelectionEmpty and silently
             drop the selection the user had already built. */}
-        {!selection.active && (
+        {!!user && !selection.active && (
           <PressableScale
             onPress={() => { setToolSheetOpen(false); enterSelectionEmpty(); }}
             style={styles.toolRow}
@@ -1390,7 +1441,7 @@ export default function TasksScreen() {
             paddingTop: chromeTopPad,
             paddingBottom:
               getFloatingTabBarContentInset(tabBarHeight, insets.bottom) +
-              (selection.active ? bulkBarHeight : 0),
+              (user && selection.active ? bulkBarHeight : 0),
           },
         ]}
         stickySectionHeadersEnabled={false}
@@ -1531,7 +1582,7 @@ export default function TasksScreen() {
           than reflowing it. NOT wrapped in a live region — the count lives
           in its own live-region Text above the buttons so SR re-announces
           the count only (not every button label) when cards toggle. */}
-      {selection.active && (
+      {!!user && selection.active && (
         <GlassSurface
           variant="bulk"
           // Web tab bar is in-flow (the list already ends above it), so the bar
@@ -1678,10 +1729,12 @@ export default function TasksScreen() {
               : null
           }
           onClose={() => setSelectedFlag(null)}
+          onDismiss={completeDetailSignIn}
           onChanged={applyStatusChange}
           onEdited={(updated) => patchFlag(updated.id, updated)}
           onDeleted={handleDeleted}
           onViewOnMap={handleViewOnMap}
+          onSignInToReview={handleDetailSignInToReview}
         />
       </Suspense>
     </View>
@@ -1692,6 +1745,8 @@ interface TaskCardProps {
   flag: FlagRow;
   isBusy: boolean;
   isOwn: boolean;
+  /** Whether this viewer may use production review controls. */
+  canReview: boolean;
   /** Current user position, or null when unknown / permission denied. */
   userLocation: LatLng | null;
   /** True when the screen is in bulk-select mode. Changes tap semantics. */
@@ -1702,9 +1757,10 @@ interface TaskCardProps {
   compactActions: boolean;
   onPress: (flag: FlagRow) => void;
   /** Long-press enters / extends selection. */
-  onLongPress: (flag: FlagRow) => void;
+  onLongPress?: (flag: FlagRow) => void;
   onSetStatus: (id: string, status: FlagStatus, isOwn: boolean) => void;
   onShowDetails: (flag: FlagRow) => void;
+  onSignInToReview: () => void;
 }
 
 // React.memo so a single triage action (which flips busyId on the parent)
@@ -1716,6 +1772,7 @@ const TaskCard = memo(function TaskCard({
   flag,
   isBusy,
   isOwn,
+  canReview,
   userLocation,
   selectionActive,
   selected,
@@ -1724,6 +1781,7 @@ const TaskCard = memo(function TaskCard({
   onLongPress,
   onSetStatus,
   onShowDetails,
+  onSignInToReview,
 }: TaskCardProps) {
   const color = useColor();
   const reduceTransparency = useReduceTransparency();
@@ -1790,7 +1848,8 @@ const TaskCard = memo(function TaskCard({
   // Moderate, status Open" not "severity 3, open" (the latter reads the status
   // like a verb). Same helpers Home + the map already speak.
   const baseLabel = `${CATEGORY_LABELS[flag.category]}, ${severityA11y(flag.severity)}, ${statusA11y(flag.status)}. Tap to view on map.`;
-  const a11yLabel = selectionActive
+  const reviewSelectionActive = canReview && selectionActive;
+  const a11yLabel = reviewSelectionActive
     ? `${CATEGORY_LABELS[flag.category]}, ${severityA11y(flag.severity)}. ${selected ? 'Selected.' : 'Not selected.'}`
     : baseLabel;
 
@@ -1826,7 +1885,7 @@ const TaskCard = memo(function TaskCard({
     // since it only navigates to the detail sheet.
     haptic: 'selection' | 'none';
   };
-  const actions: CardAction[] = [
+  const actions: CardAction[] = canReview ? [
     ...(flag.status === 'open'
       ? [{
           key: 'verify',
@@ -1864,6 +1923,26 @@ const TaskCard = memo(function TaskCard({
       dimOnPress: false,
       haptic: 'selection',
     },
+  ] : [
+    {
+      key: 'sign-in',
+      label: 'Sign in to review',
+      a11yLabel: `Sign in to review — ${actionSubject}`,
+      a11yHint: 'Opens the Profile tab, where you can sign in',
+      onPress: onSignInToReview,
+      haptic: 'selection',
+    },
+    {
+      key: 'details',
+      label: 'Details',
+      a11yLabel: `View flag details — ${actionSubject}`,
+      a11yHint: 'Opens a screen with the full report, photo, and more actions',
+      onPress: () => onShowDetails(flag),
+      btnStyle: styles.detailsLink,
+      textStyle: styles.detailsText,
+      dimOnPress: false,
+      haptic: 'selection',
+    },
   ];
   // F3 — the row stops wearing three costumes for one decision. It used to run
   // Verify (filled) · Resolved (neutral fill) · Reject (ghost) · Details
@@ -1884,8 +1963,8 @@ const TaskCard = memo(function TaskCard({
   // split cannot silently follow a reordered list.
   const commitActions = actions.filter((a) => a.key !== 'details');
   const detailsAction = actions.find((a) => a.key === 'details')!;
-  // Always ≥2 (Resolved and Reject both always render), so [0] is never
-  // undefined and the segmented control is never empty.
+  // Signed-in review always has at least two commit verbs. Guest presentation
+  // has exactly one lead account boundary and therefore no sibling segment.
   //
   // The paint is assigned HERE, by position, and deliberately not on the
   // descriptors above. Declaring it per-verb is how the first cut of this got
@@ -1935,7 +2014,7 @@ const TaskCard = memo(function TaskCard({
   // is the Pressable that opens it.
   const photo = (
 safePhotoUrl && !photoError ? (
-    selectionActive ? (
+    reviewSelectionActive ? (
       // F17: in bulk-select mode the whole card is the selection toggle.
       // Render the thumbnail as a NON-interactive View so a tap on the
       // photo falls through to the outer card Pressable instead of opening
@@ -2010,7 +2089,7 @@ safePhotoUrl && !photoError ? (
   return (
     <Pressable
       onPress={() => onPress(flag)}
-      onLongPress={() => onLongPress(flag)}
+      onLongPress={canReview && onLongPress ? () => onLongPress(flag) : undefined}
       onPressIn={sheenActive ? sheenIn : undefined}
       onPressOut={sheenActive ? sheenOut : undefined}
       style={({ pressed }) => [styles.cardOuter, pressed && styles.cardPressed]}
@@ -2085,7 +2164,7 @@ safePhotoUrl && !photoError ? (
           /* Checkmark indicator in the top-right corner. Hidden from SR because
              the accessibilityState above already conveys the checked/unchecked
              state — duplicating it would just read "checked" twice. */
-          selectionActive ? (
+          reviewSelectionActive ? (
             <View
               style={[styles.selectCheck, selected && styles.selectCheckOn]} {...decorativeProps}
             >
@@ -2094,20 +2173,22 @@ safePhotoUrl && !photoError ? (
           ) : undefined
         }
         headerA11y={{
-          role: selectionActive ? 'checkbox' : 'button',
+          role: reviewSelectionActive ? 'checkbox' : 'button',
           label: a11yLabel,
-          hint: selectionActive
+          hint: reviewSelectionActive
             ? 'Toggles this flag in the selection'
-            : 'Opens the Map tab focused on this flag. Long-press to select multiple.',
+            : canReview
+              ? 'Opens the Map tab focused on this flag. Long-press to select multiple.'
+              : 'Opens the Map tab focused on this flag.',
           state: a11yToggle(
-            selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
+            reviewSelectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
           ),
         }}
         actions={
           /* Hidden during selection mode — the floating bar handles bulk
              actions, and showing both would be confusing (a tap on Verify here
              would still fire the single-item flow, not the bulk one). */
-          selectionActive ? undefined : (
+          reviewSelectionActive ? undefined : (
             <View
               style={compactActions ? styles.cardActionsStack : styles.cardActionsRow}
               testID={compactActions ? 'card-actions-stack' : 'card-actions-row'}
@@ -2118,17 +2199,19 @@ safePhotoUrl && !photoError ? (
                   peers. The container draws the single hairline and clips the
                   ends; each cell keeps its own 44pt box and its own label,
                   hint and handler, so nothing about reaching them changed. */}
-              <View
-                testID="card-actions-segmented"
-                style={[
-                  styles.segmented,
-                  compactActions ? styles.actionBtnFull : styles.actionBtnSiblings,
-                ]}
-              >
-                {siblingActions.map((a, i) =>
-                  renderAction(a, i > 0 ? styles.segCellDivided : null),
-                )}
-              </View>
+              {siblingActions.length > 0 ? (
+                <View
+                  testID="card-actions-segmented"
+                  style={[
+                    styles.segmented,
+                    compactActions ? styles.actionBtnFull : styles.actionBtnSiblings,
+                  ]}
+                >
+                  {siblingActions.map((a, i) =>
+                    renderAction(a, i > 0 ? styles.segCellDivided : null),
+                  )}
+                </View>
+              ) : null}
               {renderAction(detailsAction, compactActions ? styles.actionBtnFull : null)}
             </View>
           )

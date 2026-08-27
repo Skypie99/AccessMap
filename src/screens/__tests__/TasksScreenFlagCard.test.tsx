@@ -126,12 +126,14 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof TaskCard>> = 
     onLongPress: jest.fn(),
     onSetStatus: jest.fn(),
     onShowDetails: jest.fn(),
+    onSignInToReview: jest.fn(),
   };
   const utils = render(
     <TaskCard
       flag={baseFlag}
       isBusy={false}
       isOwn={false}
+      canReview
       userLocation={null}
       selectionActive={false}
       selected={false}
@@ -304,6 +306,44 @@ describe('TaskCard — handler wiring (byte-identical behavior)', () => {
     expect(handlers.onPress).toHaveBeenCalledWith(baseFlag);
     fireEvent(title, 'longPress');
     expect(handlers.onLongPress).toHaveBeenCalledWith(baseFlag);
+  });
+});
+
+describe('TaskCard — guest review boundary', () => {
+  it('replaces every verdict with one sign-in action while keeping Details', () => {
+    const { getAllByText, getByText, queryByText, queryByTestId } = renderCard({
+      canReview: false,
+    });
+
+    expect(getAllByText('Sign in to review')).toHaveLength(1);
+    expect(getByText('Details')).toBeTruthy();
+    for (const verdict of ['Verify', 'Resolved', 'Reject']) {
+      expect(queryByText(verdict)).toBeNull();
+    }
+    expect(queryByTestId('card-actions-segmented')).toBeNull();
+  });
+
+  it('routes the account boundary without invoking a mutation handler', () => {
+    const { getByText, handlers } = renderCard({ canReview: false });
+
+    fireEvent.press(getByText('Sign in to review'));
+
+    expect(handlers.onSignInToReview).toHaveBeenCalledTimes(1);
+    expect(handlers.onSetStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not expose long-press selection or advertise it to assistive technology', () => {
+    const { getByRole } = renderCard({ canReview: false });
+    const summary = getByRole('button', {
+      name: 'Blocked path, severity 4 of 5, Significant, status Open. Tap to view on map.',
+    });
+    let cardPressable = summary.parent;
+    while (cardPressable && cardPressable.props.accessible !== false) {
+      cardPressable = cardPressable.parent;
+    }
+
+    expect(cardPressable?.props.onLongPress).toBeUndefined();
+    expect(summary.props.accessibilityHint).toBe('Opens the Map tab focused on this flag.');
   });
 });
 

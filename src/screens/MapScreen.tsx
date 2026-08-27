@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  InteractionManager,
   KeyboardAvoidingView,
   Linking,
   Modal,
@@ -1803,6 +1804,34 @@ export default function MapScreen() {
   // on tap, spend it on the dismissal-COMPLETE event. Everywhere but iOS the map
   // is never detached and onDismiss never fires, so the move stays inline.
   const pendingDetailFocus = useRef<FlagRow | null>(null);
+  const pendingDetailSignIn = useRef(false);
+  const detailSignInTaskRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
+
+  const completeDetailSignIn = useCallback(() => {
+    if (!pendingDetailSignIn.current) return;
+    pendingDetailSignIn.current = false;
+    navigation.navigate('Profile');
+  }, [navigation]);
+
+  const handleDetailSignInToReview = useCallback(() => {
+    // A Profile handoff outranks any previously queued local camera move.
+    pendingDetailFocus.current = null;
+    pendingDetailSignIn.current = true;
+    setSelectedFlag(null);
+    if (Platform.OS !== 'ios') {
+      detailSignInTaskRef.current?.cancel();
+      detailSignInTaskRef.current = InteractionManager.runAfterInteractions(
+        completeDetailSignIn,
+      );
+    }
+  }, [completeDetailSignIn]);
+
+  useEffect(
+    () => () => {
+      detailSignInTaskRef.current?.cancel();
+    },
+    [],
+  );
 
   const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
     // The marker highlight is plain state and survives the dismissal — only the
@@ -1852,13 +1881,17 @@ export default function MapScreen() {
   }, []);
 
   const handleDetailDismissed = useCallback(() => {
+    if (pendingDetailSignIn.current) {
+      completeDetailSignIn();
+      return;
+    }
     const pending = pendingDetailFocus.current;
     if (!pending) return;
     // Spend it exactly once: a later dismissal that wasn't a "View on map" tap
     // must not re-move the camera under the user.
     pendingDetailFocus.current = null;
     centerOnFlag(pending);
-  }, [centerOnFlag]);
+  }, [centerOnFlag, completeDetailSignIn]);
 
   // The Report FAB is dimmed until we have a location on NATIVE (where the
   // recenter button is the way to turn location on). On WEB we keep it
@@ -3202,6 +3235,7 @@ export default function MapScreen() {
           onEdited={(updated) => patchFlag(updated.id, updated)}
           onDeleted={handleDetailDeleted}
           onViewOnMap={handleDetailViewOnMap}
+          onSignInToReview={handleDetailSignInToReview}
           onDismiss={handleDetailDismissed}
         />
       </Suspense>

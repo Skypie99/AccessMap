@@ -49,7 +49,8 @@ import type { FlagRow } from '@/types/database';
 // the mount ARRANGEMENT, so the data layers are stubbed to their quietest
 // successful shape and nothing here asserts on them.
 // ---------------------------------------------------------------------------
-jest.mock('@/lib/auth', () => ({ useAuth: () => ({ user: { id: 'user-1' } }) }));
+let mockAuthUser: { id: string } | null = { id: 'user-1' };
+jest.mock('@/lib/auth', () => ({ useAuth: () => ({ user: mockAuthUser }) }));
 
 jest.mock('@/theme/ThemeContext', () => {
   const { color } = jest.requireActual('@/theme');
@@ -103,6 +104,10 @@ jest.mock('@/hooks/useComments', () => ({
     refetch: jest.fn(),
   }),
 }));
+
+beforeEach(() => {
+  mockAuthUser = { id: 'user-1' };
+});
 
 const FLAG: FlagRow = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -204,5 +209,69 @@ describe('SW-46 — sheets opened from FlagDetailModal present from its VC', () 
     const screen = renderDetail();
     const modals = screen.UNSAFE_getAllByType(Modal);
     expect(detailModal(modals.flatMap((m) => modalAncestors(m)))).toBeTruthy();
+  });
+});
+
+describe('FlagDetailModal — guest review boundary', () => {
+  function renderGuest(primaryIntent: 'read' | 'triage') {
+    mockAuthUser = null;
+    const onSignInToReview = jest.fn();
+    const updateHandlers = {
+      onChanged: jest.fn(),
+      onDeleted: jest.fn(),
+    };
+    return {
+      ...render(
+        <FlagDetailModal
+          visible
+          flag={FLAG}
+          primaryIntent={primaryIntent}
+          onClose={jest.fn()}
+          onChanged={updateHandlers.onChanged}
+          onDeleted={updateHandlers.onDeleted}
+          onViewOnMap={jest.fn()}
+          onSignInToReview={onSignInToReview}
+        />,
+      ),
+      onSignInToReview,
+      updateHandlers,
+    };
+  }
+
+  it('keeps Directions primary for readers and replaces the verdict cluster once', () => {
+    const screen = renderGuest('read');
+
+    expect(screen.getByLabelText('Get directions to this flag')).toBeTruthy();
+    expect(screen.getAllByText('Sign in to review')).toHaveLength(1);
+    for (const verdict of ['Verify', 'Resolved', 'Reject']) {
+      expect(screen.queryByText(verdict)).toBeNull();
+    }
+  });
+
+  it('uses the single account boundary as the triage primary and keeps Directions', () => {
+    const screen = renderGuest('triage');
+
+    expect(screen.getAllByText('Sign in to review')).toHaveLength(1);
+    expect(screen.getByLabelText('Get directions to this flag')).toBeTruthy();
+    expect(screen.queryByText('Verify')).toBeNull();
+    expect(screen.queryByText('Resolved')).toBeNull();
+    expect(screen.queryByText('Reject')).toBeNull();
+  });
+
+  it('delegates sign-in to the host without invoking a status callback', () => {
+    const screen = renderGuest('triage');
+
+    fireEvent.press(screen.getByLabelText('Sign in to review'));
+
+    expect(screen.onSignInToReview).toHaveBeenCalledTimes(1);
+    expect(screen.updateHandlers.onChanged).not.toHaveBeenCalled();
+  });
+
+  it('preserves the signed-in verdict controls', () => {
+    const screen = renderDetail();
+    expect(screen.getByLabelText('Verify this flag')).toBeTruthy();
+    expect(screen.getByLabelText('Mark this flag resolved')).toBeTruthy();
+    expect(screen.getByLabelText('Reject this flag')).toBeTruthy();
+    expect(screen.queryByText('Sign in to review')).toBeNull();
   });
 });
