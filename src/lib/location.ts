@@ -135,15 +135,13 @@ export interface UseUserLocationOptions {
    * When true, only fetch the location if foreground permission has
    * already been granted — NEVER triggers the OS permission prompt.
    *
-   * Used by Profile's Nearest-Unresolved card (Constitution Art. 9.6 —
-   * Sky's directive: privacy-sensitive prompts must be user-initiated,
+   * Used by passive Profile and Tasks distance decoration (Constitution Art.
+   * 9.6 — Sky's directive: privacy-sensitive prompts must be user-initiated,
    * not surfaced on tab focus). When permission isn't already granted,
-   * `permissionDenied` stays true and `location` stays null — the
-   * caller renders nothing.
+   * `permissionDenied` stays true and `location` stays null — the caller
+   * renders nothing.
    *
-   * Default false → preserves the existing prompt-on-mount behavior
-   * used by Tasks (where the user's clear intent to triage nearby
-   * flags justifies the prompt).
+   * Default false is reserved for explicitly initiated location paths.
    */
   requireExistingPermission?: boolean;
 }
@@ -181,6 +179,28 @@ export function useUserLocation(options: UseUserLocationOptions = {}): UserLocat
             setLocation(null);
           }
           return;
+        }
+        // Browsers may prompt from getCurrentPosition(). Passive consumers use
+        // requireExistingPermission, so query the no-prompt Permissions API
+        // first and degrade to location-free UI unless access is already
+        // granted. If the browser cannot answer, privacy wins over decoration.
+        if (requireExistingPermission) {
+          try {
+            const permission = await navigator.permissions?.query({ name: 'geolocation' });
+            if (permission?.state !== 'granted') {
+              if (mountedRef.current) {
+                setPermissionDenied(true);
+                setLocation(null);
+              }
+              return;
+            }
+          } catch {
+            if (mountedRef.current) {
+              setPermissionDenied(true);
+              setLocation(null);
+            }
+            return;
+          }
         }
         await new Promise<void>((resolve) => {
           navigator.geolocation.getCurrentPosition(

@@ -340,7 +340,9 @@ export default function TasksScreen() {
   // One-shot location fetch so each card can show "0.3 km · 4 min walk".
   // Graceful degrade: if the user denies permission (or we error) we just
   // render the card without distance — see FlagCard below.
-  const { location: userLocation } = useUserLocation();
+  const { location: userLocation } = useUserLocation({
+    requireExistingPermission: true,
+  });
 
   // UX #3 "Suggested next action": the single nearest OPEN barrier to the
   // user, computed from the already-loaded `displayFlags` + `userLocation`.
