@@ -134,9 +134,9 @@ Sky supplied narrow written authorization for the location-sensitive portion of 
   - Why — Automated Map behavior and all repository gates are green, but the required Explore light/dark visual comparison needs the current binary. The available Simulator device either failed data migration or lacked a current compatible runtime.
   - Alternative — Merge based on the automated gates alone.
   - Impact — The alternative leaves the approved liquid-glass visual direction and physical gesture-path acceptance unproven; it does not meet the stated Simulator acceptance requirement.
-  - Rollback — Revert only the forthcoming scoped Map commit if review finds a problem; no privacy architecture or backend change is involved.
+  - Rollback — Revert scoped Map commit `77482c5` if review finds a problem; no privacy architecture or backend change is involved.
   - Owner — Sky.
 
 ## Current handoff
 
-Implementation and automated Wave 1 gates are complete on `codex/presubmission-ui-polish`; Wave 2 was not started. The only outstanding acceptance item is the current-branch iPhone visual run described above. No EAS build, merge, push, dependency change, or production action occurred.
+Implementation and automated Wave 1 gates are complete on `codex/presubmission-ui-polish` at map commit `77482c5`; Wave 2 was not started. The only outstanding acceptance item is the current-branch iPhone visual run described above. No EAS build, merge, push, dependency change, or production action occurred.
