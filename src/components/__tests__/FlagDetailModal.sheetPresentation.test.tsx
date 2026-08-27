@@ -41,8 +41,11 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 
 import FlagDetailModal from '../FlagDetailModal';
+import PhotoGallery from '../PhotoGallery';
 import { REPORT_CONTROL_LABEL } from '@/lib/copy';
 import type { FlagRow } from '@/types/database';
+
+const PhotoGalleryInner = (PhotoGallery as unknown as { type: React.ComponentType }).type;
 
 // ---------------------------------------------------------------------------
 // Mocks — every I/O edge the sheet touches on open. The point of this suite is
@@ -273,5 +276,32 @@ describe('FlagDetailModal — guest review boundary', () => {
     expect(screen.getByLabelText('Mark this flag resolved')).toBeTruthy();
     expect(screen.getByLabelText('Reject this flag')).toBeTruthy();
     expect(screen.queryByText('Sign in to review')).toBeNull();
+  });
+});
+
+describe('FlagDetailModal — photo ownership boundary', () => {
+  it('does not expose photo-add controls to a signed-in non-owner', () => {
+    const screen = renderDetail();
+
+    expect(screen.queryByLabelText('Add photo')).toBeNull();
+    expect(screen.queryByLabelText('Add after photo')).toBeNull();
+    expect(screen.UNSAFE_queryByType(PhotoGalleryInner)).toBeNull();
+  });
+
+  it('exposes the photo-add control to the report owner when idle', () => {
+    const ownFlag = { ...FLAG, user_id: 'user-1' };
+    const screen = render(
+      <FlagDetailModal
+        visible
+        flag={ownFlag}
+        onClose={jest.fn()}
+        onChanged={jest.fn()}
+        onDeleted={jest.fn()}
+        onViewOnMap={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Add photo')).toBeTruthy();
+    expect(screen.UNSAFE_getByType(PhotoGalleryInner).props.onAddPhoto).toEqual(expect.any(Function));
   });
 });
