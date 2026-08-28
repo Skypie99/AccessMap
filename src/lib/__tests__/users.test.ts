@@ -36,11 +36,13 @@ jest.mock('expo-image-manipulator', () => ({
 const mockUpload = jest.fn();
 const mockGetPublicUrl = jest.fn();
 const mockStorageFrom = jest.fn();
+const mockRpc = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
     from: jest.fn(), // not used by uploadAvatar — present so TypeScript is satisfied
+    rpc: (...args: unknown[]) => mockRpc(...args),
     storage: {
       from: (...args: unknown[]) => mockStorageFrom(...args),
     },
@@ -108,6 +110,13 @@ describe('uploadAvatar()', () => {
       upload: mockUpload,
       getPublicUrl: mockGetPublicUrl,
     });
+    mockRpc.mockImplementation((name: unknown) => ({
+      single: jest.fn().mockResolvedValue(
+        name === 'prepare_flag_photo_upload'
+          ? { data: { intent_id: 'avatar-intent-1', object_key: 'uploads/avatar.jpg' }, error: null }
+          : { data: { id: USER_ID, display_name: 'Alice', avatar_url: null, avatar_object_key: 'uploads/avatar.jpg', points: 0, created_at: '2026-01-01T00:00:00Z' }, error: null },
+      ),
+    }));
   });
 
   // ── Success path ─────────────────────────────────────────────────────────
@@ -141,9 +150,9 @@ describe('uploadAvatar()', () => {
       data: { publicUrl: 'https://cdn.example.com/user-abc-123/avatar/1234567890.jpg' },
     });
 
-    const url = await uploadAvatar(USER_ID, 'file:///tmp/photo.jpg');
+    const result = await uploadAvatar(USER_ID, 'file:///tmp/photo.jpg');
 
-    expect(url).toMatch(/^https:\/\//);
+    expect(result.url).toMatch(/^https:\/\//);
     expect(mockUpload).toHaveBeenCalledTimes(1);
     expect(mockGetPublicUrl).toHaveBeenCalledTimes(1);
   });
@@ -252,9 +261,9 @@ describe('uploadAvatar()', () => {
     });
 
     try {
-      const url = await uploadAvatar(USER_ID, 'file:///tmp/photo.jpg');
+      const result = await uploadAvatar(USER_ID, 'file:///tmp/photo.jpg');
 
-      expect(url).toMatch(/^https:\/\//);
+      expect(result.url).toMatch(/^https:\/\//);
       expect(mockUpload).toHaveBeenCalledTimes(1);
       // The uploaded bytes are the APP1-spliced codec output — byte-identical
       // to the same fixture built without the EXIF segment.

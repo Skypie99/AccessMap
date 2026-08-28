@@ -133,17 +133,16 @@ const SAMPLE_AUTH_ROW = {
 const mockCreateAnonFlag = jest.fn().mockResolvedValue(SAMPLE_ANON_ROW);
 const mockCreateFlag = jest.fn().mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
 const mockSubscribeContextTagsCapability = jest.fn(() => () => {});
-// FIX B (storage orphan cleanup): uploadFlagPhoto returns { url, path };
-// removeUploadedFlagPhotos is the best-effort cleanup the submit catch fires.
-// Both hoisted so tests can stage per-call results and assert calls.
+// D1F4: uploads have durable server-created intents. A failed report asks the
+// server to resolve that intent; the client never treats local cleanup as proof.
 const mockUploadFlagPhoto = jest.fn();
-const mockRemoveUploadedFlagPhotos = jest.fn();
+const mockCancelFlagPhotoUpload = jest.fn();
 
 jest.mock('@/lib/flags', () => ({
   createAnonFlag: (...args: unknown[]) => mockCreateAnonFlag(...args),
   createFlag: (...args: unknown[]) => mockCreateFlag(...args),
   uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
-  removeUploadedFlagPhotos: (...args: unknown[]) => mockRemoveUploadedFlagPhotos(...args),
+  cancelFlagPhotoUpload: (...args: unknown[]) => mockCancelFlagPhotoUpload(...args),
   subscribeContextTagsCapability: (...args: unknown[]) => mockSubscribeContextTagsCapability(...args),
   getContextTagsCapability: jest.fn().mockReturnValue('unknown'),
   CATEGORY_LABELS: {
@@ -458,16 +457,16 @@ beforeEach(() => {
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
   mockSubscribeContextTagsCapability.mockReturnValue(() => {});
-  // Default upload: derive { url, path } from the picked uri so multi-photo
-  // tests get distinct, recognizable storage paths.
+  // Default upload: every result carries a durable intent reference.
   mockUploadFlagPhoto.mockImplementation((_userId: unknown, uri: unknown) => {
     const name = String(uri).split('/').pop() ?? 'photo.jpg';
     return Promise.resolve({
+      intentId: `intent-${name}`,
       url: `http://example.com/${name}`,
       path: `user-abc/${name}`,
     });
   });
-  mockRemoveUploadedFlagPhotos.mockResolvedValue(undefined);
+  mockCancelFlagPhotoUpload.mockResolvedValue(undefined);
   mockBatchInsertFlagPhotos.mockResolvedValue(undefined);
 });
 
@@ -726,35 +725,32 @@ describe('submit routing — auth path', () => {
 // ===========================================================================
 // 5. Storage orphan cleanup — FIX B (Decision 5, Option A)
 //
-// Photos upload BEFORE createFlag. If anything fails between the first
-// upload and createFlag resolving, the already-uploaded blobs are orphans
-// and the catch must hand their storage paths to removeUploadedFlagPhotos.
-// Once createFlag resolves, the photos are referenced by the new flag and
-// must NEVER be cleaned up — even when the junction insert (F57) fails.
+// Photos receive a durable PREPARED intent before direct upload. If report
+// creation fails, the client asks the server to resolve the same intent. Once
+// the flag exists, client cleanup must not undo it even when linking fails.
 // ===========================================================================
 
-describe('storage orphan cleanup on failed submit (auth path)', () => {
-  it('cleans up the already-uploaded path and skips createFlag when an upload fails mid-loop', async () => {
+describe('uncommitted photo intent handling on failed submit (auth path)', () => {
+  it('cancels the already-prepared intent and skips createFlag when an upload fails mid-loop', async () => {
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
     await addPhoto(utils, 'file:///p2.jpg');
 
     mockUploadFlagPhoto
-      .mockResolvedValueOnce({ url: 'http://example.com/p1.jpg', path: 'user-abc/p1.jpg' })
+      .mockResolvedValueOnce({ intentId: 'intent-p1', url: 'http://example.com/p1.jpg', path: 'user-abc/p1.jpg' })
       .mockRejectedValueOnce(new Error('upload failed'));
 
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
-      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+      expect(mockCancelFlagPhotoUpload).toHaveBeenCalledTimes(1);
     });
-    // Only the photo that actually reached Storage gets cleaned up.
-    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['user-abc/p1.jpg']);
-    // The flag insert never ran — the blobs were pure orphans.
+    expect(mockCancelFlagPhotoUpload).toHaveBeenCalledWith('intent-p1');
+    // The flag insert never ran — the intent remains server-visible.
     expect(mockCreateFlag).not.toHaveBeenCalled();
   });
 
-  it('cleans up ALL uploaded paths when createFlag itself fails', async () => {
+  it('cancels ALL prepared intents when createFlag itself fails', async () => {
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
     await addPhoto(utils, 'file:///p2.jpg');
@@ -764,12 +760,10 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
-      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+      expect(mockCancelFlagPhotoUpload).toHaveBeenCalledTimes(2);
     });
-    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith([
-      'user-abc/p1.jpg',
-      'user-abc/p2.jpg',
-    ]);
+    expect(mockCancelFlagPhotoUpload).toHaveBeenNthCalledWith(1, 'intent-p1.jpg');
+    expect(mockCancelFlagPhotoUpload).toHaveBeenNthCalledWith(2, 'intent-p2.jpg');
   });
 
   it('still surfaces the original submit error to the user after cleanup', async () => {
@@ -788,7 +782,7 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     alertSpy.mockRestore();
   });
 
-  it('performs NO cleanup on a fully successful submit', async () => {
+  it('performs NO cancellation on a fully successful submit', async () => {
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
     await addPhoto(utils, 'file:///p2.jpg');
@@ -803,10 +797,10 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(mockUploadFlagPhoto).toHaveBeenCalledTimes(2);
-    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalled();
   });
 
-  it('performs NO cleanup when only the junction insert fails after createFlag succeeded (F57)', async () => {
+  it('performs NO cancellation when only the junction insert fails after createFlag succeeded (F57)', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
@@ -821,8 +815,8 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    // The flag exists and references the photos — they are NOT orphans.
-    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+    // The flag exists; client cleanup must not roll it back.
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalled();
     warn.mockRestore();
   });
 });

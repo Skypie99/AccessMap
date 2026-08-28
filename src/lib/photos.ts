@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
-import { uploadFlagPhoto } from './flags';
+import { commitFlagPhotoUpload, uploadFlagPhoto } from './flags';
 import { trackEvent } from './analytics';
 // SLOP-3 (code-qa 2026-08-06): this file's local isTableMissingError lacked
 // the SR-092 embed early-out — a broken join whose message says "does not
@@ -17,6 +17,7 @@ export type FlagPhoto = {
   // Optional VoiceOver description written by the uploader (≤200 chars).
   // Nullable/absent on rows created before 2026-08-19_photo_alt_text_APPLIED.
   alt_text?: string | null;
+  object_key?: string | null;
 };
 
 /**
@@ -32,7 +33,7 @@ export async function listFlagPhotos(
   try {
     const { data, error } = await supabase
       .from('flag_photos')
-      .select('url, position, alt_text')
+      .select('url, object_key, position, alt_text')
       .eq('flag_id', flagId)
       .order('position', { ascending: true });
 
@@ -41,7 +42,13 @@ export async function listFlagPhotos(
       throw error;
     }
 
-    return (data ?? []) as { url: string; position: number; alt_text?: string | null }[];
+    return (data ?? []).map((photo) => ({
+      url: photo.object_key
+        ? supabase.storage.from('flag-photos').getPublicUrl(photo.object_key).data.publicUrl
+        : photo.url,
+      position: photo.position,
+      alt_text: photo.alt_text,
+    })) as { url: string; position: number; alt_text?: string | null }[];
   } catch (e) {
     if (isRelationMissing(e)) return [];
     throw e;
@@ -66,48 +73,35 @@ export async function addFlagPhoto(
   const existing = await listFlagPhotos(flagId);
   const position = existing.length;
 
-  const { url } = await uploadFlagPhoto(user.id, localUri, srcWidth, srcHeight);
-
+  const prepared = await uploadFlagPhoto(user.id, localUri, srcWidth, srcHeight);
   const alt = altText?.trim().slice(0, 200) || null;
-  const { data, error } = await supabase
-    .from('flag_photos')
-    .insert({ flag_id: flagId, url, position, alt_text: alt })
-    .select()
-    .single();
-
-  if (error) throw error;
+  await commitFlagPhotoUpload(prepared.intentId, flagId, position, alt, false);
 
   // Analytics: a photo was added. photo_count is the new total; no flag_id or
   // URL is logged (both are PII-adjacent). See src/lib/analytics.ts.
   trackEvent('photo_added', { photo_count: position + 1, platform: Platform.OS });
 
-  return data as FlagPhoto;
+  return {
+    id: prepared.intentId,
+    flag_id: flagId,
+    url: prepared.url,
+    position,
+    created_at: new Date().toISOString(),
+    alt_text: alt,
+    object_key: prepared.path,
+  };
 }
 
 /**
- * Batch-insert pre-uploaded URLs as junction rows for a newly created flag.
- * Used by ReportFlagModal after createFlag() — avoids re-uploading.
- * Silent no-op if the table doesn't exist yet.
+ * Commit prepared intents after the report exists. A client does not insert a
+ * public URL: the server verifies exact object key, bucket, and owner_id.
  */
 export async function batchInsertFlagPhotos(
   flagId: string,
-  photos: { url: string; alt?: string | null }[],
+  photos: { intentId: string; alt?: string | null }[],
 ): Promise<void> {
   if (photos.length === 0) return;
-  const rows = photos.map((p, i) => ({
-    flag_id: flagId,
-    url: p.url,
-    position: i,
-    alt_text: p.alt?.trim().slice(0, 200) || null,
-  }));
-  try {
-    const { error } = await supabase.from('flag_photos').insert(rows);
-    if (error) {
-      if (isRelationMissing(error)) return;
-      throw error;
-    }
-  } catch (e) {
-    if (isRelationMissing(e)) return;
-    throw e;
+  for (const [position, photo] of photos.entries()) {
+    await commitFlagPhotoUpload(photo.intentId, flagId, position, photo.alt, position === 0);
   }
 }

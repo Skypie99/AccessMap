@@ -125,8 +125,10 @@ describe('L7 — ReportFlagModal releases draft blob URLs post-settle only', () 
   });
 
   it('the submit FAILURE path does not release — drafts must survive for retry', () => {
-    // The auth-path catch block: orphan cleanup + error alert, and nothing else.
-    const catchBlock = around(report, 'void removeUploadedFlagPhotos(uploadedPaths)', 400);
+    // D1F4 delegates uncertain upload outcomes to the server, but must still
+    // retain draft blob URLs for a report retry.
+    const catchBlock = around(report, 'void Promise.all(preparedPhotos.map', 500);
+    expect(catchBlock).toContain('cancelFlagPhotoUpload');
     expect(catchBlock).not.toContain('releaseUri');
     expect(catchBlock).not.toContain('revokeObjectURL');
   });

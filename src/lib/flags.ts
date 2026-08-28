@@ -740,7 +740,7 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
 export async function uploadStrippedImage(
   userId: string,
   localUri: string,
-  buildPath: (userId: string, finalExt: string) => string,
+  buildPath: (userId: string, finalExt: string) => string | Promise<string>,
   webStripFailedMessage: string,
   srcWidth?: number,
   srcHeight?: number,
@@ -839,7 +839,7 @@ export async function uploadStrippedImage(
   const strippedMime = detectMimeFromBytes(arrayBuffer);
   const contentType = strippedMime === 'image/png' ? 'image/png' : 'image/jpeg';
   const finalExt = strippedMime === 'image/png' ? 'png' : 'jpg';
-  const filePath = buildPath(userId, finalExt);
+  const filePath = await buildPath(userId, finalExt);
 
   const { error: uploadErr } = await supabase.storage
     .from(FLAG_PHOTOS_BUCKET)
@@ -858,19 +858,60 @@ export async function uploadFlagPhoto(
   localUri: string,
   srcWidth?: number,
   srcHeight?: number,
-): Promise<{ url: string; path: string }> {
-  // Flag photos keep the `<uid>/<ts>.<ext>` object name. The web-strip-failure
-  // copy carries the F46 HEIC-specific hint (retrying the same undecodable
-  // file is doomed — point the user at JPG/PNG instead). srcWidth/srcHeight (the
-  // picker-reported dimensions, when available) drive the B8 downscale-on-ingest.
-  return uploadStrippedImage(
-    userId,
-    localUri,
-    (uid, finalExt) => `${uid}/${Date.now()}.${finalExt}`,
-    "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
-    srcWidth,
-    srcHeight,
-  );
+): Promise<{ intentId: string; url: string; path: string }> {
+  let intentId = '';
+  try {
+    const upload = await uploadStrippedImage(
+      userId,
+      localUri,
+      async (_userId, finalExt) => {
+        const { data, error } = await supabase
+          .rpc('prepare_flag_photo_upload', { p_extension: finalExt, p_kind: 'flag_photo' })
+          .single();
+        if (error || !data) throw error ?? new Error('Photo upload could not be prepared.');
+        intentId = data.intent_id;
+        return data.object_key;
+      },
+      "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
+      srcWidth,
+      srcHeight,
+    );
+    if (!intentId) throw new Error('Photo upload intent was not created.');
+    return { ...upload, intentId };
+  } catch (error) {
+    // A direct user-JWT upload can be ambiguous; never infer a terminal result
+    // from a client failure or timeout. The server retains it for review.
+    if (intentId) {
+      try {
+        await supabase.rpc('cancel_flag_photo_upload', { p_intent_id: intentId });
+      } catch {
+        // Preserve the original upload error; the durable intent remains a hold.
+      }
+    }
+    throw error;
+  }
+}
+
+export async function commitFlagPhotoUpload(
+  intentId: string,
+  flagId: string,
+  position: number,
+  altText: string | null | undefined,
+  setPrimary: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc('commit_flag_photo_upload', {
+    p_intent_id: intentId,
+    p_flag_id: flagId,
+    p_position: position,
+    p_alt_text: altText?.trim().slice(0, 200) || null,
+    p_set_primary: setPrimary,
+  });
+  if (error) throw error;
+}
+
+export async function cancelFlagPhotoUpload(intentId: string): Promise<void> {
+  const { error } = await supabase.rpc('cancel_flag_photo_upload', { p_intent_id: intentId });
+  if (error) throw error;
 }
 
 /**
@@ -982,6 +1023,20 @@ export interface CreateFlagInput {
   context_tags?: string[];
 }
 
+// Presentation only. Authorization, cleanup, provenance, and deletion use the
+// server-created object key and never parse the public display URL back.
+function withDisplayPhotoUrl(row: FlagRow): FlagRow {
+  if (!row.photo_object_key) return row;
+  return {
+    ...row,
+    photo_url: supabase.storage.from(FLAG_PHOTOS_BUCKET).getPublicUrl(row.photo_object_key).data.publicUrl,
+  };
+}
+
+function withDisplayPhotoUrls(rows: FlagRow[]): FlagRow[] {
+  return rows.map(withDisplayPhotoUrl);
+}
+
 /**
  * Fetch flags matching the given statuses. Capped at 500 rows so a runaway
  * table can't lock up the Map/Tasks screens. The shared FlagsProvider now
@@ -997,12 +1052,12 @@ export interface CreateFlagInput {
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(500);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 export interface ListFlagsPageOptions {
@@ -1047,7 +1102,7 @@ export async function listFlagsPage(
   const limit = opts.limit ?? INITIAL_PAGE_SIZE;
   let query = supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -1056,7 +1111,7 @@ export async function listFlagsPage(
   }
   const { data, error } = await query;
   if (error) throw error;
-  const rows = (data ?? []) as FlagRow[];
+  const rows = withDisplayPhotoUrls((data ?? []) as FlagRow[]);
   const nextCursor = rows.length === limit ? (rows[rows.length - 1]?.created_at ?? null) : null;
   return { rows, nextCursor };
 }
@@ -1075,12 +1130,12 @@ export async function listFlagsPage(
 export async function listFlagsByUser(userId: string) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 // Capability gate for the `flags.context_tags` column. Starts 'unknown' on
@@ -1483,11 +1538,11 @@ async function collectFlagPhotoPaths(flagId: string): Promise<string[]> {
 export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
     .eq('id', flagId)
     .maybeSingle();
   if (error) throw error;
-  return (data as FlagRow | null) ?? null;
+  return data ? withDisplayPhotoUrl(data as FlagRow) : null;
 }
 
 /**
@@ -1509,10 +1564,10 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
   if (flagIds.length === 0) return [];
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
     .in('id', flagIds);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 /**
@@ -1548,11 +1603,11 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
 export async function listRecentFlags(limit = 100): Promise<FlagRow[]> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 export const CATEGORY_LABELS: Record<FlagCategory, string> = {

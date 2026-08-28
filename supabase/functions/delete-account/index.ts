@@ -1,184 +1,61 @@
-// delete-account — Supabase Edge Function
-// Permanently deletes the user's account and associated content.
-// Called from the app's Profile screen after in-app confirmation.
-//
-// Security:
-//   - verify_jwt: true (set in supabase/config.toml) — Supabase validates the
-//     JWT before this function runs. No unauthenticated caller can reach here.
-//   - The authenticated subject is the ONLY identity source. The caller never
-//     supplies a user id.
-//   - The service-role key creates the durable deletion lock, clears only that
-//     user's Storage namespace, invokes the service-role-only atomic database
-//     purge, and deletes auth.users LAST.
-//   - Never logs user IDs, Storage paths, tokens, or backend error detail.
-//
-// Deletion sequence (order matters):
-//   1. Insert (or retain) public.account_deletion_locks(user_id). From this
-//      point every lock-aware client write is rejected in every active session.
-//   2. Recursively remove only <userId>/ from the flag-photos bucket.
-//   3. Call public.purge_deleting_account(userId), a single DB transaction that
-//      purges the account's database rows + protected backup residue and proves
-//      zero database residue. It intentionally does NOT delete auth.users.
-//   4. Sweep the same Storage namespace again and require it to be empty.
-//   5. adminClient.auth.admin.deleteUser(userId) LAST. Its cascade removes
-//      public.users and therefore the durable deletion lock.
-//
-// If any step before auth deletion fails, the deletion lock intentionally stays
-// in place. The user remains signed in to retry, but no session can write
-// account-owned data while cleanup is pending.
-//
-// Deploy:
-//   supabase functions deploy delete-account
-//
-// supabase/config.toml must include:
-//   [functions.delete-account]
-//   verify_jwt = true
-//
-// Returns:
-//   200 { status: "deleted" }              — success; client should sign out locally
-//   401 Unauthorized                        — missing/invalid JWT (Supabase-level)
-//   500 { status: "error", error: string } — deletion failed; caller stays logged in
+// Transaction A of D1F4 asynchronous account deletion. The client creates and
+// secure-stores its operation id + 256-bit receipt secret before calling this
+// endpoint. This endpoint derives the subject only from verified Auth, hashes
+// the secret, and commits REQUESTED. It never cleans Storage or deletes Auth.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const FLAG_PHOTOS_BUCKET = 'flag-photos';
-const STORAGE_PAGE_SIZE = 100;
-const STORAGE_DELETE_BATCH_SIZE = 100;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const RECEIPT_RE = /^[0-9a-f]{64}$/i;
+const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Admin client — service-role key, used only for the server-owned deletion
-// workflow. The client-facing write boundary remains enforced by the D1
-// migration's RLS policies and lock-aware helper.
-const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-type StorageEntry = {
-  name: string;
-  id: string | null;
-};
+type RequestBody = { operationId?: unknown; receiptSecret?: unknown };
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method !== 'POST') {
-    return jsonResponse(405, { status: 'error', error: 'Method not allowed.' });
-  }
+  if (req.method !== 'POST') return json(405, { status: 'error' });
 
-  // Build a user-scoped client to resolve the caller's identity from their JWT.
-  // Supabase already validated the token (verify_jwt: true), so getUser() here
-  // is a cheap confirmation step, not a second verification round-trip.
-  const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const caller = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
+  const { data: { user }, error: authError } = await caller.auth.getUser();
+  if (authError || !user) return json(401, { status: 'error' });
 
-  const {
-    data: { user },
-    error: authError,
-  } = await userClient.auth.getUser();
-
-  if (authError || !user) {
-    return jsonResponse(401, { status: 'error', error: 'Not authenticated.' });
+  let body: RequestBody;
+  try {
+    body = await req.json() as RequestBody;
+  } catch {
+    return json(400, { status: 'error' });
+  }
+  if (typeof body.operationId !== 'string' || !UUID_RE.test(body.operationId)
+    || typeof body.receiptSecret !== 'string' || !RECEIPT_RE.test(body.receiptSecret)) {
+    return json(400, { status: 'error' });
   }
 
-  const userId = user.id;
-
   try {
-    await createDeletionLock(userId);
-    await clearAccountStorage(userId);
-    await purgeAccountDatabase(userId);
-    await clearAccountStorage(userId);
-    await assertAccountStorageEmpty(userId);
-
-    // Auth deletion is deliberately LAST. It cascades public.users and then
-    // account_deletion_locks, the only successful path that releases the fence.
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
-    if (deleteError) throw deleteError;
-
-    return jsonResponse(200, { status: 'deleted' });
+    const { data, error } = await admin.rpc('request_account_deletion', {
+      p_operation_id: body.operationId,
+      p_receipt_hash: await sha256Hex(body.receiptSecret),
+      // Server-derived identity. The client-controlled receipt never chooses it.
+      p_subject_id: user.id,
+    }).single();
+    if (error || !data) throw error ?? new Error('request not recorded');
+    return json(202, { status: 'requested', requestedAt: data.requested_at });
   } catch {
-    // An opaque marker is intentional: provider errors can contain object
-    // paths, relation names, or other deletion-context detail.
-    console.error('[delete-account] cleanup failed.');
-    return jsonResponse(500, { status: 'error', error: 'Deletion failed unexpectedly.' });
+    // A lost response is deliberately indistinguishable from a failed request
+    // to the UI. The already stored receipt is the recovery capability.
+    console.error('[delete-account] request recording failed.');
+    return json(409, { status: 'error' });
   }
 });
 
-async function createDeletionLock(userId: string): Promise<void> {
-  // The unique key makes repeated account-deletion calls a safe resume path.
-  // We never delete this row on failure; only final Auth teardown removes it.
-  const { error } = await adminClient
-    .from('account_deletion_locks')
-    .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true });
-  if (error) throw error;
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function purgeAccountDatabase(userId: string): Promise<void> {
-  const { error } = await adminClient.rpc('purge_deleting_account', {
-    p_user_id: userId,
-  });
-  if (error) throw error;
-}
-
-/**
- * Recursively lists only the caller's Storage namespace. The list API exposes
- * directory entries with id=null; files have an object id. Each directory is
- * paginated independently so an account with many uploads is still complete.
- */
-async function listAccountStoragePaths(userId: string): Promise<string[]> {
-  const root = userId;
-  const folders = [root];
-  const files: string[] = [];
-
-  for (let folderIndex = 0; folderIndex < folders.length; folderIndex += 1) {
-    const folder = folders[folderIndex]!;
-    for (let offset = 0; ; offset += STORAGE_PAGE_SIZE) {
-      const { data, error } = await adminClient.storage.from(FLAG_PHOTOS_BUCKET).list(folder, {
-        limit: STORAGE_PAGE_SIZE,
-        offset,
-        sortBy: { column: 'name', order: 'asc' },
-      });
-      if (error) throw error;
-
-      const entries = (data ?? []) as StorageEntry[];
-      for (const entry of entries) {
-        // Storage list returns names relative to the folder. Reject malformed
-        // values instead of ever broadening the deletion prefix.
-        if (!entry.name || entry.name.includes('/') || entry.name === '.' || entry.name === '..') {
-          throw new Error('Unexpected Storage entry.');
-        }
-        const path = `${folder}/${entry.name}`;
-        if (entry.id === null) {
-          folders.push(path);
-        } else {
-          files.push(path);
-        }
-      }
-
-      if (entries.length < STORAGE_PAGE_SIZE) break;
-    }
-  }
-
-  return files;
-}
-
-async function clearAccountStorage(userId: string): Promise<void> {
-  const paths = await listAccountStoragePaths(userId);
-  for (let start = 0; start < paths.length; start += STORAGE_DELETE_BATCH_SIZE) {
-    const batch = paths.slice(start, start + STORAGE_DELETE_BATCH_SIZE);
-    const { error } = await adminClient.storage.from(FLAG_PHOTOS_BUCKET).remove(batch);
-    if (error) throw error;
-  }
-}
-
-async function assertAccountStorageEmpty(userId: string): Promise<void> {
-  const remainingPaths = await listAccountStoragePaths(userId);
-  if (remainingPaths.length > 0) {
-    throw new Error('Account Storage remains after cleanup.');
-  }
-}
-
-function jsonResponse(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
+function json(status: number, body: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }

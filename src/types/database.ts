@@ -44,6 +44,10 @@ export type FlagRow = {
   description: string | null;
   severity: FlagSeverity;
   photo_url: string | null;
+  // New photos retain their exact server-created Storage key and uploader.
+  // Legacy URLs are display data only and are never parsed for ownership.
+  photo_object_key?: string | null;
+  photo_uploader_id?: string | null;
   // Optional alt text for the primary photo, written by the reporter so
   // VoiceOver users hear a real description instead of "Flag photo".
   // Optional until supabase/migrations/2026-08-19_photo_alt_text_APPLIED.sql
@@ -73,6 +77,9 @@ export type UserRow = {
   email: string;
   display_name: string | null;
   avatar_url: string | null;
+  // New avatars use an exact server-created Storage key; read paths derive a
+  // display URL from this value without parsing any persisted URL.
+  avatar_object_key?: string | null;
   points: number;
   created_at: string;
   // Optional until supabase/migrations/2026-05-30_admin_role.sql is applied.
@@ -248,7 +255,9 @@ export type Database = {
         Row: {
           id: string;
           flag_id: string;
-          url: string;
+          url: string | null;
+          object_key?: string | null;
+          uploader_id?: string | null;
           position: number;
           created_at: string;
           // Optional VoiceOver description, written by the uploader.
@@ -257,14 +266,18 @@ export type Database = {
         };
         Insert: {
           flag_id: string;
-          url: string;
+          url?: string | null;
+          object_key?: string | null;
+          uploader_id?: string | null;
           position: number;
           id?: string;
           created_at?: string;
           alt_text?: string | null;
         };
         Update: Partial<{
-          url: string;
+          url: string | null;
+          object_key: string | null;
+          uploader_id: string | null;
           position: number;
           alt_text: string | null;
         }>;
@@ -397,6 +410,30 @@ export type Database = {
           p_flag_id: string;
         };
         Returns: number;
+      };
+      // D1F4: server-owned canonical-photo lifecycle. The RPC derives the
+      // uploader from auth.uid(); the client never supplies a subject/key.
+      prepare_flag_photo_upload: {
+        Args: { p_extension: string; p_kind?: 'flag_photo' | 'avatar' };
+        Returns: { intent_id: string; object_key: string }[];
+      };
+      commit_flag_photo_upload: {
+        Args: {
+          p_intent_id: string;
+          p_flag_id: string;
+          p_position: number;
+          p_alt_text: string | null;
+          p_set_primary: boolean;
+        };
+        Returns: undefined;
+      };
+      commit_avatar_photo_upload: {
+        Args: { p_intent_id: string };
+        Returns: { avatar_url: string | null; avatar_object_key: string }[];
+      };
+      cancel_flag_photo_upload: {
+        Args: { p_intent_id: string };
+        Returns: undefined;
       };
       // UX #8: Monthly leaderboard RPC. Ranks contributors by THIS calendar
       // month's points from peer-validated work. Optional until the migration

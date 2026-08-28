@@ -141,7 +141,8 @@
         }
       ],
       "expo-font",
-      "./plugins/withFmtXcode26Fix"
+      "./plugins/withFmtXcode26Fix",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

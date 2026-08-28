@@ -24,12 +24,12 @@ import { GuestProfile } from './GuestProfile';
 import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
-import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
+import { AccountDeletionRequestSignOutPendingError, deleteAccount } from '@/lib/account';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { getInitials, updateUserProfile, uploadAvatar } from '@/lib/users';
+import { getInitials, updateUserProfile, uploadAvatar, withAvatarDisplayUrl } from '@/lib/users';
 import { hapticSelection } from '@/lib/haptics';
 import { DEFAULT_TABS, getDefaultTab, setDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { useRealtimeEnabled } from '@/lib/realtimePrefs';
@@ -352,7 +352,7 @@ export default function ProfileScreen() {
       const [{ data: profileRow, error: profileErr }, statusRowsRes, eventsResult] = await Promise.all([
         // PRIVACY: Explicit columns — never select('*') on users; future schema
         // columns (e.g. internal flags, phone number) must not leak automatically.
-        supabase.from('users').select('id, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
+        supabase.from('users').select('id, display_name, avatar_url, avatar_object_key, points, created_at').eq('id', user.id).maybeSingle(),
         supabase.from('flags').select('status').eq('user_id', user.id),
         // 42P01 guard: migration not yet applied → returns [] silently.
         getPointEventHistory(user.id).catch(() => [] as PointEventRow[]),
@@ -368,7 +368,7 @@ export default function ProfileScreen() {
       if (profileErr) throw profileErr;
       if (statusRowsRes.error) throw statusRowsRes.error;
       if (!mountedRef.current) return;
-      const row = (profileRow as UserRow | null) ?? null;
+      const row = profileRow ? withAvatarDisplayUrl(profileRow as UserRow) : null;
       setProfile(row);
       // F55: the user has now SEEN their current total — advance the
       // "points while you were away" watermark so in-session earnings are
@@ -584,8 +584,7 @@ export default function ProfileScreen() {
       if (!user) return;
       setUploadingAvatar(true);
       try {
-        const avatarUrl = await uploadAvatar(user.id, localUri, srcWidth, srcHeight);
-        const updated = await updateUserProfile(user.id, { avatar_url: avatarUrl });
+        const { profile: updated } = await uploadAvatar(user.id, localUri, srcWidth, srcHeight);
         if (mountedRef.current) {
           setProfile(updated);
           AccessibilityInfo.announceForAccessibility('Profile photo updated.');
@@ -715,15 +714,15 @@ export default function ProfileScreen() {
       // Auth state change (SIGNED_OUT) fires automatically; screen unmounts.
     } catch (e) {
       if (mountedRef.current) {
-        // F63: distinguish "delete failed" from "deleted, but local sign-out
-        // didn't finish" — the old copy claimed the account was not deleted
-        // even when it was.
-        if (e instanceof AccountDeletedSignOutPendingError) {
-          notify('Account deleted', e.message);
+        // The receipt was stored before the request, so a lost response is
+        // ambiguous. Never claim that deletion did not start; status recovery
+        // remains available on the signed-out screen.
+        if (e instanceof AccountDeletionRequestSignOutPendingError) {
+          notify('Deletion requested', e.message);
         } else {
           notify(
-            'Could not delete account',
-            errorMessage(e, 'Something went wrong. Your account was not deleted.'),
+            'Could not confirm deletion request',
+            errorMessage(e, 'Check deletion status on this device before trying again.'),
           );
         }
         setDeletingAccount(false);
@@ -1893,7 +1892,7 @@ export default function ProfileScreen() {
           onPress={() => setDeleteAccountOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"
-          accessibilityHint="Opens a confirmation dialog before permanently deleting your account and associated content"
+          accessibilityHint="Opens a confirmation dialog before starting asynchronous account deletion"
         >
           <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
         </Pressable>
@@ -1932,9 +1931,10 @@ export default function ProfileScreen() {
                 Delete your account?
               </AppText>
               <AppText variant="body" style={styles.deleteBody}>
-                This will permanently delete your account, complete report trees,
-                direct contributions, feedback, and uploaded photos. This cannot
-                be undone.
+                This starts deletion of your account and associated content. Deletion happens asynchronously and cannot be undone.
+              </AppText>
+              <AppText variant="body" style={styles.deleteBodySecondary}>
+                This device will show confirmation when deletion is complete.
               </AppText>
             </ScrollView>
             <View style={styles.deleteActions}>
@@ -2848,6 +2848,12 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.md,
       color: color.text,
       lineHeight: font.lineHeight.md,
+    },
+    deleteBodySecondary: {
+      fontSize: font.size.sm,
+      color: color.textMuted,
+      lineHeight: font.lineHeight.sm,
+      marginTop: -4,
     },
     deleteActions: {
       flexDirection: 'row',

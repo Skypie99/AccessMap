@@ -16,6 +16,17 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// D1F4 deletion receipts are recovery capabilities, so production keeps them
+// out of AsyncStorage. The isolated mock makes receipt tests deterministic.
+jest.mock('expo-secure-store', () => {
+  const values = new Map();
+  return {
+    getItemAsync: jest.fn(async (key) => values.get(key) ?? null),
+    setItemAsync: jest.fn(async (key, value) => { values.set(key, value); }),
+    deleteItemAsync: jest.fn(async (key) => { values.delete(key); }),
+  };
+});
+
 // expo-haptics has no native module in the Node test env. src/lib/haptics.ts
 // already no-ops safely (try/catch around require), but mocking it here keeps
 // every test that wires up haptics clean and silent.

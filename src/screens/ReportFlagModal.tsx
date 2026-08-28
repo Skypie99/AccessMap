@@ -38,10 +38,10 @@ import { useLegalSheets } from '@/components/LegalSheets';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
+  cancelFlagPhotoUpload,
   createAnonFlag,
   createFlag,
   type ContextTagsCapability,
-  removeUploadedFlagPhotos,
   severityColor,
   SEVERITY_DESCRIPTIONS,
   SEVERITY_LABELS,
@@ -701,23 +701,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       return;
     }
 
-    // Authenticated submission path — full feature set.
-    // Hoisted OUTSIDE the try so the catch can clean up Storage orphans.
-    // Photos upload BEFORE createFlag, so a mid-loop upload failure or a
-    // createFlag failure would otherwise leave already-uploaded blobs with
-    // no DB row referencing them (Decision 5, Option A — cleanup on failure
-    // only; no retry-reuse of uploaded URLs).
-    const photoUrls: string[] = [];
-    const uploadedPaths: string[] = [];
+    // Authenticated path. Every photo gets a durable intent before direct
+    // Storage receives bytes; a failed submit preserves that uncertainty for
+    // server reconciliation rather than deleting based on client timing.
+    const preparedPhotos: { intentId: string; url: string; path: string }[] = [];
     try {
-      // Upload all picked photos. First URL doubles as the legacy photo_url
-      // field for backwards-compat with clients that haven't migrated to
-      // the flag_photos junction table yet.
       for (const uri of photoUris) {
         const dims = photoDimsRef.current[uri];
-        const { url, path } = await uploadFlagPhoto(user.id, uri, dims?.width, dims?.height);
-        photoUrls.push(url);
-        uploadedPaths.push(path);
+        preparedPhotos.push(await uploadFlagPhoto(user.id, uri, dims?.width, dims?.height));
       }
 
       const result = await createFlag(user.id, {
@@ -726,24 +717,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         category,
         severity,
         description: description.trim() ? description.trim() : null,
-        photo_url: photoUrls[0] ?? null,
-        // Alt of the FIRST photo — it is the one photo_url points at.
-        photo_alt: photoUris[0] ? photoAlts[photoUris[0]] || null : null,
+        // Only the commit RPC writes canonical photo provenance after exact
+        // bucket/key/owner verification. Direct report creation is photo-free.
+        photo_url: null,
+        photo_alt: null,
         // Only send the field when the user actually picked tags. Empty
         // array means "no context"; createFlag still tries the column path
         // so it stays exercised, but skipping it keeps the legacy insert
         // path cheap (one round-trip) when no tags are selected.
         context_tags: contextTags.length > 0 ? [...contextTags] : undefined,
       });
-      // The created flag now references these photos (photo_url above + the
-      // junction rows below) — from this line on they are NOT orphans and
-      // must never be deleted. Clear the cleanup list immediately so the
-      // catch below (e.g. the F57 junction path rethrowing something
-      // unexpected) can't remove photos a live flag points at.
-      uploadedPaths.length = 0;
-
-      // Insert junction rows for all uploaded photos. Silent no-op if the
-      // flag_photos migration hasn't been applied yet.
+      // The server, not a client success report, creates photo metadata.
       // F57 (re-sweep): a junction-row failure AFTER createFlag succeeded used
       // to reject the whole submit — the user was told it failed, retried, and
       // created a DUPLICATE public flag. The report exists; say photos didn't
@@ -751,14 +735,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       try {
         await batchInsertFlagPhotos(
           result.row.id,
-          photoUrls.map((url, i) => ({
-            url,
+          preparedPhotos.map((photo, i) => ({
+            intentId: photo.intentId,
             alt: photoUris[i] ? photoAlts[photoUris[i]] || null : null,
           })),
         );
       } catch (photoLinkErr) {
         console.warn('[report] photo link insert failed:', photoLinkErr);
-        if (photoUrls.length > 0) {
+        if (preparedPhotos.length > 0) {
           notify(
             'Report filed — photos not attached',
             'Your report was saved, but its photos could not be attached. You can add photos again from the flag details.',
@@ -775,7 +759,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
         );
       }
-      track('flag_created', { category, severity, hasPhoto: photoUrls.length > 0 });
+      track('flag_created', { category, severity, hasPhoto: preparedPhotos.length > 0 });
       hapticNotify('success');
       reset();
       onCreated(result.row);
@@ -789,19 +773,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       // (PROTECT-8). Presentation-only — no change to flags.ts or the upload.
       setLiveStatus({
         message:
-          photoUrls.length > 0
+          preparedPhotos.length > 0
             ? 'Report filed — thanks for flagging this barrier. Location data was removed from your photos.'
             : 'Report filed — thanks for flagging this barrier',
         tone: 'success',
         autoDismissMs: 4000,
       });
     } catch (e) {
-      // Best-effort Storage orphan cleanup: an upload mid-loop failure or a
-      // createFlag failure left blobs no DB row references. Fire-and-forget
-      // (removeUploadedFlagPhotos never throws) so the ORIGINAL error always
-      // surfaces to the user below. Empty after createFlag succeeds — photos
-      // referenced by a created flag are never deleted.
-      if (uploadedPaths.length > 0) void removeUploadedFlagPhotos(uploadedPaths);
+      // Server cancellation records AMBIGUOUS, never client-inferred absence.
+      // The operation can later be reviewed on the same deletion request.
+      if (preparedPhotos.length > 0) {
+        void Promise.all(preparedPhotos.map((photo) => cancelFlagPhotoUpload(photo.intentId))).catch(() => undefined);
+      }
       // §SKY-7: same coherence fix as the comment path — a description
       // rejected by the filter now offers the guidelines it was judged
       // against. Every other failure keeps notify() unchanged, so the three

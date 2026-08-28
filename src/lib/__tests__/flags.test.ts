@@ -76,6 +76,7 @@ const mockFrom = jest.fn();
 const mockStorageUpload = jest.fn();
 const mockStorageGetPublicUrl = jest.fn();
 const mockStorageFrom = jest.fn();
+const mockRpc = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
@@ -87,6 +88,7 @@ jest.mock('../supabase', () => ({
     storage: {
       from: (...args: unknown[]) => mockStorageFrom(...args),
     },
+    rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
 
@@ -855,6 +857,13 @@ describe('uploadFlagPhoto — codec-emitted APP1 is sanitized (native path)', ()
       upload: mockStorageUpload,
       getPublicUrl: mockStorageGetPublicUrl,
     });
+    mockRpc.mockReset().mockImplementation((name: unknown) => ({
+      single: jest.fn().mockResolvedValue(
+        name === 'prepare_flag_photo_upload'
+          ? { data: { intent_id: 'intent-1', object_key: 'uploads/canonical.jpg' }, error: null }
+          : { data: null, error: null },
+      ),
+    }));
   });
 
   afterEach(() => {
@@ -887,7 +896,7 @@ describe('uploadFlagPhoto — codec-emitted APP1 is sanitized (native path)', ()
     expect(result.url).toMatch(/^https:\/\//);
     expect(mockStorageUpload).toHaveBeenCalledTimes(1);
     const [pathArg, bufferArg] = mockStorageUpload.mock.calls[0];
-    expect(String(pathArg).startsWith(`${USER_ID}/`)).toBe(true);
+    expect(pathArg).toBe('uploads/canonical.jpg');
     expect(new Uint8Array(bufferArg as ArrayBuffer)).toEqual(new Uint8Array(expectedUpload));
     expect(verifyExifStripped(bufferArg as ArrayBuffer)).toBe(true);
   });

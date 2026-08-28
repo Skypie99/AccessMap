@@ -13,6 +13,7 @@ const d1saMigration = read(
   '2026-08-27_d1sa_deployed_security_containment.sql',
 );
 const edgeFunction = read('supabase', 'functions', 'delete-account', 'index.ts');
+const worker = read('supabase', 'functions', 'account-deletion-worker', 'index.ts');
 const profile = read('src', 'screens', 'ProfileScreen.tsx');
 const executableSql = migration.replace(/^\s*--.*$/gm, '');
 
@@ -260,51 +261,42 @@ describe('D1 Option A atomic purge RPC', () => {
   });
 });
 
-describe('D1 Option A Edge Function ordering and retry safety', () => {
-  it('uses only the authenticated subject and preserves the exact destructive order', () => {
-    const lock = edgeFunction.indexOf('await createDeletionLock(userId);');
-    const initialStorage = edgeFunction.indexOf('await clearAccountStorage(userId);');
-    const purge = edgeFunction.indexOf('await purgeAccountDatabase(userId);');
-    const finalStorage = edgeFunction.lastIndexOf('await clearAccountStorage(userId);');
-    const storageCheck = edgeFunction.indexOf('await assertAccountStorageEmpty(userId);');
-    const authDelete = edgeFunction.lastIndexOf('adminClient.auth.admin.deleteUser(userId)');
-
-    expect(edgeFunction).toContain('const userId = user.id;');
-    expect(edgeFunction).not.toMatch(/req\.json\(|p_user_id:\s*req/i);
-    expect(lock).toBeGreaterThanOrEqual(0);
-    expect(initialStorage).toBeGreaterThan(lock);
-    expect(purge).toBeGreaterThan(initialStorage);
-    expect(finalStorage).toBeGreaterThan(purge);
-    expect(storageCheck).toBeGreaterThan(finalStorage);
-    expect(authDelete).toBeGreaterThan(storageCheck);
-    expect(edgeFunction).not.toMatch(/update\(\{\s*user_id:\s*null\s*\}\)/i);
+describe('D1F4 request endpoint and worker split', () => {
+  it('uses the authenticated subject only to commit a durable request; it never performs destructive work', () => {
+    expect(edgeFunction).toContain('p_subject_id: user.id');
+    expect(edgeFunction).toContain('p_operation_id: body.operationId');
+    expect(edgeFunction).toContain('p_receipt_hash: await sha256Hex(body.receiptSecret)');
+    expect(edgeFunction).toContain("return json(202, { status: 'requested', requestedAt: data.requested_at });");
+    expect(edgeFunction).not.toMatch(/p_subject_id:\s*body\./i);
+    expect(edgeFunction).not.toMatch(/storage\.from\(/i);
+    expect(edgeFunction).not.toMatch(/auth\.admin\.deleteUser/i);
   });
 
-  it('traverses only the exact Storage namespace recursively, paginates, batches, and does not log identifiers', () => {
-    expect(edgeFunction).toContain('const root = userId;');
-    expect(edgeFunction).toContain('const folders = [root];');
-    expect(edgeFunction).toContain('folders.push(path);');
-    expect(edgeFunction).toContain('offset += STORAGE_PAGE_SIZE');
-    expect(edgeFunction).toContain('limit: STORAGE_PAGE_SIZE');
-    expect(edgeFunction).toContain('start += STORAGE_DELETE_BATCH_SIZE');
-    expect(edgeFunction).toContain('paths.slice(start, start + STORAGE_DELETE_BATCH_SIZE)');
-    expect(edgeFunction).toContain("console.error('[delete-account] cleanup failed.');");
-    expect(edgeFunction).not.toMatch(/console\.(?:log|error|warn)\([^)]*userId/i);
-    expect(edgeFunction).not.toMatch(/console\.(?:log|error|warn)\([^)]*path/i);
+  it('keeps exact-key storage reconciliation and Auth deletion in the worker, with Auth last', () => {
+    const exactStorageDelete = worker.indexOf('admin.storage.from(BUCKET).remove');
+    const authDelete = worker.indexOf('admin.auth.admin.deleteUser(operation.subject_id)');
+
+    expect(worker).toContain("const { data, error } = await admin.rpc('claim_next_account_deletion_operation'");
+    expect(worker).toContain("await rpcOperation('lock_requested_account_deletion'");
+    expect(worker).not.toMatch(/\.list\(/i);
+    expect(exactStorageDelete).toBeGreaterThanOrEqual(0);
+    expect(authDelete).toBeGreaterThan(exactStorageDelete);
+    expect(worker).not.toMatch(/console\.(?:log|error|warn)\([^)]*(?:subject_id|object_key|operation_id)/i);
   });
 
-  it('leaves a failed pre-auth deletion retryable and preserves the successful response contract', () => {
-    expect(edgeFunction).toContain("return jsonResponse(200, { status: 'deleted' });");
-    expect(edgeFunction).toContain('If any step before auth deletion fails, the deletion lock intentionally stays');
-    expect(edgeFunction).toContain("return jsonResponse(500, { status: 'error', error: 'Deletion failed unexpectedly.' });");
+  it('uses a receipt-recoverable request response rather than claiming immediate deletion', () => {
+    expect(edgeFunction).toContain("return json(202, { status: 'requested', requestedAt: data.requested_at });");
+    expect(edgeFunction).toContain("return json(409, { status: 'error' });");
+    expect(edgeFunction).toContain('The already stored receipt is the recovery capability.');
+    expect(edgeFunction).not.toMatch(/status:\s*['\"]deleted['\"]/i);
   });
 });
 
-describe('D1 Option A user-facing deletion copy', () => {
-  it('states full permanent deletion and removes the prior anonymous-report/support claims', () => {
-    expect(profile).toContain('complete report trees');
-    expect(profile).toContain('direct contributions, feedback, and uploaded photos');
-    expect(profile).toContain('associated content');
+describe('D1F4 user-facing deletion copy', () => {
+  it('states asynchronous deletion and local completion confirmation without an unsupported time promise', () => {
+    expect(profile).toContain('This starts deletion of your account and associated content. Deletion happens asynchronously and cannot be undone.');
+    expect(profile).toContain('This device will show confirmation when deletion is complete.');
+    expect(profile).not.toMatch(/\b30\s*(?:calendar\s*)?days?\b/i);
     expect(profile).not.toContain('remain on the map anonymously');
     expect(profile).not.toContain('get in touch with support');
   });
