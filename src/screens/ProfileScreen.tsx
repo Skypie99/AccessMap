@@ -25,6 +25,7 @@ import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
 import { AccountDeletionRequestSignOutPendingError, deleteAccount } from '@/lib/account';
+import { accountDeletionStartAvailability } from '@/lib/accountDeletionAvailability';
 import {
   AccountDeletionReceiptUnavailableError,
   getAccountDeletionStatus,
@@ -737,6 +738,15 @@ export default function ProfileScreen() {
   }, [user]);
 
   useEffect(() => { void refreshAccountDeletionStatus(); }, [refreshAccountDeletionStatus]);
+
+  const handleOpenAccountDeletion = useCallback(() => {
+    const availability = accountDeletionStartAvailability(Platform.OS);
+    if (!availability.supported) {
+      notify(availability.title, availability.message);
+      return;
+    }
+    setDeleteAccountOpen(true);
+  }, []);
 
   const handleDeleteAccount = useCallback(async () => {
     if (!user) return;
@@ -1954,7 +1964,7 @@ export default function ProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => setDeleteAccountOpen(true)}
+          onPress={handleOpenAccountDeletion}
           disabled={accountDeletionStatus !== null}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"

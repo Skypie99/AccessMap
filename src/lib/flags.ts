@@ -1455,8 +1455,9 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
  * stays so nobody re-diagnoses the old 42501 from stale docs.
  */
 export async function deleteFlag(flagId: string) {
-  // Gather BEFORE the delete — see the order note above.
-  const paths = await collectFlagPhotoPaths(flagId);
+  // Gather and consume BEFORE the relational delete — see the order note above.
+  const plan = await collectFlagPhotoCleanupPlan(flagId);
+  await removeExactFlagPhotoObjects(plan.paths);
 
   // `.select('id')` is what makes a refused delete distinguishable from a
   // completed one. RLS does not error when it denies a DELETE — it filters the
@@ -1474,9 +1475,6 @@ export async function deleteFlag(flagId: string) {
     throw denied;
   }
 
-  // Best-effort, never throws. On the admin path RLS refuses this and it warns;
-  // the row is still gone, which is the contract the caller surfaces.
-  await removeUploadedFlagPhotos(paths);
 }
 
 /**
@@ -1490,36 +1488,70 @@ export async function deleteFlag(flagId: string) {
  * it matters. Undeleted blobs are invisible to users and are what R-1's
  * server-side sweep is for.
  */
-async function collectFlagPhotoPaths(flagId: string): Promise<string[]> {
-  try {
-    const { data: auth } = await supabase.auth.getUser();
-    const uid = auth?.user?.id;
-    // No uid means no owner-folder to validate against, and every derivation
-    // would refuse anyway. Skip the round trips.
-    if (!uid) return [];
+async function collectFlagPhotoCleanupPlan(flagId: string): Promise<{ paths: string[] }> {
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  const uid = auth?.user?.id;
+  if (!uid) throw new Error('A signed-in user is required to delete report photos.');
 
-    const [rowRes, photosRes] = await Promise.all([
-      supabase.from('flags').select('photo_url').eq('id', flagId).maybeSingle(),
-      supabase.from('flag_photos').select('url').eq('flag_id', flagId),
-    ]);
+  const [rowRes, photosRes] = await Promise.all([
+    supabase.from('flags')
+      .select('photo_object_key, photo_url, photo_uploader_id')
+      .eq('id', flagId)
+      .maybeSingle(),
+    supabase.from('flag_photos')
+      .select('object_key, url, uploader_id')
+      .eq('flag_id', flagId),
+  ]);
+  if (rowRes.error) throw rowRes.error;
+  if (photosRes.error) throw photosRes.error;
 
-    const urls: string[] = [];
-    const legacy = (rowRes.data as { photo_url?: string | null } | null)?.photo_url;
-    if (legacy) urls.push(legacy);
-    for (const p of (photosRes.data ?? []) as { url?: string | null }[]) {
-      if (p.url) urls.push(p.url);
-    }
-
-    const paths = new Set<string>();
-    for (const url of urls) {
-      const path = storagePathFromPublicUrl(url, uid);
-      if (path) paths.add(path);
-    }
-    return [...paths];
-  } catch (e) {
-    console.warn('[flags] SR-050: could not collect photo paths before delete:', e);
-    return [];
+  const paths = new Set<string>();
+  const primary = rowRes.data as {
+    photo_object_key?: string | null;
+    photo_url?: string | null;
+    photo_uploader_id?: string | null;
+  } | null;
+  addCanonicalReportObject(paths, primary?.photo_object_key, primary?.photo_uploader_id, uid);
+  if (primary?.photo_url) addLegacyReportPath(paths, primary.photo_url, uid);
+  for (const photo of (photosRes.data ?? []) as {
+    object_key?: string | null;
+    url?: string | null;
+    uploader_id?: string | null;
+  }[]) {
+    addCanonicalReportObject(paths, photo.object_key, photo.uploader_id, uid);
+    if (photo.url) addLegacyReportPath(paths, photo.url, uid);
   }
+  return { paths: [...paths] };
+}
+
+function addCanonicalReportObject(
+  paths: Set<string>,
+  objectKey: string | null | undefined,
+  uploaderId: string | null | undefined,
+  currentUserId: string,
+): void {
+  if (!objectKey) return;
+  if (uploaderId !== currentUserId) {
+    throw new Error('A canonical report photo has unverified ownership; report deletion was not started.');
+  }
+  paths.add(objectKey);
+}
+
+function addLegacyReportPath(paths: Set<string>, url: string, currentUserId: string): void {
+  const path = storagePathFromPublicUrl(url, currentUserId);
+  if (path) paths.add(path);
+}
+
+async function removeExactFlagPhotoObjects(paths: readonly string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const { error } = await supabase.storage.from(FLAG_PHOTOS_BUCKET).remove([...paths]);
+  if (error && !isMissingStorageObjectError(error)) throw error;
+}
+
+function isMissingStorageObjectError(error: { statusCode?: unknown; status?: unknown; message?: unknown }): boolean {
+  return error.statusCode === 404 || error.status === 404
+    || (typeof error.message === 'string' && /not found|does not exist/i.test(error.message));
 }
 
 /**

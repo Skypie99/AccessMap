@@ -96,12 +96,16 @@ function makeChain(terminal: () => unknown): Record<string, unknown> {
 const mockFrom = jest.fn();
 
 const mockRpc = jest.fn();
+const mockGetUser = jest.fn();
+const mockRemove = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
     from: (...args: unknown[]) => mockFrom(...args),
     rpc: (...args: unknown[]) => mockRpc(...args),
+    auth: { getUser: () => mockGetUser() },
+    storage: { from: () => ({ remove: mockRemove }) },
   },
 }));
 
@@ -134,6 +138,36 @@ function setupChain(result: { data: unknown; error: unknown }) {
   mockFrom.mockReturnValue(makeChain(() => Promise.resolve(result)));
 }
 
+function setupDeleteFlag(result: { data: { id: string }[] | null; error: unknown }) {
+  mockFrom.mockImplementation((table: string) => {
+    if (table === 'flags') {
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data: { photo_object_key: null, photo_url: null, photo_uploader_id: null },
+              error: null,
+            }),
+          }),
+        }),
+        delete: () => ({
+          eq: () => ({
+            select: async () => result,
+          }),
+        }),
+      };
+    }
+    if (table === 'flag_photos') {
+      return {
+        select: () => ({
+          eq: async () => ({ data: [], error: null }),
+        }),
+      };
+    }
+    throw new Error('Unexpected table in deleteFlag test');
+  });
+}
+
 beforeEach(() => {
   // resetAllMocks() clears both usage data (calls/results) AND the
   // mockResolvedValueOnce / mockReturnValue queues.  This matters here
@@ -142,6 +176,8 @@ beforeEach(() => {
   // reset those stale queue entries bleed into subsequent tests.
   // clearAllMocks() only clears usage data and leaves queues intact.
   jest.resetAllMocks();
+  mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null });
+  mockRemove.mockResolvedValue({ data: [], error: null });
 });
 
 // ---------------------------------------------------------------------------
@@ -295,12 +331,12 @@ describe('deleteFlag', () => {
     // A successful delete reports the deleted row back: deleteFlag asks for
     // `.select('id')` precisely so zero rows can be read as the refusal it is
     // (RLS filters rather than raising). See sr050DeleteFlagPhotos.test.ts.
-    setupChain({ data: [{ id: 'f1' }], error: null });
+    setupDeleteFlag({ data: [{ id: 'f1' }], error: null });
     await expect(deleteFlag('f1')).resolves.toBeUndefined();
   });
 
   it('throws when Supabase returns an error', async () => {
-    setupChain({ data: null, error: { message: 'not found', code: '404' } });
+    setupDeleteFlag({ data: null, error: { message: 'not found', code: '404' } });
     await expect(deleteFlag('f1')).rejects.toMatchObject({ code: '404' });
   });
 });

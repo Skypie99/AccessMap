@@ -1,6 +1,6 @@
 // Receipt capability status. Works after Auth removal and reveals no account,
 // object, error, or review detail. Invalid and unknown receipts are identical.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '../_shared/supabase.ts';
 import { corsHeaders, corsPreflight } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;

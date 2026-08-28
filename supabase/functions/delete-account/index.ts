@@ -3,7 +3,7 @@
 // endpoint. This endpoint derives the subject only from verified Auth, hashes
 // the secret, and commits REQUESTED. It never cleans Storage or deletes Auth.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '../_shared/supabase.ts';
 import { corsHeaders, corsPreflight } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;

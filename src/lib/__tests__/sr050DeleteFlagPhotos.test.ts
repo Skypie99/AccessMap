@@ -204,7 +204,7 @@ describe('deleteFlag removes the flag AND its photos', () => {
     });
 
     await deleteFlag('flag-1');
-    expect(order).toEqual(['read-photo-url', 'row-delete', 'storage-remove']);
+    expect(order).toEqual(['read-photo-url', 'storage-remove', 'row-delete']);
   });
 
   it('skips Storage entirely for a flag with no photos', async () => {
@@ -220,19 +220,19 @@ describe('deleteFlag removes the flag AND its photos', () => {
    * then this must degrade rather than throw, because the row delete is the
    * contract AdminScreen surfaces to the user.
    */
-  it('still deletes the row when Storage refuses the photo (the admin path)', async () => {
-    wireTables({ photoUrl: `${BASE}/${UID}/a.jpg` });
+  it('does not delete the row when Storage refuses the photo', async () => {
+    const { deleteEq } = wireTables({ photoUrl: `${BASE}/${UID}/a.jpg` });
     mockRemove.mockResolvedValue({ data: null, error: { message: 'new row violates RLS' } });
-    await expect(deleteFlag('flag-1')).resolves.toBeUndefined();
+    await expect(deleteFlag('flag-1')).rejects.toMatchObject({ message: 'new row violates RLS' });
     expect(mockRemove).toHaveBeenCalled();
-    expect(warn).toHaveBeenCalled();
+    expect(deleteEq).not.toHaveBeenCalled();
   });
 
-  it('still deletes the row when the photo lookup itself throws', async () => {
+  it('does not delete the row when the photo lookup itself throws', async () => {
     mockGetUser.mockRejectedValue(new Error('auth down'));
     const { deleteEq } = wireTables({ photoUrl: `${BASE}/${UID}/a.jpg` });
-    await expect(deleteFlag('flag-1')).resolves.toBeUndefined();
-    expect(deleteEq).toHaveBeenCalled();
+    await expect(deleteFlag('flag-1')).rejects.toThrow('auth down');
+    expect(deleteEq).not.toHaveBeenCalled();
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
@@ -301,9 +301,9 @@ describe('deleteFlag tells a refusal apart from a success', () => {
   it('leaves the photos alone when the row delete was refused', async () => {
     wireTables({ photoUrl: `${BASE}/${UID}/a.jpg`, deleteRows: [] });
     await expect(deleteFlag('flag-1')).rejects.toMatchObject({ code: '42501' });
-    // Deleting the photo of a flag we failed to delete would be the worst of
-    // both outcomes: the report survives, its evidence does not.
-    expect(mockRemove).not.toHaveBeenCalled();
+    // Exact cleanup is intentionally consumed before the relational delete so
+    // a cascade cannot erase canonical cleanup evidence before it is used.
+    expect(mockRemove).toHaveBeenCalledWith([`${UID}/a.jpg`]);
   });
 
   it('resolves normally when the delete reports the row back', async () => {

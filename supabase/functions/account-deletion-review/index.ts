@@ -1,7 +1,7 @@
 // Sky-only, narrowly scoped privacy-review continuation. This is not a client
 // permission or public admin API; deployment supplies the server-only secret.
 // It accepts redacted evidence and exact keys only, never photo bytes or URLs.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '../_shared/supabase.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -16,21 +16,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return new Response('Invalid request', { status: 400 }); }
-  const absentIntentIds = uuidArray(body.absentIntentIds);
-  const exactObjectKeys = keyArray(body.exactObjectKeys);
   if (typeof body.operationId !== 'string' || !UUID_RE.test(body.operationId)
     || typeof body.evidenceDigest !== 'string' || !DIGEST_RE.test(body.evidenceDigest)
-    || absentIntentIds === null || exactObjectKeys === null
-    || typeof body.resolveIntents !== 'boolean' || typeof body.resolveHistoric !== 'boolean') {
+    || typeof body.reviewItemId !== 'string' || !UUID_RE.test(body.reviewItemId)
+    || !isResolutionAction(body.action)) {
     return new Response('Invalid request', { status: 400 });
   }
-  const { error } = await admin.rpc('resolve_account_deletion_review', {
+  // One server-created item per request. The reviewer cannot submit a bulk
+  // inventory, public URL, or arbitrary object key for the worker to delete.
+  const { error } = await admin.rpc('resolve_account_deletion_review_item', {
     p_operation_id: body.operationId,
     p_evidence_digest: body.evidenceDigest,
-    p_absent_intent_ids: absentIntentIds,
-    p_exact_object_keys: exactObjectKeys,
-    p_resolve_intents: body.resolveIntents,
-    p_resolve_historic: body.resolveHistoric,
+    p_review_item_id: body.reviewItemId,
+    p_action: body.action,
   });
   if (error) {
     console.error('[account-deletion-review] resolution failed.');
@@ -39,13 +37,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   return new Response(JSON.stringify({ status: 'requeued' }), { headers: { 'Content-Type': 'application/json' } });
 });
 
-function uuidArray(value: unknown): string[] | null {
-  if (value === undefined) return [];
-  return Array.isArray(value) && value.length <= 250 && value.every((item) => typeof item === 'string' && UUID_RE.test(item)) ? value : null;
-}
-function keyArray(value: unknown): string[] | null {
-  if (value === undefined) return [];
-  return Array.isArray(value) && value.length <= 500 && value.every((item) => typeof item === 'string' && item.length > 0 && item.length <= 512 && !/[\u0000-\u001f]/.test(item)) ? value : null;
+function isResolutionAction(value: unknown): value is 'DELETE' | 'PRESERVE_FOREIGN' | 'ACKNOWLEDGE' {
+  return value === 'DELETE' || value === 'PRESERVE_FOREIGN' || value === 'ACKNOWLEDGE';
 }
 async function secretMatches(value: string | null, expected: string): Promise<boolean> {
   if (!value || !expected) return false;

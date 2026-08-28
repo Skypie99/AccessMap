@@ -14,6 +14,7 @@ const d1saMigration = read(
 );
 const edgeFunction = read('supabase', 'functions', 'delete-account', 'index.ts');
 const worker = read('supabase', 'functions', 'account-deletion-worker', 'index.ts');
+const workerCore = read('supabase', 'functions', '_shared', 'accountDeletionWorkerCore.ts');
 const profile = read('src', 'screens', 'ProfileScreen.tsx');
 const executableSql = migration.replace(/^\s*--.*$/gm, '');
 
@@ -274,13 +275,18 @@ describe('D1F4 request endpoint and worker split', () => {
 
   it('keeps exact-key storage reconciliation and Auth deletion in the worker, with Auth last', () => {
     const exactStorageDelete = worker.indexOf('admin.storage.from(BUCKET).remove');
-    const authDelete = worker.indexOf('admin.auth.admin.deleteUser(operation.subject_id)');
+    const authDelete = worker.indexOf('admin.auth.admin.deleteUser(subjectId)');
+    const coreStorageDelete = workerCore.indexOf('await gateway.removeExactOwnedKeys');
+    const coreAuthDelete = workerCore.indexOf('await deleteAuthLast(gateway, operation');
 
     expect(worker).toContain("const { data, error } = await admin.rpc('claim_next_account_deletion_operation'");
-    expect(worker).toContain("await rpcOperation('lock_requested_account_deletion'");
+    expect(worker).toContain("lock: (operationId, leaseToken) => rpcOperation('lock_requested_account_deletion'");
+    expect(workerCore).toContain('await gateway.lock(operation.operation_id, leaseToken)');
     expect(worker).not.toMatch(/\.list\(/i);
     expect(exactStorageDelete).toBeGreaterThanOrEqual(0);
-    expect(authDelete).toBeGreaterThan(exactStorageDelete);
+    expect(authDelete).toBeGreaterThanOrEqual(0);
+    expect(coreStorageDelete).toBeGreaterThanOrEqual(0);
+    expect(coreAuthDelete).toBeGreaterThan(coreStorageDelete);
     expect(worker).not.toMatch(/console\.(?:log|error|warn)\([^)]*(?:subject_id|object_key|operation_id)/i);
   });
 
