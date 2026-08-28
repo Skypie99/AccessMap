@@ -29,6 +29,7 @@ const backupTables = [
 const lockAwarePolicies = [
   'users update own row',
   'flags insert own',
+  'flags_user_scoped',
   'flags owner edit open',
   'flags status update by any authenticated',
   'flags delete own',
@@ -130,6 +131,21 @@ describe('D1 Option A lock-aware boundaries', () => {
     expect(body).toContain('(select public.current_account_can_write())');
   });
 
+  it('fences the legacy owner ALL policy for locked-owner INSERT, UPDATE, and DELETE paths', () => {
+    const legacyOwnerPolicy = statementAfter('create policy "flags_user_scoped"');
+    const lockedOwnerPredicate =
+      /\(select\s+auth\.uid\(\)\)\s*=\s*user_id\s+and\s+\(select\s+public\.current_account_can_write\(\)\)/i;
+
+    // The old TO public policy's auth.uid owner condition could not pass for
+    // anonymous callers. The authenticated scope preserves that behavior and
+    // avoids granting anon access to the authenticated-only lock helper.
+    expect(legacyOwnerPolicy).toMatch(/on\s+public\.flags\s+for\s+all\s+to\s+authenticated/i);
+    // WITH CHECK governs INSERT (and the new row of UPDATE); USING governs
+    // UPDATE's old row and DELETE. A locked owner fails both policy paths.
+    expect(legacyOwnerPolicy).toMatch(new RegExp(`using\\s*\\(\\s*${lockedOwnerPredicate.source}`, 'i'));
+    expect(legacyOwnerPolicy).toMatch(new RegExp(`with\\s+check\\s*\\(\\s*${lockedOwnerPredicate.source}`, 'i'));
+  });
+
   it('retains anonymous reporting and anonymous feedback without a lock bypass for signed-in writers', () => {
     expect(executableSql).not.toContain('drop policy if exists "flags anon insert"');
     const feedback = statementAfter('create policy "feedback_insert_self_or_anon"');
@@ -191,6 +207,50 @@ describe('D1 Option A atomic purge RPC', () => {
 
   it.each(backupTables)('removes and verifies retained backup residue in %s', (table) => {
     expect(purge).toContain(`public.${table}`);
+  });
+
+  it('captures subject point-event ids before live deletion and uses the complete predicate for backup links', () => {
+    const capture = purge.indexOf('into backup_point_event_ids');
+    const liveEventDelete = purge.indexOf('delete from public.point_events where user_id = p_user_id;');
+    const backupLinkDelete = purge.indexOf('delete from public.bk_2026_08_22_point_links');
+    const backupLinkResidue = purge.lastIndexOf('union all select 1 from public.bk_2026_08_22_point_links');
+    const completePredicate =
+      /point_event_id\s*=\s*any\(backup_point_event_ids\)\s+or\s+flag_id\s*=\s*any\(backup_flag_ids\)/i;
+
+    expect(purge).toContain("backup_point_event_ids bigint[] := '{}'::bigint[];");
+    expect(purge).toContain("select coalesce(array_agg(id), '{}'::bigint[])");
+    expect(capture).toBeGreaterThanOrEqual(0);
+    expect(liveEventDelete).toBeGreaterThan(capture);
+    expect(backupLinkDelete).toBeGreaterThan(liveEventDelete);
+    expect(backupLinkResidue).toBeGreaterThan(backupLinkDelete);
+    expect(purge.slice(backupLinkDelete, backupLinkResidue)).toMatch(completePredicate);
+    expect(purge.slice(backupLinkResidue)).toMatch(completePredicate);
+  });
+
+  it('models cross-owner point links and a no-live-row retry without deleting another account’s content', () => {
+    const shouldDeleteBackupLink = (
+      link: { pointEventId: number; flagId: string },
+      subjectPointEventIds: number[],
+      subjectBackupFlagIds: string[],
+    ) =>
+      subjectPointEventIds.includes(link.pointEventId) || subjectBackupFlagIds.includes(link.flagId);
+
+    // User A earned event 101 for activity on User B's flag. User B's event
+    // and report stay intact when A's event-linked backup row is removed.
+    const backupLinks = [
+      { pointEventId: 101, flagId: 'user-b-flag' },
+      { pointEventId: 202, flagId: 'user-b-flag' },
+    ];
+    const afterUserADeletion = backupLinks.filter(
+      (link) => !shouldDeleteBackupLink(link, [101], ['user-a-flag']),
+    );
+
+    expect(afterUserADeletion).toEqual([{ pointEventId: 202, flagId: 'user-b-flag' }]);
+    // Once the subject's live event and owned-backup rows are already absent,
+    // the coalesced empty arrays make a retry a no-op for User B's row.
+    expect(
+      afterUserADeletion.filter((link) => shouldDeleteBackupLink(link, [], [])),
+    ).toEqual([]);
   });
 
   it('raises on a non-zero residue count so PostgreSQL rolls all database work back', () => {

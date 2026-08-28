@@ -5,6 +5,14 @@
 -- applies reviewed migrations; this migration is deliberately additive and
 -- does not replay or alter D1S-A.
 --
+-- MIGRATION-HISTORY RESTRICTION:
+-- DO NOT run `supabase db push`.
+-- DO NOT run `supabase migration repair`.
+-- D1S-A was manually applied through the SQL Editor and is live but absent
+-- from the remote migration ledger. Generic push/repair remains prohibited
+-- until Sky explicitly authorizes a separately reviewed migration-history
+-- reconciliation. Apply D1 only by a separately reviewed, history-safe method.
+--
 -- The edge function owns the outer workflow:
 --   authenticated subject → lock → Storage sweep → this RPC → final Storage
 --   check → auth.users delete LAST.
@@ -85,6 +93,24 @@ drop policy if exists "flags insert own" on public.flags;
 create policy "flags insert own"
   on public.flags for insert
   to authenticated
+  with check (
+    (select auth.uid()) = user_id
+    and (select public.current_account_can_write())
+  );
+
+-- The live legacy ALL policy is permissive and therefore OR-composes with the
+-- named paths above. Its historical owner predicate cannot admit an anonymous
+-- request, so limiting this replacement to authenticated preserves that owner
+-- behavior while allowing the authenticated-only lock helper to fence every
+-- write verb (INSERT through WITH CHECK; UPDATE/DELETE through USING).
+drop policy if exists "flags_user_scoped" on public.flags;
+create policy "flags_user_scoped"
+  on public.flags for all
+  to authenticated
+  using (
+    (select auth.uid()) = user_id
+    and (select public.current_account_can_write())
+  )
   with check (
     (select auth.uid()) = user_id
     and (select public.current_account_can_write())
@@ -445,6 +471,7 @@ set search_path = ''
 as $$
 declare
   backup_flag_ids uuid[] := '{}'::uuid[];
+  backup_point_event_ids bigint[] := '{}'::bigint[];
   residue_count bigint := 0;
 begin
   if p_user_id is null
@@ -460,6 +487,14 @@ begin
   select coalesce(array_agg(id), '{}'::uuid[])
     into backup_flag_ids
     from public.bk_2026_08_22_flags
+    where user_id = p_user_id;
+
+  -- A point event can belong to this account even when its linked flag belongs
+  -- to another account. Capture event ids before deleting live point_events so
+  -- the protected backup link has a complete subject-safe deletion predicate.
+  select coalesce(array_agg(id), '{}'::bigint[])
+    into backup_point_event_ids
+    from public.point_events
     where user_id = p_user_id;
 
   -- Direct contributions outside the user’s owned report trees.
@@ -482,7 +517,8 @@ begin
   -- D1S-A protects the seven backup relations from clients; Option A must
   -- nevertheless erase matching retained content in the same transaction.
   delete from public.bk_2026_08_22_point_links
-    where flag_id = any(backup_flag_ids);
+    where point_event_id = any(backup_point_event_ids)
+       or flag_id = any(backup_flag_ids);
   delete from public.bk_2026_08_22_flag_comments
     where user_id = p_user_id or flag_id = any(backup_flag_ids);
   delete from public.bk_2026_08_22_flag_photos
@@ -526,7 +562,8 @@ begin
     union all select 1 from public.bk_2026_08_22_flag_edit_history
       where user_id = p_user_id or flag_id = any(backup_flag_ids)
     union all select 1 from public.bk_2026_08_22_point_links
-      where flag_id = any(backup_flag_ids)
+      where point_event_id = any(backup_point_event_ids)
+         or flag_id = any(backup_flag_ids)
   ) as residues;
 
   if residue_count <> 0 then
