@@ -1,10 +1,10 @@
 # D1F4R3 Source Closure — local implementation record
 
-**Date:** 2026-08-28  
-**Worktree:** `/Users/skypie/AccessMap-codex/d1f4-source-repair-r3`  
-**Branch:** `codex/d1f4-source-repair-r3`  
-**Implementation commit:** `560b41efc0c22e69dab347f382b952e4158af8c6`  
-**Base:** `93036d13980eaa54e3c126043dc6d7116514210e`  
+**Date:** 2026-08-28
+**Worktree:** `/Users/skypie/AccessMap-codex/d1f4-source-repair-r3`
+**Branch:** `codex/d1f4-source-repair-r3`
+**Implementation commit:** `560b41efc0c22e69dab347f382b952e4158af8c6`
+**Base:** `93036d13980eaa54e3c126043dc6d7116514210e`
 **Scope:** local source, forward-only migration, focused tests, and QA record only. No remote database, deployment, merge, push, credentials, or production operation was performed.
 
 ## Result
@@ -90,24 +90,24 @@ The shared Edge client has the exact pinned import `npm:@supabase/supabase-js@2.
 
 ### 1. Resolve the local dependency gate before acceptance
 
-**Decision:** restore the approved Expo dependency cache/installation used by this checkout, without changing the lockfile as a workaround.  
-**Recommendation:** restore the declared dependencies from the existing approved package lock, then rerun the complete local gate set.  
-**Why:** the full Jest, typecheck, and lint commands cannot initialize because `expo-secure-store` and `expo-crypto` are absent locally; this does not establish any changed-source failure, but it prevents a complete repository result.  
-**Alternative:** accept only the focused 87-test result.  
+**Decision:** restore the approved Expo dependency cache/installation used by this checkout, without changing the lockfile as a workaround.
+**Recommendation:** restore the declared dependencies from the existing approved package lock, then rerun the complete local gate set.
+**Why:** the full Jest, typecheck, and lint commands cannot initialize because `expo-secure-store` and `expo-crypto` are absent locally; this does not establish any changed-source failure, but it prevents a complete repository result.
+**Alternative:** accept only the focused 87-test result.
 **Impact:** that alternative leaves the repair blocked from independent acceptance and release planning.
 
 ### 2. Decide the authorized staging configuration and runtime verification scope for `delete-flag`
 
-**Decision:** whether to review any needed Edge-function configuration under a dedicated authentication/security change and staging test plan.  
-**Recommendation:** preserve gateway JWT enforcement unless a separately reviewed configuration requires otherwise; test browser OPTIONS/preflight and token behavior in staging before relying on the new route.  
-**Why:** this task could not change root Supabase function authentication configuration. The handler has defense in depth, but source review cannot prove platform gateway and preflight behavior.  
-**Alternative:** change config within this repair without dedicated review.  
+**Decision:** whether to review any needed Edge-function configuration under a dedicated authentication/security change and staging test plan.
+**Recommendation:** preserve gateway JWT enforcement unless a separately reviewed configuration requires otherwise; test browser OPTIONS/preflight and token behavior in staging before relying on the new route.
+**Why:** this task could not change root Supabase function authentication configuration. The handler has defense in depth, but source review cannot prove platform gateway and preflight behavior.
+**Alternative:** change config within this repair without dedicated review.
 **Impact:** that would cross the estate's no-auth/security-config boundary and still would not prove staging behavior.
 
 ### 3. Set the operator path for non-derivable historic URLs
 
-**Decision:** define the staging manual-review procedure for a historical record that cannot be associated with an exact Storage object key.  
-**Recommendation:** retain the fail-closed `BLOCKED_ASSOCIATION` state until an authorized operator can establish an exact association or separately record a reviewed no-object outcome.  
-**Why:** the repair intentionally removes the old “acknowledge unknown association and continue” escape hatch.  
-**Alternative:** infer a key from a legacy URL and permit deletion/acknowledgement.  
+**Decision:** define the staging manual-review procedure for a historical record that cannot be associated with an exact Storage object key.
+**Recommendation:** retain the fail-closed `BLOCKED_ASSOCIATION` state until an authorized operator can establish an exact association or separately record a reviewed no-object outcome.
+**Why:** the repair intentionally removes the old “acknowledge unknown association and continue” escape hatch.
+**Alternative:** infer a key from a legacy URL and permit deletion/acknowledgement.
 **Impact:** that alternative could delete the wrong object or erase the evidence required to make a privacy-terminal claim.
