@@ -695,8 +695,9 @@ export const DISPUTE_FAILED_TITLE = "Couldn't record that";
 /* ───────────────────────────────────────────────────────────────────────────
  * THE TERMS & COMMUNITY GUIDELINES (Apple 1.2, §SKY-6)
  *
- * Sky ratified this text on 2026-07-27. It sat in the repo as a document for a
- * day and could not be read from inside the app — which is the gap `§SKY-6`
+ * Sky ratified this text on 2026-07-27 and approved its D1 Option A account-
+ * deletion revision on 2026-08-27. It sat in the repo as a document for a day
+ * and could not be read from inside the app — which is the gap `§SKY-6`
  * closes: "Words rendered VERBATIM from 14_MODERATION_TEXTS_v1.md §1; render,
  * never rewrite."
  *
@@ -710,7 +711,7 @@ export const DISPUTE_FAILED_TITLE = "Couldn't record that";
 
 /**
  * The document's own title, verbatim from §1's first line.
- * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 14_MODERATION_TEXTS_v1.md §1.
  */
 export const TERMS_TITLE = 'Flagstone Terms & Community Guidelines';
 
@@ -718,9 +719,9 @@ export const TERMS_TITLE = 'Flagstone Terms & Community Guidelines';
  * The effective-date line, verbatim from §1's first line. Carries the version
  * because §1's own "Changes" paragraph promises a new date at the top when the
  * terms change — so this string IS the promise being kept.
- * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 14_MODERATION_TEXTS_v1.md §1.
  */
-export const TERMS_EFFECTIVE = 'Effective 2026-07-27 · v1.0';
+export const TERMS_EFFECTIVE = 'Effective 2026-08-27 · v1.1';
 
 /**
  * The nine titled paragraphs, verbatim and in Sky's order. `heading` is the
@@ -731,7 +732,7 @@ export const TERMS_EFFECTIVE = 'Effective 2026-07-27 · v1.0';
  * `FEEDBACK_EMAIL`, because this block's contract is verbatim transcription and
  * an interpolation would not be. The guard test asserts the two are equal
  * instead, so they cannot drift without going red.
- * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 14_MODERATION_TEXTS_v1.md §1.
  */
 export const TERMS_SECTIONS = [
   {
@@ -760,7 +761,7 @@ export const TERMS_SECTIONS = [
   },
   {
     heading: 'Your account.',
-    body: "You can delete your account any time from your Profile. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.",
+    body: 'You can delete your account any time from your Profile. Deleting your account permanently removes your profile information, reports and their associated content, direct contributions, feedback, and uploaded photos. This cannot be undone.',
   },
   {
     heading: 'Changes.',
@@ -825,22 +826,22 @@ export const TERMS_LINK_HINT = 'Opens the terms and community guidelines';
 
 /**
  * Document title, as the policy itself states it.
- * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 15_PRIVACY_POLICY_v1.md §The policy text.
  */
 export const PRIVACY_TITLE = 'Flagstone Privacy Policy';
 
 /**
  * Effective date and version, the policy's own second line.
- * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 15_PRIVACY_POLICY_v1.md §The policy text.
  */
-export const PRIVACY_EFFECTIVE = 'Effective 2026-07-29 · v1.0';
+export const PRIVACY_EFFECTIVE = 'Effective 2026-08-27 · v1.1';
 
 /**
  * The fourteen policy paragraphs, in document order. `heading` is the bolded
  * lead-in INCLUDING its trailing period; `body` is the rest of the paragraph.
  * Rendered as separate elements so a screen reader can jump the document by
  * heading — the only practical way to navigate a policy non-visually.
- * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 15_PRIVACY_POLICY_v1.md §The policy text.
  */
 export const PRIVACY_SECTIONS = [
   {
@@ -881,7 +882,7 @@ export const PRIVACY_SECTIONS = [
   },
   {
     heading: 'Deleting your account.',
-    body: "You can delete your account any time from your Profile. Your account and personal details go. Reports and comments you contributed may stay in the app with your name removed, so the community's record of barriers stays whole. Photos attached to your reports may remain unless you delete the report itself first.",
+    body: 'You can delete your account any time from your Profile. Deleting your account permanently removes your profile information, reports and their associated content, direct contributions, feedback, points history, notification data, and uploaded photos. This cannot be undone.',
   },
   {
     heading: 'Children.',

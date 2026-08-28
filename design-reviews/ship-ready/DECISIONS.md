@@ -2,6 +2,16 @@
 
 Records every Sky pick + every audit-level judgment call (with rationale). Sky writes her picks in §SKY.
 
+## §D1-AMEND-02 — Option A account deletion (2026-08-27)
+
+Sky approved the race-safe, full-deletion Option A implementation: an
+account-deletion lock blocks new account-owned writes across active sessions,
+Storage is recursively cleared only within the account namespace, and a
+service-role-only transactional purge removes the approved live and retained
+backup content before Auth deletion runs last. Terms and Privacy Policy v1.1
+state this full-deletion boundary. This approval does not deploy the migration
+or Edge Function, and it does not publish external policy copy.
+
 ## §J Judgment calls made by the audit (execution-level, reversible, all read-only)
 
 - **J-1 (2026-07-26)** Simulator evidence tier SKIPPED this train: local sim builds fail on untouched main (fmt pod vs Xcode 26.6 — fix lives on in-flight `fix/fmt-xcode26-local-sim-2026-07-25`, SEAM) and sim-MCP attach is broken. Evidence = web (static export) + code-inferred + NEEDS-SKY-DEVICE; binary-launch honesty stated top-line in 05.

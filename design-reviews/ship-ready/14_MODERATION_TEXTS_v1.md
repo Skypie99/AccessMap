@@ -1,4 +1,4 @@
-# AccessMap Moderation Texts v1.0 (DRAFT for Sky's ratification, 2026-07-27)
+# AccessMap Moderation Texts v1.1 (D1-AMEND-02 approved, 2026-08-27)
 
 Drafted by Claude with Sky. Every word below requires Sky's explicit ratification before it ships. Note: plain-language solo-maintainer terms, not legal advice.
 
@@ -10,7 +10,7 @@ Where it lives: the About page, the App Store description (lead with it), the re
 
 ## 1 · Terms & Community Guidelines (in-app page)
 
-Flagstone Terms & Community Guidelines Effective 2026-07-27 · v1.0
+Flagstone Terms & Community Guidelines Effective 2026-08-27 · v1.1
 
 **What Flagstone is.** Flagstone is a community map of accessibility barriers. I'm Sky, and I built it and run it on my own so that disabled people get better information about the places they move through. By using the app, you're agreeing to these terms.
 
@@ -24,7 +24,7 @@ Flagstone Terms & Community Guidelines Effective 2026-07-27 · v1.0
 
 **Your content.** What you post stays yours. By posting it, you're letting Flagstone show it in the app so the community can use it.
 
-**Your account.** You can delete your account any time from your Profile. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.
+**Your account.** You can delete your account any time from your Profile. Deleting your account permanently removes your profile information, reports and their associated content, direct contributions, feedback, and uploaded photos. This cannot be undone.
 
 **Changes.** If these terms ever change, the new version will live right here with a new date at the top.
 
@@ -75,3 +75,11 @@ Response commitment: 24 hours, Sky's genuine commitment
 REPORT_SENT_BODY: "Thanks, your report was sent. Reports are reviewed
   within 24 hours."
 ```
+
+### D1-AMEND-02 account-deletion revision (approved 2026-08-27)
+
+Terms & Community Guidelines v1.1 is approved for the D1 Option A deletion
+implementation. The account-deletion paragraph now describes permanent removal
+of the account and associated content. It is rendered verbatim by `copy.ts`;
+the public, externally published policy remains Sky's publication responsibility
+before release.

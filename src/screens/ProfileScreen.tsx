@@ -1893,7 +1893,7 @@ export default function ProfileScreen() {
           onPress={() => setDeleteAccountOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"
-          accessibilityHint="Opens a confirmation dialog before permanently deleting your account and data"
+          accessibilityHint="Opens a confirmation dialog before permanently deleting your account and associated content"
         >
           <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
         </Pressable>
@@ -1932,12 +1932,9 @@ export default function ProfileScreen() {
                 Delete your account?
               </AppText>
               <AppText variant="body" style={styles.deleteBody}>
-                This will permanently delete your account and personal information.
-                Your accessibility reports will remain on the map anonymously to
-                help the community. This cannot be undone.
-              </AppText>
-              <AppText variant="body" style={styles.deleteBodySecondary}>
-                If you also want your reports removed, get in touch with support and we&apos;ll take care of it.
+                This will permanently delete your account, complete report trees,
+                direct contributions, feedback, and uploaded photos. This cannot
+                be undone.
               </AppText>
             </ScrollView>
             <View style={styles.deleteActions}>
@@ -2851,12 +2848,6 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.md,
       color: color.text,
       lineHeight: font.lineHeight.md,
-    },
-    deleteBodySecondary: {
-      fontSize: font.size.sm,
-      color: color.textMuted,
-      lineHeight: font.lineHeight.sm,
-      marginTop: -4,
     },
     deleteActions: {
       flexDirection: 'row',

@@ -8,7 +8,7 @@
 // ---------------------------------------------------------------------------
 // Supabase mock — hoisted before any import.
 // ---------------------------------------------------------------------------
-import { deleteAccount } from '../account';
+import { AccountDeletedSignOutPendingError, deleteAccount } from '../account';
 
 const mockInvoke = jest.fn();
 const mockSignOut = jest.fn();
@@ -113,21 +113,22 @@ describe('deleteAccount() — network error', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 4. Anonymisation ordering contract
+// 4. Full-deletion ordering contract
 //
-// The anonymisation step (UPDATE flags SET user_id = NULL) runs inside the
-// Edge Function BEFORE auth.users is deleted. From the client's perspective,
-// this is an implementation detail of the delete-account function — the client
-// calls invoke() and the server runs both steps in order.
+// The Edge Function creates a durable deletion lock, clears the account's
+// Storage namespace, atomically purges the approved database scope, verifies
+// the namespace again, and deletes auth.users last. From the client's
+// perspective, those server steps remain implementation details — it invokes
+// one function and receives success only after final Auth teardown.
 //
 // These tests verify the client-side contract:
-//   - On success (both steps ran), signOut is called (account is gone).
-//   - If the Edge Function signals failure (e.g. anonymise step threw), the
+//   - On success (all server steps ran), signOut is called (account is gone).
+//   - If the Edge Function signals failure before Auth deletion, the
 //     client receives an error and does NOT sign out, leaving the user logged in.
 // ---------------------------------------------------------------------------
 
-describe('deleteAccount() — anonymisation ordering', () => {
-  it('calls signOut after invoke succeeds, confirming anonymise+delete both ran', async () => {
+describe('deleteAccount() — full-deletion ordering', () => {
+  it('calls signOut after invoke succeeds, confirming final Auth teardown ran', async () => {
     mockInvoke.mockResolvedValueOnce({ data: { status: 'deleted' }, error: null });
     mockSignOut.mockResolvedValueOnce(undefined);
 
@@ -137,9 +138,9 @@ describe('deleteAccount() — anonymisation ordering', () => {
     expect(mockSignOut).toHaveBeenCalledWith(USER_ID);
   });
 
-  it('does NOT call signOut when the Edge Function signals anonymisation failed', async () => {
-    const anonError = new Error('Failed to anonymise flags before deletion.');
-    mockInvoke.mockResolvedValueOnce({ data: null, error: anonError });
+  it('does NOT call signOut when the Edge Function signals pre-auth cleanup failed', async () => {
+    const cleanupError = new Error('Deletion failed unexpectedly.');
+    mockInvoke.mockResolvedValueOnce({ data: null, error: cleanupError });
 
     try {
       await deleteAccount(USER_ID);
@@ -148,5 +149,12 @@ describe('deleteAccount() — anonymisation ordering', () => {
     }
 
     expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it('truthfully reports when server deletion succeeded but local sign-out did not', async () => {
+    mockInvoke.mockResolvedValueOnce({ data: { status: 'deleted' }, error: null });
+    mockSignOut.mockResolvedValueOnce({ error: new Error('Local logout failed') });
+
+    await expect(deleteAccount(USER_ID)).rejects.toBeInstanceOf(AccountDeletedSignOutPendingError);
   });
 });

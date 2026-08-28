@@ -410,16 +410,12 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
   const ratifiedMarker = (section: string) =>
     `RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md ${section}.`;
 
+  const d1TermsMarker =
+    'RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 14_MODERATION_TEXTS_v1.md §1.';
+
   const RATIFIED_EXPORTS: ReadonlyArray<[name: string, section: string]> = [
     ['REPORT_SENT_BODY', '§5'],
     ['CONTENT_BLOCKED_MESSAGE', '§2'],
-    // Run 2 (§SKY-6): the terms screen's text, transcribed from §1. The words
-    // themselves are additionally compared against the markdown, character for
-    // character, by `src/__tests__/terms.guard.test.ts` — this list only holds
-    // the provenance claim.
-    ['TERMS_TITLE', '§1'],
-    ['TERMS_EFFECTIVE', '§1'],
-    ['TERMS_SECTIONS', '§1'],
   ];
 
   it.each(RATIFIED_EXPORTS)('%s is marked RATIFIED, not PROPOSED', (name, section) => {
@@ -436,6 +432,26 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
       expect(prose(name).endsWith(ratifiedMarker(section))).toBe(true);
     },
   );
+
+  // D1-AMEND-02 supersedes only the account-deletion wording in Terms §1. The
+  // whole rendered terms set gets the new marker because it remains a verbatim
+  // document transcription, and terms.guard.test.ts compares it character for
+  // character with that approved v1.1 source.
+  const RATIFIED_D1_TERMS: readonly string[] = [
+    'TERMS_TITLE',
+    'TERMS_EFFECTIVE',
+    'TERMS_SECTIONS',
+  ];
+
+  it.each(RATIFIED_D1_TERMS)('%s carries the D1-approved Terms provenance', (name) => {
+    const doc = prose(name);
+    expect(doc).toContain(d1TermsMarker);
+    expect(doc).not.toContain(MARKER);
+  });
+
+  it.each(RATIFIED_D1_TERMS)('%s ends its JSDoc with the D1 Terms marker', (name) => {
+    expect(prose(name).endsWith(d1TermsMarker)).toBe(true);
+  });
 
   /**
    * ⚑ THE THIRD GRAMMAR, added 2026-07-28 (§SKY-6).
@@ -489,7 +505,7 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
    * provenance claim; that file holds the text.
    */
   const privacyMarker =
-    'RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.';
+    'RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 15_PRIVACY_POLICY_v1.md §The policy text.';
 
   const RATIFIED_PRIVACY: readonly string[] = [
     'PRIVACY_TITLE',
@@ -509,16 +525,24 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
 
   it('no export is in both lists', () => {
     for (const [name] of RATIFIED_EXPORTS) expect(PROPOSED_EXPORTS).not.toContain(name);
+    for (const name of RATIFIED_D1_TERMS) expect(PROPOSED_EXPORTS).not.toContain(name);
     for (const [name] of RATIFIED_IN_DECISIONS) expect(PROPOSED_EXPORTS).not.toContain(name);
     for (const name of RATIFIED_PRIVACY) expect(PROPOSED_EXPORTS).not.toContain(name);
     // The ratified lists are also mutually exclusive: a string cites exactly one
     // provenance — her moderation document, her decision record, or her policy.
     for (const [name] of RATIFIED_IN_DECISIONS) {
       expect(RATIFIED_EXPORTS.map(([n]) => n)).not.toContain(name);
+      expect(RATIFIED_D1_TERMS).not.toContain(name);
+    }
+    for (const name of RATIFIED_D1_TERMS) {
+      expect(RATIFIED_EXPORTS.map(([n]) => n)).not.toContain(name);
+      expect(RATIFIED_IN_DECISIONS.map(([n]) => n)).not.toContain(name);
+      expect(RATIFIED_PRIVACY).not.toContain(name);
     }
     for (const name of RATIFIED_PRIVACY) {
       expect(RATIFIED_EXPORTS.map(([n]) => n)).not.toContain(name);
       expect(RATIFIED_IN_DECISIONS.map(([n]) => n)).not.toContain(name);
+      expect(RATIFIED_D1_TERMS).not.toContain(name);
     }
   });
 });

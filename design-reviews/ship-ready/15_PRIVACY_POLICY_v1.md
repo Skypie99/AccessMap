@@ -1,4 +1,4 @@
-# AccessMap Privacy Policy v1.0 (DRAFT for Sky's ratification, 2026-07-29)
+# AccessMap Privacy Policy v1.1 (D1-AMEND-02 approved, 2026-08-27)
 
 Drafted by Claude with Sky. Requires Sky's ratification before it ships. Plain-language, not legal advice.
 
@@ -7,7 +7,7 @@ Drafted by Claude with Sky. Requires Sky's ratification before it ships. Plain-l
 ## The policy text
 
 **Flagstone Privacy Policy**
-Effective 2026-07-29 · v1.0
+Effective 2026-08-27 · v1.1
 
 **Who runs this.** Flagstone is built and run by one person, Sky, in British Columbia, Canada. If you have a question about your data, email support@skypistudio.com and it comes straight to me.
 
@@ -29,7 +29,7 @@ Effective 2026-07-29 · v1.0
 
 **Getting a copy of your data.** You can export your data from inside the app, in Settings. [V: dataExport path]
 
-**Deleting your account.** You can delete your account any time from your Profile. Your account and personal details go. Reports and comments you contributed may stay in the app with your name removed, so the community's record of barriers stays whole. [V: users FK is ON DELETE SET NULL, per SR-117] Photos attached to your reports may remain unless you delete the report itself first. [V: SR-050 owner cleanup ships on the owner delete path]
+**Deleting your account.** You can delete your account any time from your Profile. Deleting your account permanently removes your profile information, reports and their associated content, direct contributions, feedback, points history, notification data, and uploaded photos. This cannot be undone. [V: D1 Option A deletion lock, atomic database purge, and account Storage cleanup]
 
 **Children.** Flagstone isn't designed for children and I don't knowingly collect information from anyone under 13.
 
@@ -53,3 +53,11 @@ Every [V] claim must be verified against the codebase before render. Any
   describing an app that does not exist.
 The existing B-2 privacy links repoint to the in-app screen.
 ```
+
+### D1-AMEND-02 account-deletion revision (approved 2026-08-27)
+
+Privacy Policy v1.1 is approved for the D1 Option A deletion implementation.
+Its account-deletion paragraph is rendered verbatim by `copy.ts` after its
+verification marker is stripped. This repository change does not publish or
+change any external policy URL; Sky must publish corresponding external copy
+before release.
