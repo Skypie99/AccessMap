@@ -160,6 +160,19 @@ create policy "flag-photos owner delete"
     and (select public.current_account_can_write())
   );
 
+-- This existing permissive admin path must be replaced too: adding a separate
+-- “not deleting” policy would not restrict it because permissive RLS policies
+-- compose with OR.
+drop policy if exists "flag-photos admin delete" on storage.objects;
+create policy "flag-photos admin delete"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'flag-photos'
+    and (select public.current_account_can_write())
+    and (select is_admin from public.users where id = (select auth.uid()))
+  );
+
 drop policy if exists "flag_photos: authenticated insert" on public.flag_photos;
 create policy "flag_photos: authenticated insert"
   on public.flag_photos for insert
@@ -213,6 +226,15 @@ create policy "flag_comments: own delete"
   using (
     user_id = (select auth.uid())
     and (select public.current_account_can_write())
+  );
+
+drop policy if exists "admin delete any comment" on public.flag_comments;
+create policy "admin delete any comment"
+  on public.flag_comments for delete
+  to authenticated
+  using (
+    (select public.current_account_can_write())
+    and (select is_admin from public.users where id = (select auth.uid()))
   );
 
 drop policy if exists "flag_verifications own insert" on public.flag_verifications;
