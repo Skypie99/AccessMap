@@ -3,7 +3,7 @@
 ## DECISIONS FOR SKY
 
 - [ ] **Keep D1 local until a separately approved release step** — the migration and Edge Function are committed for review, not applied or deployed.
-  - **Action:** Review commit `ff4da72` on `codex/d1-option-a-account-deletion`; retain the current no-deployment hold.
+  - **Action:** Review commits `ff4da72` and `d2e01a2` on `codex/d1-option-a-account-deletion`; retain the current no-deployment hold.
   - **Why deferred:** Applying a migration or deploying an Auth/Storage deletion flow changes production state and requires Sky's release authority.
   - **Impact:** The shipped app is unchanged until Sky explicitly authorizes a future release procedure.
 
@@ -14,25 +14,21 @@
 
 ## BLOCKERS / FAIL_FAST
 
-- **[State: BLOCKER] Full Jest gate is not all-green because of one unrelated baseline-style failure.** `src/screens/__tests__/LeaderboardScreen.monogram.test.tsx` expects one visible `you` label but receives zero (`1 failed, 254 passed; 3,776 passed, 32 todo`). D1 does not modify the failing screen or test.
-  - **Quarantined?** Yes. The D1 focused suite, typecheck, lint, and diff check all pass.
-  - **Recommended path:** Diagnose that Leaderboard test in a separately scoped task; do not widen this privacy/auth implementation to repair it.
-
-- **[State: FAIL_FAST] The exact requested full-Jest invocation could not initialize Watchman.** Watchman cannot change its global state directory in the sandbox. The equivalent supported fallback `--no-watchman` ran the complete suite and exposed the unrelated failure above.
-  - **Quarantined?** Yes. No code or test configuration was changed to silence Watchman.
-  - **Recommended path:** Re-run the exact command in Sky's normal host session if Watchman evidence itself is required.
+- **[State: ENVIRONMENT LIMIT]** The exact requested full-Jest invocation could not initialize Watchman because the sandbox denies its global-state-directory permission change before the suite starts. No code or test configuration was changed to silence Watchman.
+  - **Evidence:** The complete supported fallback, `npx --no-install jest --ci --no-watchman -w 3`, passed: 255 suites, 3,779 tests, 32 todo, 0 failures.
+  - **Recommended path:** Re-run the exact Watchman-enabled command in Sky's normal host session only if Watchman-specific evidence is required.
 
 ## Summary
 
 Implemented the approved D1-AMEND-02 race-safe Option A account-deletion architecture from the exact approved base `ed37860e9cc7989802a87f9994b78ed258210cc7`. The local implementation creates a durable service-role lock before cleanup, fences every relevant account-owned write path, recursively clears only the account Storage namespace, uses one transactional service-role purge RPC for live and retained backup data, verifies zero residue, and deletes Auth last.
 
-Implementation commit: `ff4da72` (`feat(account): add race-safe account deletion`) on `codex/d1-option-a-account-deletion`. No migration was applied, no Edge Function was deployed, no production data was read or changed, no `supabase db push` or migration-history repair ran, and D1S-A was neither replayed nor modified.
+Implementation commits: `ff4da72` (`feat(account): add race-safe account deletion`) and `d2e01a2` (`fix(account): fence inherited admin deletion paths`) on `codex/d1-option-a-account-deletion`. The final policy audit identified two inherited live permissive administrative delete routes; the D1 migration now replaces both with lock-aware equivalents so their OR composition cannot bypass the deletion lock. No migration was applied, no Edge Function was deployed, no production data was read or changed, no `supabase db push` or migration-history repair ran, and D1S-A was neither replayed nor modified.
 
-## What Shipped (Local Commit `ff4da72`)
+## What Shipped (Local Commits `ff4da72`, `d2e01a2`)
 
 - `supabase/migrations/2026-08-27_d1_option_a_account_deletion.sql`
   - Adds `account_deletion_locks` with RLS, client privilege revocation, and service-role-only lock use.
-  - Adds the zero-argument, search-path-pinned `current_account_can_write()` helper and replaces every enumerated permissive client-write policy/RPC boundary with a lock-aware equivalent; anonymous report and feedback paths remain available.
+  - Adds the zero-argument, search-path-pinned `current_account_can_write()` helper and replaces every enumerated permissive client-write policy/RPC boundary—including inherited `flag-photos admin delete` and `admin delete any comment` administrative delete routes—with a lock-aware equivalent; anonymous report and feedback paths remain available.
   - Adds search-path-pinned, `SECURITY DEFINER`, service-role-only `purge_deleting_account(uuid)`, which requires the lock, removes the approved live and seven retained-backup scopes in one transaction, verifies zero residue, and never deletes `auth.users`.
   - Includes D1-only rollback prerequisites and constraints. It does not alter the D1S-A migration.
 
@@ -73,11 +69,11 @@ Implementation commit: `ff4da72` (`feat(account): add race-safe account deletion
 
 | Gate | Result | Evidence |
 |---|---|---|
-| Focused D1/D1S-A/account/copy/policy Jest suites | PASS | 6 suites, 256 tests passed |
+| Focused D1/D1S-A/account/copy/policy Jest suites | PASS | 6 suites, 258 tests passed |
 | `npm run typecheck` | PASS | `tsc --noEmit` completed with exit 0 |
 | `npm run lint` | PASS with pre-existing warnings | 0 errors; 90 warnings reported across unrelated existing files |
 | `npx --no-install jest --ci -w 3` | ENVIRONMENT FAIL | Watchman global-state permission failure before suite execution |
-| `npx --no-install jest --ci --no-watchman -w 3` | FAIL (unrelated) | 1 failed, 254 passed, 3,776 passed tests, 32 todo; D1 suites passed |
+| `npx --no-install jest --ci --no-watchman -w 3` | PASS | 255 suites, 3,779 tests passed, 32 todo |
 | `git diff --check` | PASS | No whitespace errors |
 
 Runtime/database checks were deliberately skipped: no local or production migration was applied, no Edge Function was deployed, no real Auth user was deleted, and no real Storage namespace was listed or changed.
@@ -98,13 +94,13 @@ A sequential set of Edge Function table deletes would have been smaller, but it 
 
 ## How to Review
 
-Inspect the local implementation commit against its approved base:
+Inspect the local implementation commits against their approved base:
 
 ```bash
-git -C /Users/skypie/AccessMap-codex/d1-option-a-account-deletion diff ed37860e9cc7989802a87f9994b78ed258210cc7..ff4da72
+git -C /Users/skypie/AccessMap-codex/d1-option-a-account-deletion diff ed37860e9cc7989802a87f9994b78ed258210cc7..d2e01a2
 ```
 
-From `/Users/skypie/AccessMap-codex/d1-option-a-account-deletion`, run the focused D1 guards without using Watchman:
+After dependencies are present in `/Users/skypie/AccessMap-codex/d1-option-a-account-deletion` (D1 did not install or retain any), run the focused D1 guards without using Watchman:
 
 ```bash
 npx --no-install jest --ci --no-watchman -w 3 src/__tests__/d1OptionAAccountDeletion.guard.test.ts src/__tests__/d1saSecurityContainment.guard.test.ts src/lib/__tests__/account.test.ts src/lib/__tests__/copy.test.ts src/__tests__/terms.guard.test.ts src/__tests__/privacy.guard.test.ts
@@ -112,4 +108,4 @@ npx --no-install jest --ci --no-watchman -w 3 src/__tests__/d1OptionAAccountDele
 
 ## Next Recommended Action
 
-Sky should review and retain this local branch under the explicit no-deployment hold, resolve the unrelated Leaderboard test separately if a fully green global suite is required, and publish matching external policy copy before authorizing any future release.
+Sky should review and retain this local branch under the explicit no-deployment hold, publish matching external policy copy before authorizing any future release, and separately decide whether Watchman-specific gate evidence is required from a normal host session.
