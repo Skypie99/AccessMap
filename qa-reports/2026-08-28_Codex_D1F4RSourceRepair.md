@@ -20,6 +20,7 @@ Repaired the rejected D1F4 candidate in a new isolated worktree from the supplie
 - Branch: `codex/d1f4-source-repair`
 - Worktree: `/Users/skypie/AccessMap-codex/d1f4-source-repair`
 - Base and repair start: `960fbcc8d194910760e55106445c2a5595fd5cf5`
+- Source repair commit: `6423692bdbbbc02c62fce6bc102495bf3933656c`
 - Correct underlying D1 baseline: `cf2b7f8c0c8b5b941d49fd4eae97d955a350478e`
 - Older noncanonical branch consulted read-only: `8376c0dd085903153fe6977add73d8044e18959b`
 
