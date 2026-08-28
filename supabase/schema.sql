@@ -346,9 +346,20 @@ create policy "users update own row"
 -- Jordan-approved via 2026-05-29_anon_flags_select.sql — flags contain no PII).
 -- Additional live policies NOT yet modelled here (see migrations):
 --   "flags anon insert"   — anon INSERT (anonymous reporting, 2026-05-29_anon_flags_select.sql)
---   "admin delete any flag" — authenticated DELETE for is_admin users (2026-05-30_admin_role.sql)
 --   "flags owner edit open" — replaces "flags update own" in live DB; restricts owner edits to
 --                             status='open' only (see 2026-05-25_flag_edit_rls_replacement.sql)
+--
+-- Ordinary report deletion is exclusively the narrow delete-flag Edge route.
+-- A stale client must not regain a Data API DELETE path when this idempotent
+-- baseline is rerun: grants and RLS policies are both removed, while the
+-- service role remains server-side only for the canonical Storage-first flow.
+revoke delete on table public.flags from public, anon, authenticated;
+grant select, insert, update on table public.flags to authenticated;
+grant select, insert, update, delete on table public.flags to service_role;
+drop policy if exists "flags_user_scoped" on public.flags;
+drop policy if exists "flags delete own" on public.flags;
+drop policy if exists "admin delete any flag" on public.flags;
+
 drop policy if exists "flags readable by authenticated" on public.flags;
 create policy "flags readable by authenticated"
   on public.flags for select
@@ -392,12 +403,6 @@ create policy "flags status update by any authenticated"
     and photo_url   is not distinct from (select photo_url   from public.flags where id = flags.id)
     and created_at  = (select created_at  from public.flags where id = flags.id)
   );
-
-drop policy if exists "flags delete own" on public.flags;
-create policy "flags delete own"
-  on public.flags for delete
-  to authenticated
-  using ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------------
 -- push_tokens: Expo push notification tokens (one per user, upserted).

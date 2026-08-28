@@ -2,6 +2,7 @@
 // permission or public admin API; deployment supplies the server-only secret.
 // It accepts redacted evidence and exact keys only, never photo bytes or URLs.
 import { createClient } from '../_shared/supabase.ts';
+import { parseReviewResolution } from '../_shared/accountDeletionReviewCore.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -35,16 +36,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return new Response('Unavailable', { status: 503 });
   }
   // A lost HTTP response can replay the identical review decision. The RPC
-  // reports its durable truth, so this handler never claims a requeue while
-  // unresolved items still block the operation.
-  const status = data === 'requeued' || data === 'waiting_for_review' || data === 'resolved_item'
-    ? data
-    : null;
-  if (!status) {
+  // reports its durable current state (including COMPLETE after redaction), so
+  // this handler never claims a fresh requeue while review still blocks it.
+  const resolution = parseReviewResolution(data);
+  if (!resolution) {
     console.error('[account-deletion-review] resolution returned an invalid state.');
     return new Response('Unavailable', { status: 503 });
   }
-  return new Response(JSON.stringify({ status }), { headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(resolution), { headers: { 'Content-Type': 'application/json' } });
 });
 
 function isResolutionAction(value: unknown): value is 'DELETE' | 'PRESERVE_FOREIGN' | 'ACKNOWLEDGE' {

@@ -59,7 +59,8 @@ describe('D1F4R3 source-closure database contracts', () => {
     expect(resolve).toContain("if v_item.resolution <> p_action then raise exception 'Review item already has a different resolution.'");
     expect(resolve).toContain("'waiting_for_review'");
     expect(resolve).toContain("'requeued'");
-    expect(review).toContain("data === 'requeued' || data === 'waiting_for_review' || data === 'resolved_item'");
+    expect(review).toContain("parseReviewResolution(data)");
+    expect(review).toContain('JSON.stringify(resolution)');
     expect(review).not.toContain("JSON.stringify({ status: 'requeued' })");
   });
 
