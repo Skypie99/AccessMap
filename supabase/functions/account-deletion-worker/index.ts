@@ -5,6 +5,7 @@
 import { createClient } from '../_shared/supabase.ts';
 import {
   ACCOUNT_DELETION_PAGE_SIZE,
+  collectCompositeKeysetPages,
   collectKeysetPages,
   hasExactTextOwner,
   processAccountDeletion,
@@ -42,6 +43,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch (error) {
     try {
       if (error instanceof ReviewRequiredError) {
+        // A final owner change is captured through the exact production RPC
+        // before this durable hold is opened. Earlier plan-path captures are
+        // idempotent, so repeating this call after a lost worker response is
+        // safe and cannot turn a key into delete authority.
+        if (error.objectKey) {
+          await captureExactReviewObject(operation.operation_id, leaseToken, error.objectKey, error.reason);
+        }
         await rpcVoid('move_account_deletion_to_review', {
           p_operation_id: operation.operation_id,
           p_lease_token: leaseToken,
@@ -88,8 +96,19 @@ function createGateway(): AccountDeletionWorkerGateway {
     }),
     renew: renewLease,
     retryOrReview,
+    assertDeletionDrain: (operationId, leaseToken) => rpcVoid('assert_account_deletion_drain', {
+      p_operation_id: operationId, p_lease_token: leaseToken,
+    }),
     reviewReason: reviewReasonFor,
     captureHistoricalEvidence: (operationId, leaseToken) => rpcVoid('capture_account_deletion_historical_evidence', {
+      p_operation_id: operationId, p_lease_token: leaseToken,
+    }),
+    captureCanonicalEvidence: (operationId, leaseToken) => rpcVoid('capture_account_deletion_canonical_evidence', {
+      p_operation_id: operationId, p_lease_token: leaseToken,
+    }),
+    captureExactReviewObject,
+    revalidatePreservedForeign,
+    reconcileStorageTerminality: (operationId, leaseToken) => rpcVoid('reconcile_account_deletion_storage_terminality', {
       p_operation_id: operationId, p_lease_token: leaseToken,
     }),
     completeStoragePlan,
@@ -130,23 +149,29 @@ async function completeStoragePlan(operationId: string, subjectId: string, lease
 }
 
 async function exactKnownKeys(operationId: string, subjectId: string): Promise<string[]> {
-  const [intents, primary, gallery, reportTree, avatar, reviewed] = await Promise.all([
-    allRows((from, to) => admin.from('flag_photo_upload_intents').select('object_key').eq('subject_id', subjectId).order('object_key').range(from, to)),
-    allRows((from, to) => admin.from('flags').select('photo_object_key').eq('photo_uploader_id', subjectId).not('photo_object_key', 'is', null).order('photo_object_key').range(from, to)),
-    allRows((from, to) => admin.from('flag_photos').select('object_key').eq('uploader_id', subjectId).not('object_key', 'is', null).order('object_key').range(from, to)),
-    allRows((from, to) => admin.from('flag_photos').select('object_key, flags!inner(user_id)').eq('flags.user_id', subjectId).not('object_key', 'is', null).order('object_key').range(from, to)),
-    allRows((from, to) => admin.from('users').select('avatar_object_key').eq('id', subjectId).not('avatar_object_key', 'is', null).order('avatar_object_key').range(from, to)),
-    allRows((from, to) => admin.from('account_deletion_review_items').select('object_key').eq('operation_id', operationId).eq('resolution', 'DELETE').not('object_key', 'is', null).order('object_key').range(from, to)),
-  ]);
-  const values = [
-    ...intents.map((row) => row.object_key),
-    ...primary.map((row) => row.photo_object_key),
-    ...gallery.map((row) => row.object_key),
-    ...reportTree.map((row) => row.object_key),
-    ...avatar.map((row) => row.avatar_object_key),
-    ...reviewed.map((row) => row.object_key),
-  ];
-  return [...new Set(values.filter((key): key is string => typeof key === 'string' && key.length > 0))];
+  const rows = await collectCompositeKeysetPages(async (after) => {
+    const { data, error } = await admin.rpc('account_deletion_known_keys_page', {
+      p_operation_id: operationId,
+      p_subject_id: subjectId,
+      p_after_object_key: after?.objectKey ?? null,
+      p_after_source_ref: after?.sourceRef ?? null,
+      p_after_source_id: after?.sourceId ?? null,
+      p_limit: ACCOUNT_DELETION_PAGE_SIZE,
+    });
+    if (error) throw error;
+    const items = (data ?? []).map((row: { object_key?: unknown; source_ref?: unknown; source_id?: unknown }) => {
+      if (typeof row.object_key !== 'string' || typeof row.source_ref !== 'string' || typeof row.source_id !== 'string') {
+        throw new Error('known-key inventory returned an invalid cursor');
+      }
+      return { objectKey: row.object_key, sourceRef: row.source_ref, sourceId: row.source_id };
+    });
+    if (items.length > ACCOUNT_DELETION_PAGE_SIZE) throw new Error('known-key inventory exceeded fixed page size');
+    return {
+      items,
+      nextCursor: items.length === ACCOUNT_DELETION_PAGE_SIZE ? items[items.length - 1]! : null,
+    };
+  }, (item) => item);
+  return [...new Set(rows.map((row) => row.objectKey))];
 }
 
 async function subjectOwnedStorageInventory(
@@ -236,17 +261,16 @@ async function captureExactReviewObject(
   });
 }
 
-async function allRows<T extends Record<string, unknown>>(
-  fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
-): Promise<T[]> {
-  const rows: T[] = [];
-  for (let from = 0; ; from += ACCOUNT_DELETION_PAGE_SIZE) {
-    const { data, error } = await fetchPage(from, from + ACCOUNT_DELETION_PAGE_SIZE - 1);
-    if (error) throw error;
-    const page = data ?? [];
-    rows.push(...page);
-    if (page.length < ACCOUNT_DELETION_PAGE_SIZE) return rows;
-  }
+async function revalidatePreservedForeign(operationId: string, leaseToken: string): Promise<string[]> {
+  const { data, error } = await admin.rpc('account_deletion_revalidate_preserved_foreign', {
+    p_operation_id: operationId,
+    p_lease_token: leaseToken,
+  });
+  if (error) throw error;
+  return (data ?? []).map((row: { object_key?: unknown }) => {
+    if (typeof row.object_key !== 'string') throw new Error('preserved-foreign validation returned an invalid key');
+    return row.object_key;
+  });
 }
 
 async function getUserById(subjectId: string): Promise<AuthLookup> {

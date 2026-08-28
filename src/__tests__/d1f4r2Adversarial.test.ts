@@ -1,5 +1,6 @@
 import {
   ACCOUNT_DELETION_PAGE_SIZE,
+  collectCompositeKeysetPages,
   collectKeysetPages,
   hasExactTextOwner,
   processAccountDeletion,
@@ -27,8 +28,13 @@ function gateway(overrides: Partial<AccountDeletionWorkerGateway> = {}): Account
     complete: async () => undefined,
     renew: async () => undefined,
     retryOrReview: async () => undefined,
+    assertDeletionDrain: async () => undefined,
     reviewReason: async () => null,
     captureHistoricalEvidence: async () => undefined,
+    captureCanonicalEvidence: async () => undefined,
+    captureExactReviewObject: async () => undefined,
+    revalidatePreservedForeign: async () => [],
+    reconcileStorageTerminality: async () => undefined,
     completeStoragePlan: async () => ({ knownKeys: [], subjectOwnedKeys: [] }),
     removeExactOwnedKeys: async () => undefined,
     assertCompleteStorageInventory: async () => undefined,
@@ -64,6 +70,28 @@ describe('D1F4R2 adversarial worker core', () => {
     },
   );
 
+  it.each([99, 100, 101, 199, 200, 201, 250, 500, 501])(
+    'enumerates a %i-row application inventory with a unique composite cursor',
+    async (count) => {
+      const rows = Array.from({ length: count }, (_, index) => ({
+        objectKey: 'object-' + String(Math.floor(index / 2)).padStart(4, '0'),
+        sourceRef: index % 2 === 0 ? 'gallery_uploader' : 'subject_report_tree',
+        sourceId: String(index).padStart(4, '0'),
+      })).sort((a, b) => `${a.objectKey}\u0000${a.sourceRef}\u0000${a.sourceId}`.localeCompare(
+        `${b.objectKey}\u0000${b.sourceRef}\u0000${b.sourceId}`,
+      ));
+      const seen = await collectCompositeKeysetPages(async (after) => {
+        const afterValue = after ? `${after.objectKey}\u0000${after.sourceRef}\u0000${after.sourceId}` : null;
+        const start = afterValue === null ? 0 : rows.findIndex((row) =>
+          `${row.objectKey}\u0000${row.sourceRef}\u0000${row.sourceId}` === afterValue,
+        ) + 1;
+        const items = rows.slice(start, start + ACCOUNT_DELETION_PAGE_SIZE);
+        return { items, nextCursor: items.length === ACCOUNT_DELETION_PAGE_SIZE ? items[items.length - 1]! : null };
+      }, (row) => row);
+      expect(seen).toEqual(rows);
+    },
+  );
+
   it('rejects a duplicate or non-advancing inventory page instead of accepting partial Storage evidence', async () => {
     await expect(collectKeysetPages(
       async () => ({ items: ['object-1'], nextCursor: 'object-1' }),
@@ -86,6 +114,74 @@ describe('D1F4R2 adversarial worker core', () => {
       OPERATION.subject_id!,
     )).rejects.toThrow('lease expired');
     expect(renew).toHaveBeenCalledTimes(1);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('fails closed before any cleanup or purge when a corrupt CLEANING claim lacks the durable drain proof', async () => {
+    const remove = jest.fn();
+    const purge = jest.fn();
+    const captureHistoricalEvidence = jest.fn();
+    const g = gateway({
+      assertDeletionDrain: async () => { throw new Error('Durable Transaction-B deletion lock is required.'); },
+      captureHistoricalEvidence,
+      removeExactOwnedKeys: remove,
+      purge,
+    });
+    await expect(processAccountDeletion(g, { ...OPERATION, status: 'CLEANING', resume_from: null }, 'lease-token'))
+      .rejects.toThrow('Durable Transaction-B deletion lock is required.');
+    expect(captureHistoricalEvidence).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+    expect(purge).not.toHaveBeenCalled();
+  });
+
+  it('returns a pre-lock retry through REQUESTED and Transaction B before cleanup', async () => {
+    const calls: string[] = [];
+    const retry = { ...OPERATION, status: 'RETRY_REQUIRED', resume_from: 'LOCK_DRAIN' as const };
+    const locked = { ...OPERATION, status: 'LOCKED', resume_from: null };
+    const cleaning = { ...OPERATION, status: 'CLEANING', resume_from: null };
+    const verifying = { ...OPERATION, status: 'VERIFYING', resume_from: null };
+    const ready = { ...OPERATION, status: 'READY_FOR_AUTH_DELETE', resume_from: null };
+    const authDeleted = { ...OPERATION, status: 'AUTH_DELETED', resume_from: null };
+    const g = gateway({
+      resume: async () => { calls.push('resume-lock-drain'); return { ...OPERATION, status: 'REQUESTED', resume_from: null }; },
+      lock: async () => { calls.push('transaction-b-lock'); return locked; },
+      assertDeletionDrain: async () => { calls.push('assert-drain'); },
+      captureHistoricalEvidence: async () => { calls.push('historical'); },
+      captureCanonicalEvidence: async () => { calls.push('canonical'); },
+      completeStoragePlan: async () => ({ knownKeys: ['uploads/a.jpg'], subjectOwnedKeys: ['uploads/a.jpg'] }),
+      beginCleaning: async () => { calls.push('begin-cleaning'); return cleaning; },
+      removeExactOwnedKeys: async () => { calls.push('storage-remove'); },
+      assertCompleteStorageInventory: async () => { calls.push('storage-assert'); },
+      reconcileStorageTerminality: async () => { calls.push('terminality'); },
+      purge: async () => { calls.push('purge'); },
+      markVerifying: async () => { calls.push('verify'); return verifying; },
+      markReadyForAuth: async () => { calls.push('ready-auth'); return ready; },
+      getUserById: async () => 'ABSENT',
+      markAuthDeleted: async () => { calls.push('auth-deleted'); return authDeleted; },
+      complete: async () => { calls.push('complete'); },
+    });
+    await processAccountDeletion(g, retry, 'lease-token');
+    expect(calls.indexOf('transaction-b-lock')).toBeGreaterThan(calls.indexOf('resume-lock-drain'));
+    expect(calls.indexOf('storage-remove')).toBeGreaterThan(calls.indexOf('transaction-b-lock'));
+    expect(calls.indexOf('purge')).toBeGreaterThan(calls.indexOf('storage-remove'));
+  });
+
+  it('captures a precise owner-change item before holding a formerly preserved foreign key', async () => {
+    const captureExactReviewObject = jest.fn();
+    const remove = jest.fn();
+    const g = gateway({
+      revalidatePreservedForeign: async () => ['uploads/owner-changed.jpg'],
+      captureExactReviewObject,
+      removeExactOwnedKeys: remove,
+    });
+    await expect(processAccountDeletion(g, { ...OPERATION, status: 'CLEANING', resume_from: null }, 'lease-token'))
+      .rejects.toMatchObject({ reason: 'preserved_foreign_owner_changed', objectKey: 'uploads/owner-changed.jpg' });
+    expect(captureExactReviewObject).toHaveBeenCalledWith(
+      OPERATION.operation_id,
+      'lease-token',
+      'uploads/owner-changed.jpg',
+      'preserved_foreign_owner_changed',
+    );
     expect(remove).not.toHaveBeenCalled();
   });
 

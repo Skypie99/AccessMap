@@ -19,7 +19,7 @@ export type StoragePlan = { knownKeys: string[]; subjectOwnedKeys: string[] };
 export type AuthLookup = 'PRESENT' | 'ABSENT' | 'INDETERMINATE';
 
 export class ReviewRequiredError extends Error {
-  constructor(readonly reason: string) {
+  constructor(readonly reason: string, readonly objectKey?: string) {
     super(reason);
     this.name = 'ReviewRequiredError';
   }
@@ -38,8 +38,13 @@ export type AccountDeletionWorkerGateway = {
   complete(operationId: string, leaseToken: string): Promise<void>;
   renew(operationId: string, leaseToken: string): Promise<void>;
   retryOrReview(operationId: string, leaseToken: string, code: string): Promise<void>;
+  assertDeletionDrain(operationId: string, leaseToken: string): Promise<void>;
   reviewReason(operationId: string): Promise<string | null>;
   captureHistoricalEvidence(operationId: string, leaseToken: string): Promise<void>;
+  captureCanonicalEvidence(operationId: string, leaseToken: string): Promise<void>;
+  captureExactReviewObject(operationId: string, leaseToken: string, objectKey: string, reason: string): Promise<void>;
+  revalidatePreservedForeign(operationId: string, leaseToken: string): Promise<string[]>;
+  reconcileStorageTerminality(operationId: string, leaseToken: string): Promise<void>;
   completeStoragePlan(operationId: string, subjectId: string, leaseToken: string): Promise<StoragePlan>;
   removeExactOwnedKeys(plan: StoragePlan, operationId: string, subjectId: string, leaseToken: string): Promise<void>;
   assertCompleteStorageInventory(keys: readonly string[], operationId: string, subjectId: string, leaseToken: string): Promise<void>;
@@ -69,23 +74,45 @@ export async function processAccountDeletion(
     throw new Error('operation is not in a resumable pre-Auth phase');
   }
 
+  // CLEANING is never authority. This durable RPC checks the committed
+  // Transaction-B lock/drain proof before the production path can even reach
+  // a destructive Storage batch or relational purge.
+  await gateway.assertDeletionDrain(operation.operation_id, leaseToken);
   // The durable capture occurs before relational purge can erase legacy or
   // backup associations needed for a later review decision.
   await gateway.captureHistoricalEvidence(operation.operation_id, leaseToken);
+  await gateway.captureCanonicalEvidence(operation.operation_id, leaseToken);
   const reviewReason = await gateway.reviewReason(operation.operation_id);
   if (reviewReason) throw new ReviewRequiredError(reviewReason);
+
+  // A previous PRESERVE_FOREIGN is terminal only while the exact current
+  // metadata remains foreign. A later owner change becomes a new exact review
+  // item before a hold is entered; it never silently becomes delete authority.
+  const ownerChangedKeys = await gateway.revalidatePreservedForeign(operation.operation_id, leaseToken);
+  if (ownerChangedKeys.length > 0) {
+    const objectKey = ownerChangedKeys[0]!;
+    await gateway.captureExactReviewObject(
+      operation.operation_id,
+      leaseToken,
+      objectKey,
+      'preserved_foreign_owner_changed',
+    );
+    throw new ReviewRequiredError('preserved_foreign_owner_changed', objectKey);
+  }
 
   const plan = await gateway.completeStoragePlan(operation.operation_id, operation.subject_id, leaseToken);
   if (operation.status === 'LOCKED') operation = await gateway.beginCleaning(operation.operation_id, leaseToken);
   if (operation.status === 'CLEANING') {
     await gateway.removeExactOwnedKeys(plan, operation.operation_id, operation.subject_id, leaseToken);
     await gateway.assertCompleteStorageInventory(plan.knownKeys, operation.operation_id, operation.subject_id, leaseToken);
+    await gateway.reconcileStorageTerminality(operation.operation_id, leaseToken);
     await gateway.renew(operation.operation_id, leaseToken);
     await gateway.purge(operation.operation_id, operation.subject_id, leaseToken);
     operation = await gateway.markVerifying(operation.operation_id, leaseToken);
   }
   if (operation.status !== 'VERIFYING') throw new Error('operation did not enter verification');
   await gateway.assertCompleteStorageInventory(plan.knownKeys, operation.operation_id, operation.subject_id, leaseToken);
+  await gateway.reconcileStorageTerminality(operation.operation_id, leaseToken);
   operation = await gateway.markReadyForAuth(operation.operation_id, leaseToken);
   await deleteAuthLast(gateway, operation, leaseToken);
 }
@@ -141,6 +168,7 @@ async function reconcileAuth(
     authDeleted.subject_id,
     leaseToken,
   );
+  await gateway.reconcileStorageTerminality(authDeleted.operation_id, leaseToken);
   await gateway.complete(authDeleted.operation_id, leaseToken);
 }
 
@@ -151,6 +179,17 @@ export function hasExactTextOwner(object: Pick<StorageObject, 'owner_id'>, subje
 }
 
 export type KeysetPage<T> = { items: readonly T[]; nextCursor: string | null };
+
+export type CompositeCursor = {
+  objectKey: string;
+  sourceRef: string;
+  sourceId: string;
+};
+
+export type CompositeKeysetPage<T> = {
+  items: readonly T[];
+  nextCursor: CompositeCursor | null;
+};
 
 /** Consumes the production keyset contract and fails closed on a duplicate or
  * non-advancing page, instead of accepting a partial inventory as complete. */
@@ -180,6 +219,43 @@ export async function collectKeysetPages<T>(
   }
 }
 
+/** The application-owned inventory contains duplicate object keys across
+ * relational sources. Its production cursor therefore orders a unique tuple,
+ * not the object key alone, and fails closed on any non-advancing page. */
+export async function collectCompositeKeysetPages<T>(
+  fetchPage: (after: CompositeCursor | null) => Promise<CompositeKeysetPage<T>>,
+  cursorOf: (item: T) => CompositeCursor,
+): Promise<T[]> {
+  const all: T[] = [];
+  const seen = new Set<string>();
+  let after: CompositeCursor | null = null;
+  const encode = (cursor: CompositeCursor) => `${cursor.objectKey}\u0000${cursor.sourceRef}\u0000${cursor.sourceId}`;
+  for (;;) {
+    const page = await fetchPage(after);
+    for (const item of page.items) {
+      const cursor = cursorOf(item);
+      const value = encode(cursor);
+      if (!cursor.objectKey || !cursor.sourceRef || !cursor.sourceId || seen.has(value)) {
+        throw new Error('known-key inventory page is not uniquely enumerable');
+      }
+      if (after !== null && value <= encode(after)) {
+        throw new Error('known-key inventory page is not strictly ordered');
+      }
+      seen.add(value);
+      all.push(item);
+    }
+    if (page.nextCursor === null) return all;
+    if (after !== null && encode(page.nextCursor) <= encode(after)) {
+      throw new Error('known-key inventory cursor did not advance');
+    }
+    if (page.items.length === 0) throw new Error('known-key inventory returned an empty nonterminal page');
+    if (encode(page.nextCursor) !== encode(cursorOf(page.items[page.items.length - 1]!))) {
+      throw new Error('known-key inventory cursor does not match its final item');
+    }
+    after = page.nextCursor;
+  }
+}
+
 /** The worker calls this helper immediately before each real Storage API
  * removal. Keeping this ordering here makes the stale-lease proof exercise
  * the exact production control path. */
@@ -196,7 +272,7 @@ export async function removeCheckedStorageBatches(
       const object = await checkExactObject(key);
       if (!object) continue;
       if (!hasExactTextOwner(object, subjectId)) {
-        throw new ReviewRequiredError('storage_owner_changed_before_delete');
+        throw new ReviewRequiredError('storage_owner_changed_before_delete', key);
       }
     }
     // This is deliberately after all exact reads: a stale lease can never

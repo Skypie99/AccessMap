@@ -24,7 +24,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   // One server-created item per request. The reviewer cannot submit a bulk
   // inventory, public URL, or arbitrary object key for the worker to delete.
-  const { error } = await admin.rpc('resolve_account_deletion_review_item', {
+  const { data, error } = await admin.rpc('resolve_account_deletion_review_item', {
     p_operation_id: body.operationId,
     p_evidence_digest: body.evidenceDigest,
     p_review_item_id: body.reviewItemId,
@@ -34,7 +34,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
     console.error('[account-deletion-review] resolution failed.');
     return new Response('Unavailable', { status: 503 });
   }
-  return new Response(JSON.stringify({ status: 'requeued' }), { headers: { 'Content-Type': 'application/json' } });
+  // A lost HTTP response can replay the identical review decision. The RPC
+  // reports its durable truth, so this handler never claims a requeue while
+  // unresolved items still block the operation.
+  const status = data === 'requeued' || data === 'waiting_for_review' || data === 'resolved_item'
+    ? data
+    : null;
+  if (!status) {
+    console.error('[account-deletion-review] resolution returned an invalid state.');
+    return new Response('Unavailable', { status: 503 });
+  }
+  return new Response(JSON.stringify({ status }), { headers: { 'Content-Type': 'application/json' } });
 });
 
 function isResolutionAction(value: unknown): value is 'DELETE' | 'PRESERVE_FOREIGN' | 'ACKNOWLEDGE' {
