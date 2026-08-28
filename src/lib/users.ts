@@ -109,7 +109,12 @@ export async function uploadAvatar(
     if (!intentId) throw new Error('Avatar upload intent was not created.');
     const { data, error } = await supabase.rpc('commit_avatar_photo_upload', { p_intent_id: intentId }).single();
     if (error || !data) throw error ?? new Error('Avatar upload could not be verified.');
-    return { url: upload.url, profile: { ...(data as UserRow), avatar_url: upload.url } };
+    if (data.outcome !== 'COMMITTED' || !data.id || data.points === null || !data.created_at) {
+      throw new Error('Avatar upload outcome requires review.');
+    }
+    // The RPC deliberately exposes only the profile fields the authenticated
+    // role may read; UserRow's email is sourced from the authenticated session.
+    return { url: upload.url, profile: { ...(data as unknown as UserRow), avatar_url: upload.url } };
   } catch (error) {
     if (intentId) {
       try {

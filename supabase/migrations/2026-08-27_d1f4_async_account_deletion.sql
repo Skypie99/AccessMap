@@ -54,6 +54,12 @@ create table if not exists public.account_deletion_operations (
   worker_lease_token uuid,
   worker_lease_expires_at timestamptz,
   worker_attempts integer not null default 0 check (worker_attempts >= 0),
+  -- RETRY_REQUIRED is not a phase. Preserve the exact safe phase that must
+  -- resume so a generic retry can never skip the drain, verification, or
+  -- Auth-last ordering.
+  resume_from text check (resume_from is null or resume_from in (
+    'LOCK_DRAIN', 'CLEANING', 'VERIFYING', 'AUTH_DELETE', 'AUTH_RECONCILIATION'
+  )),
   review_reason text,
   review_opened_at timestamptz,
   intent_review_resolved_at timestamptz,
@@ -112,6 +118,89 @@ alter table public.flag_photos
   add column if not exists uploader_id uuid;
 alter table public.flag_photos alter column url drop not null;
 
+-- RLS WITH CHECK expressions cannot reliably distinguish OLD from NEW values
+-- on every direct write path. These database-boundary triggers therefore make
+-- canonical provenance server-owned. The trusted finalization RPCs set the
+-- transaction-local marker immediately before their own write; a PostgREST
+-- caller cannot set that marker through an ordinary INSERT or UPDATE.
+create or replace function public.prevent_untrusted_flag_photo_provenance_write()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if coalesce(current_setting('app.d1f4_trusted_photo_commit', true), '') <> '1' then
+    if tg_op = 'INSERT' then
+      if new.photo_url is not null
+         or new.photo_object_key is not null
+         or new.photo_uploader_id is not null
+      then
+        raise exception 'Canonical flag photo metadata is server managed.' using errcode = '42501';
+      end if;
+    elsif new.photo_url is distinct from old.photo_url
+       or new.photo_object_key is distinct from old.photo_object_key
+       or new.photo_uploader_id is distinct from old.photo_uploader_id
+    then
+      raise exception 'Canonical flag photo metadata is server managed.' using errcode = '42501';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_untrusted_flag_photo_provenance_write on public.flags;
+create trigger prevent_untrusted_flag_photo_provenance_write
+  before insert or update on public.flags
+  for each row execute function public.prevent_untrusted_flag_photo_provenance_write();
+
+create or replace function public.prevent_untrusted_avatar_provenance_write()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if coalesce(current_setting('app.d1f4_trusted_photo_commit', true), '') <> '1'
+     and (
+       new.avatar_url is distinct from old.avatar_url
+       or new.avatar_object_key is distinct from old.avatar_object_key
+     )
+  then
+    raise exception 'Canonical avatar metadata is server managed.' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_untrusted_avatar_provenance_write on public.users;
+create trigger prevent_untrusted_avatar_provenance_write
+  before update on public.users
+  for each row execute function public.prevent_untrusted_avatar_provenance_write();
+
+create or replace function public.prevent_untrusted_flag_photo_row_write()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if coalesce(current_setting('app.d1f4_trusted_photo_commit', true), '') <> '1' then
+    raise exception 'Flag photo metadata is server managed.' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_untrusted_flag_photo_row_write on public.flag_photos;
+create trigger prevent_untrusted_flag_photo_row_write
+  before insert or update on public.flag_photos
+  for each row execute function public.prevent_untrusted_flag_photo_row_write();
+
+revoke all on function public.prevent_untrusted_flag_photo_provenance_write() from public, anon, authenticated;
+revoke all on function public.prevent_untrusted_avatar_provenance_write() from public, anon, authenticated;
+revoke all on function public.prevent_untrusted_flag_photo_row_write() from public, anon, authenticated;
+
 create table if not exists public.flag_photo_upload_intents (
   intent_id uuid primary key default gen_random_uuid(),
   subject_id uuid not null,
@@ -136,8 +225,9 @@ grant select, insert, update, delete on table public.flag_photo_upload_intents t
 -- admission ticket. A writer admitted before REQUESTED holds it through its
 -- transaction; Transaction B's FOR UPDATE waits for all such writers before it
 -- can set LOCKED. A later read-committed request sees the durable nonterminal
--- operation and is denied. The fence-version update in Transaction B also
--- invalidates a stale repeatable-read snapshot that reaches this gate later.
+-- operation and is denied. Transaction A's fence-version update invalidates a
+-- stale repeatable-read snapshot that reaches this gate later; Transaction B
+-- preserves the separate full writer drain.
 create or replace function public.account_subject_can_write(p_subject uuid)
 returns boolean
 language plpgsql
@@ -200,6 +290,14 @@ create policy "users update own row" on public.users for update to authenticated
 
 -- New direct reports are photo-free. Only the server-authoritative intent
 -- commit function can attach canonical metadata after checking storage.objects.
+drop policy if exists "flags anon insert" on public.flags;
+create policy "flags anon insert" on public.flags for insert to anon
+  with check (
+    user_id is null
+    and photo_url is null
+    and photo_object_key is null
+    and photo_uploader_id is null
+  );
 drop policy if exists "flags insert own" on public.flags;
 create policy "flags insert own" on public.flags for insert to authenticated
   with check (
@@ -324,7 +422,7 @@ create policy "flag-photos auth upload" on storage.objects for insert to authent
   with check (bucket_id = 'flag-photos' and (select public.can_upload_prepared_flag_photo(bucket_id, name)));
 drop policy if exists "flag-photos owner delete" on storage.objects;
 create policy "flag-photos owner delete" on storage.objects for delete to authenticated
-  using (bucket_id = 'flag-photos' and owner_id = (select auth.uid()) and (select public.current_account_can_write()));
+  using (bucket_id = 'flag-photos' and owner_id::uuid = (select auth.uid()) and (select public.current_account_can_write()));
 drop policy if exists "flag-photos admin delete" on storage.objects;
 create policy "flag-photos admin delete" on storage.objects for delete to authenticated
   using (bucket_id = 'flag-photos' and (select public.current_account_can_write()) and exists (
@@ -366,8 +464,9 @@ $$;
 -- -----------------------------------------------------------------------------
 -- Invoked only by the authenticated request Edge Function, which derives
 -- p_subject_id from verified Auth. It takes no account-row exclusive lock:
--- committing REQUESTED is the immediate policy fence and must not wait for
--- already admitted writers. Operation creation is one database transaction.
+-- committing REQUESTED plus one non-key account-row version update is the
+-- immediate policy fence and must not wait for already admitted KEY SHARE
+-- writers. Transaction B remains the separate writer-drain barrier.
 create or replace function public.request_account_deletion(
   p_operation_id uuid, p_receipt_hash text, p_subject_id uuid
 )
@@ -396,6 +495,17 @@ begin
   if found then raise exception 'A deletion request is already active.' using errcode = '23505'; end if;
   insert into public.account_deletion_operations(operation_id, subject_id, receipt_hash, status)
     values (p_operation_id, p_subject_id, p_receipt_hash, 'REQUESTED') returning * into v_existing;
+
+  -- This non-destructive, non-key UPDATE commits with REQUESTED. Existing
+  -- KEY SHARE holders remain the pre-request drain set; a REPEATABLE READ
+  -- transaction whose snapshot predates this request but only now reaches the
+  -- account gate cannot lock the obsolete tuple and must fail/retry instead of
+  -- being admitted. Transaction B still does the eventual FOR UPDATE drain.
+  update public.users
+    set deletion_fence_version = deletion_fence_version + 1
+    where id = p_subject_id;
+  if not found then raise exception 'Deletion subject has no account row.' using errcode = 'P0001'; end if;
+
   return query select v_existing.operation_id, v_existing.status, v_existing.requested_at;
 end;
 $$;
@@ -415,6 +525,62 @@ begin
   update public.account_deletion_operations set worker_lease_token = p_lease_token,
     worker_lease_expires_at = now() + interval '5 minutes', worker_attempts = worker_attempts + 1
     where operation_id = v_operation.operation_id returning * into v_operation;
+  return v_operation;
+end;
+$$;
+
+-- Renewal is a lease ownership proof as well as a keep-alive. The worker calls
+-- it before every destructive Storage/Auth action and during paginated storage
+-- inventory scans, so a reclaimed operation cannot continue after expiry.
+create or replace function public.renew_account_deletion_lease(p_operation_id uuid, p_lease_token uuid)
+returns public.account_deletion_operations
+language plpgsql security definer set search_path = ''
+as $$
+declare v_operation public.account_deletion_operations%rowtype;
+begin
+  update public.account_deletion_operations
+    set worker_lease_expires_at = now() + interval '5 minutes'
+    where operation_id = p_operation_id
+      and worker_lease_token = p_lease_token
+      and worker_lease_expires_at >= now()
+      and status <> 'COMPLETE'
+    returning * into v_operation;
+  if not found then raise exception 'Deletion operation lease has expired.' using errcode = 'P0001'; end if;
+  return v_operation;
+end;
+$$;
+
+-- Rehydrate only the phase recorded by retry_or_review_account_deletion().
+-- No generic retry can jump directly into a later destructive phase.
+create or replace function public.resume_account_deletion_operation(p_operation_id uuid, p_lease_token uuid)
+returns public.account_deletion_operations
+language plpgsql security definer set search_path = ''
+as $$
+declare v_operation public.account_deletion_operations%rowtype; v_status text;
+begin
+  select * into v_operation from public.account_deletion_operations
+    where operation_id = p_operation_id
+      and worker_lease_token = p_lease_token
+      and worker_lease_expires_at >= now()
+      and status = 'RETRY_REQUIRED'
+    for update;
+  if not found or v_operation.resume_from is null then
+    raise exception 'Deletion operation has no safe retry phase.' using errcode = 'P0001';
+  end if;
+  v_status := case v_operation.resume_from
+    when 'LOCK_DRAIN' then 'REQUESTED'
+    when 'CLEANING' then 'CLEANING'
+    when 'VERIFYING' then 'VERIFYING'
+    when 'AUTH_DELETE' then 'READY_FOR_AUTH_DELETE'
+    else null
+  end;
+  if v_status is null then
+    raise exception 'Deletion operation requires Auth reconciliation.' using errcode = 'P0001';
+  end if;
+  update public.account_deletion_operations
+    set status = v_status, resume_from = null, last_error_code = null
+    where operation_id = p_operation_id
+    returning * into v_operation;
   return v_operation;
 end;
 $$;
@@ -451,7 +617,7 @@ declare v_operation public.account_deletion_operations%rowtype;
 begin
   select * into v_operation from public.account_deletion_operations
     where operation_id = p_operation_id and worker_lease_token = p_lease_token and worker_lease_expires_at >= now() for update;
-  if not found or v_operation.status not in ('LOCKED', 'CLEANING', 'RETRY_REQUIRED') then
+  if not found or v_operation.status not in ('LOCKED', 'CLEANING') then
     raise exception 'Deletion operation cannot start cleaning.' using errcode = 'P0001';
   end if;
   if v_operation.status <> 'CLEANING' then
@@ -502,7 +668,7 @@ $$;
 create or replace function public.commit_flag_photo_upload(
   p_intent_id uuid, p_flag_id uuid, p_position integer, p_alt_text text, p_set_primary boolean
 )
-returns void
+returns text
 language plpgsql security definer set search_path = ''
 as $$
 declare v_intent public.flag_photo_upload_intents%rowtype;
@@ -515,11 +681,19 @@ begin
   if not exists (select 1 from public.flags where id = p_flag_id and user_id = v_intent.subject_id) then
     raise exception 'Photo target is not owned by uploader.' using errcode = '42501';
   end if;
-  if not exists (select 1 from storage.objects where bucket_id = v_intent.bucket_id and name = v_intent.object_key and owner_id = v_intent.subject_id) then
+  if not exists (
+    select 1 from storage.objects
+    where bucket_id = v_intent.bucket_id
+      and name = v_intent.object_key
+      and owner_id::uuid = v_intent.subject_id
+  ) then
     update public.flag_photo_upload_intents set status = 'AMBIGUOUS', review_reason = 'exact_storage_owner_not_confirmed'
       where intent_id = v_intent.intent_id;
-    raise exception 'Photo upload outcome requires review.' using errcode = 'P0001';
+    -- Return a safe result instead of raising: an exception would roll this
+    -- durable ambiguity back and falsely make the direct upload look absent.
+    return 'AMBIGUOUS';
   end if;
+  perform set_config('app.d1f4_trusted_photo_commit', '1', true);
   insert into public.flag_photos(flag_id, url, alt_text, position, object_key, uploader_id)
     values (p_flag_id, null, left(coalesce(p_alt_text, ''), 200), greatest(coalesce(p_position, 0), 0), v_intent.object_key, v_intent.subject_id);
   if coalesce(p_set_primary, false) then
@@ -528,28 +702,46 @@ begin
   end if;
   update public.flag_photo_upload_intents set status = 'COMMITTED', committed_at = now(), flag_id = p_flag_id
     where intent_id = v_intent.intent_id;
+  return 'COMMITTED';
 end;
 $$;
 
 create or replace function public.commit_avatar_photo_upload(p_intent_id uuid)
-returns table(avatar_url text, avatar_object_key text)
+returns table(
+  outcome text,
+  id uuid,
+  display_name text,
+  avatar_url text,
+  avatar_object_key text,
+  points integer,
+  created_at timestamptz
+)
 language plpgsql security definer set search_path = ''
 as $$
-declare v_intent public.flag_photo_upload_intents%rowtype;
+declare v_intent public.flag_photo_upload_intents%rowtype; v_user public.users%rowtype;
 begin
   select * into v_intent from public.flag_photo_upload_intents
     where intent_id = p_intent_id and subject_id = (select auth.uid()) for update;
   if not found or not public.current_account_can_write() or v_intent.status <> 'PREPARED' or v_intent.intent_kind <> 'avatar' then
     raise exception 'Avatar upload cannot be committed.' using errcode = 'P0001';
   end if;
-  if not exists (select 1 from storage.objects where bucket_id = v_intent.bucket_id and name = v_intent.object_key and owner_id = v_intent.subject_id) then
+  if not exists (
+    select 1 from storage.objects
+    where bucket_id = v_intent.bucket_id
+      and name = v_intent.object_key
+      and owner_id::uuid = v_intent.subject_id
+  ) then
     update public.flag_photo_upload_intents set status = 'AMBIGUOUS', review_reason = 'exact_storage_owner_not_confirmed'
       where intent_id = v_intent.intent_id;
-    raise exception 'Avatar upload outcome requires review.' using errcode = 'P0001';
+    return query select 'AMBIGUOUS'::text, null::uuid, null::text, null::text, null::text, null::integer, null::timestamptz;
+    return;
   end if;
-  update public.users set avatar_url = null, avatar_object_key = v_intent.object_key where id = v_intent.subject_id;
+  perform set_config('app.d1f4_trusted_photo_commit', '1', true);
+  update public.users set avatar_url = null, avatar_object_key = v_intent.object_key where id = v_intent.subject_id
+    returning * into v_user;
   update public.flag_photo_upload_intents set status = 'COMMITTED', committed_at = now() where intent_id = v_intent.intent_id;
-  return query select null::text, v_intent.object_key;
+  return query select 'COMMITTED'::text, v_user.id, v_user.display_name, v_user.avatar_url,
+    v_user.avatar_object_key, v_user.points, v_user.created_at;
 end;
 $$;
 
@@ -588,7 +780,7 @@ begin
     exists (select 1 from public.flags where user_id = v_operation.subject_id and photo_url is not null and photo_object_key is null)
     or exists (select 1 from public.flag_photos p join public.flags f on f.id = p.flag_id
       where f.user_id = v_operation.subject_id and p.url is not null and p.object_key is null)
-    or exists (select 1 from storage.objects o where o.bucket_id = 'flag-photos' and o.owner_id = v_operation.subject_id
+    or exists (select 1 from storage.objects o where o.bucket_id = 'flag-photos' and o.owner_id::uuid = v_operation.subject_id
       and not exists (select 1 from public.flag_photo_upload_intents i where i.object_key = o.name)
       and not exists (select 1 from public.account_deletion_review_objects r where r.operation_id = p_operation_id and r.object_key = o.name))
   ) then return 'historic_photo_provenance'; end if;
@@ -602,7 +794,8 @@ language plpgsql security definer set search_path = ''
 as $$
 begin
   update public.account_deletion_operations set status = 'FAILED_REVIEW_REQUIRED', review_reason = left(p_reason, 120),
-      review_opened_at = coalesce(review_opened_at, now()), worker_lease_token = null, worker_lease_expires_at = null
+      review_opened_at = coalesce(review_opened_at, now()), resume_from = null,
+      worker_lease_token = null, worker_lease_expires_at = null
     where operation_id = p_operation_id and worker_lease_token = p_lease_token and worker_lease_expires_at >= now() and status <> 'COMPLETE';
   if not found then raise exception 'Deletion operation cannot enter review.' using errcode = 'P0001'; end if;
   insert into public.account_deletion_review_audit(operation_id, actor_kind, actor_id, action)
@@ -621,7 +814,12 @@ create or replace function public.resolve_account_deletion_review(
 returns void
 language plpgsql security definer set search_path = ''
 as $$
-declare v_operation public.account_deletion_operations%rowtype; v_intent public.flag_photo_upload_intents%rowtype; v_key text;
+declare
+  v_operation public.account_deletion_operations%rowtype;
+  v_intent public.flag_photo_upload_intents%rowtype;
+  v_key text;
+  v_subject_object_count integer;
+  v_reviewed_key_count integer;
 begin
   if p_evidence_digest is null or p_evidence_digest !~ '^[0-9a-f]{64}$' then raise exception 'Redacted evidence digest required.' using errcode = '22023'; end if;
   select * into v_operation from public.account_deletion_operations where operation_id = p_operation_id and status = 'FAILED_REVIEW_REQUIRED' for update;
@@ -630,22 +828,48 @@ begin
   end if;
   if p_resolve_intents then
     for v_intent in select * from public.flag_photo_upload_intents where subject_id = v_operation.subject_id and status in ('PREPARED', 'AMBIGUOUS') for update loop
+      -- Keep every reviewed exact key for the operation lifetime, including a
+      -- key confirmed absent. A later appearance cannot disappear from cleanup
+      -- evidence merely because a human supplied an earlier absence claim.
+      insert into public.account_deletion_review_objects(operation_id, bucket_id, object_key)
+        values (p_operation_id, v_intent.bucket_id, v_intent.object_key) on conflict do nothing;
       if v_intent.intent_id = any(coalesce(p_absent_intent_ids, '{}'::uuid[])) then
-        -- This is an explicitly reviewed outcome, not an automatic empty-list inference.
+        -- Reviewer input is insufficient by itself. CANCELLED records a
+        -- database-side, same-resolution exact-object absence check only.
+        if exists (
+          select 1 from storage.objects
+          where bucket_id = v_intent.bucket_id and name = v_intent.object_key
+        ) then
+          raise exception 'Visible intent object cannot be resolved as absent.' using errcode = 'P0001';
+        end if;
         update public.flag_photo_upload_intents set status = 'CANCELLED', review_reason = 'sky_reviewed_exact_absence' where intent_id = v_intent.intent_id;
       elsif v_intent.object_key = any(coalesce(p_exact_object_keys, '{}'::text[])) and exists (
-        select 1 from storage.objects where bucket_id = v_intent.bucket_id and name = v_intent.object_key and owner_id = v_operation.subject_id
+        select 1 from storage.objects
+        where bucket_id = v_intent.bucket_id
+          and name = v_intent.object_key
+          and owner_id::uuid = v_operation.subject_id
       ) then
-        insert into public.account_deletion_review_objects(operation_id, bucket_id, object_key)
-          values (p_operation_id, v_intent.bucket_id, v_intent.object_key) on conflict do nothing;
         update public.flag_photo_upload_intents set status = 'COMMITTED', review_reason = 'sky_reviewed_exact_object' where intent_id = v_intent.intent_id;
       else raise exception 'Every ambiguous intent requires an exact reviewed outcome.' using errcode = 'P0001'; end if;
     end loop;
     update public.account_deletion_operations set intent_review_resolved_at = now() where operation_id = p_operation_id;
   end if;
   if p_resolve_historic then
+    -- A reviewer cannot waive unknown subject-owned objects. This compares
+    -- the provided exact set with the authoritative database inventory.
+    select count(*) into v_subject_object_count
+      from storage.objects
+      where bucket_id = 'flag-photos' and owner_id::uuid = v_operation.subject_id;
+    select count(distinct reviewed.key) into v_reviewed_key_count
+      from unnest(coalesce(p_exact_object_keys, '{}'::text[])) as reviewed(key);
+    if v_reviewed_key_count <> v_subject_object_count then
+      raise exception 'Reviewed key set is not the complete owner inventory.' using errcode = 'P0001';
+    end if;
     foreach v_key in array coalesce(p_exact_object_keys, '{}'::text[]) loop
-      if not exists (select 1 from storage.objects where bucket_id = 'flag-photos' and name = v_key and owner_id = v_operation.subject_id) then
+      if not exists (
+        select 1 from storage.objects
+        where bucket_id = 'flag-photos' and name = v_key and owner_id::uuid = v_operation.subject_id
+      ) then
         raise exception 'Reviewed object lacks the expected exact owner.' using errcode = 'P0001';
       end if;
       insert into public.account_deletion_review_objects(operation_id, bucket_id, object_key)
@@ -654,7 +878,7 @@ begin
     update public.account_deletion_operations set historic_review_resolved_at = now() where operation_id = p_operation_id;
   end if;
   update public.account_deletion_operations set status = 'CLEANING', review_reason = null,
-    worker_lease_token = null, worker_lease_expires_at = null where operation_id = p_operation_id;
+    resume_from = null, worker_lease_token = null, worker_lease_expires_at = null where operation_id = p_operation_id;
   insert into public.account_deletion_review_audit(operation_id, actor_kind, actor_id, action, evidence_digest)
     values (p_operation_id, 'privacy_reviewer', 'sky', 'review_resolved_requeue', p_evidence_digest);
 end;
@@ -664,7 +888,7 @@ create or replace function public.retry_or_review_account_deletion(p_operation_i
 returns void
 language plpgsql security definer set search_path = ''
 as $$
-declare v_operation public.account_deletion_operations%rowtype;
+declare v_operation public.account_deletion_operations%rowtype; v_resume_from text;
 begin
   select * into v_operation from public.account_deletion_operations where operation_id = p_operation_id
     and worker_lease_token = p_lease_token and worker_lease_expires_at >= now() for update;
@@ -672,11 +896,27 @@ begin
   if v_operation.worker_attempts >= 3 or v_operation.requested_at <= now() - interval '24 hours' then
     update public.account_deletion_operations set status = 'FAILED_REVIEW_REQUIRED', review_reason = 'worker_retry_threshold',
       review_opened_at = coalesce(review_opened_at, now()), last_error_code = left(coalesce(p_error_code, 'worker_failure'), 120),
-      worker_lease_token = null, worker_lease_expires_at = null where operation_id = p_operation_id;
+      resume_from = null, worker_lease_token = null, worker_lease_expires_at = null where operation_id = p_operation_id;
     insert into public.account_deletion_review_audit(operation_id, actor_kind, actor_id, action)
       values (p_operation_id, 'worker', 'worker', 'review_opened:worker_retry_threshold');
   else
-    update public.account_deletion_operations set status = 'RETRY_REQUIRED', last_error_code = left(coalesce(p_error_code, 'worker_failure'), 120),
+    v_resume_from := case
+      -- A provider error after any Auth call must be reconciled first; retrying
+      -- deletion blindly would violate Auth-last outcome safety.
+      when p_error_code = 'auth_outcome_ambiguous' then 'AUTH_RECONCILIATION'
+      when v_operation.status = 'REQUESTED' then 'LOCK_DRAIN'
+      when v_operation.status in ('LOCKED', 'CLEANING') then 'CLEANING'
+      when v_operation.status = 'VERIFYING' then 'VERIFYING'
+      when v_operation.status = 'READY_FOR_AUTH_DELETE' then 'AUTH_DELETE'
+      when v_operation.status = 'AUTH_DELETED' then 'AUTH_RECONCILIATION'
+      when v_operation.status = 'RETRY_REQUIRED' then v_operation.resume_from
+      else null
+    end;
+    if v_resume_from is null then
+      raise exception 'Deletion operation has no safe retry phase.' using errcode = 'P0001';
+    end if;
+    update public.account_deletion_operations set status = 'RETRY_REQUIRED', resume_from = v_resume_from,
+      last_error_code = left(coalesce(p_error_code, 'worker_failure'), 120),
       worker_lease_token = null, worker_lease_expires_at = null where operation_id = p_operation_id;
   end if;
 end;
@@ -709,9 +949,9 @@ begin
     and worker_lease_token = p_lease_token and worker_lease_expires_at >= now() for update;
   if not found or (
     v_operation.status <> 'READY_FOR_AUTH_DELETE'
-    and not (v_operation.status = 'RETRY_REQUIRED' and v_operation.last_error_code = 'auth_outcome_ambiguous')
+    and not (v_operation.status = 'RETRY_REQUIRED' and v_operation.resume_from = 'AUTH_RECONCILIATION')
   ) then raise exception 'Deletion is not ready for Auth reconciliation.' using errcode = 'P0001'; end if;
-  update public.account_deletion_operations set status = 'AUTH_DELETED' where operation_id = p_operation_id returning * into v_operation;
+  update public.account_deletion_operations set status = 'AUTH_DELETED', resume_from = null where operation_id = p_operation_id returning * into v_operation;
   return v_operation;
 end;
 $$;
@@ -721,14 +961,19 @@ $$;
 -- when uploader_id proves ownership. Deleting the subject's own flag tree may
 -- cascade its complete report tree. No foreign metadata is deleted merely to
 -- make a residue count reach zero; URL/UUID substring matching is absent.
-create or replace function public.purge_deleting_account(p_operation_id uuid, p_user_id uuid)
+create or replace function public.purge_deleting_account(p_operation_id uuid, p_user_id uuid, p_lease_token uuid)
 returns void
 language plpgsql security definer set search_path = ''
 as $$
 declare v_flag_ids uuid[] := '{}'::uuid[]; v_point_ids bigint[] := '{}'::bigint[]; v_residue bigint := 0;
 begin
   if p_user_id is null or not exists (select 1 from public.account_deletion_locks where user_id = p_user_id)
-    or not exists (select 1 from public.account_deletion_operations where operation_id = p_operation_id and subject_id = p_user_id and status in ('CLEANING', 'VERIFYING')) then
+    or not exists (
+      select 1 from public.account_deletion_operations
+      where operation_id = p_operation_id and subject_id = p_user_id
+        and worker_lease_token = p_lease_token and worker_lease_expires_at >= now()
+        and status in ('CLEANING', 'VERIFYING')
+    ) then
     raise exception 'Deletion lock is required.' using errcode = 'P0001';
   end if;
   if public.account_deletion_requires_review(p_operation_id) is not null then raise exception 'Deletion requires manual review.' using errcode = 'P0001'; end if;
@@ -809,6 +1054,8 @@ $$;
 
 revoke all on function public.request_account_deletion(uuid, text, uuid) from public, anon, authenticated;
 revoke all on function public.claim_next_account_deletion_operation(uuid) from public, anon, authenticated;
+revoke all on function public.renew_account_deletion_lease(uuid, uuid) from public, anon, authenticated;
+revoke all on function public.resume_account_deletion_operation(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.lock_requested_account_deletion(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.begin_account_deletion_cleaning(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.mark_account_deletion_verifying(uuid, uuid) from public, anon, authenticated;
@@ -818,11 +1065,13 @@ revoke all on function public.resolve_account_deletion_review(uuid, text, uuid[]
 revoke all on function public.retry_or_review_account_deletion(uuid, uuid, text) from public, anon, authenticated;
 revoke all on function public.mark_account_deletion_ready_for_auth(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.mark_account_deletion_auth_deleted(uuid, uuid) from public, anon, authenticated;
-revoke all on function public.purge_deleting_account(uuid, uuid) from public, anon, authenticated;
+revoke all on function public.purge_deleting_account(uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function public.complete_account_deletion(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.account_deletion_receipt_status(uuid, text) from public, anon, authenticated;
 grant execute on function public.request_account_deletion(uuid, text, uuid) to service_role;
 grant execute on function public.claim_next_account_deletion_operation(uuid) to service_role;
+grant execute on function public.renew_account_deletion_lease(uuid, uuid) to service_role;
+grant execute on function public.resume_account_deletion_operation(uuid, uuid) to service_role;
 grant execute on function public.lock_requested_account_deletion(uuid, uuid) to service_role;
 grant execute on function public.begin_account_deletion_cleaning(uuid, uuid) to service_role;
 grant execute on function public.mark_account_deletion_verifying(uuid, uuid) to service_role;
@@ -832,7 +1081,7 @@ grant execute on function public.resolve_account_deletion_review(uuid, text, uui
 grant execute on function public.retry_or_review_account_deletion(uuid, uuid, text) to service_role;
 grant execute on function public.mark_account_deletion_ready_for_auth(uuid, uuid) to service_role;
 grant execute on function public.mark_account_deletion_auth_deleted(uuid, uuid) to service_role;
-grant execute on function public.purge_deleting_account(uuid, uuid) to service_role;
+grant execute on function public.purge_deleting_account(uuid, uuid, uuid) to service_role;
 grant execute on function public.complete_account_deletion(uuid, uuid) to service_role;
 grant execute on function public.account_deletion_receipt_status(uuid, text) to service_role;
 grant execute on function public.prepare_flag_photo_upload(text, text) to authenticated;

@@ -899,7 +899,7 @@ export async function commitFlagPhotoUpload(
   altText: string | null | undefined,
   setPrimary: boolean,
 ): Promise<void> {
-  const { error } = await supabase.rpc('commit_flag_photo_upload', {
+  const { data, error } = await supabase.rpc('commit_flag_photo_upload', {
     p_intent_id: intentId,
     p_flag_id: flagId,
     p_position: position,
@@ -907,6 +907,7 @@ export async function commitFlagPhotoUpload(
     p_set_primary: setPrimary,
   });
   if (error) throw error;
+  if (data !== 'COMMITTED') throw new Error('Photo upload outcome requires review.');
 }
 
 export async function cancelFlagPhotoUpload(intentId: string): Promise<void> {

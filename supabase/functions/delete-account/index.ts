@@ -4,6 +4,7 @@
 // the secret, and commits REQUESTED. It never cleans Storage or deletes Auth.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, corsPreflight } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -15,6 +16,7 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 type RequestBody = { operationId?: unknown; receiptSecret?: unknown };
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  if (req.method === 'OPTIONS') return corsPreflight();
   if (req.method !== 'POST') return json(405, { status: 'error' });
 
   const caller = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -57,5 +59,5 @@ async function sha256Hex(value: string): Promise<string> {
 }
 
 function json(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }

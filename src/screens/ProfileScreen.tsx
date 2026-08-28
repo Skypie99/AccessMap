@@ -25,6 +25,12 @@ import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
 import { AccountDeletionRequestSignOutPendingError, deleteAccount } from '@/lib/account';
+import {
+  AccountDeletionReceiptUnavailableError,
+  getAccountDeletionStatus,
+  loadAccountDeletionReceipt,
+  type AccountDeletionStatus,
+} from '@/lib/accountDeletionReceipt';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
@@ -307,6 +313,9 @@ export default function ProfileScreen() {
   const deleteTitleRef = useFocusOnOpen<Text>(deleteAccountOpen);
   const tierTitleRef = useFocusOnOpen<Text>(tierExplainerOpen);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [accountDeletionStatus, setAccountDeletionStatus] = useState<AccountDeletionStatus | null>(null);
+  const [accountDeletionStatusUnavailable, setAccountDeletionStatusUnavailable] = useState(false);
+  const [checkingAccountDeletionStatus, setCheckingAccountDeletionStatus] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -706,6 +715,29 @@ export default function ProfileScreen() {
     );
   }, [user]);
 
+  const refreshAccountDeletionStatus = useCallback(async () => {
+    if (!user || Platform.OS === 'web') return;
+    setCheckingAccountDeletionStatus(true);
+    try {
+      const receipt = await loadAccountDeletionReceipt(user.id);
+      if (!receipt) {
+        setAccountDeletionStatus(null);
+        setAccountDeletionStatusUnavailable(false);
+        return;
+      }
+      setAccountDeletionStatus(await getAccountDeletionStatus(receipt));
+      setAccountDeletionStatusUnavailable(false);
+    } catch {
+      // Keep the receipt after a lost first response or a temporary status
+      // outage. The signed-in user can retry this visible status action.
+      setAccountDeletionStatusUnavailable(true);
+    } finally {
+      if (mountedRef.current) setCheckingAccountDeletionStatus(false);
+    }
+  }, [user]);
+
+  useEffect(() => { void refreshAccountDeletionStatus(); }, [refreshAccountDeletionStatus]);
+
   const handleDeleteAccount = useCallback(async () => {
     if (!user) return;
     setDeletingAccount(true);
@@ -714,21 +746,24 @@ export default function ProfileScreen() {
       // Auth state change (SIGNED_OUT) fires automatically; screen unmounts.
     } catch (e) {
       if (mountedRef.current) {
-        // The receipt was stored before the request, so a lost response is
-        // ambiguous. Never claim that deletion did not start; status recovery
-        // remains available on the signed-out screen.
-        if (e instanceof AccountDeletionRequestSignOutPendingError) {
+        if (e instanceof AccountDeletionReceiptUnavailableError) {
+          notify('Account deletion is unavailable in this browser', e.message);
+        } else if (e instanceof AccountDeletionRequestSignOutPendingError) {
           notify('Deletion requested', e.message);
         } else {
           notify(
             'Could not confirm deletion request',
-            errorMessage(e, 'Check deletion status on this device before trying again.'),
+            errorMessage(e, 'Use Check deletion status below before trying again.'),
           );
         }
+        // The receipt was stored before the request, so a lost response is
+        // ambiguous. Keep still-signed-in recovery visible; do not require a
+        // sign-out or a second destructive press just to learn the outcome.
+        void refreshAccountDeletionStatus();
         setDeletingAccount(false);
       }
     }
-  }, [user]);
+  }, [refreshAccountDeletionStatus, user]);
 
   // Opens My Reports pre-filtered to a single status — wired to the
   // tappable status pills in the breakdown row. Presentation/navigation
@@ -1887,12 +1922,46 @@ export default function ProfileScreen() {
           <AppText variant="label" style={styles.signOutText}>Sign out</AppText>
         </Pressable>
 
+        {accountDeletionStatus || accountDeletionStatusUnavailable ? (
+          <GlassSurface style={styles.accountDeletionStatusCard} accessibilityLiveRegion="polite">
+            <AppText variant="label" style={styles.accountDeletionStatusTitle}>Account deletion status</AppText>
+            <AppText variant="bodyMedium" style={styles.accountDeletionStatusBody}>
+              {accountDeletionStatus?.status === 'REQUESTED'
+                ? 'Your deletion request was received and is waiting to begin.'
+                : accountDeletionStatus?.status === 'DELETING'
+                  ? 'Your account remains available only while deletion is being completed.'
+                  : accountDeletionStatus?.status === 'REVIEWING'
+                    ? 'Your account remains unavailable while a deletion review is completed.'
+                    : accountDeletionStatus?.status === 'COMPLETE'
+                      ? 'Your account and associated content have been deleted.'
+                      : 'This device has a deletion receipt, but status is temporarily unavailable.'}
+            </AppText>
+            <Pressable
+              style={({ pressed }) => [styles.accountDeletionStatusAction, pressed && { opacity: 0.7 }]}
+              onPress={() => void refreshAccountDeletionStatus()}
+              disabled={checkingAccountDeletionStatus}
+              accessibilityRole="button"
+              accessibilityLabel="Check account deletion status"
+              accessibilityHint="Checks the status of the account-deletion request stored on this device"
+              {...a11yToggle({ busy: checkingAccountDeletionStatus, disabled: checkingAccountDeletionStatus })}
+            >
+              <AppText variant="label" style={styles.accountDeletionStatusActionText}>
+                {checkingAccountDeletionStatus ? 'Checking…' : 'Check deletion status'}
+              </AppText>
+            </Pressable>
+          </GlassSurface>
+        ) : null}
+
         <Pressable
           style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.7 }]}
           onPress={() => setDeleteAccountOpen(true)}
+          disabled={accountDeletionStatus !== null}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"
-          accessibilityHint="Opens a confirmation dialog before starting asynchronous account deletion"
+          accessibilityHint={accountDeletionStatus
+            ? 'A deletion request is already recorded. Use Check deletion status above.'
+            : 'Opens a confirmation dialog before starting asynchronous account deletion'}
+          {...a11yToggle({ disabled: accountDeletionStatus !== null })}
         >
           <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
         </Pressable>
@@ -2801,6 +2870,20 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     signOutText: { color: color.text, fontWeight: font.weight.semibold },
+    accountDeletionStatusCard: {
+      marginTop: spacing.lg,
+      gap: spacing.sm,
+      padding: spacing.lg,
+    },
+    accountDeletionStatusTitle: { color: color.textStrong, fontWeight: font.weight.bold },
+    accountDeletionStatusBody: { color: color.text, lineHeight: font.lineHeight.sm },
+    accountDeletionStatusAction: {
+      alignSelf: 'flex-start',
+      minHeight: a11y.minTargetSize,
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+    },
+    accountDeletionStatusActionText: { color: color.brand, fontWeight: font.weight.semibold },
     // Destructive button — text-only red, not a filled button, so it reads as
     // a secondary action well below the sign-out affordance.
     deleteAccountBtn: {

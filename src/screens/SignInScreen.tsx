@@ -35,6 +35,7 @@ import {
   clearAccountDeletionReceipt,
   getAccountDeletionStatus,
   loadAccountDeletionReceipt,
+  type AccountDeletionReceipt,
   type AccountDeletionStatus,
 } from '@/lib/accountDeletionReceipt';
 
@@ -80,6 +81,7 @@ export default function SignInScreen({
   const [termsOpen, setTermsOpen] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [deletionStatus, setDeletionStatus] = useState<AccountDeletionStatus | null>(null);
+  const [deletionReceipt, setDeletionReceipt] = useState<AccountDeletionReceipt | null>(null);
   const [deletionStatusUnavailable, setDeletionStatusUnavailable] = useState(false);
   const [checkingDeletionStatus, setCheckingDeletionStatus] = useState(false);
 
@@ -89,9 +91,11 @@ export default function SignInScreen({
       const receipt = await loadAccountDeletionReceipt();
       if (!receipt) {
         setDeletionStatus(null);
+        setDeletionReceipt(null);
         setDeletionStatusUnavailable(false);
         return;
       }
+      setDeletionReceipt(receipt);
       const status = await getAccountDeletionStatus(receipt);
       setDeletionStatus(status);
       setDeletionStatusUnavailable(false);
@@ -106,11 +110,12 @@ export default function SignInScreen({
 
   useEffect(() => { void refreshDeletionStatus(); }, [refreshDeletionStatus]);
 
-  const dismissCompletedDeletion = useCallback(async () => {
-    await clearAccountDeletionReceipt();
+  const dismissDeletionReceipt = useCallback(async () => {
+    if (deletionReceipt) await clearAccountDeletionReceipt(deletionReceipt);
     setDeletionStatus(null);
+    setDeletionReceipt(null);
     setDeletionStatusUnavailable(false);
-  }, []);
+  }, [deletionReceipt]);
 
   // A11Y-203: every error shown in the inline row must ALSO be announced.
   // The row's accessibilityLiveRegion="assertive" is Android-only in RN, and
@@ -263,9 +268,15 @@ export default function SignInScreen({
                         : 'This device has a deletion receipt, but status is temporarily unavailable.'}
               </AppText>
               {deletionStatus?.status === 'COMPLETE' ? (
-                <Pressable onPress={() => void dismissCompletedDeletion()} style={styles.deletionStatusAction}
+                <Pressable onPress={() => void dismissDeletionReceipt()} style={styles.deletionStatusAction}
                   accessibilityRole="button" accessibilityLabel="Dismiss confirmation" accessibilityHint="Removes the completed account-deletion receipt from this device.">
                   <AppText variant="label" style={styles.deletionStatusActionText}>Dismiss confirmation</AppText>
+                </Pressable>
+              ) : deletionStatusUnavailable ? (
+                <Pressable onPress={() => void dismissDeletionReceipt()} style={styles.deletionStatusAction}
+                  accessibilityRole="button" accessibilityLabel="Dismiss unavailable receipt. Account deletion status is unavailable."
+                  accessibilityHint="Removes this unavailable or expired deletion receipt from this device.">
+                  <AppText variant="label" style={styles.deletionStatusActionText}>Dismiss unavailable receipt</AppText>
                 </Pressable>
               ) : (
                 <Pressable onPress={() => void refreshDeletionStatus()} disabled={checkingDeletionStatus}

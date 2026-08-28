@@ -114,7 +114,7 @@ describe('uploadAvatar()', () => {
       single: jest.fn().mockResolvedValue(
         name === 'prepare_flag_photo_upload'
           ? { data: { intent_id: 'avatar-intent-1', object_key: 'uploads/avatar.jpg' }, error: null }
-          : { data: { id: USER_ID, display_name: 'Alice', avatar_url: null, avatar_object_key: 'uploads/avatar.jpg', points: 0, created_at: '2026-01-01T00:00:00Z' }, error: null },
+          : { data: { outcome: 'COMMITTED', id: USER_ID, display_name: 'Alice', avatar_url: null, avatar_object_key: 'uploads/avatar.jpg', points: 0, created_at: '2026-01-01T00:00:00Z' }, error: null },
       ),
     }));
   });

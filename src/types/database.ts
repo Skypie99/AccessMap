@@ -425,11 +425,19 @@ export type Database = {
           p_alt_text: string | null;
           p_set_primary: boolean;
         };
-        Returns: undefined;
+        Returns: string;
       };
       commit_avatar_photo_upload: {
         Args: { p_intent_id: string };
-        Returns: { avatar_url: string | null; avatar_object_key: string }[];
+        Returns: {
+          outcome: 'COMMITTED' | 'AMBIGUOUS';
+          id: string | null;
+          display_name: string | null;
+          avatar_url: string | null;
+          avatar_object_key: string | null;
+          points: number | null;
+          created_at: string | null;
+        }[];
       };
       cancel_flag_photo_upload: {
         Args: { p_intent_id: string };

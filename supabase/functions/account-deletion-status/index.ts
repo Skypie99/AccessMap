@@ -1,6 +1,7 @@
 // Receipt capability status. Works after Auth removal and reveals no account,
 // object, error, or review detail. Invalid and unknown receipts are identical.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, corsPreflight } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -9,6 +10,7 @@ const RECEIPT_RE = /^[0-9a-f]{64}$/i;
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  if (req.method === 'OPTIONS') return corsPreflight();
   if (req.method !== 'POST') return json(405, { status: 'error' });
   let body: { operationId?: unknown; receiptSecret?: unknown };
   try { body = await req.json(); } catch { return json(400, { status: 'error' }); }
@@ -38,5 +40,5 @@ async function sha256Hex(value: string): Promise<string> {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 function json(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }

@@ -1,0 +1,23 @@
+# Authoritative Edge Function gateway configuration. This file is the project
+# root recognized by Supabase; nested per-function config.toml files are not a
+# deployment authority. No secrets, scheduler, Vault, or hosted mutation live
+# in repository configuration.
+
+# Browser route. Gateway JWT verification is intentionally disabled so an
+# unauthenticated OPTIONS preflight reaches the handler; the handler validates
+# the caller with caller.auth.getUser() before it records REQUESTED.
+[functions.delete-account]
+verify_jwt = false
+
+# Internal-only route. The handler requires the server-only worker secret.
+[functions.account-deletion-worker]
+verify_jwt = false
+
+# Capability route. It remains usable after Auth deletion and validates the
+# high-entropy receipt secret before returning generic status only.
+[functions.account-deletion-status]
+verify_jwt = false
+
+# Privileged operational route. The handler requires the review secret.
+[functions.account-deletion-review]
+verify_jwt = false
