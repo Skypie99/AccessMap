@@ -14,6 +14,12 @@ const fix = fs.readFileSync(
   path.join(ROOT, 'supabase', 'migrations', '20260828020000_d1f4r3_fix2_review_replay_and_flag_delete.sql'),
   'utf8',
 );
+// FIX3 supersedes the FIX2 resolver body (audit-before-return); resolver
+// behavior assertions must target the effective definition, not FIX2's.
+const fix3 = fs.readFileSync(
+  path.join(ROOT, 'supabase', 'migrations', '20260828030000_d1f4r3_fix3_review_audit.sql'),
+  'utf8',
+);
 const r3 = fs.readFileSync(
   path.join(ROOT, 'supabase', 'migrations', '20260828010000_d1f4r3_source_closure.sql'),
   'utf8',
@@ -73,11 +79,11 @@ function retryClaim(phase: RetryPhase): AccountDeletionOperation {
 
 describe('D1F4R3-FIX2 review lifecycle', () => {
   it('maps every legal stored review resume phase to its correct durable worker phase', () => {
-    expect(fix).toContain("when 'LOCK_DRAIN' then 'REQUESTED'");
-    expect(fix).toContain("when 'CLEANING' then 'CLEANING'");
-    expect(fix).toContain("when 'VERIFYING' then 'VERIFYING'");
-    expect(fix).toContain("when 'AUTH_DELETE' then 'READY_FOR_AUTH_DELETE'");
-    expect(fix).toContain("when 'AUTH_RECONCILIATION' then 'RETRY_REQUIRED'");
+    expect(fix3).toContain("when 'LOCK_DRAIN' then 'REQUESTED'");
+    expect(fix3).toContain("when 'CLEANING' then 'CLEANING'");
+    expect(fix3).toContain("when 'VERIFYING' then 'VERIFYING'");
+    expect(fix3).toContain("when 'AUTH_DELETE' then 'READY_FOR_AUTH_DELETE'");
+    expect(fix3).toContain("when 'AUTH_RECONCILIATION' then 'RETRY_REQUIRED'");
   });
 
   it.each([
@@ -130,10 +136,10 @@ describe('D1F4R3-FIX2 review lifecycle', () => {
   });
 
   it('fails closed before consuming the final review item for an unsupported stored resume phase', () => {
-    const resolveAt = fix.indexOf("create function public.resolve_account_deletion_review_item");
-    const finalItemCheckAt = fix.indexOf('if not v_has_other_unresolved then', resolveAt);
-    const resolveItemAt = fix.indexOf('set resolution = p_action', resolveAt);
-    expect(fix.slice(resolveAt)).toContain("raise exception 'Deletion review has no safe resume phase.'");
+    const resolveAt = fix3.indexOf('create or replace function public.resolve_account_deletion_review_item');
+    const finalItemCheckAt = fix3.indexOf('if not v_has_other_unresolved then', resolveAt);
+    const resolveItemAt = fix3.indexOf('set resolution = p_action', resolveAt);
+    expect(fix3.slice(resolveAt)).toContain("raise exception 'Deletion review has no safe resume phase.'");
     expect(finalItemCheckAt).toBeGreaterThan(resolveAt);
     expect(resolveItemAt).toBeGreaterThan(finalItemCheckAt);
   });
@@ -152,13 +158,13 @@ describe('D1F4R3-FIX2 review lifecycle', () => {
   });
 
   it('keeps replay safe after completion redacts subject_id and rejects a conflicting replay', () => {
-    const resolveAt = fix.indexOf("create function public.resolve_account_deletion_review_item");
-    const replayAt = fix.indexOf("if v_item.resolution <> 'UNRESOLVED'", resolveAt);
-    const subjectGuardAt = fix.indexOf("v_operation.status <> 'FAILED_REVIEW_REQUIRED' or v_operation.subject_id is null", resolveAt);
+    const resolveAt = fix3.indexOf('create or replace function public.resolve_account_deletion_review_item');
+    const replayAt = fix3.indexOf("if v_item.resolution <> 'UNRESOLVED'", resolveAt);
+    const subjectGuardAt = fix3.indexOf("v_operation.status <> 'FAILED_REVIEW_REQUIRED' or v_operation.subject_id is null", resolveAt);
     expect(replayAt).toBeGreaterThan(resolveAt);
     expect(subjectGuardAt).toBeGreaterThan(replayAt);
-    expect(fix.slice(replayAt, subjectGuardAt)).toContain("v_operation.status = 'COMPLETE'");
-    expect(fix.slice(replayAt, subjectGuardAt)).toContain("if v_item.resolution <> p_action then");
+    expect(fix3.slice(replayAt, subjectGuardAt)).toContain("v_operation.status = 'COMPLETE'");
+    expect(fix3.slice(replayAt, subjectGuardAt)).toContain("if v_item.resolution <> p_action then");
     expect(r3).toContain('subject_id = null');
     expect(reviewRoute).toContain('parseReviewResolution(data)');
   });

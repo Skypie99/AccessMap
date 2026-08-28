@@ -6,6 +6,9 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const read = (...parts: string[]) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8');
 const originalMigration = read('supabase', 'migrations', '2026-08-27_d1f4_async_account_deletion.sql');
 const repairMigration = read('supabase', 'migrations', '20260828000000_d1f4r2_source_repair.sql');
+// R2's review resolver is superseded (R3 -> FIX2 -> FIX3); resolver behavior
+// assertions read the effective FIX3 body instead of the historical one.
+const fix3Migration = read('supabase', 'migrations', '20260828030000_d1f4r3_fix3_review_audit.sql');
 const worker = read('supabase', 'functions', 'account-deletion-worker', 'index.ts');
 const workerCore = read('supabase', 'functions', '_shared', 'accountDeletionWorkerCore.ts');
 const review = read('supabase', 'functions', 'account-deletion-review', 'index.ts');
@@ -94,12 +97,13 @@ describe('D1F4R2 source and database-contract guards', () => {
   it('persists Auth reconciliation through retry threshold and never uses review as a false COMPLETE shortcut', () => {
     const retry = slice(repairMigration, 'create or replace function public.retry_or_review_account_deletion');
     const move = slice(repairMigration, 'create or replace function public.move_account_deletion_to_review');
-    const resolve = slice(repairMigration, 'create or replace function public.resolve_account_deletion_review_item');
+    const resolve = slice(fix3Migration, 'create or replace function public.resolve_account_deletion_review_item');
     expect(retry).toContain("when p_error_code = 'auth_outcome_ambiguous' then 'AUTH_RECONCILIATION'");
     expect(retry).toContain('review_resume_from = v_resume_from');
     expect(move).toContain("'AUTH_RECONCILIATION'");
-    expect(resolve).toContain("then 'RETRY_REQUIRED' else 'CLEANING' end");
-    expect(resolve).not.toContain("'COMPLETE'");
+    expect(resolve).toContain("when 'AUTH_RECONCILIATION' then 'RETRY_REQUIRED'");
+    expect(resolve).not.toContain("then 'COMPLETE'");
+    expect(resolve).not.toContain("set status = 'COMPLETE'");
     expect(workerCore).toContain('await reconcileAuth');
   });
 

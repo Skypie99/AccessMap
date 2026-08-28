@@ -5,6 +5,9 @@ import path from 'path';
 const ROOT = path.resolve(__dirname, '..', '..');
 const read = (...parts: string[]) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8');
 const r3 = read('supabase', 'migrations', '20260828010000_d1f4r3_source_closure.sql');
+// The review resolver was superseded twice (FIX2 return contract, FIX3 audit
+// ordering); behavior assertions on it must read the effective FIX3 body.
+const fix3 = read('supabase', 'migrations', '20260828030000_d1f4r3_fix3_review_audit.sql');
 const worker = read('supabase', 'functions', 'account-deletion-worker', 'index.ts');
 const workerCore = read('supabase', 'functions', '_shared', 'accountDeletionWorkerCore.ts');
 const review = read('supabase', 'functions', 'account-deletion-review', 'index.ts');
@@ -54,9 +57,10 @@ describe('D1F4R3 source-closure database contracts', () => {
   });
 
   it('makes replay idempotent and returns a truthful review state', () => {
-    const resolve = slice(r3, 'create or replace function public.resolve_account_deletion_review_item');
+    const resolve = slice(fix3, 'create or replace function public.resolve_account_deletion_review_item');
     expect(resolve).toContain("if v_item.resolution <> 'UNRESOLVED'");
-    expect(resolve).toContain("if v_item.resolution <> p_action then raise exception 'Review item already has a different resolution.'");
+    expect(resolve).toContain("if v_item.resolution <> p_action then");
+    expect(resolve).toContain("raise exception 'Review item already has a different resolution.'");
     expect(resolve).toContain("'waiting_for_review'");
     expect(resolve).toContain("'requeued'");
     expect(review).toContain("parseReviewResolution(data)");
@@ -65,7 +69,7 @@ describe('D1F4R3 source-closure database contracts', () => {
   });
 
   it('keeps PRESERVE_FOREIGN durable, non-authoritative, and revalidated against later owner changes', () => {
-    const resolve = slice(r3, 'create or replace function public.resolve_account_deletion_review_item');
+    const resolve = slice(fix3, 'create or replace function public.resolve_account_deletion_review_item');
     expect(resolve).toContain("disposition = 'PRESERVED_FOREIGN'");
     expect(resolve).toContain("Preserve requires a currently foreign exact object.");
     expect(r3).toContain('account_deletion_revalidate_preserved_foreign');
@@ -75,7 +79,7 @@ describe('D1F4R3 source-closure database contracts', () => {
 
   it('records exact historical associations before purge and refuses to acknowledge an unresolved public-object obligation', () => {
     const capture = slice(r3, 'create or replace function public.capture_account_deletion_historical_evidence');
-    const resolve = slice(r3, 'create or replace function public.resolve_account_deletion_review_item');
+    const resolve = slice(fix3, 'create or replace function public.resolve_account_deletion_review_item');
     expect(capture).toContain('account_deletion_legacy_object_key_from_url');
     expect(capture).toContain("'LEGACY_AVATAR'");
     expect(capture).toContain("'LEGACY_PRIMARY_PHOTO'");
