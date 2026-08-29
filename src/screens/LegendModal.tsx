@@ -21,7 +21,7 @@ import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
-import { Check } from 'lucide-react-native';
+import { Check, X } from 'lucide-react-native';
 
 interface Props {
   visible: boolean;
@@ -87,14 +87,34 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
         >
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <SheetGrabber />
-          <View ref={titleRef} style={styles.headerRow} accessible accessibilityRole="header">
-            {/* accessibilityRole="none": the WRAPPER is the one header node —
-                it's `accessible` (and the focus-in target), so on iOS it is the
-                single VoiceOver element and only its role ever lands. Left
-                alone, variant="heading" would add a second header role, which
-                react-native-web renders as an <h1> INSIDE the wrapper's <h1>:
-                invalid HTML, and one title heard as two nested headings. */}
-            <AppText variant="heading" style={styles.title} accessibilityRole="none">Map legend</AppText>
+          {/* VP1 fix2 (Sky): the collapsed map pill no longer carries its own
+              dismiss X — only the expanded legend closes via an X, here in the
+              header's top-right corner. It's a SIBLING of the accessible title
+              wrapper, not a child of it: an `accessible` View merges every
+              descendant into ONE VoiceOver node (the exact A11Y-214/SR-072 bug
+              already fixed once on cardShell below), which would silently
+              swallow this button's own role/label. The bottom "Close" button
+              stays too — it's the reachable close action for a screen-reader
+              user who has scrolled to the end of a long legend list. */}
+          <View style={styles.headerRow}>
+            <View ref={titleRef} style={styles.titleWrap} accessible accessibilityRole="header">
+              {/* accessibilityRole="none": the WRAPPER is the one header node —
+                  it's `accessible` (and the focus-in target), so on iOS it is the
+                  single VoiceOver element and only its role ever lands. Left
+                  alone, variant="heading" would add a second header role, which
+                  react-native-web renders as an <h1> INSIDE the wrapper's <h1>:
+                  invalid HTML, and one title heard as two nested headings. */}
+              <AppText variant="heading" style={styles.title} accessibilityRole="none">Map legend</AppText>
+            </View>
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [styles.headerCloseBtn, pressed && { backgroundColor: color.borderPressed }]}
+              accessibilityRole="button"
+              accessibilityLabel="Close legend"
+              hitSlop={8}
+            >
+              <X size={20} color={color.textStrong} strokeWidth={2.4} />
+            </Pressable>
           </View>
           {/* Board 06: the subtitle restates the title ("Map legend" / "What the
               colors and categories on the map mean"), so at the recomposition
@@ -298,7 +318,19 @@ const makeStyles = (color: ColorTheme) =>
     // The bulk variant owns the surface; clip it to the rounded top.
     overflow: 'hidden',
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  titleWrap: { flexShrink: 1 },
+  // 32 + hitSlop 8 = an effective 48pt target (the same recipe the map
+  // screen's own close controls use), while the VISIBLE circle stays a
+  // compact top-right corner glyph rather than a full 44pt block.
+  headerCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.circle,
+    backgroundColor: color.surfaceNeutral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     fontSize: font.size.xxl,
     fontWeight: font.weight.bold,

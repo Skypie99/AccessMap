@@ -410,10 +410,16 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           // Grow by the bottom safe-area inset so the home indicator never
           // overlaps the tab labels. 68 (was 62) gives the label's real line
           // box room — at 62 the shrinkable label wrapper was squeezed to ~7px
-          // and clipped "Home / Tasks / Profile" in half.
+          // and clipped "Home / Tasks / Profile" in half. VP1 fix2 retested
+          // this rather than assuming it: measured the label's rendered vs.
+          // natural line-box height (clientHeight vs scrollHeight) at every
+          // value from 62-68 and it's a clean 1:1 relationship with zero
+          // slack — 67 already clips (12/16px), so 68 is the true floor, not
+          // a stale leftover. paddingTop instead absorbs the lighter-footprint
+          // ask: it only shifts the icon block, never the label's own budget.
           height: FLOATING_TAB_BAR_CAPSULE_HEIGHT + insets.bottom,
           paddingBottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + insets.bottom,
-          paddingTop: 6,
+          paddingTop: 4,
           ...(Platform.OS === 'web'
             ? {
                 backgroundColor: color.tabBarBg,

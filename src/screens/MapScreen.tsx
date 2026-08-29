@@ -425,10 +425,6 @@ export default function MapScreen() {
     lng: number;
   } | null>(null);
   const [legendOpen, setLegendOpen] = useState(false);
-  // The compact legend shortcut is session-local: a dismissal survives tab
-  // navigation while this mounted screen remains alive, but is intentionally
-  // not written to storage and resets on the next app launch.
-  const [legendDismissed, setLegendDismissed] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
@@ -2863,14 +2859,16 @@ export default function MapScreen() {
         )}
         </View>
 
-        {/* Bottom bar: legend (left, conditional) + FABs (right) */}
+        {/* Bottom bar: legend (left) + FABs (right) */}
         <View style={styles.bottomBar} pointerEvents="box-none">
           {/* The compact Legend door reserves the left half beside the intrinsic
               FAB column. The full explanation remains one tap away in
-              LegendModal; no large on-map key competes with map detail. */}
+              LegendModal; no large on-map key competes with map detail.
+              VP1 fix2 (Sky): one content-hugging pill, no separate dismiss X —
+              the whole pill opens the legend, and only the expanded LegendModal
+              closes via its own top-right X. Anchored to the corner via
+              legendSlot's flex:1 + alignItems:'flex-start' below. */}
           <View style={styles.legendSlot} pointerEvents="box-none">
-            {!legendDismissed ? (
-            <View style={styles.legendShortcut}>
             {/* M4 (Q10): the Legend is ONE tap. It was two — ⋯ then a row filed
                 under a "?" icon — and the legend is the product's TEACHING
                 surface: five colours, five numbers, five human sentences. The
@@ -2920,16 +2918,6 @@ export default function MapScreen() {
                 <AppText variant="label" style={styles.fabCrystalText}>Legend</AppText>
               </View>
             </PressableScale>
-            <Pressable
-              onPress={() => setLegendDismissed(true)}
-              style={styles.legendDismissBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss map legend shortcut"
-            >
-              <X size={16} color={color.textStrong} strokeWidth={2.4} />
-            </Pressable>
-            </View>
-            ) : null}
           </View>
           <View style={styles.fabColumn} pointerEvents="box-none">
             {/* Recenter — demoted from the old top tray into the FAB column, at the
@@ -4075,21 +4063,12 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'flex-end',
     },
     // Left half of the bottom bar, with a definite bound beside the intrinsic
-    // fabColumn so the shortcut and its dismissal do not overlap the controls.
+    // fabColumn so the pill does not overlap the controls. flex:1 + box-none
+    // keeps the rest of this half pass-through to the map beneath it.
     legendSlot: {
       flex: 1,
       marginRight: spacing.sm,
       alignItems: 'flex-start',
-    },
-    legendShortcut: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-    legendDismissBtn: {
-      width: a11y.minTargetSize,
-      height: a11y.minTargetSize,
-      borderRadius: radius.circle,
-      backgroundColor: color.surfaceNeutral,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
     // The three discs the button explains. Tight gap: they read as one glyph,
     // not as three controls.

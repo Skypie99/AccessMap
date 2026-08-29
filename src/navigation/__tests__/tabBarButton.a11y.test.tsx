@@ -20,6 +20,7 @@ import {
   FLOATING_TAB_BAR_CAPSULE_RADIUS,
   FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
   FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+  FLOATING_TAB_BAR_SELECTED_FILL_WIDTH,
 } from '../tabBarGeometry';
 
 jest.mock('@/lib/haptics', () => ({
@@ -163,5 +164,20 @@ describe('TabBarButton — a11y + press vocabulary', () => {
   it('VP1: does not render the selection wash for an unselected tab', () => {
     const { queryByTestId } = renderTab({ 'aria-selected': false, selectedFill: '#112233' });
     expect(queryByTestId('tab-segment-fill')).toBeNull();
+  });
+
+  it('VP1 fix2: the wash is a fixed content-hugging width, not insets that scale with segment width', () => {
+    // The original geometry used left/right insets on the full flex segment,
+    // so it stretched into a highlight BAND on wider devices. A fixed width
+    // centered via left:50% + a matching negative marginLeft (the same trick
+    // SignInScreen already uses) stays the same size regardless of how wide
+    // the tab segment itself is.
+    const { UNSAFE_getByProps } = renderTab({ 'aria-selected': true, selectedFill: '#112233' });
+    const fill = UNSAFE_getByProps({ testID: 'tab-segment-fill' });
+    const flat = StyleSheet.flatten(fill.props.style);
+    expect(flat.width).toBe(FLOATING_TAB_BAR_SELECTED_FILL_WIDTH);
+    expect(flat.left).toBe('50%');
+    expect(flat.marginLeft).toBe(-(FLOATING_TAB_BAR_SELECTED_FILL_WIDTH / 2));
+    expect(flat.right).toBeUndefined();
   });
 });

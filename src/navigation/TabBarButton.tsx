@@ -10,6 +10,7 @@ import {
   FLOATING_TAB_BAR_CAPSULE_RADIUS,
   FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
   FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+  FLOATING_TAB_BAR_SELECTED_FILL_WIDTH,
   type FloatingTabBarCapsuleEdge,
 } from './tabBarGeometry';
 
@@ -142,10 +143,15 @@ const styles = StyleSheet.create({
   },
   // Hugs the icon+label content (not the full segment) so the wash reads as a
   // soft chip behind the active tab rather than a full-height highlight band.
+  // VP1 fix2: a fixed width centered on the segment (left:50% + a matching
+  // negative marginLeft, the same trick SignInScreen already uses) instead of
+  // left/right insets — insets scale with the segment's own flex width, so on
+  // wider devices the wash stretched into a band instead of staying a chip.
   selectedFill: {
     position: 'absolute',
-    left: spacing.xs,
-    right: spacing.xs,
+    left: '50%',
+    marginLeft: -(FLOATING_TAB_BAR_SELECTED_FILL_WIDTH / 2),
+    width: FLOATING_TAB_BAR_SELECTED_FILL_WIDTH,
     top: spacing.xs,
     bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + spacing.sm,
     borderRadius: radius.lg,
