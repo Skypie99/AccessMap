@@ -1,0 +1,67 @@
+-- ============================================================================
+-- FILE:   20260818211920_reconcile_oob_grant_select_is_admin_for_replay_20260829.sql
+-- STATUS: 2026-08-29 migration-history RECONCILIATION. Not a new production
+--         change — production already contains the reconciled grant below.
+--
+-- WHY IT EXISTS:
+--   `grant select (is_admin) on public.users to authenticated;` is live on
+--   production (project kldlwszpfkdmsjrjhjym), independently verified as a
+--   column-level privilege via information_schema.column_privileges. It was
+--   applied HISTORICALLY OUT-OF-BAND: the column-level authenticated grant on
+--   public.users was first established by
+--   `20260529043812_email_privacy_closes_pii_exposure.sql`
+--   (id, display_name, avatar_url, points, created_at) — three days before
+--   is_admin existed (added by `20260603002810_admin_role.sql`) — and no
+--   managed migration in this repository ever extended that grant list to
+--   include is_admin. src/lib/admin.ts documents the resulting gap directly:
+--   `useIsAdmin()` read users.is_admin and got 42501 "permission denied for
+--   table users" on every call, silently failing closed, from when is_admin
+--   was introduced until the grant was applied out-of-band.
+--
+--   Because nothing in managed history grants this column, a fresh replay
+--   reproduces that 42501 instead of production's actual authorization state
+--   — 13/19 MOD1 proof cases in a from-scratch disposable replay failed for
+--   exactly this reason. This migration is the missing prerequisite that
+--   makes fresh-environment replay match production authorization truth.
+--
+-- ORDERING KEY PROVENANCE:
+--   20260818211920 is the UTC timestamp of the first repository commit that
+--   documents this exact grant statement (8650373c, "docs(device-fixes):
+--   Phase B close-out and the SQL packet Sky applies", authored 2026-08-18
+--   14:19:20 -07:00 == 2026-08-18T21:19:20Z), in
+--   design-reviews/device-fixes/2026-08-18/02_FIXPLAN.md, Artifact "A1 —
+--   restore the is_admin column read to the authenticated role":
+--     grant select (is_admin) on public.users to authenticated;
+--   packaged there for Sky's own per-statement apply in the Supabase SQL
+--   editor. It is a stable ordering/provenance key chosen to sort after the
+--   is_admin column's creation (20260603002810) and before the MOD1/MOD1R
+--   moderation series (20260828040000 onward), whose fresh-replay proof runs
+--   depend on this grant already being live. It is NOT a claim that this is
+--   the exact original hosted application timestamp, which is unknown — the
+--   admin.ts source comment separately (and independently) states the grant
+--   "went live 2026-08-18," consistent with, but not the source of, this key.
+--
+-- SAFETY POSTURE: additive only. This grants SELECT on exactly one column
+--   (is_admin) to exactly one role (authenticated). It does not touch anon,
+--   does not grant table-wide SELECT, does not alter any RLS policy, and does
+--   not modify the structure of public.users. The existing authenticated
+--   grant list (id, display_name, avatar_url, points, created_at) is
+--   untouched; Postgres column-privilege grants are additive, so this cannot
+--   regress the 2026-05-27 email-privacy protection.
+--
+-- BLAST RADIUS: NONE. Production already contains this exact object. The
+--   only client reader is src/lib/admin.ts `useIsAdmin()`, which selects the
+--   single is_admin column for the signed-in user's own row.
+-- ============================================================================
+
+grant select (is_admin) on public.users to authenticated;
+
+-- ============================================================================
+-- VERIFY (read-only): expect exactly one row, grantee=authenticated,
+-- column_name=is_admin, privilege_type=SELECT —
+--   select grantee, column_name, privilege_type
+--     from information_schema.column_privileges
+--    where table_schema = 'public' and table_name = 'users'
+--      and column_name = 'is_admin';
+-- Also confirm anon has no row for is_admin in the same query.
+-- ============================================================================
