@@ -186,7 +186,7 @@ create policy "flags insert own" on public.flags for insert to authenticated
 -- ---------------------------------------------------------------------------
 -- 4. The real migrations, applied verbatim, in shipped order.
 -- ---------------------------------------------------------------------------
-\i supabase/migrations/2026-05-23_feedback_table.sql
+\i supabase/migrations/20260524211752_feedback_table.sql
 \i supabase/migrations/20260828040000_mod1_moderation_release_safety.sql
 \i supabase/migrations/20260828050000_mod1_admin_report_queue.sql
 \i supabase/migrations/20260828060000_mod1r_fix1_report_and_insert_authz.sql

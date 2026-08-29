@@ -1,6 +1,20 @@
 -- =============================================================================
 -- D1S-A — deployed security containment
 --
+-- CORRECTED 2026-08-28 (migration-history truth repair): the line below was
+-- accurate as of this file's original 2026-08-27 authoring, but is now
+-- stale and contradicted by read-only catalog evidence. Its effects (RLS +
+-- revokes on all 7 bk_2026_08_22_* backup tables) ARE currently live in the
+-- hosted database (confirmed via read-only pg_class.relrowsecurity = true
+-- for all 7 tables) — applied out-of-band, separately from this file, at
+-- some point after 2026-08-27. This file itself is still NOT RECORDED in
+-- the hosted migration ledger (supabase_migrations.schema_migrations) under
+-- any version, and remains excluded from normal migration execution here in
+-- nonmanaged/. Distinguish: "live in hosted catalog" (true) vs "recorded
+-- applied in the migration ledger" (false, and still not the same claim).
+--
+-- Original line, preserved for provenance (was accurate at authoring time,
+-- now superseded by the above):
 -- LOCAL ARTIFACT ONLY. This migration has not been applied to Supabase.
 --
 -- Scope is intentionally limited to the deployed findings recorded in the
