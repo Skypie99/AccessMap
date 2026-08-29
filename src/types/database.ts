@@ -105,6 +105,13 @@ export type ModerationResolution =
   | 'comment_removed'
   | 'target_unavailable';
 
+// MOD1R FIX2 — mirrors the CHECK constraint's vocabulary in
+// supabase/migrations/20260828080000_mod1r_fix2_action_intent.sql. Written
+// BEFORE a destructive content mutation runs so the fact an action was about
+// to happen survives even a total loss of every post-action write — see the
+// PRE-ACTION INTENT note at the top of src/lib/adminReports.ts.
+export type ContentActionIntent = 'flag_rejected' | 'flag_removed' | 'comment_removed';
+
 export type FeedbackRow = {
   id: string;
   // Nullable so a sign-out-then-feedback flow can still record an
@@ -122,6 +129,10 @@ export type FeedbackRow = {
   moderation_reviewed_at: string | null;
   moderation_reviewed_by: string | null;
   moderation_resolution: ModerationResolution | null;
+  // MOD1R FIX2: set BEFORE the destructive content mutation it names runs,
+  // cleared meaning is derived (never trusted alone) once moderation_resolution
+  // is set — see reconcileActionIntent() in src/lib/adminReports.ts.
+  moderation_action_intent: ContentActionIntent | null;
 };
 
 // One comment on a flag. `display_name` is populated by a PostgREST join
@@ -191,7 +202,12 @@ export type Database = {
         Row: FeedbackRow;
         Insert: Omit<
           FeedbackRow,
-          'id' | 'created_at' | 'moderation_reviewed_at' | 'moderation_reviewed_by' | 'moderation_resolution'
+          | 'id'
+          | 'created_at'
+          | 'moderation_reviewed_at'
+          | 'moderation_reviewed_by'
+          | 'moderation_resolution'
+          | 'moderation_action_intent'
         > & {
           id?: string;
           created_at?: string;
@@ -201,6 +217,7 @@ export type Database = {
           moderation_reviewed_at?: string | null;
           moderation_reviewed_by?: string | null;
           moderation_resolution?: ModerationResolution | null;
+          moderation_action_intent?: ContentActionIntent | null;
         };
         Update: Partial<FeedbackRow>;
         Relationships: EmptyRelationships;

@@ -278,5 +278,78 @@ begin;
   end $$;
 rollback;
 
+-- ===========================================================================
+-- MOD1R FIX2 — pre-action intent (20260828080000)
+-- ===========================================================================
+
+-- 16. admin can write a valid pre-action intent (allowed field, same shape
+--     as test 9's resolution write, run BEFORE any resolution exists).
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = 'aaaaaaaa-0000-0000-0000-000000000001';
+  do $$
+  begin
+    update public.feedback
+      set moderation_action_intent = 'flag_rejected',
+          moderation_reviewed_by = 'aaaaaaaa-0000-0000-0000-000000000001'
+      where id = 'cccccccc-0000-0000-0000-000000000003';
+    if not found then
+      raise exception 'FAIL[16 write intent]: admin update matched zero rows';
+    end if;
+    raise notice 'PASS[16 write intent]: admin can record a pre-action intent';
+  end $$;
+rollback;
+
+-- 17. vocabulary constraint rejects a value outside the fixed intent set,
+--     even for an otherwise-authorized admin write.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = 'aaaaaaaa-0000-0000-0000-000000000001';
+  do $$
+  begin
+    update public.feedback set moderation_action_intent = 'delete_everything'
+      where id = 'cccccccc-0000-0000-0000-000000000003';
+    raise exception 'FAIL[17 intent vocabulary]: an out-of-vocabulary intent was accepted';
+  exception
+    when check_violation then
+      raise notice 'PASS[17 intent vocabulary]: out-of-vocabulary intent rejected';
+  end $$;
+rollback;
+
+-- 18. PENDING CLOSE remains reachable: resolution may be set while
+--     reviewed_at stays null (Checkpoint B, re-proven now that FIX2's
+--     migration runs after it in this harness).
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = 'aaaaaaaa-0000-0000-0000-000000000001';
+  do $$
+  begin
+    update public.feedback
+      set moderation_resolution = 'flag_rejected',
+          moderation_reviewed_by = 'aaaaaaaa-0000-0000-0000-000000000001'
+      where id = 'cccccccc-0000-0000-0000-000000000003';
+    if not found then
+      raise exception 'FAIL[18 pending close]: admin update matched zero rows';
+    end if;
+    raise notice 'PASS[18 pending close]: resolution settable without reviewed_at';
+  end $$;
+rollback;
+
+-- 19. the one direction that must stay impossible: reviewed_at set with no
+--     resolution at all.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = 'aaaaaaaa-0000-0000-0000-000000000001';
+  do $$
+  begin
+    update public.feedback set moderation_reviewed_at = now(), moderation_reviewed_by = 'aaaaaaaa-0000-0000-0000-000000000001'
+      where id = 'cccccccc-0000-0000-0000-000000000003';
+    raise exception 'FAIL[19 review pairing]: reviewed_at was set with resolution still null';
+  exception
+    when check_violation then
+      raise notice 'PASS[19 review pairing]: reviewed_at without resolution still blocked';
+  end $$;
+rollback;
+
 reset role;
-select 'MOD1R FIX1 CHECKPOINT A — ALL 15 PROOF CASES PASSED' as result;
+select 'MOD1R FIX1+FIX2 — ALL 19 PROOF CASES PASSED' as result;

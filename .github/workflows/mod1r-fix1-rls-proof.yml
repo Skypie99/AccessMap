@@ -7,10 +7,17 @@ name: MOD1R FIX1 — RLS/trigger proof
 # proof required before Checkpoint A can be considered closed. Scoped to this
 # one branch on purpose — see supabase/tests/mod1r_fix1/00_baseline.sql for
 # why this is a minimal reconstruction rather than the full schema.
+#
+# MOD1R FIX2 extends the same harness (rather than adding a second one) to
+# also prove its pre-action intent column/constraint/grant — see cases 16-19
+# in supabase/tests/mod1r_fix1/10_proof.sql — so this workflow now also runs
+# on that branch's pushes.
 
 on:
   push:
-    branches: [claude/mod1r-fix1-acceptance-20260828]
+    branches:
+      - claude/mod1r-fix1-acceptance-20260828
+      - claude/mod1r-fix2-retry-durability-20260828
   workflow_dispatch: {}
 
 permissions:

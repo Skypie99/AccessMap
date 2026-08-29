@@ -252,7 +252,7 @@ describe('closeReport — the single writer, and its idempotence guard', () => {
 });
 
 describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering', () => {
-  it('rejects the flag, THEN closes the report — content action first', async () => {
+  it('rejects the flag, THEN closes the report — content action strictly between the pre-action intent write and either post-action write', async () => {
     const callOrder: string[] = [];
     mockUpdateFlagStatus.mockImplementation(async () => {
       callOrder.push('updateFlagStatus');
@@ -270,26 +270,33 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
     });
 
     expect(result).toEqual({ closed: true });
-    // updateFlagStatus, then markPendingResolution ('feedback'), then the
-    // close write itself ('feedback') — content action strictly before
-    // either feedback write, per the locked ordering.
-    expect(callOrder).toEqual(['updateFlagStatus', 'feedback', 'feedback']);
+    // markActionIntent ('feedback'), then updateFlagStatus, then
+    // markPendingResolution ('feedback'), then the close write itself
+    // ('feedback').
+    expect(callOrder).toEqual(['feedback', 'updateFlagStatus', 'feedback', 'feedback']);
     expect(mockUpdateFlagStatus).toHaveBeenCalledWith('flag-1', 'rejected', 'open');
   });
 
   it('never closes the report when the reject itself fails — report stays open for a full retry', async () => {
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null })); // pre-action intent write succeeds
     mockUpdateFlagStatus.mockRejectedValue(new Error('RLS denied'));
 
     await expect(
       rejectFlagReport({ reportId: 'report-1', flagId: 'flag-1', previousFlagStatus: 'open', reviewedBy: 'admin-1' }),
     ).rejects.toThrow('RLS denied');
 
-    expect(mockFeedbackFrom).not.toHaveBeenCalled();
+    expect(mockFeedbackFrom).toHaveBeenCalledTimes(1); // only the pre-action intent write
   });
 
   it('reject succeeds but the close write fails every retry: says so, does not throw, and never re-rejects', async () => {
     mockUpdateFlagStatus.mockResolvedValue(undefined);
-    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: { message: 'timeout' } }));
+    let call = 0;
+    mockFeedbackFrom.mockImplementation(() => {
+      call += 1;
+      return call === 1
+        ? queryBuilder({ data: null, error: null }) // markActionIntent
+        : queryBuilder({ data: null, error: { message: 'timeout' } }); // markPendingResolution + every close attempt
+    });
 
     const result = await rejectFlagReport({
       reportId: 'report-1',
@@ -300,8 +307,8 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
 
     expect(result).toEqual({ closed: false, closeError: 'timeout', resolution: 'flag_rejected' });
     expect(mockUpdateFlagStatus).toHaveBeenCalledTimes(1); // the destructive step is never repeated
-    // 1 markPendingResolution write + 3 close attempts, all against 'feedback'.
-    expect(mockFeedbackFrom).toHaveBeenCalledTimes(4);
+    // 1 intent write + 1 markPendingResolution write + 3 close attempts.
+    expect(mockFeedbackFrom).toHaveBeenCalledTimes(5);
   });
 
   it('reject succeeds and the close write recovers on a later attempt — one destructive call, one visible success', async () => {
@@ -309,7 +316,8 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
     let call = 0;
     mockFeedbackFrom.mockImplementation(() => {
       call += 1;
-      return call < 3
+      if (call === 1) return queryBuilder({ data: null, error: null }); // markActionIntent
+      return call < 4
         ? queryBuilder({ data: null, error: { message: 'timeout' } })
         : queryBuilder({ data: null, error: null });
     });
@@ -323,9 +331,10 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
 
     expect(result).toEqual({ closed: true });
     expect(mockUpdateFlagStatus).toHaveBeenCalledTimes(1);
-    // call 1 = markPendingResolution (also fails, harmlessly); calls 2-3 =
-    // retryClose's own attempts, the second of which recovers.
-    expect(mockFeedbackFrom).toHaveBeenCalledTimes(3);
+    // call 1 = markActionIntent; call 2 = markPendingResolution (also fails,
+    // harmlessly); calls 3-4 = retryClose's own attempts, the second of
+    // which recovers.
+    expect(mockFeedbackFrom).toHaveBeenCalledTimes(4);
   });
 
   it('removeFlagReport deletes via the canonical deleteFlag(), then closes as flag_removed', async () => {
@@ -337,15 +346,17 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
 
     expect(result).toEqual({ closed: true });
     expect(mockDeleteFlag).toHaveBeenCalledWith('flag-1');
+    expect(builder.update).toHaveBeenCalledWith(expect.objectContaining({ moderation_action_intent: 'flag_removed' }));
     expect(builder.update).toHaveBeenCalledWith(expect.objectContaining({ moderation_resolution: 'flag_removed' }));
   });
 
   it('removeFlagReport never closes the report when deleteFlag fails', async () => {
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null })); // pre-action intent write succeeds
     mockDeleteFlag.mockRejectedValue(new Error('not found'));
     await expect(
       removeFlagReport({ reportId: 'report-1', flagId: 'flag-1', reviewedBy: 'admin-1' }),
     ).rejects.toThrow('not found');
-    expect(mockFeedbackFrom).not.toHaveBeenCalled();
+    expect(mockFeedbackFrom).toHaveBeenCalledTimes(1); // only the pre-action intent write
   });
 
   it('removeCommentReport deletes via the canonical deleteComment(), then closes as comment_removed', async () => {
@@ -367,11 +378,12 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
 
   it('removeCommentReport never closes the report when deleteComment fails', async () => {
     mockFetchCommentsByIds.mockResolvedValue([COMMENT]); // still exists
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null })); // pre-action intent write succeeds
     mockDeleteComment.mockRejectedValue(new Error('already gone'));
     await expect(
       removeCommentReport({ reportId: 'report-1', commentId: 'comment-1', reviewedBy: 'admin-1' }),
     ).rejects.toThrow('already gone');
-    expect(mockFeedbackFrom).not.toHaveBeenCalled();
+    expect(mockFeedbackFrom).toHaveBeenCalledTimes(1); // only the pre-action intent write
   });
 
   it('removeCommentReport closes as target_unavailable — without calling deleteComment — when the comment is already gone', async () => {
@@ -405,8 +417,8 @@ describe('MOD1R FIX1 — pending close: a second press never repeats the content
     let call = 0;
     mockFeedbackFrom.mockImplementation(() => {
       call += 1;
-      return call === 1
-        ? queryBuilder({ data: null, error: null }) // markPendingResolution
+      return call <= 2
+        ? queryBuilder({ data: null, error: null }) // markActionIntent, then markPendingResolution
         : queryBuilder({ data: null, error: { message: 'timeout' } }); // every closeReport attempt
     });
   }
@@ -491,5 +503,248 @@ describe('MOD1R FIX1 — pending close: a second press never repeats the content
 
     expect(report.reviewedAt).toBeNull();
     expect(report.resolution).toBe('flag_rejected');
+  });
+});
+
+describe('MOD1R FIX2 — pre-action intent gates the destructive action', () => {
+  it('rejectFlagReport: never calls updateFlagStatus when the pre-action intent write fails', async () => {
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: { message: 'network blip' } }));
+
+    await expect(
+      rejectFlagReport({ reportId: 'report-1', flagId: 'flag-1', previousFlagStatus: 'open', reviewedBy: 'admin-1' }),
+    ).rejects.toThrow('network blip');
+
+    expect(mockUpdateFlagStatus).not.toHaveBeenCalled();
+  });
+
+  it('removeFlagReport: never calls deleteFlag when the pre-action intent write fails', async () => {
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: { message: 'network blip' } }));
+
+    await expect(
+      removeFlagReport({ reportId: 'report-1', flagId: 'flag-1', reviewedBy: 'admin-1' }),
+    ).rejects.toThrow('network blip');
+
+    expect(mockDeleteFlag).not.toHaveBeenCalled();
+  });
+
+  it('removeCommentReport: never calls deleteComment when the pre-action intent write fails (target still present)', async () => {
+    mockFetchCommentsByIds.mockResolvedValue([COMMENT]); // still exists — takes the destructive path
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: { message: 'network blip' } }));
+
+    await expect(
+      removeCommentReport({ reportId: 'report-1', commentId: 'comment-1', reviewedBy: 'admin-1' }),
+    ).rejects.toThrow('network blip');
+
+    expect(mockDeleteComment).not.toHaveBeenCalled();
+  });
+});
+
+describe('MOD1R FIX2 — surviving total post-action write loss (the bug this fix repairs)', () => {
+  // The exact failure this task exists to close: the content action
+  // succeeds, but BOTH markPendingResolution() and every close retry then
+  // also fail (same outage, worse luck) — moderation_resolution is left
+  // null, same as an untouched report. Only moderation_action_intent (this
+  // fix's pre-action write) survives. A full reload — a fresh
+  // listOpenReports() call with no memory of this session — must still
+  // recover the true outcome from the live target.
+  function failEveryPostActionWrite() {
+    let call = 0;
+    mockFeedbackFrom.mockImplementation(() => {
+      call += 1;
+      return call === 1
+        ? queryBuilder({ data: null, error: null }) // markActionIntent — the one write that survives
+        : queryBuilder({ data: null, error: { message: 'outage' } }); // markPendingResolution + every close attempt
+    });
+  }
+
+  it('flag reject: content action succeeds, every durable write after it is lost, reload still recovers flag_rejected and never re-offers Reject', async () => {
+    mockUpdateFlagStatus.mockResolvedValue(undefined);
+    failEveryPostActionWrite();
+
+    const inSession = await rejectFlagReport({
+      reportId: 'report-1',
+      flagId: 'flag-1',
+      previousFlagStatus: 'open',
+      reviewedBy: 'admin-1',
+    });
+    expect(inSession).toEqual({ closed: false, closeError: 'outage', resolution: 'flag_rejected' });
+    expect(mockUpdateFlagStatus).toHaveBeenCalledTimes(1); // the destructive step ran exactly once
+
+    // Reload: a brand-new listOpenReports() call, no in-memory state carried
+    // over. The DB truthfully has resolution=null (every post-action write
+    // failed) but moderation_action_intent='flag_rejected' survived, and the
+    // flag itself really is 'rejected' now.
+    mockFeedbackFrom.mockReturnValue(
+      queryBuilder({
+        data: [
+          {
+            id: 'report-1',
+            created_at: '2026-08-20T00:00:00.000Z',
+            body: buildReportBody({ kind: 'flag', id: 'flag-1' }, 'spam'),
+            moderation_reviewed_at: null,
+            moderation_resolution: null,
+            moderation_action_intent: 'flag_rejected',
+          },
+        ],
+        error: null,
+      }),
+    );
+    mockFetchFlagsByIds.mockResolvedValue([{ ...FLAG, status: 'rejected' }]);
+    mockFetchCommentsByIds.mockResolvedValue([]);
+
+    const [reloaded] = await listOpenReports();
+
+    // Original successful resolution is recoverable...
+    expect(reloaded.resolution).toBe('flag_rejected');
+    // ...report is truthfully still open (not silently marked reviewed)...
+    expect(reloaded.reviewedAt).toBeNull();
+    // ...and AdminScreen's pendingResolutionFor() = report.resolution ??
+    // pendingResolutions[id] is now non-null purely from the durable
+    // column, so it renders ONLY the close-only "Finish review" control —
+    // the original Reject/Remove buttons never come back.
+  });
+
+  it('flag remove: content action succeeds, every durable write after it is lost, reload still recovers flag_removed and never re-offers Remove', async () => {
+    mockDeleteFlag.mockResolvedValue(undefined);
+    failEveryPostActionWrite();
+
+    const inSession = await removeFlagReport({ reportId: 'report-1', flagId: 'flag-1', reviewedBy: 'admin-1' });
+    expect(inSession).toEqual({ closed: false, closeError: 'outage', resolution: 'flag_removed' });
+    expect(mockDeleteFlag).toHaveBeenCalledTimes(1);
+
+    mockFeedbackFrom.mockReturnValue(
+      queryBuilder({
+        data: [
+          {
+            id: 'report-1',
+            created_at: '2026-08-20T00:00:00.000Z',
+            body: buildReportBody({ kind: 'flag', id: 'flag-1' }, 'spam'),
+            moderation_reviewed_at: null,
+            moderation_resolution: null,
+            moderation_action_intent: 'flag_removed',
+          },
+        ],
+        error: null,
+      }),
+    );
+    mockFetchFlagsByIds.mockResolvedValue([]); // really deleted
+    mockFetchCommentsByIds.mockResolvedValue([]);
+
+    const [reloaded] = await listOpenReports();
+
+    expect(reloaded.resolution).toBe('flag_removed');
+    expect(reloaded.reviewedAt).toBeNull();
+  });
+
+  it('comment delete: content action succeeds, every durable write after it is lost, reload still recovers comment_removed and never re-offers Delete', async () => {
+    mockFetchCommentsByIds.mockResolvedValueOnce([COMMENT]); // exists at action time
+    mockDeleteComment.mockResolvedValue(undefined);
+    failEveryPostActionWrite();
+
+    const inSession = await removeCommentReport({
+      reportId: 'report-1',
+      commentId: 'comment-1',
+      reviewedBy: 'admin-1',
+    });
+    expect(inSession).toEqual({ closed: false, closeError: 'outage', resolution: 'comment_removed' });
+    expect(mockDeleteComment).toHaveBeenCalledTimes(1);
+
+    mockFeedbackFrom.mockReturnValue(
+      queryBuilder({
+        data: [
+          {
+            id: 'report-1',
+            created_at: '2026-08-20T00:00:00.000Z',
+            body: buildReportBody({ kind: 'comment', id: 'comment-1', flagId: 'flag-1' }, 'harassment'),
+            moderation_reviewed_at: null,
+            moderation_resolution: null,
+            moderation_action_intent: 'comment_removed',
+          },
+        ],
+        error: null,
+      }),
+    );
+    mockFetchFlagsByIds.mockResolvedValue([FLAG]);
+    mockFetchCommentsByIds.mockResolvedValue([]); // really deleted
+
+    const [reloaded] = await listOpenReports();
+
+    expect(reloaded.resolution).toBe('comment_removed');
+    expect(reloaded.reviewedAt).toBeNull();
+  });
+});
+
+describe('MOD1R FIX2 — reconciliation never lies at the boundaries', () => {
+  it('intent recorded but the action never actually ran: target unchanged, so the ORIGINAL action is offered again — never a lie', async () => {
+    mockFeedbackFrom.mockReturnValue(
+      queryBuilder({
+        data: [
+          {
+            id: 'report-1',
+            created_at: '2026-08-20T00:00:00.000Z',
+            body: buildReportBody({ kind: 'flag', id: 'flag-1' }, 'spam'),
+            moderation_reviewed_at: null,
+            moderation_resolution: null,
+            moderation_action_intent: 'flag_rejected',
+          },
+        ],
+        error: null,
+      }),
+    );
+    mockFetchFlagsByIds.mockResolvedValue([FLAG]); // still 'open' — the reject never landed
+    mockFetchCommentsByIds.mockResolvedValue([]);
+
+    const [report] = await listOpenReports();
+
+    expect(report.resolution).toBeNull();
+    expect(report.targetAvailable).toBe(true); // safe to retry rejectFlagReport from scratch
+  });
+
+  it('flag_rejected intent but the flag is entirely gone: genuinely ambiguous — fails closed, no destructive button offered', async () => {
+    mockFeedbackFrom.mockReturnValue(
+      queryBuilder({
+        data: [
+          {
+            id: 'report-1',
+            created_at: '2026-08-20T00:00:00.000Z',
+            body: buildReportBody({ kind: 'flag', id: 'flag-1' }, 'spam'),
+            moderation_reviewed_at: null,
+            moderation_resolution: null,
+            moderation_action_intent: 'flag_rejected',
+          },
+        ],
+        error: null,
+      }),
+    );
+    mockFetchFlagsByIds.mockResolvedValue([]); // can't prove the reject happened before the flag vanished
+    mockFetchCommentsByIds.mockResolvedValue([]);
+
+    const [report] = await listOpenReports();
+
+    // Cannot recover a truthful resolution — stays unresolved rather than
+    // guessing. targetAvailable is already false, so AdminScreen's
+    // targetAvailable gate withholds Reject/Remove regardless; only the
+    // non-destructive target-unavailable/no-action close is ever offered.
+    expect(report.resolution).toBeNull();
+    expect(report.targetAvailable).toBe(false);
+  });
+
+  it('already-missing target before any action is still recorded as target_unavailable, unaffected by intent reconciliation', async () => {
+    mockFetchCommentsByIds.mockResolvedValue([]); // already gone
+    const builder = queryBuilder({ data: null, error: null });
+    mockFeedbackFrom.mockReturnValue(builder);
+
+    const result = await removeCommentReport({
+      reportId: 'report-1',
+      commentId: 'comment-1',
+      reviewedBy: 'admin-1',
+    });
+
+    expect(result).toEqual({ closed: true });
+    expect(mockDeleteComment).not.toHaveBeenCalled();
+    // No content mutation happened, so no intent was ever written for this
+    // path — closeAfterContentAction runs directly with 'target_unavailable'.
+    expect(builder.update).not.toHaveBeenCalledWith(expect.objectContaining({ moderation_action_intent: expect.anything() }));
+    expect(builder.update).toHaveBeenCalledWith(expect.objectContaining({ moderation_resolution: 'target_unavailable' }));
   });
 });

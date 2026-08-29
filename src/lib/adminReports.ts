@@ -22,6 +22,17 @@
 // with resolution set and reviewedAt still null is PENDING CLOSE, never OPEN:
 // the caller must offer only a close-only retry (retryClose), never re-offer
 // the original content actions.
+//
+// PRE-ACTION INTENT (MOD1R FIX2): markPendingResolution() above is
+// best-effort and runs AFTER the content action, so if it (and every close
+// retry) also fails, nothing durable was ever written and a reload sees a
+// report indistinguishable from one never touched — the destructive button
+// returns even though the content action already happened. markActionIntent()
+// closes that gap: it runs and THROWS *before* the content action (so a
+// content action never runs un-tracked — see 20260828080000), then
+// hydrateReports() reconciles any report whose resolution is still null but
+// whose intent is set against the LIVE target (flag status / flag or comment
+// existence) rather than trusting local memory. See reconcileActionIntent().
 import { supabase } from './supabase';
 import { errorMessage } from './errors';
 import { deleteFlag, fetchFlagsByIds, updateFlagStatus } from './flags';
@@ -29,6 +40,11 @@ import { deleteComment, fetchCommentsByIds } from './comments';
 import { parseReportBody, REPORT_BODY_PREFIX } from './reports';
 import type { ReportCategoryId } from './copy';
 import type { CommentRow, FlagRow, FlagStatus, ModerationResolution } from '@/types/database';
+
+/** The subset of ModerationResolution that names an actual destructive
+ *  content mutation — 'no_action' and 'target_unavailable' never mutate
+ *  content, so there is nothing for a pre-action intent to protect. */
+export type ContentActionIntent = 'flag_rejected' | 'flag_removed' | 'comment_removed';
 
 export type AdminReport = {
   id: string;
@@ -60,9 +76,10 @@ type FeedbackReportColumns = {
   body: string;
   moderation_reviewed_at: string | null;
   moderation_resolution: ModerationResolution | null;
+  moderation_action_intent: ContentActionIntent | null;
 };
 
-const REPORT_SELECT = 'id, created_at, body, moderation_reviewed_at, moderation_resolution';
+const REPORT_SELECT = 'id, created_at, body, moderation_reviewed_at, moderation_resolution, moderation_action_intent';
 
 /**
  * Open reports, oldest first (the queue works oldest-first so nothing ages
@@ -138,6 +155,15 @@ async function hydrateReports(rows: FeedbackReportColumns[]): Promise<AdminRepor
     const flag = target.kind === 'flag' ? (flagById.get(target.id) ?? null) : (target.flagId ? (flagById.get(target.flagId) ?? null) : null);
     const comment = target.kind === 'comment' ? (commentById.get(target.id) ?? null) : null;
     const targetAvailable = target.kind === 'flag' ? flag !== null : comment !== null;
+    // MOD1R FIX2 — resolution is the durable source of truth when present
+    // (markPendingResolution already landed). When it's still null but an
+    // intent was recorded, reconcile against the LIVE target we just fetched
+    // instead of trusting nothing: this is what recovers the true outcome
+    // when both the content action's post-write AND every close retry were
+    // lost. See reconcileActionIntent().
+    const resolution =
+      row.moderation_resolution ??
+      reconcileActionIntent(row.moderation_action_intent, target.kind, flag, comment);
     return {
       id: row.id,
       createdAt: row.created_at,
@@ -151,9 +177,46 @@ async function hydrateReports(rows: FeedbackReportColumns[]): Promise<AdminRepor
       comment,
       targetAvailable,
       reviewedAt: row.moderation_reviewed_at,
-      resolution: row.moderation_resolution,
+      resolution,
     } satisfies AdminReport;
   });
+}
+
+/**
+ * Reconciles a PRE-ACTION intent (recorded before a content mutation, see
+ * markActionIntent()) against the target's actual current state, for the
+ * case where neither markPendingResolution() nor any close retry survived.
+ *
+ * Deliberately conservative: it only ever returns a resolution when the live
+ * target PROVES the action happened. Anything else — the action clearly
+ * never ran, or the target's kind doesn't match the intent (shouldn't
+ * happen, but never trust it blindly) — returns null, which leaves the
+ * report OPEN and lets the caller's normal targetAvailable-gated buttons
+ * decide what's safe to offer next. A flag_rejected intent whose flag is now
+ * gone entirely is the one case this can't disambiguate (did the reject
+ * happen and then something else delete the flag, or did the reject never
+ * run before the flag was deleted some other way?) — that's exactly the
+ * "genuinely ambiguous" case the fail-safe requires: it returns null, and
+ * targetAvailable is already false, so no destructive button is offered
+ * either way, only the existing target-unavailable/no-action close path.
+ */
+function reconcileActionIntent(
+  intent: ContentActionIntent | null,
+  targetKind: 'flag' | 'comment',
+  flag: FlagRow | null,
+  comment: CommentRow | null,
+): ModerationResolution | null {
+  if (!intent) return null;
+  switch (intent) {
+    case 'flag_rejected':
+      return targetKind === 'flag' && flag !== null && flag.status === 'rejected' ? 'flag_rejected' : null;
+    case 'flag_removed':
+      return targetKind === 'flag' && flag === null ? 'flag_removed' : null;
+    case 'comment_removed':
+      return targetKind === 'comment' && comment === null ? 'comment_removed' : null;
+    default:
+      return null;
+  }
 }
 
 export type CloseOutcome = { ok: true } | { ok: false; error: string };
@@ -215,6 +278,30 @@ async function markPendingResolution(
 }
 
 /**
+ * Durable PRE-ACTION intent write (MOD1R FIX2) — the one thing that must
+ * land BEFORE a destructive content mutation runs. Unlike
+ * markPendingResolution() this THROWS on failure: per the required
+ * invariant, if this can't persist, the destructive action must not be
+ * attempted at all, so the caller (rejectFlagReport/removeFlagReport/
+ * removeCommentReport) never reaches its content mutation and the report
+ * stays exactly as untouched as any other pre-action failure. Guarded the
+ * same way as every other moderation write — a no-op against an
+ * already-closed report, never a conflicting one.
+ */
+async function markActionIntent(
+  reportId: string,
+  intent: ContentActionIntent,
+  reviewedBy: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('feedback')
+    .update({ moderation_action_intent: intent, moderation_reviewed_by: reviewedBy })
+    .eq('id', reportId)
+    .is('moderation_reviewed_at', null);
+  if (error) throw new Error(errorMessage(error));
+}
+
+/**
  * Retries ONLY the close write (moderation_reviewed_at) — never a content
  * mutation. Used both right after a successful content action
  * (closeAfterContentAction, below) and, standalone, by a later "Finish
@@ -258,13 +345,15 @@ async function closeAfterContentAction(
 
 /** Reject the flag (admin-only at the DB trigger layer — see
  *  20260828040000_mod1_moderation_release_safety.sql), then close the report
- *  as 'flag_rejected'. Throws (report stays open) if the reject itself fails. */
+ *  as 'flag_rejected'. Throws (report stays open) if the pre-action intent
+ *  write or the reject itself fails — in neither case does the reject run. */
 export async function rejectFlagReport(params: {
   reportId: string;
   flagId: string;
   previousFlagStatus: FlagStatus;
   reviewedBy: string;
 }): Promise<ContentActionResult> {
+  await markActionIntent(params.reportId, 'flag_rejected', params.reviewedBy);
   await updateFlagStatus(params.flagId, 'rejected', params.previousFlagStatus);
   return closeAfterContentAction(params.reportId, 'flag_rejected', params.reviewedBy);
 }
@@ -276,6 +365,7 @@ export async function removeFlagReport(params: {
   flagId: string;
   reviewedBy: string;
 }): Promise<ContentActionResult> {
+  await markActionIntent(params.reportId, 'flag_removed', params.reviewedBy);
   await deleteFlag(params.flagId);
   return closeAfterContentAction(params.reportId, 'flag_removed', params.reviewedBy);
 }
@@ -299,6 +389,7 @@ export async function removeCommentReport(params: {
   if (!existing) {
     return closeAfterContentAction(params.reportId, 'target_unavailable', params.reviewedBy);
   }
+  await markActionIntent(params.reportId, 'comment_removed', params.reviewedBy);
   await deleteComment(params.commentId);
   return closeAfterContentAction(params.reportId, 'comment_removed', params.reviewedBy);
 }

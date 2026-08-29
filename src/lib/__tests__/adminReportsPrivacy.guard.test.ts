@@ -30,6 +30,7 @@ describe('MOD1 — the admin report queue never reads reporter identity', () => 
       'body',
       'moderation_reviewed_at',
       'moderation_resolution',
+      'moderation_action_intent',
     ]);
   });
 
