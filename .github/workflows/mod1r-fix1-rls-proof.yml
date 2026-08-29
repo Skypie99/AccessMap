@@ -1,0 +1,58 @@
+name: MOD1R FIX1 — RLS/trigger proof
+
+# Disposable-PostgreSQL proof for the two database-authorization blockers
+# repaired by claude/mod1r-fix1-acceptance-20260828 (report-read authorization,
+# direct INSERT into 'rejected'). No local Docker/Postgres was available for
+# this branch's work, so this ephemeral service container is the executable
+# proof required before Checkpoint A can be considered closed. Scoped to this
+# one branch on purpose — see supabase/tests/mod1r_fix1/00_baseline.sql for
+# why this is a minimal reconstruction rather than the full schema.
+
+on:
+  push:
+    branches: [claude/mod1r-fix1-acceptance-20260828]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  rls-proof:
+    name: Postgres 16 RLS/trigger proof
+    runs-on: ubuntu-latest
+    # Not a real credential: this container is job-local and destroyed at job
+    # end. Generated per-run (rather than a literal) so it isn't a static
+    # guessable value and doesn't read as a hardcoded secret.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure psql client is available
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update && sudo apt-get install -y postgresql-client
+          fi
+          psql --version
+
+      - name: Build harness schema (auth shim + real MOD1/MOD1R policies, verbatim)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/mod1r_fix1/00_baseline.sql
+
+      - name: Run the Checkpoint A proof matrix
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/mod1r_fix1/10_proof.sql
