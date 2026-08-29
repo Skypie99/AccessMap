@@ -351,10 +351,19 @@ no token, clause, or statement was added, removed, or reordered.
 ephemeral `postgres:16` service container via
 `.github/workflows/mod1r-fix1-rls-proof.yml`. No local Docker/Postgres was
 available in this environment (matching that workflow's own documented
-constraint), so the harness was executed via that CI workflow against this
-repair's pushed branch rather than locally. Result recorded in the final
-response to this task, once the branch is pushed and the workflow run
-completes.
+constraint), so the harness was executed via that CI workflow, dispatched
+(`gh workflow run ... --ref claude/migration-map-repair-fix2-20260828`)
+against this repair's pushed branch.
+
+**Result: PASS.** Run
+[33239590999](https://github.com/Skypie99/AccessMap/actions/runs/33239590999),
+job "Postgres 16 RLS/trigger proof", completed successfully in 43s — both
+"Build harness schema (auth shim + real MOD1/MOD1R policies, verbatim)"
+(runs the repaired `00_baseline.sql`, including the corrected
+`\i supabase/migrations/20260524211752_feedback_table.sql` line) and "Run
+the Checkpoint A proof matrix" (`10_proof.sql`, unmodified) succeeded. This
+is a CI-only, ephemeral, job-local Postgres container — no hosted project
+was touched.
 
 ## Confirmations
 
