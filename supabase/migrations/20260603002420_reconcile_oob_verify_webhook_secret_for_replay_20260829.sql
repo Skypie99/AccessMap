@@ -35,10 +35,13 @@
 --   in the CURRENT SAFE production-equivalent state directly — SECURITY
 --   DEFINER + search_path preserved, EXECUTE revoked from PUBLIC/anon/
 --   authenticated, EXECUTE explicitly granted only to service_role — verified
---   2026-08-29 against the live production catalog (pg_proc.proacl showed
---   exactly `{postgres=X/postgres,service_role=X/postgres}`, matching this
---   function body byte-for-byte via pg_get_functiondef). It never passes
---   through the insecure intermediate state, so
+--   2026-08-29 against the live production catalog: pg_proc.proacl showed
+--   exactly `{postgres=X/postgres,service_role=X/postgres}`, and
+--   pg_get_functiondef confirmed the same logic, same signature, SECURITY
+--   DEFINER, and the same search_path (production's def is keyword-case-
+--   normalized by Postgres, not literally byte-identical to this file's
+--   text, but equivalent in behavior). It never passes through the
+--   insecure intermediate state, so
 --   `20260727075547_sr018_verify_webhook_secret_revoke.sql` remains a
 --   harmless no-op revoke on replay, exactly as it already is on production.
 --
