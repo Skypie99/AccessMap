@@ -57,11 +57,23 @@
 grant select (is_admin) on public.users to authenticated;
 
 -- ============================================================================
--- VERIFY (read-only): expect exactly one row, grantee=authenticated,
--- column_name=is_admin, privilege_type=SELECT —
+-- VERIFY (read-only): expect exactly one row (grantee=authenticated,
+-- column_name=is_admin, privilege_type=SELECT). This query is filtered to
+-- privilege_type = 'SELECT' because information_schema.column_privileges
+-- also lists INSERT/UPDATE/REFERENCES for every column of public.users
+-- (inherited from table-level grants elsewhere), which an unfiltered query
+-- would return alongside the SELECT grant this migration adds —
 --   select grantee, column_name, privilege_type
 --     from information_schema.column_privileges
 --    where table_schema = 'public' and table_name = 'users'
---      and column_name = 'is_admin';
--- Also confirm anon has no row for is_admin in the same query.
+--      and column_name = 'is_admin' and grantee = 'authenticated'
+--      and privilege_type = 'SELECT';
+--
+-- Separately, confirm anon has no SELECT grant on is_admin — expect zero
+-- rows —
+--   select grantee, column_name, privilege_type
+--     from information_schema.column_privileges
+--    where table_schema = 'public' and table_name = 'users'
+--      and column_name = 'is_admin' and grantee = 'anon'
+--      and privilege_type = 'SELECT';
 -- ============================================================================
