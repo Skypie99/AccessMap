@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 const migration = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'supabase', 'migrations', '2026-08-27_d1sa_deployed_security_containment.sql'),
+  path.join(__dirname, '..', '..', 'supabase', 'nonmanaged', 'live-out-of-band', '2026-08-27_d1sa_deployed_security_containment.sql'),
   'utf8',
 );
 const executableSql = migration.replace(/^\s*--.*$/gm, '');
