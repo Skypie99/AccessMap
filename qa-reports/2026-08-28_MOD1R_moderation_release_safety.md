@@ -175,17 +175,94 @@ both.
   in `adminReports.ts` had no caller anywhere in the app and was deleted
   before the Checkpoint B commit, rather than left as unused surface area.
 
-### Final gate results (this session, this worktree, HEAD `c820515`)
+### Independent 8-angle adversarial review
+
+Beyond my own re-sweep, I ran an independent code review (8 parallel finder
+agents — line-by-line, removed-behavior audit, cross-file trace, reuse,
+simplification, efficiency, altitude, CLAUDE.md conventions — each verified
+before being trusted) over the full diff from the accepted base to the
+Checkpoint B commit. It found four real, self-verified issues, three of them
+in code this same implementation wrote (not pre-existing), and confirmed the
+authorization design is genuinely DB-enforced rather than a UI bandaid at
+both the flag-trigger and report-RLS layers. **All four were fixed and
+re-verified; the full gate re-ran clean after.**
+
+1. **RLS OR-composition gap (the most significant finding).**
+   `listOpenReports()` relied on the new `feedback_select_moderation` RLS
+   policy alone to scope results to `[REPORT]`-prefixed rows. But Postgres
+   composes multiple *permissive* SELECT policies on one table with OR, and
+   `public.feedback` already had two from before this feature —
+   `feedback_select_own` (a user reading their own past feedback, any
+   category) and `feedback_select_maintainer` (blanket access for one
+   hardcoded email) — neither of which checks admin status or body shape.
+   An admin who had ever submitted ordinary feedback themselves, or who IS
+   the hardcoded maintainer, would see that unrelated content unioned into
+   the Reports queue (mis-rendered as "Unreadable report", since it doesn't
+   parse as a `[REPORT]` envelope). **Fixed** by adding
+   `.like('body', '[REPORT]%')` directly to the query in
+   `src/lib/adminReports.ts` — a defense-in-depth filter that scopes the
+   result regardless of which RLS policy admitted a given row, without
+   touching the pre-existing policies (out of scope, and used by other
+   features). New regression test asserts the filter is present.
+2. **`FlagStatusConflictError` unhandled in the report-action path.** Every
+   other `updateFlagStatus()` caller in the app (`FlagDetailModal`,
+   `TasksScreen`) special-cases this error with a friendly "this changed"
+   message; the new `runReportAction` in `AdminScreen.tsx` did not, so a
+   flag that moved since the queue loaded (or a retry after `closeReport`'s
+   internal 3 attempts were exhausted) surfaced a generic error and left a
+   stale `previousFlagStatus` in place for an identical failing retry.
+   **Fixed** by special-casing it in `runReportAction`'s catch block: a
+   friendlier message, and the queue refetches so any retry starts from
+   the real current state. New test drives this exact path.
+3. **Comment-deletion race could mislabel a resolution.** `deleteComment()`
+   has no row-count check — it "succeeds" whether it deleted a row or
+   matched zero — so if a comment's author deleted it themselves between
+   the queue loading and an admin's tap, `removeCommentReport` would still
+   record `'comment_removed'`, a false claim the vocabulary's
+   `'target_unavailable'` exists specifically to avoid. **Fixed** by
+   checking existence via the already-imported `fetchCommentsByIds` first;
+   closes as `target_unavailable` without calling `deleteComment` at all
+   when the comment is already gone. New test covers both branches.
+4. **The Checkpoint A Dismiss/Restore swap had zero render-test coverage.**
+   Every test in the new `AdminScreen.test.tsx` set the Flags queue's mock
+   to resolve an empty list, so the `item.status === 'rejected' ? Restore :
+   Dismiss` swap — introduced by Checkpoint A, in this same file — was
+   never actually exercised. **Fixed** by adding three tests that render
+   the Flags queue with real flag data and assert both branches of the
+   swap, plus the `updateFlagStatus` call `Restore` makes.
+
+Six further findings were judged real but out of scope for this checkpoint
+and intentionally left unfixed, each for a stated reason: a missing
+`useCallback` on the new report-row renderer and an unconditional
+both-queues reload on every screen focus (genuine efficiency gaps, but the
+proper fix touches handler functions and a lightweight-count-query redesign
+well beyond MOD1's locked contract); `AdminScreen`'s new restore handler
+matches this file's own existing (simpler) error-handling convention rather
+than importing `FlagDetailModal`'s richer one, and its new Reports empty
+state matches this file's own pre-existing Flags empty state rather than
+adopting the shared `EmptyState` component used elsewhere in the app — both
+real inconsistencies *between files*, but not new regressions, and fixing
+them would mean touching pre-existing code unrelated to MOD1's decisions;
+a duplicated async load/error state machine between the two queues (a
+maintainability observation, not a bug); and a `malformed` field on
+`AdminReport` that duplicates the information already in
+`targetKind === null` (a minor derivable-state simplification).
+
+### Final gate results (this session, this worktree, after the independent-review fixes)
 
 | Gate | Result |
 |---|---|
 | `npm run typecheck` | Clean, 0 errors |
 | `npm run lint` | 0 errors, 91 warnings (all pre-existing, none in changed files except one `import/first` warning in `adminReports.test.ts` matching this repo's own established mock-before-import idiom) |
-| `npx jest` (full suite, `.claude/`-worktree ignore-pattern override applied — see Known gaps) | **266/266 suites, 3,903 tests, 3,871 passed + 32 pre-existing todo, 0 failed** |
+| `npx jest` (full suite, `.claude/`-worktree ignore-pattern override applied — see Known gaps) | **266/266 suites, 3,909 tests, 3,877 passed + 32 pre-existing todo, 0 failed** |
 
-No regression survived to the final run. The one regression found
-(WCAG 2.5.3 above) was fixed within the same pass that introduced it, before
-either checkpoint commit.
+No regression survived to the final run. The WCAG 2.5.3 regression was found
+and fixed before Checkpoint B's commit. The four issues the independent
+review found were in already-committed Checkpoint A/B code; each was fixed
+and covered by a new regression test in this Checkpoint C hardening pass,
+committed and pushed separately (see the final commit SHA in the session's
+completion report) rather than by rewriting the earlier checkpoints'
+history.
 
 ## Changed files (12 total, both checkpoints)
 

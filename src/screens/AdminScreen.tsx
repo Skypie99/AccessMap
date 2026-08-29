@@ -36,6 +36,7 @@ import { REPORT_CATEGORIES } from '@/lib/copy';
 import {
   CATEGORY_LABELS,
   deleteFlag,
+  FlagStatusConflictError,
   listRecentFlags,
   updateFlagStatus,
 } from '@/lib/flags';
@@ -170,7 +171,18 @@ export default function AdminScreen() {
             );
           }
         } catch (e) {
-          Alert.alert('Error', errorMessage(e));
+          if (e instanceof FlagStatusConflictError) {
+            // The flag moved since this queue was loaded (someone else
+            // acted on it, or a prior partial-failure retry already
+            // succeeded here). Nothing was mutated by THIS press — refresh
+            // so the report's stale snapshot (and any retry) reflects
+            // reality, instead of a generic error and an unwinnable retry
+            // loop against the old status.
+            Alert.alert('This flag changed', 'It was updated since this queue loaded — refreshing.');
+            void loadReports();
+          } else {
+            Alert.alert('Error', errorMessage(e));
+          }
         } finally {
           setReportsActioningId(null);
         }
@@ -178,7 +190,7 @@ export default function AdminScreen() {
         reportsActioningRef.current.delete(report.id);
       }
     },
-    [],
+    [loadReports],
   );
 
   const closeDirectly = (resolution: 'no_action' | 'target_unavailable', reviewedBy: string, reportId: string) =>

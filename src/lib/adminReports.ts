@@ -17,7 +17,7 @@ import { supabase } from './supabase';
 import { errorMessage } from './errors';
 import { deleteFlag, fetchFlagsByIds, updateFlagStatus } from './flags';
 import { deleteComment, fetchCommentsByIds } from './comments';
-import { parseReportBody } from './reports';
+import { parseReportBody, REPORT_BODY_PREFIX } from './reports';
 import type { ReportCategoryId } from './copy';
 import type { CommentRow, FlagRow, FlagStatus, ModerationResolution } from '@/types/database';
 
@@ -57,16 +57,28 @@ const REPORT_SELECT = 'id, created_at, body, moderation_reviewed_at, moderation_
 
 /**
  * Open reports, oldest first (the queue works oldest-first so nothing ages
- * out of sight). Scoped server-side to '[REPORT]'-prefixed rows via RLS
- * ("feedback_select_moderation") — this query does not additionally filter
- * by body prefix because a row that starts with '[REPORT]' but fails to
- * fully parse must still come back (as `malformed: true`), not be excluded.
+ * out of sight).
+ *
+ * The `.like('body', ...)` filter here is NOT redundant with the
+ * "feedback_select_moderation" RLS policy's own body-prefix check — it's
+ * defense against a real gap the RLS policy can't close by itself. Postgres
+ * combines multiple PERMISSIVE SELECT policies on one table with OR, and
+ * `public.feedback` already had two: "feedback_select_own" (a user reading
+ * their OWN past feedback, any category, no admin/report-shape check) and
+ * "feedback_select_maintainer" (blanket access for one hardcoded email). If
+ * the calling admin has ever submitted ordinary feedback themselves, or IS
+ * that hardcoded maintainer, rows from those OTHER policies are unioned into
+ * the result too — every one of them with `moderation_reviewed_at IS NULL`
+ * (the column is brand new), so the `.is(...)` filter doesn't exclude them
+ * either. Filtering by prefix here, in the query itself, is what actually
+ * keeps this queue to reports regardless of which policy admitted a row.
  */
 export async function listOpenReports(limit = 100): Promise<AdminReport[]> {
   const { data, error } = await supabase
     .from('feedback')
     .select(REPORT_SELECT)
     .is('moderation_reviewed_at', null)
+    .like('body', `${REPORT_BODY_PREFIX}%`)
     .order('created_at', { ascending: true })
     .limit(limit);
   if (error) throw new Error(errorMessage(error));
@@ -215,12 +227,22 @@ export async function removeFlagReport(params: {
 /** Delete the comment via the canonical deleteComment() route (RLS already
  *  grants admins delete on any comment — see "admin delete any comment" in
  *  supabase/migrations/2026-08-27_d1f4_async_account_deletion.sql), then
- *  close the report as 'comment_removed'. */
+ *  close the report as 'comment_removed'.
+ *
+ *  Checks existence FIRST: deleteComment() is a bare `.delete().eq('id',
+ *  ...)` with no row-count check, so it "succeeds" whether it deleted a row
+ *  or matched zero — a comment already deleted by its author between the
+ *  queue loading and this action would otherwise get recorded as
+ *  'comment_removed' when this admin action removed nothing. */
 export async function removeCommentReport(params: {
   reportId: string;
   commentId: string;
   reviewedBy: string;
 }): Promise<ContentActionResult> {
+  const [existing] = await fetchCommentsByIds([params.commentId]);
+  if (!existing) {
+    return closeAfterContentAction(params.reportId, 'target_unavailable', params.reviewedBy);
+  }
   await deleteComment(params.commentId);
   return closeAfterContentAction(params.reportId, 'comment_removed', params.reviewedBy);
 }

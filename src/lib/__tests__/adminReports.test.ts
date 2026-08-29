@@ -52,7 +52,7 @@ import {
 function queryBuilder(result: { data?: unknown; error?: unknown }) {
   const builder: Record<string, unknown> = {};
   const chain = jest.fn(() => builder);
-  for (const method of ['select', 'is', 'in', 'order', 'limit', 'update', 'eq']) {
+  for (const method of ['select', 'is', 'in', 'like', 'order', 'limit', 'update', 'eq']) {
     builder[method] = chain;
   }
   (builder as { then: PromiseLike<unknown>['then'] }).then = (resolve, reject) =>
@@ -201,6 +201,23 @@ describe('listOpenReports — hydration', () => {
     mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: { message: 'boom' } }));
     await expect(listOpenReports()).rejects.toThrow('boom');
   });
+
+  it("filters to '[REPORT]'-prefixed bodies in the query itself, not only via RLS", async () => {
+    // public.feedback has two OTHER permissive SELECT policies pre-dating
+    // this feature (feedback_select_own, feedback_select_maintainer) that
+    // Postgres composes with the new one via OR — neither checks is_admin or
+    // the body prefix. An admin who has ever submitted ordinary feedback (or
+    // who IS the hardcoded maintainer) would otherwise see their own
+    // unrelated feedback rows unioned into this result. This query-level
+    // filter is what actually keeps the queue to reports regardless of
+    // which RLS policy admitted a row.
+    const builder = queryBuilder({ data: [], error: null });
+    mockFeedbackFrom.mockReturnValue(builder);
+
+    await listOpenReports();
+
+    expect(builder.like).toHaveBeenCalledWith('body', '[REPORT]%');
+  });
 });
 
 describe('closeReport — the single writer, and its idempotence guard', () => {
@@ -325,6 +342,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
   });
 
   it('removeCommentReport deletes via the canonical deleteComment(), then closes as comment_removed', async () => {
+    mockFetchCommentsByIds.mockResolvedValue([COMMENT]); // still exists
     mockDeleteComment.mockResolvedValue(undefined);
     const builder = queryBuilder({ data: null, error: null });
     mockFeedbackFrom.mockReturnValue(builder);
@@ -341,10 +359,31 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
   });
 
   it('removeCommentReport never closes the report when deleteComment fails', async () => {
+    mockFetchCommentsByIds.mockResolvedValue([COMMENT]); // still exists
     mockDeleteComment.mockRejectedValue(new Error('already gone'));
     await expect(
       removeCommentReport({ reportId: 'report-1', commentId: 'comment-1', reviewedBy: 'admin-1' }),
     ).rejects.toThrow('already gone');
     expect(mockFeedbackFrom).not.toHaveBeenCalled();
+  });
+
+  it('removeCommentReport closes as target_unavailable — without calling deleteComment — when the comment is already gone', async () => {
+    // The race this guards: the comment's author deletes it themselves
+    // between the queue loading and the admin's tap. deleteComment() has no
+    // row-count check (see src/lib/comments.ts), so calling it here would
+    // "succeed" having deleted nothing and wrongly record comment_removed.
+    mockFetchCommentsByIds.mockResolvedValue([]); // already gone
+    const builder = queryBuilder({ data: null, error: null });
+    mockFeedbackFrom.mockReturnValue(builder);
+
+    const result = await removeCommentReport({
+      reportId: 'report-1',
+      commentId: 'comment-1',
+      reviewedBy: 'admin-1',
+    });
+
+    expect(result).toEqual({ closed: true });
+    expect(mockDeleteComment).not.toHaveBeenCalled();
+    expect(builder.update).toHaveBeenCalledWith(expect.objectContaining({ moderation_resolution: 'target_unavailable' }));
   });
 });

@@ -6,9 +6,13 @@
  * kind / availability / malformed-ness.
  */
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import type { FlagRow, CommentRow } from '@/types/database';
 import type { AdminReport } from '@/lib/adminReports';
+// The real class — @/lib/flags is NOT mocked in this file, so `instanceof`
+// checks in AdminScreen.tsx against this same import resolve correctly.
+import { FlagStatusConflictError } from '@/lib/flags';
 import AdminScreen from '../AdminScreen';
 
 jest.mock('expo-blur', () => {
@@ -150,6 +154,41 @@ describe('AdminScreen — access gate (unchanged)', () => {
   });
 });
 
+describe('AdminScreen — MOD1 Flags queue: the Dismiss/Restore swap', () => {
+  it('a non-rejected flag shows Dismiss, not Restore', async () => {
+    mockListRecentFlags.mockResolvedValue([FLAG]); // status: 'open'
+    const { findByText, queryByText } = render(<AdminScreen />);
+
+    expect(await findByText('Dismiss')).toBeTruthy();
+    expect(queryByText('Restore')).toBeNull();
+  });
+
+  it('a rejected flag shows Restore, not Dismiss', async () => {
+    const rejectedFlag = { ...FLAG, status: 'rejected' } as FlagRow;
+    mockListRecentFlags.mockResolvedValue([rejectedFlag]);
+    const { findByText, queryByText } = render(<AdminScreen />);
+
+    expect(await findByText('Restore')).toBeTruthy();
+    expect(queryByText('Dismiss')).toBeNull();
+  });
+
+  it('pressing Restore calls updateFlagStatus(id, "open", "rejected") and removes the busy row correctly', async () => {
+    const rejectedFlag = { ...FLAG, status: 'rejected' } as FlagRow;
+    mockListRecentFlags.mockResolvedValue([rejectedFlag]);
+    mockUpdateFlagStatus.mockResolvedValue(undefined);
+    const { findByText, getByText } = render(<AdminScreen />);
+    await findByText('Restore');
+
+    await act(async () => {
+      fireEvent.press(getByText('Restore'));
+    });
+
+    await waitFor(() =>
+      expect(mockUpdateFlagStatus).toHaveBeenCalledWith('flag-1', 'open', 'rejected'),
+    );
+  });
+});
+
 describe('AdminScreen — MOD1 Flags/Reports toggle', () => {
   it('defaults to the Flags queue and can switch to Reports', async () => {
     mockListOpenReports.mockResolvedValue([flagReport()]);
@@ -195,6 +234,38 @@ describe('AdminScreen — MOD1 report actions, gated by target kind and availabi
       reviewedBy: 'admin-1',
     }));
     await waitFor(() => expect(queryByText('This looks fake')).toBeNull());
+  });
+
+  it('a stale flag status (FlagStatusConflictError) shows a friendly message and refreshes the queue, not a generic error', async () => {
+    // Reachable two ways: someone else acted on the flag since this queue
+    // loaded, OR a prior partial-failure retry already applied THIS reject
+    // and the admin pressed the same button again. Either way there's
+    // nothing new to mutate — the fix is to refresh, not to error out.
+    mockListOpenReports
+      .mockResolvedValueOnce([flagReport()])
+      .mockResolvedValueOnce([]); // the refresh after the conflict finds it already handled
+    mockRejectFlagReport.mockRejectedValue(new FlagStatusConflictError());
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { findByText, getByText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText(/^Reports/));
+    await findByText('This looks fake');
+
+    await act(async () => {
+      fireEvent.press(getByText('Reject flag'));
+    });
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        'This flag changed',
+        expect.stringContaining('refreshing'),
+      ),
+    );
+    expect(alertSpy).not.toHaveBeenCalledWith('Error', expect.anything());
+    // The refresh actually ran — a second listOpenReports call — rather than
+    // leaving the stale report sitting there for an identical failed retry.
+    await waitFor(() => expect(mockListOpenReports).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(queryByText('This looks fake')).toBeNull());
+    alertSpy.mockRestore();
   });
 
   it('a comment report offers Delete comment, not the flag actions', async () => {
