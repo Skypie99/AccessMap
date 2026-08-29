@@ -4,6 +4,7 @@ import { PlatformPressable } from '@react-navigation/elements';
 import { type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { hapticSelection } from '@/lib/haptics';
 import { decorativeProps } from '@/lib/accessibility';
+import { radius, spacing } from '@/theme';
 import {
   FLOATING_TAB_BAR_CAPSULE_HEIGHT,
   FLOATING_TAB_BAR_CAPSULE_RADIUS,
@@ -41,6 +42,14 @@ import {
  *
  * Extracted from RootNavigator so it can be unit-tested in isolation without
  * pulling the whole screen/provider graph.
+ *
+ * VP1 (2026-08-29): the selected tab also wears a soft rounded wash behind its
+ * icon+label, sized to the content rather than the full segment, so selection
+ * reads at a glance without adding a second loud signal next to the existing
+ * underline. Reuses `color.glassSelectedTint` — the same selection-wash token
+ * already shipped on Tasks rows and the report-flag option list — instead of
+ * `shadow.glowBrand`, which DESIGN.md §5/§12 reserves for Prominent brand/
+ * reward surfaces and explicitly says must never signal state.
  */
 interface TabBarButtonProps extends BottomTabBarButtonProps {
   /** Decorative divider after this segment (Home and Tasks only). */
@@ -51,6 +60,8 @@ interface TabBarButtonProps extends BottomTabBarButtonProps {
   dividerInk?: string;
   /** Clips only an outside selected edge to the liquid-glass capsule. */
   capsuleEdge?: FloatingTabBarCapsuleEdge;
+  /** Selection wash behind the active tab's icon+label (color.glassSelectedTint). */
+  selectedFill?: string;
 }
 
 export function TabBarButton({
@@ -61,11 +72,20 @@ export function TabBarButton({
   activeInk,
   dividerInk,
   capsuleEdge,
+  selectedFill,
   ...rest
 }: TabBarButtonProps) {
   const selected = rest['aria-selected'] === true || rest.accessibilityState?.selected === true;
   return (
     <View style={[styles.segment, style]}>
+      {selected ? (
+        <View
+          pointerEvents="none"
+          style={[styles.selectedFill, selectedFill ? { backgroundColor: selectedFill } : null]}
+          {...decorativeProps}
+          testID="tab-segment-fill"
+        />
+      ) : null}
       <PlatformPressable
         {...rest}
         style={styles.pressable}
@@ -119,6 +139,16 @@ const styles = StyleSheet.create({
     right: 0,
     width: 0,
     borderRightWidth: StyleSheet.hairlineWidth,
+  },
+  // Hugs the icon+label content (not the full segment) so the wash reads as a
+  // soft chip behind the active tab rather than a full-height highlight band.
+  selectedFill: {
+    position: 'absolute',
+    left: spacing.xs,
+    right: spacing.xs,
+    top: spacing.xs,
+    bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + spacing.sm,
+    borderRadius: radius.lg,
   },
   // The tab item's bottom sits one control-padding above the capsule edge.
   // Extending this mask into that padding aligns its rounded outer corner with

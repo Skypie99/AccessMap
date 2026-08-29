@@ -386,6 +386,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
             {...props}
             activeInk={activeTabInk}
             dividerInk={color.navBorder}
+            selectedFill={color.glassSelectedTint}
             showDivider={route.name === 'Home' || route.name === 'Tasks'}
             capsuleEdge={
               usesLiquidTabBar

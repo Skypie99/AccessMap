@@ -150,4 +150,18 @@ describe('TabBarButton — a11y + press vocabulary', () => {
     const { queryByTestId } = renderTab({ 'aria-selected': false });
     expect(queryByTestId('tab-segment-underline')).toBeNull();
   });
+
+  it('VP1: draws a decorative selection wash behind the selected tab, hugging its content', () => {
+    const { UNSAFE_getByProps } = renderTab({ 'aria-selected': true, selectedFill: '#112233' });
+    const fill = UNSAFE_getByProps({ testID: 'tab-segment-fill' });
+    expect(fill.props.accessibilityElementsHidden).toBe(true);
+    expect(StyleSheet.flatten(fill.props.style)).toMatchObject({
+      backgroundColor: '#112233',
+    });
+  });
+
+  it('VP1: does not render the selection wash for an unselected tab', () => {
+    const { queryByTestId } = renderTab({ 'aria-selected': false, selectedFill: '#112233' });
+    expect(queryByTestId('tab-segment-fill')).toBeNull();
+  });
 });
