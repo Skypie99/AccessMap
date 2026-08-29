@@ -222,6 +222,20 @@ supabase/migrations/20260828050000_mod1_admin_report_queue.sql        | 119 (new
   task) — both migration files are source-only. Hosted Supabase, Storage,
   and Auth were not touched by this session in any way; no MCP call to any
   Supabase project-management tool was made.
+- **A manual retry after a rare partial failure surfaces a generic error,
+  though it stays safe.** If `closeReport`'s 3 internal attempts are *all*
+  exhausted (transient failure that outlasts ~3 round-trips) and an admin
+  presses the same action button again, the composite function re-runs the
+  content mutation with the stale pre-action status it still has in local
+  state. For `rejectFlagReport` specifically, the flag's status trigger CAS
+  (F53, pre-existing) will then reject the second write as a conflict — so
+  the flag is never double-mutated and nothing incorrect is stored, but the
+  admin sees a generic conflict error rather than a "this was already
+  handled, just retrying the close" message. I judged this an acceptable
+  residual rough edge (the safety property holds; only the error copy is
+  imprecise) rather than something to fix by adding a refetch-after-partial-
+  failure path, given how rare hitting it requires two independent failures
+  in sequence.
 - **No AdminReports UI polish pass** — the Reports queue is functionally
   complete (every locked requirement has a control and a code path) but has
   not been visually reviewed against the app's Design Compiler / luxury-UI
