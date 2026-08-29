@@ -1,0 +1,226 @@
+// MOD1 — the admin moderation queue over the EXISTING [REPORT] envelope
+// (src/lib/reports.ts). No second reporting backend: this file only reads
+// public.feedback rows that already look like reports, and writes only the
+// moderation_reviewed_at / moderation_reviewed_by / moderation_resolution
+// columns added by supabase/migrations/20260828050000_mod1_admin_report_queue.sql.
+//
+// RELEASE-SAFETY ORDERING (locked decision, do not reorder): every action
+// that touches content (reject/remove a flag, delete a comment) performs
+// that write FIRST and only calls closeReport() after it succeeds. If the
+// content write throws, this module throws too and the report is untouched
+// — the caller's whole action is safe to retry from scratch. If the content
+// write succeeds but closeReport() fails (network blip, etc.), the
+// composite functions below return `{ closed: false, closeError }` instead
+// of throwing, specifically so the caller does NOT repeat the now-already-
+// applied destructive action — it should retry with closeReport() alone.
+import { supabase } from './supabase';
+import { errorMessage } from './errors';
+import { deleteFlag, fetchFlagsByIds, updateFlagStatus } from './flags';
+import { deleteComment, fetchCommentsByIds } from './comments';
+import { parseReportBody } from './reports';
+import type { ReportCategoryId } from './copy';
+import type { CommentRow, FlagRow, FlagStatus, ModerationResolution } from '@/types/database';
+
+export type AdminReport = {
+  id: string;
+  createdAt: string;
+  reason: string;
+  category?: ReportCategoryId;
+  /** true when the body starts with '[REPORT]' but parseReportBody() could
+   *  not read it — surfaced, never silently dropped. */
+  malformed: boolean;
+  rawBody: string;
+  targetKind: 'flag' | 'comment' | null;
+  targetId: string | null;
+  /** The reported flag itself (kind 'flag'), or the parent flag of a
+   *  reported comment (kind 'comment', for context) — null if that flag no
+   *  longer exists (or, for a malformed row, unknown). */
+  flag: FlagRow | null;
+  /** The reported comment (kind 'comment' only) — null if it was already
+   *  deleted (or the row doesn't concern a comment). */
+  comment: CommentRow | null;
+  /** false when the thing this report is about is already gone. */
+  targetAvailable: boolean;
+  reviewedAt: string | null;
+  resolution: ModerationResolution | null;
+};
+
+type FeedbackReportColumns = {
+  id: string;
+  created_at: string;
+  body: string;
+  moderation_reviewed_at: string | null;
+  moderation_resolution: ModerationResolution | null;
+};
+
+const REPORT_SELECT = 'id, created_at, body, moderation_reviewed_at, moderation_resolution';
+
+/**
+ * Open reports, oldest first (the queue works oldest-first so nothing ages
+ * out of sight). Scoped server-side to '[REPORT]'-prefixed rows via RLS
+ * ("feedback_select_moderation") — this query does not additionally filter
+ * by body prefix because a row that starts with '[REPORT]' but fails to
+ * fully parse must still come back (as `malformed: true`), not be excluded.
+ */
+export async function listOpenReports(limit = 100): Promise<AdminReport[]> {
+  const { data, error } = await supabase
+    .from('feedback')
+    .select(REPORT_SELECT)
+    .is('moderation_reviewed_at', null)
+    .order('created_at', { ascending: true })
+    .limit(limit);
+  if (error) throw new Error(errorMessage(error));
+  return hydrateReports((data ?? []) as FeedbackReportColumns[]);
+}
+
+async function hydrateReports(rows: FeedbackReportColumns[]): Promise<AdminReport[]> {
+  const parsedRows = rows.map((row) => ({ row, parsed: parseReportBody(row.body) }));
+
+  // One batched fetch per target table instead of N+1 — every flag id we'll
+  // need (a reported flag directly, or a reported comment's parent flag for
+  // context) and every comment id, gathered up front.
+  const flagIds = new Set<string>();
+  const commentIds = new Set<string>();
+  for (const { parsed } of parsedRows) {
+    if (!parsed) continue;
+    if (parsed.target.kind === 'flag') flagIds.add(parsed.target.id);
+    if (parsed.target.kind === 'comment') {
+      commentIds.add(parsed.target.id);
+      if (parsed.target.flagId) flagIds.add(parsed.target.flagId);
+    }
+  }
+  const [flags, comments] = await Promise.all([
+    fetchFlagsByIds([...flagIds]),
+    fetchCommentsByIds([...commentIds]),
+  ]);
+  const flagById = new Map(flags.map((f) => [f.id, f]));
+  const commentById = new Map(comments.map((c) => [c.id, c]));
+
+  return parsedRows.map(({ row, parsed }) => {
+    if (!parsed) {
+      return {
+        id: row.id,
+        createdAt: row.created_at,
+        reason: '',
+        malformed: true,
+        rawBody: row.body,
+        targetKind: null,
+        targetId: null,
+        flag: null,
+        comment: null,
+        targetAvailable: false,
+        reviewedAt: row.moderation_reviewed_at,
+        resolution: row.moderation_resolution,
+      } satisfies AdminReport;
+    }
+    const { target } = parsed;
+    const flag = target.kind === 'flag' ? (flagById.get(target.id) ?? null) : (target.flagId ? (flagById.get(target.flagId) ?? null) : null);
+    const comment = target.kind === 'comment' ? (commentById.get(target.id) ?? null) : null;
+    const targetAvailable = target.kind === 'flag' ? flag !== null : comment !== null;
+    return {
+      id: row.id,
+      createdAt: row.created_at,
+      reason: parsed.reason,
+      category: parsed.category,
+      malformed: false,
+      rawBody: row.body,
+      targetKind: target.kind,
+      targetId: target.id,
+      flag,
+      comment,
+      targetAvailable,
+      reviewedAt: row.moderation_reviewed_at,
+      resolution: row.moderation_resolution,
+    } satisfies AdminReport;
+  });
+}
+
+export type CloseOutcome = { ok: true } | { ok: false; error: string };
+
+/**
+ * The one writer of moderation_reviewed_at/by/resolution. The `.is(...,
+ * null)` guard is what makes closing an already-closed report a safe no-op
+ * instead of a second, possibly-conflicting write: `count === 0` here means
+ * either the id doesn't exist or (far more likely) another admin — or a
+ * retried tap — already closed it, and PostgREST reports that as success
+ * with zero matched rows, not an error.
+ */
+export async function closeReport(
+  reportId: string,
+  resolution: ModerationResolution,
+  reviewedBy: string,
+): Promise<CloseOutcome> {
+  const { error } = await supabase
+    .from('feedback')
+    .update({
+      moderation_reviewed_at: new Date().toISOString(),
+      moderation_reviewed_by: reviewedBy,
+      moderation_resolution: resolution,
+    })
+    .eq('id', reportId)
+    .is('moderation_reviewed_at', null);
+  if (error) return { ok: false, error: errorMessage(error) };
+  return { ok: true };
+}
+
+export type ContentActionResult = { closed: true } | { closed: false; closeError: string };
+
+/**
+ * The content mutation (reject/remove a flag, delete a comment) already
+ * happened by the time this runs, so a transient failure here must not
+ * surface as "the whole action failed" — that would invite a caller (or an
+ * impatient admin) to press the same button again and re-run a destructive
+ * step that already succeeded. Retrying ONLY the close write a few times
+ * costs nothing extra on the happy path (it succeeds on attempt 1) and turns
+ * most blips into a transparent success instead of a stuck-open report.
+ */
+async function closeAfterContentAction(
+  reportId: string,
+  resolution: ModerationResolution,
+  reviewedBy: string,
+  attempts = 3,
+): Promise<ContentActionResult> {
+  let outcome: CloseOutcome = { ok: false, error: 'unreachable' };
+  for (let i = 0; i < attempts; i++) {
+    outcome = await closeReport(reportId, resolution, reviewedBy);
+    if (outcome.ok) return { closed: true };
+  }
+  return { closed: false, closeError: outcome.ok ? '' : outcome.error };
+}
+
+/** Reject the flag (admin-only at the DB trigger layer — see
+ *  20260828040000_mod1_moderation_release_safety.sql), then close the report
+ *  as 'flag_rejected'. Throws (report stays open) if the reject itself fails. */
+export async function rejectFlagReport(params: {
+  reportId: string;
+  flagId: string;
+  previousFlagStatus: FlagStatus;
+  reviewedBy: string;
+}): Promise<ContentActionResult> {
+  await updateFlagStatus(params.flagId, 'rejected', params.previousFlagStatus);
+  return closeAfterContentAction(params.reportId, 'flag_rejected', params.reviewedBy);
+}
+
+/** Permanently remove the flag via the canonical deleteFlag() route, then
+ *  close the report as 'flag_removed'. Never a direct client DELETE. */
+export async function removeFlagReport(params: {
+  reportId: string;
+  flagId: string;
+  reviewedBy: string;
+}): Promise<ContentActionResult> {
+  await deleteFlag(params.flagId);
+  return closeAfterContentAction(params.reportId, 'flag_removed', params.reviewedBy);
+}
+
+/** Delete the comment via the canonical deleteComment() route (RLS already
+ *  grants admins delete on any comment — see "admin delete any comment" in
+ *  supabase/migrations/2026-08-27_d1f4_async_account_deletion.sql), then
+ *  close the report as 'comment_removed'. */
+export async function removeCommentReport(params: {
+  reportId: string;
+  commentId: string;
+  reviewedBy: string;
+}): Promise<ContentActionResult> {
+  await deleteComment(params.commentId);
+  return closeAfterContentAction(params.reportId, 'comment_removed', params.reviewedBy);
+}

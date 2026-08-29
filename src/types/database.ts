@@ -95,6 +95,16 @@ export type UserRow = {
 // Kept aligned with FEEDBACK_CATEGORIES in src/lib/feedback.ts.
 export type FeedbackCategoryRow = 'bug' | 'idea' | 'love' | 'other';
 
+// MOD1 — mirrors the CHECK constraint's vocabulary in
+// supabase/migrations/20260828050000_mod1_admin_report_queue.sql. Keep in
+// sync with src/lib/adminReports.ts, which is the only writer.
+export type ModerationResolution =
+  | 'no_action'
+  | 'flag_rejected'
+  | 'flag_removed'
+  | 'comment_removed'
+  | 'target_unavailable';
+
 export type FeedbackRow = {
   id: string;
   // Nullable so a sign-out-then-feedback flow can still record an
@@ -106,6 +116,12 @@ export type FeedbackRow = {
   contact_email: string | null;
   platform: string | null;
   created_at: string;
+  // MOD1: a report ([REPORT]-prefixed body) is OPEN while this is null, and
+  // closes only once BOTH this and moderation_resolution are set together —
+  // the DB CHECK constraint makes the two independently-null impossible.
+  moderation_reviewed_at: string | null;
+  moderation_reviewed_by: string | null;
+  moderation_resolution: ModerationResolution | null;
 };
 
 // One comment on a flag. `display_name` is populated by a PostgREST join
@@ -173,9 +189,18 @@ export type Database = {
       // mailto-only so the user never sees the error.
       feedback: {
         Row: FeedbackRow;
-        Insert: Omit<FeedbackRow, 'id' | 'created_at'> & {
+        Insert: Omit<
+          FeedbackRow,
+          'id' | 'created_at' | 'moderation_reviewed_at' | 'moderation_reviewed_by' | 'moderation_resolution'
+        > & {
           id?: string;
           created_at?: string;
+          // Never set by submitFeedback()/submitContentReport() — a fresh
+          // report is always open. Optional so those call sites don't need
+          // to know these columns exist.
+          moderation_reviewed_at?: string | null;
+          moderation_reviewed_by?: string | null;
+          moderation_resolution?: ModerationResolution | null;
         };
         Update: Partial<FeedbackRow>;
         Relationships: EmptyRelationships;
