@@ -8,7 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Ban, Inbox, Lock, Trash2 } from 'lucide-react-native';
+import { Ban, Inbox, Lock, RotateCcw, Trash2 } from 'lucide-react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { GlassSurface } from '@/components/ui/GlassSurface';
@@ -183,6 +183,33 @@ export default function AdminScreen() {
     }
   };
 
+  // MOD1 — moderator-error recovery. Only ever offered on an already-rejected
+  // row (see renderItem's Dismiss/Restore swap), so this never competes with
+  // Dismiss for the same flag.
+  const handleRestore = async (flag: FlagRow) => {
+    if (actioningRef.current.has(flag.id)) return; // F18: already actioning this flag
+    actioningRef.current.add(flag.id);
+    try {
+      const ok = await confirm(
+        'Restore this flag?',
+        'This reopens the report so the community can review it again.',
+      );
+      if (!ok) return;
+      hapticSelection();
+      setActioningId(flag.id);
+      try {
+        await updateFlagStatus(flag.id, 'open', flag.status); // F53: CAS
+        setFlags((prev) => prev.map((f) => (f.id === flag.id ? { ...f, status: 'open' } : f)));
+      } catch (e) {
+        Alert.alert('Error', errorMessage(e));
+      } finally {
+        setActioningId(null);
+      }
+    } finally {
+      actioningRef.current.delete(flag.id);
+    }
+  };
+
   const renderItem = ({ item }: { item: FlagRow }) => {
     const isBusy = actioningId === item.id;
     const sev = severityRamp[item.severity];
@@ -254,18 +281,33 @@ export default function AdminScreen() {
                 Remove flag
               </AppText>
             </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
-              onPress={() => void handleDismiss(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`Dismiss ${CATEGORY_LABELS[item.category]} report`}
-              {...a11yToggle({ disabled: isBusy })}
-            >
-              <Ban size={16} color={color.text} strokeWidth={2} />
-              <AppText variant="label" size={font.size.sm} color={color.text}>
-                Dismiss
-              </AppText>
-            </Pressable>
+            {item.status === 'rejected' ? (
+              <Pressable
+                style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
+                onPress={() => void handleRestore(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Restore ${CATEGORY_LABELS[item.category]} flag`}
+                {...a11yToggle({ disabled: isBusy })}
+              >
+                <RotateCcw size={16} color={color.text} strokeWidth={2} />
+                <AppText variant="label" size={font.size.sm} color={color.text}>
+                  Restore
+                </AppText>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
+                onPress={() => void handleDismiss(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Dismiss ${CATEGORY_LABELS[item.category]} report`}
+                {...a11yToggle({ disabled: isBusy })}
+              >
+                <Ban size={16} color={color.text} strokeWidth={2} />
+                <AppText variant="label" size={font.size.sm} color={color.text}>
+                  Dismiss
+                </AppText>
+              </Pressable>
+            )}
           </View>
         )}
       </GlassSurface>

@@ -40,6 +40,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, BULK_FLOOR_CANDIDATE, font, radius, severity, shadow, spacing } from '@/theme';
+import { useIsAdmin } from '@/lib/admin';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
@@ -113,7 +114,12 @@ import {
 // 'reopen' = community threshold met, resolved→open. It is its own action
 // because the points trigger awards NOTHING for it — callers must not show
 // the "+N points" flash they show for verify/resolve.
-export type DetailAction = 'verify' | 'resolve' | 'reject' | 'reopen';
+// 'restore' = MOD1 admin-only rejected→open, moderator-error recovery. Kept
+// distinct from 'reopen' even though both land on 'open': 'reopen' is a
+// community threshold vote off a RESOLVED flag; 'restore' is a direct
+// admin write off a REJECTED one. Conflating them would let a caller's
+// reopen-specific copy ("+N more requests needed") leak onto a restore.
+export type DetailAction = 'verify' | 'resolve' | 'reject' | 'reopen' | 'restore';
 
 interface Props {
   visible: boolean;
@@ -178,6 +184,7 @@ export default function FlagDetailModal({
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
+  const isAdmin = useIsAdmin();
   const reducedMotion = useReducedMotion();
   // F4: at 1.5x and up a fixed composition recomposes instead of squeezing —
   // here the segmented control's cells stop sharing a row and become
@@ -670,7 +677,11 @@ export default function FlagDetailModal({
   const status = shownFlag.status;
   const canVerify = status === 'open';
   const canResolve = status === 'open' || status === 'verified';
+  // MOD1: legality only — WHO may act on it is the isAdmin check at the cell's
+  // `show`, same split as canDispute below (status legality here, account
+  // legality there). The DB trigger enforces the admin half independently.
   const canReject = status === 'open' || status === 'verified';
+  const canRestore = status === 'rejected';
   // W1 — every clause is load-bearing, and three of them are dead-control
   // prevention (SR-093), not preference:
   //   DISPUTE_ENABLED  the constant tracks live migration state; a UI that
@@ -842,7 +853,9 @@ export default function FlagDetailModal({
           ? 'Flag marked verified'
           : next === 'resolved'
             ? 'Flag marked resolved'
-            : 'Flag rejected',
+            : next === 'open'
+              ? 'Flag restored'
+              : 'Flag rejected',
       );
       onClose();
     } catch (e) {
@@ -874,6 +887,20 @@ export default function FlagDetailModal({
     );
     if (!ok) return;
     await runStatusChange('rejected', 'reject');
+  };
+
+  // MOD1 — moderator-error recovery. Not destructive (it puts the report BACK
+  // in front of the community, same tier as Verify/Resolve), so no `destructive`
+  // flag on the confirm.
+  const handleRestore = async () => {
+    if (busy) return;
+    const ok = await confirm(
+      'Restore this flag?',
+      'This reopens the report so the community can review it again.',
+      'Restore',
+    );
+    if (!ok) return;
+    await runStatusChange('open', 'restore');
   };
 
   // Share the flag. The message is built by the pure `formatFlagShareText`
@@ -1289,7 +1316,17 @@ export default function FlagDetailModal({
       a11yLabel: 'Reject this flag',
       hint: 'Marks this report as invalid or spam',
       onPress: handleReject,
-      show: !!user && canReject,
+      // MOD1: rejecting is admin-only — the DB trigger enforces this
+      // independently, this just keeps the control off a non-admin's screen.
+      show: !!user && canReject && isAdmin === true,
+    },
+    {
+      key: 'restore',
+      label: 'Restore',
+      a11yLabel: 'Restore this flag',
+      hint: 'Reopens a rejected report',
+      onPress: handleRestore,
+      show: !!user && canRestore && isAdmin === true,
     },
   ].filter((cell) => cell.show);
 

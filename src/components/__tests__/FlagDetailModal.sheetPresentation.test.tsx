@@ -55,6 +55,11 @@ const PhotoGalleryInner = (PhotoGallery as unknown as { type: React.ComponentTyp
 let mockAuthUser: { id: string } | null = { id: 'user-1' };
 jest.mock('@/lib/auth', () => ({ useAuth: () => ({ user: mockAuthUser }) }));
 
+// MOD1: Reject/Restore are admin-gated. Defaults to a plain signed-in,
+// non-admin viewer — the pre-MOD1 default this whole suite assumed.
+let mockIsAdmin: boolean | null = false;
+jest.mock('@/lib/admin', () => ({ useIsAdmin: () => mockIsAdmin }));
+
 jest.mock('@/theme/ThemeContext', () => {
   const { color } = jest.requireActual('@/theme');
   return { useColor: () => color };
@@ -110,6 +115,7 @@ jest.mock('@/hooks/useComments', () => ({
 
 beforeEach(() => {
   mockAuthUser = { id: 'user-1' };
+  mockIsAdmin = false;
 });
 
 const FLAG: FlagRow = {
@@ -270,12 +276,62 @@ describe('FlagDetailModal — guest review boundary', () => {
     expect(screen.updateHandlers.onChanged).not.toHaveBeenCalled();
   });
 
-  it('preserves the signed-in verdict controls', () => {
+  it('preserves the signed-in verdict controls available to a non-admin', () => {
     const screen = renderDetail();
     expect(screen.getByLabelText('Verify this flag')).toBeTruthy();
     expect(screen.getByLabelText('Mark this flag resolved')).toBeTruthy();
-    expect(screen.getByLabelText('Reject this flag')).toBeTruthy();
     expect(screen.queryByText('Sign in to review')).toBeNull();
+  });
+});
+
+describe('FlagDetailModal — MOD1: Reject/Restore are admin-only', () => {
+  it('hides Reject from a signed-in non-admin', () => {
+    const screen = renderDetail();
+    expect(screen.queryByLabelText('Reject this flag')).toBeNull();
+  });
+
+  it('shows Reject to a signed-in admin', () => {
+    mockIsAdmin = true;
+    const screen = renderDetail();
+    expect(screen.getByLabelText('Reject this flag')).toBeTruthy();
+  });
+
+  it('never shows Restore on a flag that is not rejected, admin or not', () => {
+    mockIsAdmin = true;
+    const screen = renderDetail();
+    expect(screen.queryByLabelText('Restore this flag')).toBeNull();
+  });
+
+  it('shows Restore to an admin viewing a rejected flag', () => {
+    mockIsAdmin = true;
+    const rejectedFlag = { ...FLAG, status: 'rejected' } as FlagRow;
+    const screen = render(
+      <FlagDetailModal
+        visible
+        flag={rejectedFlag}
+        onClose={jest.fn()}
+        onChanged={jest.fn()}
+        onDeleted={jest.fn()}
+        onViewOnMap={jest.fn()}
+      />,
+    );
+    expect(screen.getByLabelText('Restore this flag')).toBeTruthy();
+    expect(screen.queryByLabelText('Reject this flag')).toBeNull();
+  });
+
+  it('hides Restore from a non-admin viewing a rejected flag', () => {
+    const rejectedFlag = { ...FLAG, status: 'rejected' } as FlagRow;
+    const screen = render(
+      <FlagDetailModal
+        visible
+        flag={rejectedFlag}
+        onClose={jest.fn()}
+        onChanged={jest.fn()}
+        onDeleted={jest.fn()}
+        onViewOnMap={jest.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText('Restore this flag')).toBeNull();
   });
 });
 

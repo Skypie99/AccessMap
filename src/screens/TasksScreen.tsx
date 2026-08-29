@@ -21,6 +21,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
+import { useIsAdmin } from '@/lib/admin';
 import { useAuth } from '@/lib/auth';
 import { formatDistance, formatWalkingEta, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { confirm, notify } from '@/lib/confirm';
@@ -159,6 +160,7 @@ export default function TasksScreen() {
   const menuTrigger = useDrawerTrigger<View>();
   const { setOpen: setSharedModal } = useSharedModals();
   const { user } = useAuth();
+  const isAdmin = useIsAdmin();
   // Measured height of the floating bulk-action bar (selection mode). Seeded
   // with the fallback, then set from the bar's real onLayout so the list
   // reserves the correct space even when the bar grows at large type.
@@ -707,7 +709,7 @@ export default function TasksScreen() {
       // re-enters the queue; the reconcile refresh below fills it in if the
       // store didn't hold the resolved row), remove it for resolve/reject
       // (it leaves the triage queue).
-      if (action === 'verify' || action === 'reopen') {
+      if (action === 'verify' || action === 'reopen' || action === 'restore') {
         patchFlag(updated.id, { ...updated });
       } else {
         removeFlag(updated.id);
@@ -715,6 +717,13 @@ export default function TasksScreen() {
       if (action === 'reopen') {
         // No points flash: the trigger awards nothing for resolved→open.
         showFlash('Flag reopened');
+      } else if (action === 'restore') {
+        // MOD1: admin-only rejected→open. Not reachable from this screen today
+        // (TRIAGE_STATUSES excludes 'rejected', so this card's own modal can
+        // never show Restore) — handled here anyway so this callback stays
+        // correct if that ever changes, rather than silently mis-filing a
+        // restored flag as a removal.
+        showFlash('Flag restored');
       } else if (action === 'verify') {
         const msg = isOwn
           ? `Verified! +${POINTS.reporter.verify} points`
@@ -878,6 +887,7 @@ export default function TasksScreen() {
         isOwn={item.user_id === userId}
         userLocation={userLocation}
         canReview={!!user}
+        isAdmin={isAdmin === true}
         selectionActive={!!user && selection.active}
         selected={!!user && isSelected(selection, item.id)}
         compactActions={compactActions}
@@ -893,6 +903,7 @@ export default function TasksScreen() {
       userId,
       userLocation,
       user,
+      isAdmin,
       selection,
       compactActions,
       handleCardPress,
@@ -1747,6 +1758,9 @@ interface TaskCardProps {
   isOwn: boolean;
   /** Whether this viewer may use production review controls. */
   canReview: boolean;
+  /** MOD1: whether this viewer may Reject (admin-only; DB trigger enforces
+   *  this independently — this only keeps the control off the screen). */
+  isAdmin: boolean;
   /** Current user position, or null when unknown / permission denied. */
   userLocation: LatLng | null;
   /** True when the screen is in bulk-select mode. Changes tap semantics. */
@@ -1773,6 +1787,7 @@ const TaskCard = memo(function TaskCard({
   isBusy,
   isOwn,
   canReview,
+  isAdmin,
   userLocation,
   selectionActive,
   selected,
@@ -1904,14 +1919,20 @@ const TaskCard = memo(function TaskCard({
       onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
       haptic: 'none',
     },
-    {
-      key: 'reject',
-      label: 'Reject',
-      a11yLabel: `Reject this flag — ${actionSubject}`,
-      a11yHint: 'Dismisses this report; asks you to confirm first',
-      onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
-      haptic: 'none',
-    },
+    // MOD1: community Reject is removed — only an admin viewer gets this cell.
+    // Rejected flags never reach TRIAGE_STATUSES, so there is no matching
+    // "Restore" cell to add here (see AdminScreen, where rejected flags do
+    // surface).
+    ...(isAdmin
+      ? [{
+          key: 'reject',
+          label: 'Reject',
+          a11yLabel: `Reject this flag — ${actionSubject}`,
+          a11yHint: 'Dismisses this report; asks you to confirm first',
+          onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
+          haptic: 'none',
+        } satisfies CardAction]
+      : []),
     {
       key: 'details',
       label: 'Details',
