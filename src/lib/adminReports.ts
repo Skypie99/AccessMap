@@ -287,18 +287,32 @@ async function markPendingResolution(
  * stays exactly as untouched as any other pre-action failure. Guarded the
  * same way as every other moderation write — a no-op against an
  * already-closed report, never a conflicting one.
+ *
+ * MOD1R FIX2 edge case: `error === null` alone does NOT mean the write
+ * landed — the `.is('moderation_reviewed_at', null)` guard can legitimately
+ * match zero rows (e.g. another admin closed this exact report a moment
+ * earlier) and PostgREST reports that as a successful update of nothing, not
+ * an error. `.select('id').maybeSingle()` (the same proof-of-effect shape
+ * updateFlagStatus() uses in src/lib/flags.ts) is what turns "no error" into
+ * "actually proven" — a null/mismatched row fails closed exactly like a
+ * write error would, before any destructive mutation is ever attempted.
  */
 async function markActionIntent(
   reportId: string,
   intent: ContentActionIntent,
   reviewedBy: string,
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('feedback')
     .update({ moderation_action_intent: intent, moderation_reviewed_by: reviewedBy })
     .eq('id', reportId)
-    .is('moderation_reviewed_at', null);
+    .is('moderation_reviewed_at', null)
+    .select('id')
+    .maybeSingle();
   if (error) throw new Error(errorMessage(error));
+  if (!data || data.id !== reportId) {
+    throw new Error('Could not confirm the pre-action intent was recorded — the report may already be closed.');
+  }
 }
 
 /**

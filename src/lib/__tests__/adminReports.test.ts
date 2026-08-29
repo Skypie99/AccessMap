@@ -53,7 +53,7 @@ import {
 function queryBuilder(result: { data?: unknown; error?: unknown }) {
   const builder: Record<string, unknown> = {};
   const chain = jest.fn(() => builder);
-  for (const method of ['select', 'is', 'in', 'like', 'order', 'limit', 'update', 'eq']) {
+  for (const method of ['select', 'is', 'in', 'like', 'order', 'limit', 'update', 'eq', 'maybeSingle']) {
     builder[method] = chain;
   }
   (builder as { then: PromiseLike<unknown>['then'] }).then = (resolve, reject) =>
@@ -259,7 +259,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
     });
     mockFeedbackFrom.mockImplementation(() => {
       callOrder.push('feedback');
-      return queryBuilder({ data: null, error: null });
+      return queryBuilder({ data: { id: 'report-1' }, error: null });
     });
 
     const result = await rejectFlagReport({
@@ -278,7 +278,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
   });
 
   it('never closes the report when the reject itself fails — report stays open for a full retry', async () => {
-    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null })); // pre-action intent write succeeds
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: { id: 'report-1' }, error: null })); // pre-action intent write succeeds
     mockUpdateFlagStatus.mockRejectedValue(new Error('RLS denied'));
 
     await expect(
@@ -294,7 +294,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
     mockFeedbackFrom.mockImplementation(() => {
       call += 1;
       return call === 1
-        ? queryBuilder({ data: null, error: null }) // markActionIntent
+        ? queryBuilder({ data: { id: 'report-1' }, error: null }) // markActionIntent
         : queryBuilder({ data: null, error: { message: 'timeout' } }); // markPendingResolution + every close attempt
     });
 
@@ -316,7 +316,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
     let call = 0;
     mockFeedbackFrom.mockImplementation(() => {
       call += 1;
-      if (call === 1) return queryBuilder({ data: null, error: null }); // markActionIntent
+      if (call === 1) return queryBuilder({ data: { id: 'report-1' }, error: null }); // markActionIntent
       return call < 4
         ? queryBuilder({ data: null, error: { message: 'timeout' } })
         : queryBuilder({ data: null, error: null });
@@ -339,7 +339,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
 
   it('removeFlagReport deletes via the canonical deleteFlag(), then closes as flag_removed', async () => {
     mockDeleteFlag.mockResolvedValue(undefined);
-    const builder = queryBuilder({ data: null, error: null });
+    const builder = queryBuilder({ data: { id: 'report-1' }, error: null });
     mockFeedbackFrom.mockReturnValue(builder);
 
     const result = await removeFlagReport({ reportId: 'report-1', flagId: 'flag-1', reviewedBy: 'admin-1' });
@@ -351,7 +351,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
   });
 
   it('removeFlagReport never closes the report when deleteFlag fails', async () => {
-    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null })); // pre-action intent write succeeds
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: { id: 'report-1' }, error: null })); // pre-action intent write succeeds
     mockDeleteFlag.mockRejectedValue(new Error('not found'));
     await expect(
       removeFlagReport({ reportId: 'report-1', flagId: 'flag-1', reviewedBy: 'admin-1' }),
@@ -362,7 +362,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
   it('removeCommentReport deletes via the canonical deleteComment(), then closes as comment_removed', async () => {
     mockFetchCommentsByIds.mockResolvedValue([COMMENT]); // still exists
     mockDeleteComment.mockResolvedValue(undefined);
-    const builder = queryBuilder({ data: null, error: null });
+    const builder = queryBuilder({ data: { id: 'report-1' }, error: null });
     mockFeedbackFrom.mockReturnValue(builder);
 
     const result = await removeCommentReport({
@@ -378,7 +378,7 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
 
   it('removeCommentReport never closes the report when deleteComment fails', async () => {
     mockFetchCommentsByIds.mockResolvedValue([COMMENT]); // still exists
-    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null })); // pre-action intent write succeeds
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: { id: 'report-1' }, error: null })); // pre-action intent write succeeds
     mockDeleteComment.mockRejectedValue(new Error('already gone'));
     await expect(
       removeCommentReport({ reportId: 'report-1', commentId: 'comment-1', reviewedBy: 'admin-1' }),
@@ -417,8 +417,9 @@ describe('MOD1R FIX1 — pending close: a second press never repeats the content
     let call = 0;
     mockFeedbackFrom.mockImplementation(() => {
       call += 1;
-      return call <= 2
-        ? queryBuilder({ data: null, error: null }) // markActionIntent, then markPendingResolution
+      if (call === 1) return queryBuilder({ data: { id: 'report-1' }, error: null }); // markActionIntent
+      return call === 2
+        ? queryBuilder({ data: null, error: null }) // markPendingResolution
         : queryBuilder({ data: null, error: { message: 'timeout' } }); // every closeReport attempt
     });
   }
@@ -537,6 +538,71 @@ describe('MOD1R FIX2 — pre-action intent gates the destructive action', () => 
 
     expect(mockDeleteComment).not.toHaveBeenCalled();
   });
+
+  // MOD1R FINAL EDGE-CASE REPAIR — the missed race: a guarded UPDATE can
+  // match ZERO rows (e.g. another admin's close write landed a moment
+  // earlier, so the `.is('moderation_reviewed_at', null)` guard now excludes
+  // this report) while Supabase reports NO error — PostgREST treats
+  // "updated nothing" as a successful update of an empty set, not a
+  // failure. `error === null` alone must never be read as "the intent row
+  // was written"; only a proven affected row (the `.select().maybeSingle()`
+  // row matching this exact report id) may. `queryBuilder({ data: null,
+  // error: null })` is exactly this: no error, but no row returned either.
+  it('rejectFlagReport: a zero-row/no-error intent write (report closed concurrently) fails closed — updateFlagStatus never runs', async () => {
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null }));
+
+    await expect(
+      rejectFlagReport({ reportId: 'report-1', flagId: 'flag-1', previousFlagStatus: 'open', reviewedBy: 'admin-1' }),
+    ).rejects.toThrow();
+
+    expect(mockUpdateFlagStatus).not.toHaveBeenCalled();
+  });
+
+  it('removeFlagReport: a zero-row/no-error intent write (report closed concurrently) fails closed — deleteFlag never runs', async () => {
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null }));
+
+    await expect(
+      removeFlagReport({ reportId: 'report-1', flagId: 'flag-1', reviewedBy: 'admin-1' }),
+    ).rejects.toThrow();
+
+    expect(mockDeleteFlag).not.toHaveBeenCalled();
+  });
+
+  it('removeCommentReport: a zero-row/no-error intent write (report closed concurrently) fails closed — deleteComment never runs', async () => {
+    mockFetchCommentsByIds.mockResolvedValue([COMMENT]); // still exists — takes the destructive path
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null }));
+
+    await expect(
+      removeCommentReport({ reportId: 'report-1', commentId: 'comment-1', reviewedBy: 'admin-1' }),
+    ).rejects.toThrow();
+
+    expect(mockDeleteComment).not.toHaveBeenCalled();
+  });
+
+  it('a returned row for a DIFFERENT id (should be unreachable given .eq(id, reportId), but never trusted blindly) also fails closed', async () => {
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: { id: 'some-other-report' }, error: null }));
+
+    await expect(
+      rejectFlagReport({ reportId: 'report-1', flagId: 'flag-1', previousFlagStatus: 'open', reviewedBy: 'admin-1' }),
+    ).rejects.toThrow();
+
+    expect(mockUpdateFlagStatus).not.toHaveBeenCalled();
+  });
+
+  it('a genuinely affected row (proof of effect) still lets the destructive action proceed normally', async () => {
+    mockUpdateFlagStatus.mockResolvedValue(undefined);
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: { id: 'report-1' }, error: null }));
+
+    const result = await rejectFlagReport({
+      reportId: 'report-1',
+      flagId: 'flag-1',
+      previousFlagStatus: 'open',
+      reviewedBy: 'admin-1',
+    });
+
+    expect(result).toEqual({ closed: true });
+    expect(mockUpdateFlagStatus).toHaveBeenCalledWith('flag-1', 'rejected', 'open');
+  });
 });
 
 describe('MOD1R FIX2 — surviving total post-action write loss (the bug this fix repairs)', () => {
@@ -552,7 +618,7 @@ describe('MOD1R FIX2 — surviving total post-action write loss (the bug this fi
     mockFeedbackFrom.mockImplementation(() => {
       call += 1;
       return call === 1
-        ? queryBuilder({ data: null, error: null }) // markActionIntent — the one write that survives
+        ? queryBuilder({ data: { id: 'report-1' }, error: null }) // markActionIntent — the one write that survives
         : queryBuilder({ data: null, error: { message: 'outage' } }); // markPendingResolution + every close attempt
     });
   }
