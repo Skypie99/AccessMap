@@ -45,6 +45,7 @@ import {
   rejectFlagReport,
   removeFlagReport,
   removeCommentReport,
+  retryClose,
 } from '../adminReports';
 
 /** A thenable query-builder stub: every chain method returns itself, and it
@@ -269,7 +270,10 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
     });
 
     expect(result).toEqual({ closed: true });
-    expect(callOrder).toEqual(['updateFlagStatus', 'feedback']);
+    // updateFlagStatus, then markPendingResolution ('feedback'), then the
+    // close write itself ('feedback') — content action strictly before
+    // either feedback write, per the locked ordering.
+    expect(callOrder).toEqual(['updateFlagStatus', 'feedback', 'feedback']);
     expect(mockUpdateFlagStatus).toHaveBeenCalledWith('flag-1', 'rejected', 'open');
   });
 
@@ -294,9 +298,10 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
       reviewedBy: 'admin-1',
     });
 
-    expect(result).toEqual({ closed: false, closeError: 'timeout' });
+    expect(result).toEqual({ closed: false, closeError: 'timeout', resolution: 'flag_rejected' });
     expect(mockUpdateFlagStatus).toHaveBeenCalledTimes(1); // the destructive step is never repeated
-    expect(mockFeedbackFrom).toHaveBeenCalledTimes(3); // but the close write itself gets 3 attempts
+    // 1 markPendingResolution write + 3 close attempts, all against 'feedback'.
+    expect(mockFeedbackFrom).toHaveBeenCalledTimes(4);
   });
 
   it('reject succeeds and the close write recovers on a later attempt — one destructive call, one visible success', async () => {
@@ -318,6 +323,8 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
 
     expect(result).toEqual({ closed: true });
     expect(mockUpdateFlagStatus).toHaveBeenCalledTimes(1);
+    // call 1 = markPendingResolution (also fails, harmlessly); calls 2-3 =
+    // retryClose's own attempts, the second of which recovers.
     expect(mockFeedbackFrom).toHaveBeenCalledTimes(3);
   });
 
@@ -385,5 +392,104 @@ describe('rejectFlagReport / removeFlagReport / removeCommentReport — ordering
     expect(result).toEqual({ closed: true });
     expect(mockDeleteComment).not.toHaveBeenCalled();
     expect(builder.update).toHaveBeenCalledWith(expect.objectContaining({ moderation_resolution: 'target_unavailable' }));
+  });
+});
+
+describe('MOD1R FIX1 — pending close: a second press never repeats the content action', () => {
+  // Shared shape for all three: the first press's content mutation succeeds,
+  // markPendingResolution's write lands, but every close retry then fails —
+  // exactly the exhausted-retries case the task requires a real fix for.
+  // The "second press" is retryClose() alone, exactly as AdminScreen's
+  // Finish-review button calls it — never the original composite action.
+  function failEveryCloseAfterPendingMark() {
+    let call = 0;
+    mockFeedbackFrom.mockImplementation(() => {
+      call += 1;
+      return call === 1
+        ? queryBuilder({ data: null, error: null }) // markPendingResolution
+        : queryBuilder({ data: null, error: { message: 'timeout' } }); // every closeReport attempt
+    });
+  }
+
+  it('rejectFlagReport: retryClose alone finishes the job without ever calling updateFlagStatus again', async () => {
+    mockUpdateFlagStatus.mockResolvedValue(undefined);
+    failEveryCloseAfterPendingMark();
+
+    const first = await rejectFlagReport({
+      reportId: 'report-1',
+      flagId: 'flag-1',
+      previousFlagStatus: 'open',
+      reviewedBy: 'admin-1',
+    });
+    expect(first).toEqual({ closed: false, closeError: 'timeout', resolution: 'flag_rejected' });
+    expect(mockUpdateFlagStatus).toHaveBeenCalledTimes(1);
+
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null }));
+    const second = await retryClose('report-1', first.resolution, 'admin-1');
+
+    expect(second).toEqual({ closed: true });
+    expect(mockUpdateFlagStatus).toHaveBeenCalledTimes(1); // still the one original call
+  });
+
+  it('removeFlagReport: retryClose alone finishes the job without ever calling deleteFlag again', async () => {
+    mockDeleteFlag.mockResolvedValue(undefined);
+    failEveryCloseAfterPendingMark();
+
+    const first = await removeFlagReport({ reportId: 'report-1', flagId: 'flag-1', reviewedBy: 'admin-1' });
+    expect(first).toEqual({ closed: false, closeError: 'timeout', resolution: 'flag_removed' });
+    expect(mockDeleteFlag).toHaveBeenCalledTimes(1);
+
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null }));
+    const second = await retryClose('report-1', first.resolution, 'admin-1');
+
+    expect(second).toEqual({ closed: true });
+    expect(mockDeleteFlag).toHaveBeenCalledTimes(1);
+  });
+
+  it('removeCommentReport: retryClose alone finishes the job without ever calling deleteComment again', async () => {
+    mockFetchCommentsByIds.mockResolvedValue([COMMENT]);
+    mockDeleteComment.mockResolvedValue(undefined);
+    failEveryCloseAfterPendingMark();
+
+    const first = await removeCommentReport({
+      reportId: 'report-1',
+      commentId: 'comment-1',
+      reviewedBy: 'admin-1',
+    });
+    expect(first).toEqual({ closed: false, closeError: 'timeout', resolution: 'comment_removed' });
+    expect(mockDeleteComment).toHaveBeenCalledTimes(1);
+
+    mockFeedbackFrom.mockReturnValue(queryBuilder({ data: null, error: null }));
+    const second = await retryClose('report-1', first.resolution, 'admin-1');
+
+    expect(second).toEqual({ closed: true });
+    expect(mockDeleteComment).toHaveBeenCalledTimes(1); // never repeated, even though its target is now gone
+  });
+
+  it('a pending-close report (resolution set, reviewedAt still null) keeps surfacing via listOpenReports after a reload', async () => {
+    // Simulates a reload after markPendingResolution landed but every close
+    // attempt failed in a prior session: the durable columns, not any local
+    // state, are what a fresh listOpenReports() call sees.
+    mockFeedbackFrom.mockReturnValue(
+      queryBuilder({
+        data: [
+          {
+            id: 'report-1',
+            created_at: '2026-08-20T00:00:00.000Z',
+            body: buildReportBody({ kind: 'flag', id: 'flag-1' }, 'spam'),
+            moderation_reviewed_at: null,
+            moderation_resolution: 'flag_rejected',
+          },
+        ],
+        error: null,
+      }),
+    );
+    mockFetchFlagsByIds.mockResolvedValue([FLAG]);
+    mockFetchCommentsByIds.mockResolvedValue([]);
+
+    const [report] = await listOpenReports();
+
+    expect(report.reviewedAt).toBeNull();
+    expect(report.resolution).toBe('flag_rejected');
   });
 });

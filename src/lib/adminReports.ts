@@ -10,9 +10,18 @@
 // content write throws, this module throws too and the report is untouched
 // — the caller's whole action is safe to retry from scratch. If the content
 // write succeeds but closeReport() fails (network blip, etc.), the
-// composite functions below return `{ closed: false, closeError }` instead
-// of throwing, specifically so the caller does NOT repeat the now-already-
-// applied destructive action — it should retry with closeReport() alone.
+// composite functions below return `{ closed: false, closeError, resolution
+// }` instead of throwing, specifically so the caller does NOT repeat the
+// now-already-applied destructive action — it should retry with retryClose()
+// alone, passing the SAME resolution back.
+//
+// PENDING CLOSE (MOD1R FIX1): closeAfterContentAction() records the
+// resolution (+ reviewedBy) via markPendingResolution() BEFORE attempting the
+// close write, so that fact survives a reload even if every close retry is
+// exhausted — see 20260828070000_mod1r_fix1_pending_close_state.sql. A report
+// with resolution set and reviewedAt still null is PENDING CLOSE, never OPEN:
+// the caller must offer only a close-only retry (retryClose), never re-offer
+// the original content actions.
 import { supabase } from './supabase';
 import { errorMessage } from './errors';
 import { deleteFlag, fetchFlagsByIds, updateFlagStatus } from './flags';
@@ -175,18 +184,46 @@ export async function closeReport(
   return { ok: true };
 }
 
-export type ContentActionResult = { closed: true } | { closed: false; closeError: string };
+export type ContentActionResult =
+  | { closed: true }
+  // `resolution` is present whenever a content mutation already happened and
+  // must never be repeated (closeAfterContentAction/retryClose) — absent for
+  // closeDirectly's no_action/target_unavailable, which have no content step
+  // and are just as safe to retry via their original button as a close-only one.
+  | { closed: false; closeError: string; resolution?: ModerationResolution };
 
 /**
- * The content mutation (reject/remove a flag, delete a comment) already
- * happened by the time this runs, so a transient failure here must not
- * surface as "the whole action failed" — that would invite a caller (or an
- * impatient admin) to press the same button again and re-run a destructive
- * step that already succeeded. Retrying ONLY the close write a few times
- * costs nothing extra on the happy path (it succeeds on attempt 1) and turns
- * most blips into a transparent success instead of a stuck-open report.
+ * Best-effort durability write, run BEFORE the close is attempted: records
+ * that the content action succeeded (and what it resolved to) without yet
+ * marking the report reviewed. Never throws — closeAfterContentAction()
+ * retries the full close regardless of whether this lands, and that retry
+ * writes the same resolution/reviewedBy again anyway. The only thing this
+ * buys is durability: if every close retry below is then exhausted, this
+ * write (if it landed) is what makes "the content action already happened"
+ * survive a reload instead of only living in this session's local state.
  */
-async function closeAfterContentAction(
+async function markPendingResolution(
+  reportId: string,
+  resolution: ModerationResolution,
+  reviewedBy: string,
+): Promise<void> {
+  await supabase
+    .from('feedback')
+    .update({ moderation_reviewed_by: reviewedBy, moderation_resolution: resolution })
+    .eq('id', reportId)
+    .is('moderation_reviewed_at', null);
+}
+
+/**
+ * Retries ONLY the close write (moderation_reviewed_at) — never a content
+ * mutation. Used both right after a successful content action
+ * (closeAfterContentAction, below) and, standalone, by a later "Finish
+ * review" retry against a report already in PENDING CLOSE — so it's exactly
+ * as safe to call a second or third time as a first: closeReport()'s own
+ * `.is('moderation_reviewed_at', null)` guard makes re-closing an
+ * already-closed report a no-op, not a conflicting write.
+ */
+export async function retryClose(
   reportId: string,
   resolution: ModerationResolution,
   reviewedBy: string,
@@ -197,7 +234,26 @@ async function closeAfterContentAction(
     outcome = await closeReport(reportId, resolution, reviewedBy);
     if (outcome.ok) return { closed: true };
   }
-  return { closed: false, closeError: outcome.ok ? '' : outcome.error };
+  return { closed: false, closeError: outcome.ok ? '' : outcome.error, resolution };
+}
+
+/**
+ * The content mutation (reject/remove a flag, delete a comment) already
+ * happened by the time this runs, so a transient failure here must not
+ * surface as "the whole action failed" — that would invite a caller (or an
+ * impatient admin) to press the same button again and re-run a destructive
+ * step that already succeeded. Marking PENDING CLOSE first, then retrying
+ * only the close write a few times, costs nothing extra on the happy path
+ * (it succeeds on attempt 1) and turns most blips into a transparent success
+ * instead of a stuck-open report.
+ */
+async function closeAfterContentAction(
+  reportId: string,
+  resolution: ModerationResolution,
+  reviewedBy: string,
+): Promise<ContentActionResult> {
+  await markPendingResolution(reportId, resolution, reviewedBy);
+  return retryClose(reportId, resolution, reviewedBy);
 }
 
 /** Reject the flag (admin-only at the DB trigger layer — see

@@ -46,10 +46,11 @@ import {
   rejectFlagReport,
   removeCommentReport,
   removeFlagReport,
+  retryClose,
   type AdminReport,
   type ContentActionResult,
 } from '@/lib/adminReports';
-import type { FlagRow } from '@/types/database';
+import type { FlagRow, ModerationResolution } from '@/types/database';
 
 const REPORT_CATEGORY_TEXT: Record<string, string> = Object.fromEntries(
   REPORT_CATEGORIES.map((c) => [c.id, c.label]),
@@ -112,6 +113,14 @@ export default function AdminScreen() {
   const [reportsActioningId, setReportsActioningId] = useState<string | null>(null);
   const reportsActioningRef = useRef<Set<string>>(new Set());
   const reportsLoadSeqRef = useRef(0);
+  // MOD1R FIX1 — PENDING CLOSE fallback for THIS session only. The durable
+  // signal is AdminReport.resolution (set by markPendingResolution() and
+  // surviving a reload); this only covers the narrower window where even
+  // that write hasn't landed yet, so a report whose content action just
+  // succeeded doesn't briefly render its original (now-stale) action set
+  // before the next reload. Never read on its own — always merged with
+  // item.resolution via pendingResolutionFor() below.
+  const [pendingResolutions, setPendingResolutions] = useState<Record<string, ModerationResolution>>({});
 
   const loadReports = useCallback(async () => {
     const seq = ++reportsLoadSeqRef.current;
@@ -164,7 +173,21 @@ export default function AdminScreen() {
           const result = await action();
           if (result.closed) {
             setReports((prev) => prev.filter((r) => r.id !== report.id));
+            setPendingResolutions((prev) => {
+              if (!(report.id in prev)) return prev;
+              const next = { ...prev };
+              delete next[report.id];
+              return next;
+            });
           } else {
+            // Present only for a content mutation that already succeeded
+            // (never for closeDirectly's no_action/target_unavailable, which
+            // have no content step to protect) — never let THAT report fall
+            // back to its original action set. See pendingResolutionFor().
+            const { resolution } = result;
+            if (resolution) {
+              setPendingResolutions((prev) => ({ ...prev, [report.id]: resolution }));
+            }
             Alert.alert(
               'Not marked reviewed yet',
               `The action was applied, but this report could not be closed: ${result.closeError}. It stays in the queue — try again in a moment.`,
@@ -248,6 +271,25 @@ export default function AdminScreen() {
       'Close as target unavailable?',
       'This marks the report reviewed — the flag or comment it refers to is already gone.',
       () => closeDirectly('target_unavailable', user.id, report.id),
+    );
+  };
+
+  // MOD1R FIX1 — a report is PENDING CLOSE (its content action already
+  // succeeded; only the close write is outstanding) when either the durable
+  // column says so, or this session already learned it the hard way. Never
+  // derives resolution from anything but one of those two sources — this
+  // must be the SAME outcome the original successful action recorded, not
+  // recomputed.
+  const pendingResolutionFor = (report: AdminReport): ModerationResolution | null =>
+    report.resolution ?? pendingResolutions[report.id] ?? null;
+
+  const handleFinishReview = (report: AdminReport, resolution: ModerationResolution) => {
+    if (!user) return;
+    void runReportAction(
+      report,
+      'Finish review?',
+      'The moderation action already happened — this only finalizes the report.',
+      () => retryClose(report.id, resolution, user.id),
     );
   };
 
@@ -512,6 +554,10 @@ export default function AdminScreen() {
   const renderReportItem = ({ item }: { item: AdminReport }) => {
     const isBusy = reportsActioningId === item.id;
     const categoryText = item.category ? REPORT_CATEGORY_TEXT[item.category] : null;
+    // MOD1R FIX1 — a pending-close report never re-offers its original
+    // action set (whatever it was already stays applied and unrepeated); the
+    // ONLY control it exposes is closing the still-open report.
+    const pendingResolution = pendingResolutionFor(item);
     return (
       <GlassSurface variant="row" forceEngineered style={styles.card}>
         <View style={styles.cardHeader}>
@@ -597,6 +643,24 @@ export default function AdminScreen() {
 
         {isBusy ? (
           <ActivityIndicator style={styles.busyIndicator} color={color.brand} accessibilityLabel="Processing" />
+        ) : pendingResolution ? (
+          <View style={styles.reportActions}>
+            <AppText variant="label" size={font.size.xs} color={color.inkGlassMuted} style={styles.reportTargetGone}>
+              Action already applied — finishing the review.
+            </AppText>
+            <Pressable
+              style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
+              onPress={() => handleFinishReview(item, pendingResolution)}
+              accessibilityRole="button"
+              accessibilityLabel="Finish review"
+              {...a11yToggle({ disabled: isBusy })}
+            >
+              <Check size={16} color={color.text} strokeWidth={2} />
+              <AppText variant="label" size={font.size.sm} color={color.text}>
+                Finish review
+              </AppText>
+            </Pressable>
+          </View>
         ) : (
           <View style={styles.reportActions}>
             {!item.malformed && item.targetKind === 'flag' && item.targetAvailable ? (

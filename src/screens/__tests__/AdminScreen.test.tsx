@@ -84,12 +84,14 @@ const mockRejectFlagReport = jest.fn();
 const mockRemoveFlagReport = jest.fn();
 const mockRemoveCommentReport = jest.fn();
 const mockCloseReport = jest.fn();
+const mockRetryClose = jest.fn();
 jest.mock('@/lib/adminReports', () => ({
   listOpenReports: (...a: unknown[]) => mockListOpenReports(...a),
   rejectFlagReport: (...a: unknown[]) => mockRejectFlagReport(...a),
   removeFlagReport: (...a: unknown[]) => mockRemoveFlagReport(...a),
   removeCommentReport: (...a: unknown[]) => mockRemoveCommentReport(...a),
   closeReport: (...a: unknown[]) => mockCloseReport(...a),
+  retryClose: (...a: unknown[]) => mockRetryClose(...a),
 }));
 
 const FLAG: FlagRow = {
@@ -366,7 +368,7 @@ describe('AdminScreen — MOD1 report actions, gated by target kind and availabi
     // adminReports.test.ts) — `{closed: false}` reaching the UI means even
     // those retries were exhausted. The screen must not pretend it closed.
     mockListOpenReports.mockResolvedValue([flagReport()]);
-    mockRejectFlagReport.mockResolvedValue({ closed: false, closeError: 'timeout' });
+    mockRejectFlagReport.mockResolvedValue({ closed: false, closeError: 'timeout', resolution: 'flag_rejected' });
     const { findByText, getByText } = render(<AdminScreen />);
     fireEvent.press(getByText(/^Reports/));
     await findByText('This looks fake');
@@ -381,5 +383,63 @@ describe('AdminScreen — MOD1 report actions, gated by target kind and availabi
     // first); only the bookkeeping write failed, so this stays visible for a
     // deliberate, human-initiated retry rather than being silently dropped.
     expect(getByText('This looks fake')).toBeTruthy();
+  });
+});
+
+describe('MOD1R FIX1 — pending close: only a Finish-review retry, never the original actions again', () => {
+  it('after a partial-failure outcome, the original action buttons are replaced by Finish review alone', async () => {
+    mockListOpenReports.mockResolvedValue([flagReport()]);
+    mockRejectFlagReport.mockResolvedValue({ closed: false, closeError: 'timeout', resolution: 'flag_rejected' });
+    const { findByText, getByText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText(/^Reports/));
+    await findByText('This looks fake');
+
+    await act(async () => {
+      fireEvent.press(getByText('Reject flag'));
+    });
+    await waitFor(() => expect(mockRejectFlagReport).toHaveBeenCalledTimes(1));
+
+    // The content action already happened — these must never be offered again.
+    expect(queryByText('Reject flag')).toBeNull();
+    expect(queryByText('Remove flag')).toBeNull();
+    expect(queryByText('No action')).toBeNull();
+    expect(getByText('Finish review')).toBeTruthy();
+  });
+
+  it('pressing Finish review calls retryClose with the original resolution, never rejectFlagReport again', async () => {
+    mockListOpenReports.mockResolvedValue([flagReport()]);
+    mockRejectFlagReport.mockResolvedValue({ closed: false, closeError: 'timeout', resolution: 'flag_rejected' });
+    mockRetryClose.mockResolvedValue({ closed: true });
+    const { findByText, getByText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText(/^Reports/));
+    await findByText('This looks fake');
+
+    await act(async () => {
+      fireEvent.press(getByText('Reject flag'));
+    });
+    await waitFor(() => expect(mockRejectFlagReport).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      fireEvent.press(getByText('Finish review'));
+    });
+
+    await waitFor(() =>
+      expect(mockRetryClose).toHaveBeenCalledWith('report-1', 'flag_rejected', 'admin-1'),
+    );
+    expect(mockRejectFlagReport).toHaveBeenCalledTimes(1); // never repeated
+    await waitFor(() => expect(queryByText('This looks fake')).toBeNull()); // now truly closed
+  });
+
+  it('a report that is ALREADY pending close on load (reloaded from a prior session) also offers only Finish review', async () => {
+    // Simulates markPendingResolution having survived a reload: the durable
+    // column says pending, not any local state from this render.
+    mockListOpenReports.mockResolvedValue([flagReport({ resolution: 'comment_removed' })]);
+    const { findByText, getByText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText(/^Reports/));
+    await findByText('This looks fake');
+
+    expect(queryByText('Reject flag')).toBeNull();
+    expect(queryByText('Remove flag')).toBeNull();
+    expect(getByText('Finish review')).toBeTruthy();
   });
 });
