@@ -134,7 +134,11 @@ describe('A11Y-214 guard — accessible-by-default Pressables must not swallow n
 
   it('LegendModal card shell (SR-072): the tap-swallow Pressable is not an AT element', () => {
     const src = read('screens/LegendModal.tsx');
-    const shellTag = openTagAt(src, 'styles.cardShell}', 'LegendModal');
+    // VP1 fix3: the style prop became an array (`[styles.cardShell, {
+    // marginTop: ... }]`) to carry the dynamic top inset, so the anchor can no
+    // longer assume a bare `styles.cardShell}` — anything unique inside the
+    // tag still locates it via openTagAt's brace-balanced walk.
+    const shellTag = openTagAt(src, 'styles.cardShell,', 'LegendModal');
     expect(hasAccessibleFalse(shellTag)).toBe(true);
     // Its jobs stay: swallow taps, contain VO, handle escape.
     expect(shellTag).toContain('accessibilityViewIsModal');

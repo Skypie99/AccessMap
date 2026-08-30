@@ -252,6 +252,13 @@ export default function SignInScreen({
 
         <View style={styles.formCard}>
           {deletionStatus || deletionStatusUnavailable ? (
+            // VP1 fix3: this was the one block on the screen with no font-scale
+            // cap at all (the fields cap at 1.4, the footer's TypeBlock below
+            // caps at TYPE_BLOCK.chrome) — at large Dynamic Type it grew
+            // unbounded and crowded Create Account/the footer toward the
+            // bottom. `chrome` matches this screen's own precedent for
+            // peripheral, non-primary-reading content.
+            <TypeBlock cap={TYPE_BLOCK.chrome}>
             <View style={styles.deletionStatusCard} accessibilityLiveRegion="polite">
               <AppText variant="label" style={styles.deletionStatusTitle}>
                 {deletionStatus?.status === 'COMPLETE' ? 'Account deletion complete' : 'Account deletion status'}
@@ -288,6 +295,7 @@ export default function SignInScreen({
                 </Pressable>
               )}
             </View>
+            </TypeBlock>
           ) : null}
           {/* The design system's field, at last. This screen hand-rolled a twin
               of `Input` — its own label, focus ring, 44pt floor and error row —

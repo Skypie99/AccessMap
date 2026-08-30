@@ -334,7 +334,11 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       closeLabel="Close leaderboard"
       glass
       engineered
-      shrinkStyle={styles.cap}
+      // VP1 fix3 (Global Fix 3): reaches the top safe area instead of
+      // content-hugging at a flat 90% cap, which left dead space above a
+      // short list. `shrinkStyle={styles.cap}` is gone — its maxHeight:'90%'
+      // would have clobbered the expanded 100% cap (it applies last).
+      presentation="expanded"
       cardStyle={styles.card}
       // SW-45: the sheet clears the tab bar. Folded into the primitive's
       // `Math.max(floor, insets.bottom)` rather than replacing it, so the home
@@ -460,13 +464,6 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
 
 function makeStyles(color: ColorTheme) {
   return StyleSheet.create({
-    // `Sheet`'s own 90% cap is what this sheet always wanted; the difference
-    // is that the primitive's RESOLVES. D22: the '90%' here sat on a card
-    // whose parent was content-sized, so it never applied and a long list at
-    // large type ran off the screen (G6/SR-099, the same shape four sibling
-    // sheets had). Declared anyway, so the intent is legible where the sheet
-    // is configured rather than only in the primitive's default.
-    cap: { maxHeight: '90%' },
     // Not `padded`: this sheet's children carry their own gutters (the list
     // rows are full-bleed with inset content, and the footer spans the card).
     card: { paddingTop: spacing.tight },

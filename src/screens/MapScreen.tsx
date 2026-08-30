@@ -2732,7 +2732,7 @@ export default function MapScreen() {
             <ActivityIndicator
               color="#414B5A" {...decorativeProps}
             />
-            <AppText variant="body" style={styles.bannerLocatingText}>Finding your location…</AppText>
+            <AppText variant="body" style={styles.bannerText}>Finding your location…</AppText>
           </GlassSurface>
         )}
 
@@ -2741,20 +2741,28 @@ export default function MapScreen() {
             denied); reuses the banner INK only. Mutually exclusive with the
             denied banner below, which stays byte-identical. */}
         {noLocationHint && (
-          <View
+          <GlassSurface
             style={styles.banner}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
           >
             <AppText variant="body" style={styles.bannerText}>
               {NO_LOCATION_HINT}
             </AppText>
-          </View>
+          </GlassSurface>
         )}
 
         {permissionDenied && (
-          <View
+          <GlassSurface
             style={styles.banner}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
             accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
           >
@@ -2779,7 +2787,7 @@ export default function MapScreen() {
                 <AppText variant="label" style={styles.bannerLinkText}>Open Settings</AppText>
               </Pressable>
             )}
-          </View>
+          </GlassSurface>
         )}
 
         {/* Jordan Art. 7 disclaimer — shown whenever the heat layer is active.
@@ -3007,10 +3015,13 @@ export default function MapScreen() {
             <PressableScale
               ref={nearbyTrigger.ref}
               style={styles.fabCrystalPill}
-              // Crystal List pill (Sky Q3). The word "List" (15px bold = NOT
-              // WCAG-large) needs 4.5, so it darkens from color.brand to
-              // textStrong on the thin crystal (arbiter 5.58/5.40); the icon
-              // takes the crystal ink. dimOnPress={false} — glass hides a dim.
+              // Crystal Nearby pill (Sky Q3; VP1 fix3 renamed "List" → "Nearby"
+              // so the button matches the sheet it opens — "Nearby flags",
+              // not "List"). The label (15px bold = NOT WCAG-large) needs 4.5,
+              // so it darkens from color.brand to textStrong on the thin
+              // crystal (arbiter 5.58/5.40, unaffected by the word change —
+              // same size/weight); the icon takes the crystal ink.
+              // dimOnPress={false} — glass hides a dim.
               dimOnPress={false}
               onPress={() => {
                 // register() captures this button's native handle BEFORE the
@@ -3037,7 +3048,7 @@ export default function MapScreen() {
               />
               <View style={styles.fabSecondaryRow}>
                 <List size={16} color={barIconColor} strokeWidth={2.2} />
-                <AppText variant="label" style={styles.fabCrystalText}>List</AppText>
+                <AppText variant="label" style={styles.fabCrystalText}>Nearby</AppText>
               </View>
             </PressableScale>
             {/* Jordan Condition 2: hide Report FAB for guest users.
@@ -3239,6 +3250,7 @@ export default function MapScreen() {
         // The dismissal-COMPLETE event — only now is the legend button back on
         // screen and safe to aim the screen-reader cursor at.
         onDismiss={legendTrigger.restore}
+        tabBarHeight={tabBarHeight}
       />
 
       <AddressSearchModal
@@ -3663,7 +3675,12 @@ const makeStyles = (color: ColorTheme) =>
     // M10 group: must shrink (RN Views default flexShrink 0) so the nested
     // filterPanel's own flexShrink/maxHeight bound still engages against the
     // absolute-fill overlay. Never give this flex:1 or a fixed height.
-    overlayTopGroup: { flexShrink: 1 },
+    // VP1 fix3: gap here (not per-child margin) is the one place that keeps
+    // every conditional banner in this column apart — the error banner and a
+    // location banner can both be visible at once (e.g. a fetch failure while
+    // location is still undetermined), and with zero margin on either they'd
+    // render flush against each other.
+    overlayTopGroup: { flexShrink: 1, gap: spacing.sm },
     // Direction B command bar (Sky-locked B-refined). ONE crystal pill replaces
     // the old title row + pill/tray row. GlassSurface variant="row" owns the
     // material (liteColors = the crystal tokens); this outer style carries only
@@ -3873,9 +3890,15 @@ const makeStyles = (color: ColorTheme) =>
     // The denied banner has a sentence plus an optional Settings route. Stack
     // them so both receive the banner's full inner width and can reflow at
     // accessibility sizes instead of overflowing a centered horizontal row.
+    // VP1 fix3: this used to be a solid `color.overlaySoft` fill — a
+    // 95%-opaque near-BLACK slab in dark mode (no blur), visually unrelated to
+    // every other map control. GlassSurface now supplies the same pinned-light
+    // material as `bannerLocating`/`heatNotice` below (Global Fix 5) — the
+    // no-location-hint and permission-denied banners join that family instead
+    // of standing apart. Layout-only; the material lives on the GlassSurface
+    // props at each call site.
     banner: {
       alignSelf: 'stretch',
-      backgroundColor: color.overlaySoft,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       borderRadius: radius.md,
@@ -3883,11 +3906,9 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       alignItems: 'stretch',
     },
-    // Frosted variant of `banner` for the NEUTRAL "Finding your location…" info
-    // banner only. Identical layout, but no solid backgroundColor — <GlassSurface>
-    // owns the surface (translucent + blur with an AA contrast floor; opaque
-    // fallback under Reduce Transparency). The semantic alert banners
-    // (permission / offline / error) keep their solid fills for urgency.
+    // Compact variant of `banner` for the "Finding your location…" info pill —
+    // same pinned-light material, laid out as a centered row instead of a
+    // stretched column.
     bannerLocating: {
       alignSelf: 'center',
       paddingHorizontal: spacing.md,
@@ -3897,7 +3918,11 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       alignItems: 'center',
     },
-    bannerText: { fontSize: font.size.sm, color: color.text },
+    // Pinned-light literal, shared by every banner on the pinned-light glass
+    // family above (banner / bannerLocating). #333 on the 0.82 white floor =
+    // 8.28:1 (arbiter-proved) — themed color.text would go light-on-light in
+    // dark mode once the surface stopped following the theme.
+    bannerText: { fontSize: font.size.sm, color: '#333' },
     // D26: the banner's route out. Sits under the sentence rather than beside
     // it so it survives the reflow at large type, and carries the 44pt box
     // itself.
@@ -3909,17 +3934,16 @@ const makeStyles = (color: ColorTheme) =>
       paddingRight: spacing.sm,
     },
     bannerLinkPressed: { opacity: 0.7 },
+    // Pinned-light literal (light theme's own inkSelect) — dark theme's
+    // inkSelect (#B4CFFA) is tuned for a dark surface and would go
+    // light-on-light now that `banner` is always the pinned-light material.
     bannerLinkText: {
-      color: color.inkSelect,
+      color: '#0F53BE',
       fontWeight: font.weight.bold,
       fontSize: font.size.sm,
       textDecorationLine: 'underline',
     },
-    // Pinned-light literal — NOT the shared bannerText (the permission banner
-    // renders that on a themed dark fill). #333 on the 0.82 white banner = 8.28:1.
-    bannerLocatingText: { fontSize: font.size.sm, color: '#333' },
     errorBanner: {
-      marginTop: spacing.sm,
       backgroundColor: color.error,
       paddingHorizontal: 14,
       paddingVertical: spacing.md,
@@ -4106,8 +4130,8 @@ const makeStyles = (color: ColorTheme) =>
       ...(color.scheme === 'light' ? shadow.e2 : {}),
     },
     fabSecondaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    // List word on crystal: textStrong (5.58 L / 5.40 D) — color.brand would fail
-    // 4.5 on the thin crystal (a 15px-bold label is NOT WCAG-large).
+    // "Nearby" word on crystal: textStrong (5.58 L / 5.40 D) — color.brand would
+    // fail 4.5 on the thin crystal (a 15px-bold label is NOT WCAG-large).
     fabCrystalText: { color: color.textStrong, fontWeight: font.weight.bold, fontSize: 15 },
     // Shared icon+label row. Replaces two identical inline
     // `{ flexDirection:'row', alignItems:'center', gap:6 }` objects (Save-preset

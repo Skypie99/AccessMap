@@ -43,7 +43,7 @@ function setPlatform(os: 'ios' | 'android') {
 function capsuleStyle(utils: ReturnType<typeof render>) {
   const capsule = utils.UNSAFE_getAllByType(View).find((node) => {
     const style = StyleSheet.flatten(node.props.style);
-    return style?.height === 68 && style?.overflow === 'hidden';
+    return style?.bottom === 0 && style?.overflow === 'hidden';
   });
   return StyleSheet.flatten(capsule?.props.style);
 }
@@ -59,13 +59,13 @@ describe('TabBarGlass liquid material', () => {
     if (platformDescriptor) Object.defineProperty(Platform, 'OS', platformDescriptor);
   });
 
-  it('uses a clipped, inset crystal material on iOS instead of the opaque legacy floor', () => {
+  it('uses a clipped, inset crystal material that spans the full bar height (VP1 fix3: grounded to the device edge, no transparent gap below it)', () => {
     const utils = render(<TabBarGlass />);
     expect(capsuleStyle(utils)).toMatchObject({
       top: 0,
+      bottom: 0,
       left: spacing.md,
       right: spacing.md,
-      height: 68,
       overflow: 'hidden',
     });
     expect(utils.UNSAFE_getAllByType(BlurView)).toHaveLength(1);

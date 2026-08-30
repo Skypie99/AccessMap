@@ -124,35 +124,33 @@ describe('SW-42 — a shrinking sheet scrolls its body instead of clipping it', 
   });
 });
 
-describe('SW-42 follow-up — the two list sheets cannot collapse', () => {
-  // Sky's call, 2026-08-20. The clipping fix above stopped these sheets LOSING
-  // content; it did not stop them rendering at 52.3% and 36.8% while their
-  // KAV-free siblings sat at 72.4%, which left dead space above the tab bar and
-  // a 198pt list viewport showing ~1.5 of 6 report cards. The cause was never
-  // isolated and could not be measured (both sheets are behind auth), so the
-  // floor is deliberately mechanism-independent.
-  it.each(SHRINKING_SHEETS)('%s floors its height on the KAV, where percentages resolve', (_n, rel) => {
+describe('SW-42 follow-up / VP1 fix3 — the two list sheets cannot collapse', () => {
+  // Sky's call, 2026-08-20, superseded 2026-08-29 (Global Fix 3 — information
+  // panels use the maximum practical reading height). The 55%/85% floor+cap
+  // stopped these sheets rendering undersized; it did not stop a SHORT list
+  // leaving dead space above the tab bar, because a floor only ever promises
+  // "at least", not "flush". `presentation="expanded"` replaces it with a
+  // strictly stronger guarantee — the card fills to (near) 100% unconditionally
+  // — the same primitive path FeedbackModal/ReportContentModal/
+  // StatusHistoryModal already proved before this pair adopted it too.
+  it.each(SHRINKING_SHEETS)('%s opts into the primitive\'s expanded presentation', (_n, rel) => {
     const src = stripComments(read(rel));
-    // Same rule as the cap it sits beside: only the flex:1 backdrop is definite,
-    // so a minHeight anywhere below the KAV would be inert (G6/SR-099).
-    expect(src).toMatch(/kav:\s*\{[^}]*minHeight:\s*'\d+%'/);
-    expect(src).toMatch(/kav:\s*\{[^}]*maxHeight:\s*'\d+%'/);
+    expect(src).toMatch(/<Sheet\b/);
+    expect(src).toContain('presentation="expanded"');
   });
 
-  it.each(SHRINKING_SHEETS)('%s lets the card FILL that floor, not sit above it', (_n, rel) => {
-    // Without flexGrow the floor would raise the KAV and leave the card
-    // content-sized at its top — turning a height bug into a gap bug.
-    //
-    // The consumer asks for it by name (`fill`); the primitive is what has to
-    // spend it. `fill` being a silent no-op is the failure this pair blocks,
-    // and it is a failure the old single-file assertion could not have seen.
-    const src = stripComments(read(rel));
-    expect(src).toMatch(/\bfill\b/);
+  it('the primitive spends `expanded` on every node the KAV chain needs to actually fill', () => {
+    // Consumer opt-in means nothing if the primitive's `expanded` branch is a
+    // no-op — checked once here, the same Recipe-D split used elsewhere in this
+    // file: the consumer asks by name, the primitive is what has to spend it.
     const primitive = stripComments(read(SHEET_PRIMITIVE));
-    expect(primitive).toMatch(/cardFill:\s*\{[^}]*flexGrow:\s*1/);
-    // …and spends it on BOTH nodes that need it: the shadow wrapper, which is
-    // what the KAV actually sizes, and the card inside it.
-    expect((primitive.match(/fill && styles\.cardFill/g) ?? []).length).toBe(2);
+    expect(primitive).toMatch(/kavExpanded:\s*\{[^}]*maxHeight:\s*'100%'[^}]*flexGrow:\s*1/);
+    expect(primitive).toMatch(/cardExpanded:\s*\{[^}]*maxHeight:\s*'100%'/);
+    expect(primitive).toMatch(/cardShadowExpanded:\s*\{[^}]*maxHeight:\s*'100%'/);
+    // `expanded` reuses `cardFill` (flexGrow:1) rather than growing a parallel
+    // mechanism — both nodes that need it, same as the old `fill` prop spent.
+    expect(primitive).toMatch(/cardFill:\s*\{\s*flexGrow:\s*1\s*\}/);
+    expect((primitive.match(/expanded && styles\.cardFill/g) ?? []).length).toBe(2);
   });
 });
 

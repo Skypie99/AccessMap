@@ -97,11 +97,8 @@ describe('SW-13 + SW-38 — the announced tab count', () => {
     expect(src).toMatch(/if \(Platform\.OS !== 'ios'\) return undefined;/);
   });
 
-  it('keeps exactly two dividers and clips only the liquid capsule exterior indicators', () => {
+  it('keeps exactly two dividers', () => {
     expect(src).toContain("showDivider={route.name === 'Home' || route.name === 'Tasks'}");
-    expect(src).toMatch(
-      /capsuleEdge=\{\s*usesLiquidTabBar\s*\?\s*route\.name === 'Home'\s*\?\s*'start'[\s\S]*route\.name === 'Profile'\s*\?\s*'end'[\s\S]*: undefined\s*\}/,
-    );
   });
 
   it('keeps the native safe-area strip transparent and absolute', () => {

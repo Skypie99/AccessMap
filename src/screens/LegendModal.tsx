@@ -14,6 +14,7 @@ import {
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { FLOATING_TAB_BAR_CAPSULE_HEIGHT } from '@/navigation/tabBarGeometry';
 import CategoryIcon from '@/components/CategoryIcon';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { AppText } from '@/components/ui/AppText';
@@ -33,9 +34,17 @@ interface Props {
    * Optional — an opener with no trigger to return to passes nothing.
    */
   onDismiss?: () => void;
+  /**
+   * VP1 fix3: the occupied height of the floating bottom nav (MapScreen's
+   * `useBottomTabBarHeight()`), so the expanded panel can stop its readable
+   * content short of the nav instead of being clipped behind it. Optional —
+   * defaults to the bar's own control height + this context's insets.bottom,
+   * the same formula RootNavigator uses, for callers/tests with no navigator.
+   */
+  tabBarHeight?: number;
 }
 
-export default function LegendModal({ visible, onClose, onDismiss }: Props) {
+export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight }: Props) {
   const color = useColor();
   const reducedMotion = useReducedMotion();
   const { fontScale } = useWindowDimensions();
@@ -44,6 +53,7 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
   // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  const effectiveTabBarHeight = tabBarHeight ?? FLOATING_TAB_BAR_CAPSULE_HEIGHT + insets.bottom;
   // WCAG 2.4.3: move the screen-reader cursor onto the header when the modal opens.
   const titleRef = useFocusOnOpen<View>(visible);
   // Pull-to-dismiss (map-gestures SPEC §2.6). Read-only sheet, so no busy gate —
@@ -56,9 +66,10 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
         {/* S9 (L6-21): the scrim is an absolute SIBLING of the card, not its
             ancestor — a screen reader never lands on a giant "Close" button that
             wraps the whole dialog. Hidden from the a11y tree on web; SR users
-            close via the in-card "Close" button below. Native VoiceOver is
-            trapped in the card (accessibilityViewIsModal) so tap-to-dismiss on
-            the scrim stays a sighted-only affordance. */}
+            close via the in-card top-right X, the escape scrub, or the
+            hardware back path. Native VoiceOver is trapped in the card
+            (accessibilityViewIsModal) so tap-to-dismiss on the scrim stays a
+            sighted-only affordance. */}
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
@@ -69,9 +80,14 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
         {/* Pull-down-to-dismiss — the same onClose the scrim tap, the in-card
             Close button and onRequestClose all use. The legend is read-only and
             never busy, so the gesture has no state to guard against. */}
-        <SheetPull onDismiss={onClose} atTop={atTop} simultaneousHandlers={scrollRef}>
+        <SheetPull
+          onDismiss={onClose}
+          atTop={atTop}
+          simultaneousHandlers={scrollRef}
+          style={styles.pullExpanded}
+        >
         <Pressable
-          style={styles.cardShell}
+          style={[styles.cardShell, { marginTop: insets.top + spacing.sm }]}
           // Swallow taps on the card so they don't dismiss via the backdrop.
           // (The tap-swallow + accessibilityViewIsModal stay on this Pressable;
           //  the bulk-glass material is the child so the guard is preserved.)
@@ -93,9 +109,15 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
               wrapper, not a child of it: an `accessible` View merges every
               descendant into ONE VoiceOver node (the exact A11Y-214/SR-072 bug
               already fixed once on cardShell below), which would silently
-              swallow this button's own role/label. The bottom "Close" button
-              stays too — it's the reachable close action for a screen-reader
-              user who has scrolled to the end of a long legend list. */}
+              swallow this button's own role/label.
+              VP1 fix3: the redundant fixed BOTTOM "Close" button that used to
+              sit below the scroll area is gone — it ate scroll real estate and
+              was the direct cause of "Anonymous report" clipping against it.
+              A screen-reader user who scrolls to the end still has two ways
+              out without scrolling back: the VoiceOver escape scrub
+              (`onAccessibilityEscape` on the card Pressable below, fires from
+              anywhere in the modal) and `onRequestClose`/the hardware back
+              gesture. Sighted users keep the backdrop tap and this X. */}
           <View style={styles.headerRow}>
             <View ref={titleRef} style={styles.titleWrap} accessible accessibilityRole="header">
               {/* accessibilityRole="none": the WRAPPER is the one header node —
@@ -129,7 +151,10 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
           <ScrollView
             ref={scrollRef}
             style={styles.scroll}
-            contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(spacing.sm, insets.bottom) }]}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(spacing.sm, effectiveTabBarHeight) },
+            ]}
             onScroll={onScroll}
             scrollEventThrottle={scrollEventThrottle}
           >
@@ -278,15 +303,6 @@ export default function LegendModal({ visible, onClose, onDismiss }: Props) {
             </AppText>
             </TypeBlock>
           </ScrollView>
-
-          <Pressable
-            onPress={onClose}
-            style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-            accessibilityRole="button"
-            accessibilityLabel="Close legend"
-          >
-            <AppText variant="label" style={styles.closeText}>Close</AppText>
-          </Pressable>
         </GlassSurface>
         </Pressable>
         </SheetPull>
@@ -302,18 +318,32 @@ const makeStyles = (color: ColorTheme) =>
     backgroundColor: color.scrim,
     justifyContent: 'flex-end',
   },
+  // VP1 fix3: the pull wrapper must stretch (flexGrow) for cardShell's own
+  // flexGrow to have a definite band to grow into — same wiring as Sheet's
+  // `pullExpanded`.
+  pullExpanded: { width: '100%', flexGrow: 1 },
   // Tap-swallow shell (the Pressable) — bounds the sheet height; the bulk-glass
-  // material is its child, so the backdrop-dismiss guard is preserved. No fill.
+  // material is its child, so the backdrop-dismiss guard is preserved.
+  // VP1 fix3 (Global Fix 3): grows to fill from the top margin down to the
+  // backdrop's own bottom (the literal screen edge — this Modal renders above
+  // the tab bar, same as every other legend/list overlay) instead of
+  // content-hugging at a flat 85%, which left the panel undersized with dead
+  // space below it and let the old fixed bottom Close button crowd out the
+  // last rows. The nav-clearance gap moves to the ScrollView's own bottom
+  // padding below (`scrollContent`), matching Sheet's `expanded` pattern.
   cardShell: {
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    maxHeight: '85%',
+    maxHeight: '100%',
+    flexGrow: 1,
+    flexShrink: 1,
   },
   card: {
     padding: spacing.xl,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     gap: spacing.sm,
+    flexGrow: 1,
     flexShrink: 1,
     // The bulk variant owns the surface; clip it to the rounded top.
     overflow: 'hidden',
@@ -343,7 +373,7 @@ const makeStyles = (color: ColorTheme) =>
     fontFamily: font.family.bodyMedium,
     lineHeight: 18,
   },
-  scroll: { marginTop: spacing.tight, flexShrink: 1 },
+  scroll: { marginTop: spacing.tight, flexGrow: 1, flexShrink: 1 },
   scrollContent: { paddingBottom: spacing.sm, gap: spacing.sm + 2 },
   sectionLabel: {
     fontSize: font.size.caption,
@@ -420,19 +450,5 @@ const makeStyles = (color: ColorTheme) =>
     marginTop: spacing.lg - 2,
     fontStyle: 'italic',
     lineHeight: 17,
-  },
-  closeBtn: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.md + 2,
-    borderRadius: radius.md,
-    backgroundColor: color.surfaceNeutral,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44, // WCAG 2.5.5 / Apple HIG touch target (matches sibling modal close buttons)
-  },
-  closeText: {
-    color: color.text,
-    fontWeight: font.weight.bold,
-    fontSize: font.size.md,
   },
 });

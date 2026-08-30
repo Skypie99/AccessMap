@@ -358,9 +358,13 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
       glass
       engineered
       padded
-      fill
+      // VP1 fix3 (Global Fix 3): information-heavy panels use the max
+      // practical reading height instead of a content-hugging 55%/85%
+      // floor+cap. `expanded` fills from just under the safe-area top to
+      // minBottomPad, same as Leaderboard below and the pattern already
+      // proven on FeedbackModal/ReportContentModal/StatusHistoryModal.
+      presentation="expanded"
       keyboardAvoiding
-      shrinkStyle={styles.kav}
       cardStyle={keyboardVisible ? styles.cardKeyboard : styles.cardRhythm}
       minBottomPad={spacing.xxl + 4}
       atTop={atTop}
@@ -564,12 +568,6 @@ function chipActiveFg(status: WatchedStatusFilter, color: ColorTheme): string {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    kav: {
-      width: '100%',
-      minHeight: '55%',
-      maxHeight: '85%',
-      flexShrink: 1,
-    },
     // The sheet's inter-child rhythm. `padded` supplies `md`; this surface
     // shipped tighter and its rows carry their own spacing.
     cardRhythm: { gap: spacing.tight },

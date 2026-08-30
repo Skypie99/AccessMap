@@ -6,17 +6,19 @@ import { spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReduceTransparency } from '@/lib/accessibility';
 import {
-  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
   FLOATING_TAB_BAR_CAPSULE_RADIUS,
   FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
 } from './tabBarGeometry';
 
 /**
- * Floating glass background for the native bottom tab bar. The 68pt control
- * band stays intact, while only its inset capsule owns material; the bottom
- * safe-area region remains transparent so Explore's map reads continuously
- * beneath it. Android retains the established blur + opaque-floor recipe and
- * Reduce Transparency remains entirely opaque.
+ * Floating glass background for the native bottom tab bar. VP1 fix3: the
+ * capsule now spans the FULL bar container — the 68pt control band AND the
+ * bottom safe-area strip below it — so the material is grounded flush to the
+ * device edge instead of floating above a transparent gap. Button content
+ * still lives entirely inside the top 68pt band (TabBarButton/tabBarStyle are
+ * unchanged), so nothing sits under the home indicator; only the visual
+ * material now occupies that inset. Android retains the established blur +
+ * opaque-floor recipe and Reduce Transparency remains entirely opaque.
  */
 export function TabBarGlass() {
   const color = useColor();
@@ -56,9 +58,9 @@ export const tabBarGlassStyles = StyleSheet.create({
   capsule: {
     position: 'absolute',
     top: 0,
+    bottom: 0,
     left: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
     right: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
-    height: FLOATING_TAB_BAR_CAPSULE_HEIGHT,
     overflow: 'hidden',
     borderRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
     borderWidth: StyleSheet.hairlineWidth,

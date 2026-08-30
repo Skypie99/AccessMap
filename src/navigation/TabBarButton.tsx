@@ -6,12 +6,8 @@ import { hapticSelection } from '@/lib/haptics';
 import { decorativeProps } from '@/lib/accessibility';
 import { radius, spacing } from '@/theme';
 import {
-  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
-  FLOATING_TAB_BAR_CAPSULE_RADIUS,
-  FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
   FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
   FLOATING_TAB_BAR_SELECTED_FILL_WIDTH,
-  type FloatingTabBarCapsuleEdge,
 } from './tabBarGeometry';
 
 /**
@@ -46,21 +42,24 @@ import {
  *
  * VP1 (2026-08-29): the selected tab also wears a soft rounded wash behind its
  * icon+label, sized to the content rather than the full segment, so selection
- * reads at a glance without adding a second loud signal next to the existing
- * underline. Reuses `color.glassSelectedTint` — the same selection-wash token
- * already shipped on Tasks rows and the report-flag option list — instead of
- * `shadow.glowBrand`, which DESIGN.md §5/§12 reserves for Prominent brand/
- * reward surfaces and explicitly says must never signal state.
+ * reads at a glance. Reuses `color.glassSelectedTint` — the same
+ * selection-wash token already shipped on Tasks rows and the report-flag
+ * option list — instead of `shadow.glowBrand`, which DESIGN.md §5/§12
+ * reserves for Prominent brand/reward surfaces and explicitly says must never
+ * signal state.
+ *
+ * VP1 fix3 (Sky): the selected tab used to carry a THIRD signal — a 2pt
+ * underline — alongside this chip and the OS-level active tint
+ * (tabBarActiveTintColor, applied by React Navigation itself to the icon and
+ * label). Three simultaneous signals read as busy; the underline was the
+ * redundant one and is gone. Selection is now chip + ink only, verified against
+ * real iOS in both themes (see the VP1 fix3 report) before removal shipped.
  */
 interface TabBarButtonProps extends BottomTabBarButtonProps {
   /** Decorative divider after this segment (Home and Tasks only). */
   showDivider?: boolean;
-  /** Mirrors the navigator's contrast-safe active ink for the underline. */
-  activeInk?: string;
   /** Keeps the crystal divider on the navigation token, not a raw color. */
   dividerInk?: string;
-  /** Clips only an outside selected edge to the liquid-glass capsule. */
-  capsuleEdge?: FloatingTabBarCapsuleEdge;
   /** Selection wash behind the active tab's icon+label (color.glassSelectedTint). */
   selectedFill?: string;
 }
@@ -70,9 +69,7 @@ export function TabBarButton({
   children,
   style,
   showDivider = false,
-  activeInk,
   dividerInk,
-  capsuleEdge,
   selectedFill,
   ...rest
 }: TabBarButtonProps) {
@@ -107,25 +104,6 @@ export function TabBarButton({
           testID="tab-segment-divider"
         />
       ) : null}
-      {selected ? (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.underlineMask,
-            capsuleEdge === 'start' && styles.underlineMaskStart,
-            capsuleEdge === 'end' && styles.underlineMaskEnd,
-          ]}
-          {...decorativeProps}
-          testID="tab-segment-underline-mask"
-        >
-          <View
-            pointerEvents="none"
-            style={[styles.selectedUnderline, activeInk ? { borderTopColor: activeInk } : null]}
-            {...decorativeProps}
-            testID="tab-segment-underline"
-          />
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -155,35 +133,5 @@ const styles = StyleSheet.create({
     top: spacing.xs,
     bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + spacing.sm,
     borderRadius: radius.lg,
-  },
-  // The tab item's bottom sits one control-padding above the capsule edge.
-  // Extending this mask into that padding aligns its rounded outer corner with
-  // TabBarGlass without shrinking the pressable or changing its hit frame.
-  underlineMask: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: -FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
-    height: FLOATING_TAB_BAR_CAPSULE_HEIGHT,
-  },
-  underlineMaskStart: {
-    left: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
-    overflow: 'hidden',
-    borderTopLeftRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
-    borderBottomLeftRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
-  },
-  underlineMaskEnd: {
-    right: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
-    overflow: 'hidden',
-    borderTopRightRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
-    borderBottomRightRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
-  },
-  selectedUnderline: {
-    position: 'absolute',
-    bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
-    left: 0,
-    right: 0,
-    height: 2,
-    borderTopWidth: 2,
   },
 });

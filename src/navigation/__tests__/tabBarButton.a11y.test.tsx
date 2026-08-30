@@ -15,13 +15,7 @@ import { StyleSheet, Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { TabBarButton } from '../TabBarButton';
-import {
-  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
-  FLOATING_TAB_BAR_CAPSULE_RADIUS,
-  FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
-  FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
-  FLOATING_TAB_BAR_SELECTED_FILL_WIDTH,
-} from '../tabBarGeometry';
+import { FLOATING_TAB_BAR_SELECTED_FILL_WIDTH } from '../tabBarGeometry';
 
 jest.mock('@/lib/haptics', () => ({
   hapticSelection: jest.fn(),
@@ -107,49 +101,10 @@ describe('TabBarButton — a11y + press vocabulary', () => {
     });
   });
 
-  it('draws a 2pt underline across the selected segment only', () => {
-    const { UNSAFE_getByProps } = renderTab({ 'aria-selected': true, activeInk: '#abcdef' });
-    const underline = UNSAFE_getByProps({ testID: 'tab-segment-underline' });
-    expect(underline.props.accessibilityElementsHidden).toBe(true);
-    expect(StyleSheet.flatten(underline.props.style)).toMatchObject({
-      left: 0,
-      right: 0,
-      bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
-      height: 2,
-      borderTopColor: '#abcdef',
-    });
-  });
-
-  it('clips a leading selected indicator to the rounded liquid capsule without shrinking the tab', () => {
-    const { UNSAFE_getByProps } = renderTab({ capsuleEdge: 'start' });
-    const mask = UNSAFE_getByProps({ testID: 'tab-segment-underline-mask' });
-    expect(mask.props.accessibilityElementsHidden).toBe(true);
-    expect(StyleSheet.flatten(mask.props.style)).toMatchObject({
-      left: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
-      bottom: -FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
-      height: FLOATING_TAB_BAR_CAPSULE_HEIGHT,
-      overflow: 'hidden',
-      borderBottomLeftRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
-    });
-  });
-
-  it('mirrors clipping at the trailing capsule edge and leaves an internal segment untrimmed', () => {
-    const trailing = renderTab({ capsuleEdge: 'end' }).UNSAFE_getByProps({
-      testID: 'tab-segment-underline-mask',
-    });
-    expect(StyleSheet.flatten(trailing.props.style)).toMatchObject({
-      right: FLOATING_TAB_BAR_CAPSULE_SIDE_INSET,
-      overflow: 'hidden',
-      borderBottomRightRadius: FLOATING_TAB_BAR_CAPSULE_RADIUS,
-    });
-
-    const internal = renderTab().UNSAFE_getByProps({ testID: 'tab-segment-underline-mask' });
-    expect(StyleSheet.flatten(internal.props.style).overflow).toBeUndefined();
-  });
-
-  it('does not render the selected underline for an unselected tab', () => {
-    const { queryByTestId } = renderTab({ 'aria-selected': false });
+  it('VP1 fix3: renders no underline at all — three simultaneous selection signals read as busy, so the chip + OS-level active ink now carry selection alone', () => {
+    const { queryByTestId } = renderTab({ 'aria-selected': true, selectedFill: '#112233' });
     expect(queryByTestId('tab-segment-underline')).toBeNull();
+    expect(queryByTestId('tab-segment-underline-mask')).toBeNull();
   });
 
   it('VP1: draws a decorative selection wash behind the selected tab, hugging its content', () => {

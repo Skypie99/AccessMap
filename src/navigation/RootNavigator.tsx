@@ -384,19 +384,9 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         tabBarButton: (props) => (
           <TabBarButton
             {...props}
-            activeInk={activeTabInk}
             dividerInk={color.navBorder}
             selectedFill={color.glassSelectedTint}
             showDivider={route.name === 'Home' || route.name === 'Tasks'}
-            capsuleEdge={
-              usesLiquidTabBar
-                ? route.name === 'Home'
-                  ? 'start'
-                  : route.name === 'Profile'
-                    ? 'end'
-                    : undefined
-                : undefined
-            }
           />
         ),
         // Native: TabBarGlass supplies liquid glass on normal iOS and preserves
