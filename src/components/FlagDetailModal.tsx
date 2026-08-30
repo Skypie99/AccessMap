@@ -29,6 +29,7 @@ import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
 import { TYPE_BLOCK, TypeBlock } from '@/components/ui/TypeBlock';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import {
+  AlertTriangle,
   Copy,
   History,
   Map as MapIcon,
@@ -102,6 +103,7 @@ import {
   DISPUTE_FAILED_TITLE,
   DISPUTE_RECORDED_MESSAGE,
   DISPUTE_STALE_MESSAGE,
+  GALLERY_LOAD_FAILED_TEXT,
   HIDE_FAILED_TITLE,
   REPORT_CONTROL_LABEL,
 } from '@/lib/copy';
@@ -212,6 +214,13 @@ export default function FlagDetailModal({
   const keyboardVisible = useKeyboardVisible();
   const bodyScrollRef = useRef(null);
   const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
+  // Prompt B B2/Fable B-UX-002: the gallery's own loading/error state, owned
+  // here (not the write-path throw COR-3 already relies on). photosRetryToken
+  // is a pure re-run trigger for the Retry control — bumping it re-enters the
+  // SAME effect below, so Retry is never a second, divergent loader.
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const [photosError, setPhotosError] = useState<string | null>(null);
+  const [photosRetryToken, setPhotosRetryToken] = useState(0);
   // photo_alt (2026-08-19): a picked photo parks here so the owner can add an
   // optional screen-reader description BEFORE it uploads. All three pickers
   // (web input, camera, library) feed this one attach row. isBlobUrl marks
@@ -376,30 +385,43 @@ export default function FlagDetailModal({
     void recordView(user.id, shownFlag.id);
   }, [visible, shownFlag, user]);
 
-  // Load the gallery photos whenever the modal opens or the flag changes.
-  // listFlagPhotos returns [] only when the migration hasn't run yet; real
-  // failures throw (COR-3). The gallery has no error-state UI (banked for
-  // Sky), so the VIEW path degrades to warn + keep the current list — the
-  // throw matters on the write path, where addFlagPhoto's position math must
-  // not run against a failed read.
+  // Load the gallery photos whenever the modal opens, the flag changes, or
+  // Retry is pressed. listFlagPhotos now throws every backend error (Prompt B
+  // B2/Fable B-UX-002 — a false-empty gallery on an evidence surface is an
+  // active false statement). Rows and any prior error are reset SYNCHRONOUSLY
+  // before the fetch starts, so a flag-to-flag switch can never leave a stale
+  // photo (or a stale error) rendered under the new flag while the new load
+  // is in flight; `cancelled` still rejects a stale completion arriving after
+  // a further switch. Error clears only when a load for the CURRENT flag
+  // actually succeeds.
   useEffect(() => {
     if (!visible || !shownFlag) {
       setFlagPhotos([]);
+      setPhotosError(null);
+      setPhotosLoading(false);
       return;
     }
     let cancelled = false;
+    setFlagPhotos([]);
+    setPhotosError(null);
+    setPhotosLoading(true);
     (async () => {
       try {
         const photos = await listFlagPhotos(shownFlag.id);
-        if (!cancelled) setFlagPhotos(photos);
+        if (cancelled) return;
+        setFlagPhotos(photos);
       } catch (e) {
+        if (cancelled) return;
         console.warn('[FlagDetailModal] photo gallery load failed:', e);
+        setPhotosError(GALLERY_LOAD_FAILED_TEXT);
+      } finally {
+        if (!cancelled) setPhotosLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [visible, shownFlag?.id]);
+  }, [visible, shownFlag?.id, photosRetryToken]);
 
   // Read the user's watched list to know whether THIS flag is being
   // tracked. Re-runs whenever the modal opens or the shown flag changes,
@@ -1751,21 +1773,60 @@ export default function FlagDetailModal({
                 </View>
               )}
 
-              {/* (4) PHOTOS, AND ONLY WHEN THERE ARE PHOTOS.
-                  The strip used to open the sheet with a 96pt grey tile saying
-                  "No photos" — on most flags the first thing under the title
-                  was an absence, in the sheet's prime area. The placeholder is
+              {/* (4) PHOTOS.
+                  Prompt B B2/Fable B-UX-002: LOADING / ERROR / real content are
+                  now mutually exclusive branches, so a failed load can never
+                  render as the real "No photos" empty state (nor, before this
+                  fix, as nothing at all). photosLoading and photosError are
+                  reset synchronously on every flag change, so switching flags
+                  can never show a stale prior flag's photos or a stale error
+                  under the new one.
+                  The real-content branch keeps its original shape: the strip
+                  used to open the sheet with a 96pt grey tile saying "No
+                  photos" — on most flags the first thing under the title was
+                  an absence, in the sheet's prime area. The placeholder is
                   right in the REPORT form, where it is an invitation; here it
                   is a report of nothing. Rendered when there is something to
                   show, or when the owner can add something (the gallery's own
                   add sentinel fills the list, so the placeholder still cannot
                   appear). PhotoGallery itself is untouched. */}
-              {(flagPhotos.length > 0 || (isOwn && !busy && !pendingPhoto)) && (
-                <PhotoGallery
-                  photos={flagPhotos}
-                  onAddPhoto={isOwn && !busy && !pendingPhoto ? handleAddPhoto : undefined}
-                  maxPhotos={5}
+              {photosLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={color.brand}
+                  style={styles.photosSpinner}
+                  accessible
+                  accessibilityLabel="Loading photos"
                 />
+              ) : photosError ? (
+                <Pressable
+                  onPress={() => setPhotosRetryToken((t) => t + 1)}
+                  style={({ pressed }) => [
+                    styles.photosErrorBanner,
+                    pressed && styles.photosErrorBannerPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={GALLERY_LOAD_FAILED_TEXT}
+                  accessibilityHint="Tries to load photos again"
+                  accessibilityLiveRegion="polite"
+                >
+                  <AlertTriangle
+                    size={18}
+                    color={color.errorFg}
+                    strokeWidth={2.2} {...decorativeProps}
+                  />
+                  <AppText variant="body" style={styles.photosErrorText}>
+                    {GALLERY_LOAD_FAILED_TEXT}
+                  </AppText>
+                </Pressable>
+              ) : (
+                (flagPhotos.length > 0 || (isOwn && !busy && !pendingPhoto)) && (
+                  <PhotoGallery
+                    photos={flagPhotos}
+                    onAddPhoto={isOwn && !busy && !pendingPhoto ? handleAddPhoto : undefined}
+                    maxPhotos={5}
+                  />
+                )
               )}
 
 
@@ -2989,6 +3050,28 @@ const makeStyles = (color: ColorTheme) =>
     commentsSpinner: {
       marginTop: spacing.sm,
       alignSelf: 'center',
+    },
+    // Prompt B B-UX-002: same recipe as commentsErrorBanner above (error-red
+    // tappable area, visible text doubling as the accessible name) — kept as
+    // its own scoped style group rather than sharing the comments-prefixed
+    // one, matching this file's per-surface naming.
+    photosSpinner: {
+      alignSelf: 'flex-start',
+    },
+    photosErrorBanner: {
+      backgroundColor: color.errorBg,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      minHeight: 44,
+    },
+    photosErrorBannerPressed: { backgroundColor: color.errorPressed },
+    photosErrorText: {
+      flex: 1,
+      fontSize: font.size.sm,
+      color: color.errorFg,
     },
     commentsList: {
       gap: spacing.tight,

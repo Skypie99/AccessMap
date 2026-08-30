@@ -13,10 +13,23 @@
 
 import React from 'react';
 import { AccessibilityInfo, StyleSheet } from 'react-native';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, configure } from '@testing-library/react-native';
 // jest.mock calls are hoisted above imports, so the component-under-test can
 // be imported here with the rest (keeps import/first clean).
 import SignInScreen from '../SignInScreen';
+import {
+  loadAccountDeletionReceipt,
+  getAccountDeletionStatus,
+  clearAccountDeletionReceipt,
+  type AccountDeletionReceipt,
+  type AccountDeletionStatus,
+} from '@/lib/accountDeletionReceipt';
+import { confirm as confirmMock } from '@/lib/confirm';
+
+// Matches useComments.test.ts's precedent: the Prompt B B2-R suite below
+// chains two awaited mock resolutions per test, and RTL's 1000ms default
+// asyncUtilTimeout was intermittently too tight under full-suite load.
+configure({ asyncUtilTimeout: 10_000 });
 
 jest.mock('@/lib/supabase', () => ({
   signInWithEmail: jest.fn(async () => ({ error: null })),
@@ -24,7 +37,12 @@ jest.mock('@/lib/supabase', () => ({
 }));
 
 jest.mock('@/lib/analytics', () => ({ track: jest.fn() }));
-jest.mock('@/lib/confirm', () => ({ notify: jest.fn() }));
+jest.mock('@/lib/confirm', () => ({ notify: jest.fn(), confirm: jest.fn() }));
+jest.mock('@/lib/accountDeletionReceipt', () => ({
+  loadAccountDeletionReceipt: jest.fn(),
+  getAccountDeletionStatus: jest.fn(),
+  clearAccountDeletionReceipt: jest.fn(),
+}));
 
 // PrivacyScreen pulls in the full policy surface — irrelevant here.
 jest.mock('@/screens/PrivacyScreen', () => () => null);
@@ -139,5 +157,181 @@ describe('the show/hide toggle survived the move into the field', () => {
     expect(StyleSheet.flatten(toggle.props.style).width).toBe(44);
     fireEvent.press(toggle);
     expect(u.getByLabelText('Hide password')).toBeTruthy();
+  });
+});
+
+/**
+ * Prompt B B2-R — SignInScreen deletion-receipt unavailable-state repair.
+ *
+ * The defect: when the mount-time status check failed, the ONLY offered
+ * action was an unconfirmed "Dismiss unavailable receipt" — a transient
+ * outage invited discarding the local recovery capability for a deletion
+ * whose true state was unknown, and the body could claim "this device has a
+ * deletion receipt" even when no receipt object had ever loaded (a
+ * SecureStore/index rejection can set deletionStatusUnavailable before any
+ * receipt exists). This repair adds an in-place Check status retry, gates
+ * the dismiss control on an actually-held receipt, and requires confirm()
+ * before that dismiss runs. Backend/receipt-format/security semantics are
+ * unchanged — see accountDeletionReceipt.test.ts and confirm.test.ts for
+ * those unchanged contracts.
+ */
+describe('Prompt B B2-R — account-deletion receipt unavailable-state repair', () => {
+  const RECEIPT: AccountDeletionReceipt = {
+    operationId: '11111111-1111-4111-8111-111111111111',
+    receiptSecret: 'a'.repeat(64),
+    subjectId: 'user-1',
+    createdAt: '2026-08-01T00:00:00.000Z',
+  };
+  const REQUESTED_STATUS: AccountDeletionStatus = {
+    status: 'REQUESTED',
+    requestedAt: '2026-08-01T00:00:00.000Z',
+    completedAt: null,
+  };
+  const COMPLETE_STATUS: AccountDeletionStatus = {
+    status: 'COMPLETE',
+    requestedAt: '2026-08-01T00:00:00.000Z',
+    completedAt: '2026-08-02T00:00:00.000Z',
+  };
+  const UNAVAILABLE_WITH_RECEIPT =
+    "This device has a deletion receipt, but status is temporarily unavailable.";
+  const UNAVAILABLE_NO_RECEIPT = 'Account deletion status is temporarily unavailable.';
+
+  const mockLoad = loadAccountDeletionReceipt as jest.Mock;
+  const mockStatus = getAccountDeletionStatus as jest.Mock;
+  const mockClear = clearAccountDeletionReceipt as jest.Mock;
+  const mockConfirm = confirmMock as jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+  });
+
+  it('loaded receipt + outage: shows the receipt-truthful unavailable body, Check status, and targeted dismiss', async () => {
+    mockLoad.mockResolvedValue(RECEIPT);
+    mockStatus.mockRejectedValue(new Error('network down'));
+
+    const u = render(<SignInScreen />);
+    await waitFor(() => expect(u.getByText(UNAVAILABLE_WITH_RECEIPT)).toBeTruthy());
+    expect(u.getByLabelText('Check account deletion status')).toBeTruthy();
+    expect(
+      u.getByLabelText('Dismiss unavailable receipt. Account deletion status is unavailable.'),
+    ).toBeTruthy();
+  });
+
+  it('retry busies immediately, and a continued failure retains the receipt and unavailable state', async () => {
+    mockLoad.mockResolvedValue(RECEIPT);
+    mockStatus.mockRejectedValue(new Error('network down'));
+
+    const u = render(<SignInScreen />);
+    await waitFor(() => expect(u.getByText(UNAVAILABLE_WITH_RECEIPT)).toBeTruthy());
+
+    // fireEvent.press runs the handler synchronously up to its first await,
+    // and setCheckingDeletionStatus(true) is the first statement in
+    // refreshDeletionStatus, so the busy/disabled state is visible immediately.
+    fireEvent.press(u.getByLabelText('Check account deletion status'));
+    expect(u.getByText('Checking…')).toBeTruthy();
+    expect(
+      u.getByLabelText('Check account deletion status').props.accessibilityState.disabled,
+    ).toBe(true);
+
+    await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(2));
+    expect(u.getByText(UNAVAILABLE_WITH_RECEIPT)).toBeTruthy();
+    expect(
+      u.getByLabelText('Dismiss unavailable receipt. Account deletion status is unavailable.'),
+    ).toBeTruthy();
+    expect(mockClear).not.toHaveBeenCalled();
+  });
+
+  it('a later successful retry clears unavailable, shows the real status, and removes the dismiss control', async () => {
+    mockLoad.mockResolvedValue(RECEIPT);
+    mockStatus.mockResolvedValueOnce(REQUESTED_STATUS);
+
+    const u = render(<SignInScreen />);
+    await waitFor(() =>
+      expect(
+        u.getByText('Your deletion request was received and is waiting to begin.'),
+      ).toBeTruthy(),
+    );
+    expect(u.queryByText(UNAVAILABLE_WITH_RECEIPT)).toBeNull();
+    expect(
+      u.queryByLabelText('Dismiss unavailable receipt. Account deletion status is unavailable.'),
+    ).toBeNull();
+  });
+
+  it('cancelling the confirmation leaves the receipt, status, and card untouched', async () => {
+    mockLoad.mockResolvedValue(RECEIPT);
+    mockStatus.mockRejectedValue(new Error('network down'));
+    mockConfirm.mockResolvedValueOnce(false);
+
+    const u = render(<SignInScreen />);
+    const dismiss = await u.findByLabelText(
+      'Dismiss unavailable receipt. Account deletion status is unavailable.',
+    );
+
+    fireEvent.press(dismiss);
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+    expect(mockClear).not.toHaveBeenCalled();
+    // The card, receipt, and dismiss control are all still there — a cancel
+    // is a true no-op.
+    expect(u.getByText(UNAVAILABLE_WITH_RECEIPT)).toBeTruthy();
+    expect(
+      u.getByLabelText('Dismiss unavailable receipt. Account deletion status is unavailable.'),
+    ).toBeTruthy();
+  });
+
+  it('confirming the dismissal clears exactly the displayed receipt, once, then clears the local card', async () => {
+    mockLoad.mockResolvedValue(RECEIPT);
+    mockStatus.mockRejectedValue(new Error('network down'));
+    mockConfirm.mockResolvedValueOnce(true);
+
+    const u = render(<SignInScreen />);
+    const dismiss = await u.findByLabelText(
+      'Dismiss unavailable receipt. Account deletion status is unavailable.',
+    );
+
+    fireEvent.press(dismiss);
+    await waitFor(() => expect(mockClear).toHaveBeenCalledTimes(1));
+    expect(mockClear).toHaveBeenCalledWith(RECEIPT);
+    await waitFor(() => expect(u.queryByText(UNAVAILABLE_WITH_RECEIPT)).toBeNull());
+  });
+
+  it('COMPLETE keeps its own direct, unconfirmed dismissal — the new confirm() gate does not apply to it', async () => {
+    mockLoad.mockResolvedValue(RECEIPT);
+    mockStatus.mockResolvedValue(COMPLETE_STATUS);
+
+    const u = render(<SignInScreen />);
+    const dismiss = await u.findByLabelText('Dismiss confirmation');
+    expect(u.getByText('Your account and associated content have been deleted.')).toBeTruthy();
+
+    fireEvent.press(dismiss);
+    await waitFor(() => expect(mockClear).toHaveBeenCalledTimes(1));
+    expect(mockClear).toHaveBeenCalledWith(RECEIPT);
+    // No new confirmation was introduced on this existing, already-safe path.
+    expect(mockConfirm).not.toHaveBeenCalled();
+  });
+
+  it('no loaded receipt: retry-only, no false "has a receipt" claim, and no targeted dismiss', async () => {
+    // Case B (B2-R): the receipt load itself rejects, so
+    // deletionStatusUnavailable is set before any receipt object exists.
+    mockLoad.mockRejectedValueOnce(new Error('SecureStore unavailable'));
+
+    const u = render(<SignInScreen />);
+    await waitFor(() => expect(u.getByText(UNAVAILABLE_NO_RECEIPT)).toBeTruthy());
+    expect(u.queryByText(UNAVAILABLE_WITH_RECEIPT)).toBeNull();
+    expect(
+      u.queryByLabelText('Dismiss unavailable receipt. Account deletion status is unavailable.'),
+    ).toBeNull();
+    expect(u.getByLabelText('Check account deletion status')).toBeTruthy();
+    expect(mockStatus).not.toHaveBeenCalled();
+    expect(mockClear).not.toHaveBeenCalled();
+
+    // Retry resolves to "no receipt at all" — the whole card clears, no
+    // status call is made, and no clear/clear-all runs.
+    mockLoad.mockResolvedValueOnce(null);
+    fireEvent.press(u.getByLabelText('Check account deletion status'));
+    await waitFor(() => expect(u.queryByText(UNAVAILABLE_NO_RECEIPT)).toBeNull());
+    expect(u.queryByLabelText('Check account deletion status')).toBeNull();
+    expect(mockStatus).not.toHaveBeenCalled();
+    expect(mockClear).not.toHaveBeenCalled();
   });
 });

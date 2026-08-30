@@ -350,6 +350,10 @@ describe('B-1 copy carries the PROPOSED marker (the honesty fence, mechanised)',
     'UNBLOCK_ALL_LABEL',
     'UNBLOCK_ALL_CONFIRM_BODY',
     'blockAuthorA11yLabel',
+    // Prompt B B-UX-002: the gallery load-failure state. Fixed rather than
+    // provider-composed, and must never collapse into the real "No photos"
+    // empty-state copy.
+    'GALLERY_LOAD_FAILED_TEXT',
   ];
 
   /**

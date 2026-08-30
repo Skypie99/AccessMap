@@ -2,11 +2,6 @@ import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { commitFlagPhotoUpload, uploadFlagPhoto } from './flags';
 import { trackEvent } from './analytics';
-// SLOP-3 (code-qa 2026-08-06): this file's local isTableMissingError lacked
-// the SR-092 embed early-out — a broken join whose message says "does not
-// exist" was misread as "table missing". The canonical embed-aware check
-// lives in postgrestErrors.ts now.
-import { isRelationMissing } from './postgrestErrors';
 
 export type FlagPhoto = {
   id: string;
@@ -22,37 +17,37 @@ export type FlagPhoto = {
 
 /**
  * Fetch all photos for a flag ordered by position.
- * Returns [] ONLY when the flag_photos table doesn't exist yet (migration
- * pending). Any other failure throws — COR-3 (code-qa 2026-08-06): the old
- * swallow-all [] made a transient failure render as "this flag has no photos"
- * and let addFlagPhoto compute position 0 from a failed read.
+ *
+ * Throws every backend error — missing relation, missing column, auth,
+ * network, malformed response, anything (Prompt B B2/Fable B-UX-002). A
+ * missing-column failure was previously misclassified as "the table doesn't
+ * exist yet" (via the broad `does not exist` match in isRelationMissing) and
+ * swallowed into `[]`, which rendered a real backend failure as an empty
+ * gallery — an evidence surface, so a false "No photos" is an active false
+ * statement. flag_photos is a permanent table now; its own absence is no
+ * longer an expected transitional state either. FlagDetailModal owns the
+ * loading/error/Retry presentation — this helper's only job is to never lie
+ * about what happened. `[]` here means what it says: zero rows, not a
+ * failure in a trenchcoat.
  */
 export async function listFlagPhotos(
   flagId: string,
 ): Promise<{ url: string; position: number; alt_text?: string | null }[]> {
-  try {
-    const { data, error } = await supabase
-      .from('flag_photos')
-      .select('url, object_key, position, alt_text')
-      .eq('flag_id', flagId)
-      .order('position', { ascending: true });
+  const { data, error } = await supabase
+    .from('flag_photos')
+    .select('url, object_key, position, alt_text')
+    .eq('flag_id', flagId)
+    .order('position', { ascending: true });
 
-    if (error) {
-      if (isRelationMissing(error)) return [];
-      throw error;
-    }
+  if (error) throw error;
 
-    return (data ?? []).map((photo) => ({
-      url: photo.object_key
-        ? supabase.storage.from('flag-photos').getPublicUrl(photo.object_key).data.publicUrl
-        : photo.url,
-      position: photo.position,
-      alt_text: photo.alt_text,
-    })) as { url: string; position: number; alt_text?: string | null }[];
-  } catch (e) {
-    if (isRelationMissing(e)) return [];
-    throw e;
-  }
+  return (data ?? []).map((photo) => ({
+    url: photo.object_key
+      ? supabase.storage.from('flag-photos').getPublicUrl(photo.object_key).data.publicUrl
+      : photo.url,
+    position: photo.position,
+    alt_text: photo.alt_text,
+  })) as { url: string; position: number; alt_text?: string | null }[];
 }
 
 /**

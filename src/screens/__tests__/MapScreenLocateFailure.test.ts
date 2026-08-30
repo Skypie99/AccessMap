@@ -56,6 +56,10 @@ describe('B10 — web locate-failure gets a visible + spoken outcome', () => {
   it('keeps the native Alert.alert dialog (works + announced there)', () => {
     // Globally unique to this catch's else branch (a different message than the
     // preset-save Alert), so assert on the whole file rather than a window.
-    expect(map).toContain('Alert.alert("Couldn\'t find your location", errorMessage(e))');
+    // Prompt B B-UX-003: the body now goes through locationErrorMessage (not
+    // the generic errorMessage), which keeps raw native diagnostics (e.g.
+    // kCLErrorDomain text) out of this alert — see location.test.ts for that
+    // boundary's own coverage.
+    expect(map).toContain('Alert.alert("Couldn\'t find your location", locationErrorMessage(e))');
   });
 });

@@ -18,7 +18,7 @@ import {
 import type { LayoutChangeEvent } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
+import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction, locationErrorMessage } from '@/lib/location';
 import { failureBannerText, offlineBannerText } from '@/lib/copy';
 import { announce } from '@/lib/announce';
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -1302,7 +1302,10 @@ export default function MapScreen() {
             action: { label: 'Retry', onPress: () => requestLocationRef.current() },
           });
         } else {
-          Alert.alert("Couldn't find your location", errorMessage(e));
+          // Prompt B B-UX-003: locationErrorMessage keeps raw native
+          // diagnostics (e.g. kCLErrorDomain text) out of this alert while
+          // still passing the specific, actionable timeout message through.
+          Alert.alert("Couldn't find your location", locationErrorMessage(e));
         }
       }
     } finally {
@@ -2591,9 +2594,12 @@ export default function MapScreen() {
             ]}
             accessibilityRole="button"
             // A11Y-211: the visible banner ends "Tap to retry." and this is a
-            // BUTTON, so the accessible name must carry the verb too — Tasks
-            // composes it already and the two screens disagreed. 2.5.3-adjacent.
-            accessibilityLabel={`${loadError} Tap to retry.`}
+            // BUTTON, so the accessible name must carry the verb too. Prompt B
+            // B-UX-001: routed through the SAME failureBannerText() as the
+            // visible text below (was a hand-composed `${loadError} Tap to
+            // retry.` that silently disagreed with the visible sentence
+            // whenever loadError didn't already end in a period).
+            accessibilityLabel={failureBannerText(loadError)}
             accessibilityHint="Tries to load flags again"
             {...a11yToggle({ busy: loadingFlags })}
             // Announces re-renders of this region on Android too; iOS uses

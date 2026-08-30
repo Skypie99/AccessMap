@@ -37,15 +37,39 @@ describe('B9b — Home surfaces a refresh that failed while data is on screen', 
     expect(block).toContain('Tap to try again');
   });
 
-  it('is a live region and retries via refresh() when tapped', () => {
+  it('is a live region and retries via the shared refresh callback when tapped', () => {
     const block = around(home, 'error && flags.length > 0 && !isOfflineCache');
     expect(block).toContain('accessibilityLiveRegion="polite"');
     expect(block).toContain('accessibilityRole="button"');
-    expect(block).toContain('void refresh()');
+    expect(block).toContain('onPress={handleRefresh}');
   });
 
   it('still states the cache age on the offline banner (B9a)', () => {
     // The offline banner composes its age through the shared copy helper.
     expect(home).toContain('offlineBannerText(offlineCachedAt)');
+  });
+});
+
+describe('Prompt B B-UX-004 — the shared handleRefresh callback catches the re-throw', () => {
+  // refresh() intentionally re-throws when there's no offline cache
+  // (flagsStore.tsx), so a bare `void refresh()` at any Retry entry point is
+  // an unhandled promise rejection on a failed retry. All three entry points
+  // (RefreshControl, the B9b stale-data banner, and the empty-list error
+  // card's retry) must share ONE caught callback rather than each re-forking
+  // the fire-and-forget.
+  it('handleRefresh catches the rejection instead of leaking it', () => {
+    const block = around(home, 'const handleRefresh', 400);
+    expect(block).toContain('refresh().catch(');
+  });
+
+  it('no entry point calls refresh() bare/uncaught anymore', () => {
+    expect(home).not.toContain('void refresh()');
+  });
+
+  it('all three Retry entry points route through the shared callback', () => {
+    expect(home).toContain('onRefresh={handleRefresh}');
+    // The other two are covered by the B9b/W5 describe blocks above, which
+    // already anchor on their surrounding guards.
+    expect(home.match(/onPress=\{handleRefresh\}/g)?.length).toBe(2);
   });
 });

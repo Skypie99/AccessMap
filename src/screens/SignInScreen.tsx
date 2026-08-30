@@ -20,7 +20,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText, Input, TypeBlock, TYPE_BLOCK } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
 import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
-import { notify } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import {
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
@@ -116,6 +116,53 @@ export default function SignInScreen({
     setDeletionReceipt(null);
     setDeletionStatusUnavailable(false);
   }, [deletionReceipt]);
+
+  // Prompt B B2-R: the unavailable-state dismissal is the ONLY control B2-R
+  // authorizes to change — it now requires explicit confirmation before
+  // running the SAME dismissDeletionReceipt() the COMPLETE branch still calls
+  // directly and unconfirmed (COMPLETE dismissal is out of B2-R's scope and
+  // stays exactly as it was). Cancelling leaves every receipt/status/
+  // unavailable state untouched.
+  const dismissUnavailableReceipt = useCallback(async () => {
+    const confirmed = await confirm(
+      'Dismiss unavailable receipt?',
+      "Status is currently unknown. Dismissing removes this device's recovery receipt for this deletion request — it does not cancel the deletion, and without the receipt this device may no longer be able to check the request's status.",
+      'Dismiss',
+      true,
+    );
+    if (!confirmed) return;
+    await dismissDeletionReceipt();
+  }, [dismissDeletionReceipt]);
+
+  // Prompt B B2-R: unavailable presentation must win over any retained
+  // nonterminal deletionStatus (a failed refresh after a known status left
+  // stale "waiting to begin"-style prose showing while the action branch had
+  // already switched to unavailable), and must not claim a receipt exists
+  // when deletionReceipt is null (a SecureStore/index load rejection can set
+  // deletionStatusUnavailable before any receipt object was ever held).
+  const deletionStatusBodyText = (): string => {
+    if (deletionStatus?.status === 'COMPLETE') {
+      return 'Your account and associated content have been deleted.';
+    }
+    if (deletionStatusUnavailable) {
+      return deletionReceipt
+        ? 'This device has a deletion receipt, but status is temporarily unavailable.'
+        : 'Account deletion status is temporarily unavailable.';
+    }
+    if (deletionStatus?.status === 'REQUESTED') {
+      return 'Your deletion request was received and is waiting to begin.';
+    }
+    if (deletionStatus?.status === 'DELETING') {
+      return 'Your account remains unavailable while deletion is in progress.';
+    }
+    if (deletionStatus?.status === 'REVIEWING') {
+      return 'Your account remains unavailable while we complete a deletion review.';
+    }
+    // Unreachable given this card only renders when deletionStatus is set or
+    // deletionStatusUnavailable is true, and every status/unavailable
+    // combination is covered above — kept so this always returns a string.
+    return 'Account deletion status is temporarily unavailable.';
+  };
 
   // A11Y-203: every error shown in the inline row must ALSO be announced.
   // The row's accessibilityLiveRegion="assertive" is Android-only in RN, and
@@ -264,15 +311,7 @@ export default function SignInScreen({
                 {deletionStatus?.status === 'COMPLETE' ? 'Account deletion complete' : 'Account deletion status'}
               </AppText>
               <AppText variant="body" style={styles.deletionStatusBody}>
-                {deletionStatus?.status === 'REQUESTED'
-                  ? 'Your deletion request was received and is waiting to begin.'
-                  : deletionStatus?.status === 'DELETING'
-                    ? 'Your account remains unavailable while deletion is in progress.'
-                    : deletionStatus?.status === 'REVIEWING'
-                      ? 'Your account remains unavailable while we complete a deletion review.'
-                      : deletionStatus?.status === 'COMPLETE'
-                        ? 'Your account and associated content have been deleted.'
-                        : 'This device has a deletion receipt, but status is temporarily unavailable.'}
+                {deletionStatusBodyText()}
               </AppText>
               {deletionStatus?.status === 'COMPLETE' ? (
                 <Pressable onPress={() => void dismissDeletionReceipt()} style={styles.deletionStatusAction}
@@ -280,11 +319,28 @@ export default function SignInScreen({
                   <AppText variant="label" style={styles.deletionStatusActionText}>Dismiss confirmation</AppText>
                 </Pressable>
               ) : deletionStatusUnavailable ? (
-                <Pressable onPress={() => void dismissDeletionReceipt()} style={styles.deletionStatusAction}
-                  accessibilityRole="button" accessibilityLabel="Dismiss unavailable receipt. Account deletion status is unavailable."
-                  accessibilityHint="Removes this unavailable or expired deletion receipt from this device.">
-                  <AppText variant="label" style={styles.deletionStatusActionText}>Dismiss unavailable receipt</AppText>
-                </Pressable>
+                // Prompt B B2-R: Check status is now offered FIRST and in
+                // place (reusing the exact same refreshDeletionStatus/
+                // checkingDeletionStatus/"Checking…" control as the normal
+                // branch below), so a transient outage is recoverable without
+                // discarding anything. Dismiss is now SECOND, only rendered
+                // when a receipt is actually held, and confirmed before it runs.
+                <View style={styles.deletionStatusActionRow}>
+                  <Pressable onPress={() => void refreshDeletionStatus()} disabled={checkingDeletionStatus}
+                    style={styles.deletionStatusAction} accessibilityRole="button" accessibilityLabel="Check account deletion status"
+                    {...a11yToggle({ busy: checkingDeletionStatus, disabled: checkingDeletionStatus })}>
+                    <AppText variant="label" style={styles.deletionStatusActionText}>
+                      {checkingDeletionStatus ? 'Checking…' : 'Check status'}
+                    </AppText>
+                  </Pressable>
+                  {deletionReceipt !== null && (
+                    <Pressable onPress={() => void dismissUnavailableReceipt()} style={styles.deletionStatusAction}
+                      accessibilityRole="button" accessibilityLabel="Dismiss unavailable receipt. Account deletion status is unavailable."
+                      accessibilityHint="Removes this unavailable or expired deletion receipt from this device.">
+                      <AppText variant="label" style={styles.deletionStatusActionText}>Dismiss unavailable receipt</AppText>
+                    </Pressable>
+                  )}
+                </View>
               ) : (
                 <Pressable onPress={() => void refreshDeletionStatus()} disabled={checkingDeletionStatus}
                   style={styles.deletionStatusAction} accessibilityRole="button" accessibilityLabel="Check account deletion status"
@@ -615,6 +671,9 @@ const makeStyles = (_color: ColorTheme) =>
     deletionStatusTitle: { color: '#dceaff', fontSize: font.size.sm, fontWeight: font.weight.semibold },
     deletionStatusBody: { color: 'rgba(235,243,255,0.9)', fontSize: font.size.sm, lineHeight: font.lineHeight.sm },
     deletionStatusAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm },
+    // Prompt B B2-R: holds Check status + the conditional Dismiss side by
+    // side in the unavailable branch.
+    deletionStatusActionRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
     deletionStatusActionText: { color: '#b4cffa', fontSize: font.size.sm, fontWeight: font.weight.semibold },
     // The label / fill / focus-ring / 44pt-floor styles that used to live here
     // are the `Input` primitive's now, drawn from `fixedDark` in theme.ts —

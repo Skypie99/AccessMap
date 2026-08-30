@@ -344,7 +344,13 @@ describe('FlagDetailModal — photo ownership boundary', () => {
     expect(screen.UNSAFE_queryByType(PhotoGalleryInner)).toBeNull();
   });
 
-  it('exposes the photo-add control to the report owner when idle', () => {
+  it('exposes the photo-add control to the report owner when idle', async () => {
+    // Prompt B B2/Fable B-UX-002: the gallery now has a real, distinct
+    // LOADING state (cleared once listFlagPhotos settles), so the owner's
+    // add-sentinel — rendered by PhotoGallery once real content replaces the
+    // loading indicator — is no longer available on the very first
+    // synchronous render; await the resolved (empty) load like a real user
+    // would see it.
     const ownFlag = { ...FLAG, user_id: 'user-1' };
     const screen = render(
       <FlagDetailModal
@@ -357,7 +363,8 @@ describe('FlagDetailModal — photo ownership boundary', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Add photo')).toBeTruthy();
+    const addPhoto = await screen.findByLabelText('Add photo');
+    expect(addPhoto).toBeTruthy();
     expect(screen.UNSAFE_getByType(PhotoGalleryInner).props.onAddPhoto).toEqual(expect.any(Function));
   });
 });

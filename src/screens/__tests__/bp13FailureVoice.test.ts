@@ -35,6 +35,14 @@ describe('copy.ts — the one true failure register (behavioural)', () => {
     expect(failureBannerText('offline — TAP TO RETRY.')).toBe('offline — TAP TO RETRY.');
   });
 
+  it('B-UX-001: does NOT double the period when the provider message already ends in one', () => {
+    // FEATURE_UNAVAILABLE ends in its own period; the composed banner must have
+    // exactly one sentence boundary at the join, not "…yet.. Tap to retry."
+    expect(failureBannerText("That feature isn't available yet.")).toBe(
+      "That feature isn't available yet. Tap to retry.",
+    );
+  });
+
   it('the retry verb is a plain second sentence (not an em-dash status line)', () => {
     expect(RETRY_VERB).toBe('Tap to retry.');
     expect(RETRY_VERB).not.toContain('—');

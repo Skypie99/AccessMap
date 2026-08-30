@@ -25,6 +25,7 @@ import {
   STATUS_ORDER,
   DEFAULT_STATUSES,
   FLAG_PHOTOS_BUCKET,
+  FLAG_READ_SELECT,
   updateFlagContent,
   uploadFlagPhoto,
   verifyExifStripped,
@@ -35,6 +36,12 @@ import {
   resizeActionFor,
   scaledCanvasDims,
   PHOTO_MAX_DIMENSION,
+  listFlags,
+  listFlagsPage,
+  listFlagsByUser,
+  fetchFlagById,
+  fetchFlagsByIds,
+  listRecentFlags,
 } from '../flags';
 import type { FlagCategory, FlagSeverity, FlagStatus } from '@/types/database';
 import { Platform } from 'react-native';
@@ -91,6 +98,101 @@ jest.mock('../supabase', () => ({
     rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
+
+// Prompt B B2-PN03: a chainable Supabase query-builder mock generic enough
+// for all six full flag readers — every chain method returns the SAME
+// object (so any call order resolves), and the object is itself thenable so
+// `await` on the chain (listFlags/listFlagsPage/listFlagsByUser/
+// fetchFlagsByIds/listRecentFlags never call a terminal .single()) resolves
+// {data, error} directly; fetchFlagById's .maybeSingle() resolves the same
+// pair via a real Promise.
+function flagReadChain(data: unknown, error: unknown = null) {
+  const resolved = Promise.resolve({ data, error });
+  const chain: Record<string, jest.Mock> & Pick<Promise<unknown>, 'then'> = {
+    select: jest.fn(() => chain),
+    in: jest.fn(() => chain),
+    eq: jest.fn(() => chain),
+    order: jest.fn(() => chain),
+    limit: jest.fn(() => chain),
+    lt: jest.fn(() => chain),
+    maybeSingle: jest.fn(() => resolved),
+    then: resolved.then.bind(resolved),
+  } as unknown as Record<string, jest.Mock> & Pick<Promise<unknown>, 'then'>;
+  return chain;
+}
+
+describe('FLAG_READ_SELECT — the shared projection for all six full flag readers (Prompt B B2)', () => {
+  const ROW = {
+    id: 'flag-1',
+    user_id: 'user-1',
+    lat: 49.28,
+    lng: -123.12,
+    category: 'no_ramp',
+    description: null,
+    severity: 3,
+    photo_url: 'https://cdn/legacy.jpg',
+    photo_object_key: null,
+    photo_alt: null,
+    status: 'open',
+    created_at: '2026-08-01T00:00:00.000Z',
+  };
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('retains photo_object_key and drops photo_uploader_id (no display consumer, provenance-disclosure risk)', () => {
+    expect(FLAG_READ_SELECT).toBe(
+      'id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_alt, status, created_at',
+    );
+  });
+
+  it('listFlags selects the shared projection', async () => {
+    const chain = flagReadChain([ROW]);
+    mockFrom.mockReturnValue(chain);
+    await listFlags();
+    expect(chain.select).toHaveBeenCalledWith(FLAG_READ_SELECT);
+  });
+
+  it('listFlagsPage selects the shared projection', async () => {
+    const chain = flagReadChain([ROW]);
+    mockFrom.mockReturnValue(chain);
+    await listFlagsPage();
+    expect(chain.select).toHaveBeenCalledWith(FLAG_READ_SELECT);
+  });
+
+  it('listFlagsByUser selects the shared projection', async () => {
+    const chain = flagReadChain([ROW]);
+    mockFrom.mockReturnValue(chain);
+    await listFlagsByUser('user-1');
+    expect(chain.select).toHaveBeenCalledWith(FLAG_READ_SELECT);
+  });
+
+  it('fetchFlagById selects the shared projection', async () => {
+    const chain = flagReadChain(ROW);
+    mockFrom.mockReturnValue(chain);
+    await fetchFlagById('flag-1');
+    expect(chain.select).toHaveBeenCalledWith(FLAG_READ_SELECT);
+  });
+
+  it('fetchFlagsByIds selects the shared projection', async () => {
+    const chain = flagReadChain([ROW]);
+    mockFrom.mockReturnValue(chain);
+    await fetchFlagsByIds(['flag-1']);
+    expect(chain.select).toHaveBeenCalledWith(FLAG_READ_SELECT);
+  });
+
+  it('listRecentFlags selects the shared projection', async () => {
+    const chain = flagReadChain([ROW]);
+    mockFrom.mockReturnValue(chain);
+    await listRecentFlags();
+    expect(chain.select).toHaveBeenCalledWith(FLAG_READ_SELECT);
+  });
+
+  it('every full reader still throws its backend error rather than swallowing it', async () => {
+    const err = { code: '42703', message: 'column flags.photo_object_key does not exist' };
+    mockFrom.mockReturnValue(flagReadChain(null, err));
+    await expect(listRecentFlags()).rejects.toEqual(err);
+  });
+});
 
 const ALL_CATEGORIES: FlagCategory[] = [
   'no_ramp',

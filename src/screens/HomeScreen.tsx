@@ -151,6 +151,17 @@ export default function HomeScreen() {
   const { flags, loading, error, isOfflineCache, offlineCachedAt, refresh } = useFlags();
   const styles = makeStyles(color);
 
+  // Prompt B B2/Fable B-UX-004: refresh() intentionally re-throws when there's
+  // no offline cache to fall back on (flagsStore.tsx), so all three entry
+  // points below used to call it bare and uncaught, each an unhandled
+  // rejection on a failed Retry. The provider already owns visible error/
+  // loading state before it throws, so this callback only needs to keep the
+  // rejection from escaping — same shape as flagsStore's own internal
+  // `refresh().catch(() => {})`.
+  const handleRefresh = useCallback(() => {
+    refresh().catch(() => {});
+  }, [refresh]);
+
   // The tab bar is absolute (frosted) on native, so float the Report pill +
   // scroll padding above it. On web the bar stays in normal flow (reserves its
   // own space), so the safe-area inset is the right offset there.
@@ -346,7 +357,7 @@ export default function HomeScreen() {
           // Pull-to-refresh parity with Tasks/Profile. `refreshing` stays false:
           // the SWR store renders its own inline banners for stale/failed
           // reloads, so a pinned spinner would double-report.
-          refreshControl={<RefreshControl refreshing={false} onRefresh={() => void refresh()} />}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={handleRefresh} />}
         >
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
         <ScreenHeader
@@ -587,7 +598,7 @@ export default function HomeScreen() {
             the offline banner above when we actually fell back to the cache. */}
         {error && flags.length > 0 && !isOfflineCache && (
           <PressableScale
-            onPress={() => void refresh()}
+            onPress={handleRefresh}
             style={styles.offlineBanner}
             // Warning-tinted banner: a neutral grey dim would fight the warning
             // colour and there's no darker-warning token. Spring + haptic answer it.
@@ -615,7 +626,7 @@ export default function HomeScreen() {
               title="Couldn’t load barriers."
               action={
                 <PressableScale
-                  onPress={() => void refresh()}
+                  onPress={handleRefresh}
                   style={styles.retryBtn}
                   pressedTint={color.ctaFillPressed}
                   accessibilityRole="button"

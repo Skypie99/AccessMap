@@ -65,12 +65,27 @@ export const PRIVACY_POLICY_LINK_HINT = 'Opens the privacy policy';
  * through this — NOT a shared component; each screen keeps its own container.
  * Mirrors Tasks' original inline recipe: append the verb unless the provider
  * message already carries it, so a double "Tap to retry." never appears.
+ *
+ * Prompt B B-UX-001: `providerMessage` (e.g. FEATURE_UNAVAILABLE) already ends
+ * in its own period, so appending `. ${RETRY_VERB}` produced a double period —
+ * "…yet.. Tap to retry." Strip a trailing period before appending so the
+ * composed sentence has exactly one boundary either way.
  */
 export function failureBannerText(providerMessage: string): string {
-  return providerMessage.toLowerCase().includes('tap to retry')
-    ? providerMessage
-    : `${providerMessage}. ${RETRY_VERB}`;
+  if (providerMessage.toLowerCase().includes('tap to retry')) return providerMessage;
+  return `${providerMessage.replace(/\.+$/, '')}. ${RETRY_VERB}`;
 }
+
+/**
+ * Flag Detail's photo gallery, on a load failure. Deliberately fixed rather
+ * than composed via failureBannerText: the gallery's failures are varied
+ * (missing column, network, auth) and this evidence surface must never
+ * reuse the real "No photos" empty-state copy or label for a failure — the
+ * two must stay visually and semantically distinct. AGENT-PROPOSED wording,
+ * adjudicated in Fable's Prompt B UX review (B-UX-002).
+ * PROPOSED (Prompt B B-UX-002, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const GALLERY_LOAD_FAILED_TEXT = "Couldn't load photos. Tap to retry.";
 
 /* ───────────────────────────────────────────────────────────────────────────
  * B-1 — the moderation controls: Report (Apple 1.2(b)), Hide (1.2(c)), and

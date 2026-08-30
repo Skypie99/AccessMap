@@ -1024,6 +1024,18 @@ export interface CreateFlagInput {
   context_tags?: string[];
 }
 
+/**
+ * The one projection shared by every full flag read (listFlags, listFlagsPage,
+ * listFlagsByUser, fetchFlagById, fetchFlagsByIds, listRecentFlags).
+ *
+ * Retains `photo_object_key` (the display key every full reader needs — see
+ * withDisplayPhotoUrl). Deliberately omits `photo_uploader_id`: no surface
+ * displays it, and selecting it would broaden contributor-identity disclosure
+ * through an ordinary read for no client benefit (Prompt B B2, Group 1).
+ */
+export const FLAG_READ_SELECT =
+  'id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_alt, status, created_at';
+
 // Presentation only. Authorization, cleanup, provenance, and deletion use the
 // server-created object key and never parse the public display URL back.
 function withDisplayPhotoUrl(row: FlagRow): FlagRow {
@@ -1053,7 +1065,7 @@ function withDisplayPhotoUrls(rows: FlagRow[]): FlagRow[] {
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(500);
@@ -1103,7 +1115,7 @@ export async function listFlagsPage(
   const limit = opts.limit ?? INITIAL_PAGE_SIZE;
   let query = supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -1131,7 +1143,7 @@ export async function listFlagsPage(
 export async function listFlagsByUser(userId: string) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(200);
@@ -1458,7 +1470,7 @@ export async function deleteFlag(flagId: string) {
 export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .eq('id', flagId)
     .maybeSingle();
   if (error) throw error;
@@ -1484,7 +1496,7 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
   if (flagIds.length === 0) return [];
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .in('id', flagIds);
   if (error) throw error;
   return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
@@ -1523,7 +1535,7 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
 export async function listRecentFlags(limit = 100): Promise<FlagRow[]> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_uploader_id, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;

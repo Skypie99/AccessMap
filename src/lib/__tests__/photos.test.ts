@@ -40,9 +40,30 @@ describe('listFlagPhotos', () => {
     expect(chain.select).toHaveBeenCalledWith('url, object_key, position, alt_text');
   });
 
-  it('keeps the migration-pending compatibility result only for a missing relation', async () => {
-    mockFrom.mockReturnValue(selectChain(null, { code: '42P01', message: 'relation does not exist' }));
-    await expect(listFlagPhotos('flag-1')).resolves.toEqual([]);
+  // Prompt B B2/Fable B-UX-002: the old "missing relation -> []" compatibility
+  // fallback (isRelationMissing's broad `does not exist` match) misclassified
+  // the runtime-confirmed missing-column failure the same way, rendering a
+  // real backend defect as an empty gallery on an evidence surface. throws
+  // now, every time — [] means zero rows, never a failure in disguise.
+  it('throws on a missing relation instead of resolving []', async () => {
+    const err = { code: '42P01', message: 'relation "flag_photos" does not exist' };
+    mockFrom.mockReturnValue(selectChain(null, err));
+    await expect(listFlagPhotos('flag-1')).rejects.toEqual(err);
+  });
+
+  it('throws on a missing column (the exact runtime-confirmed Prompt-B failure shape)', async () => {
+    const err = {
+      code: 'PGRST204',
+      message: "Could not find the 'object_key' column of 'flag_photos' in the schema cache",
+    };
+    mockFrom.mockReturnValue(selectChain(null, err));
+    await expect(listFlagPhotos('flag-1')).rejects.toEqual(err);
+  });
+
+  it('throws on any other backend error too (auth/network/malformed)', async () => {
+    const err = { code: '42501', message: 'permission denied for table flag_photos' };
+    mockFrom.mockReturnValue(selectChain(null, err));
+    await expect(listFlagPhotos('flag-1')).rejects.toEqual(err);
   });
 });
 
