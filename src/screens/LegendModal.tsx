@@ -96,10 +96,15 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
           onDismiss={onClose}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
-          style={styles.pullExpanded}
+          // FIX4F: the top margin moved here from cardShell (below), onto the
+          // node SheetPull itself measures for its dismiss-distance gate. See
+          // the cardShell comment for why the old placement made that gate
+          // effectively undismissable. A flat object, not a style array —
+          // SheetPull's own `style` prop is typed as plain `ViewStyle`.
+          style={{ ...styles.pullExpanded, marginTop: insets.top + spacing.sm }}
         >
         <View
-          style={[styles.cardShell, { marginTop: insets.top + spacing.sm }]}
+          style={styles.cardShell}
           // FIX4E: a plain View, not Pressable. Pressable claims React Native's
           // classic responder system on touch-start (to track press state) even
           // with a no-op onPress, and that responder claim sits, in the touch
@@ -126,6 +131,27 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
         >
+          {/* FIX4F: cardShell no longer carries its own marginTop (moved onto
+              SheetPull's wrapper above) — same visual position either way,
+              since the margin still sits between the backdrop's top edge and
+              this card's own top edge, just on the other side of the flex
+              boundary. What changes is what SheetPull measures for its
+              dismiss-distance gate: SheetPull's `cardHeight.current` is the
+              height of the node it wraps, and that node used to be the OLD,
+              margin-inclusive `pullExpanded` box — 874px on a real device
+              (confirmed live), 70px (insets.top + spacing.sm) MORE than this
+              card's own true 804px, because the margin lived inside the
+              measured box instead of pushing its top edge down. `distanceGate
+              = max(120, cardHeight * 0.3)` turned that phantom 70px into a
+              real ~21px inflation of the drag distance a human has to travel
+              before the grabber pull commits. Small on its own, but Legend's
+              "expanded" full-height presentation (VP1 fix3, unlike the
+              content-hugging `standard` sheets this threshold was tuned
+              against) already puts the honest gate north of 240px — every
+              phantom pixel matters when the true number is already this
+              close to the edge of what a normal pull travels. Moving the
+              margin here makes SheetPull measure the actual visible,
+              draggable card. */}
         <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
           <SheetGrabber />
           {/* VP1 fix2 (Sky): the collapsed map pill no longer carries its own
@@ -345,7 +371,9 @@ const makeStyles = (color: ColorTheme) =>
   },
   // VP1 fix3: the pull wrapper must stretch (flexGrow) for cardShell's own
   // flexGrow to have a definite band to grow into — same wiring as Sheet's
-  // `pullExpanded`.
+  // `pullExpanded`. FIX4F: the render adds `marginTop` to THIS style (not to
+  // cardShell below) — see the render's FIX4F comment for why SheetPull needs
+  // to measure a box that ends exactly where the visible card ends.
   pullExpanded: { width: '100%', flexGrow: 1 },
   // Tap-swallow shell (a View — FIX4E, see the render for why not Pressable) —
   // bounds the sheet height; the bulk-glass material is its child, so the
@@ -357,6 +385,9 @@ const makeStyles = (color: ColorTheme) =>
   // space below it and let the old fixed bottom Close button crowd out the
   // last rows. The nav-clearance gap moves to the ScrollView's own bottom
   // padding below (`scrollContent`), matching Sheet's `expanded` pattern.
+  // FIX4F: the top margin itself now lives on `pullExpanded` above, not here
+  // — this node's own height is unaffected either way, only which ancestor
+  // SheetPull's dismiss-gate math measures.
   cardShell: {
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,

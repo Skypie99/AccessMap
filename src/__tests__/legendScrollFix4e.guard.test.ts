@@ -42,9 +42,14 @@ describe('FIX4E — expanded Legend: the SheetPull→ScrollView ancestor stays a
   const legend = read('screens/LegendModal.tsx');
 
   // The cardShell tag, opening-brace to opening-brace: from whatever host
-  // component carries `styles.cardShell` through the end of its own opening
-  // tag (the next bare `>` before the following JSX element).
-  const cardShellTag = /<(\w+)\s*\n?\s*style={\[styles\.cardShell,[\s\S]*?\n\s*>/.exec(legend);
+  // component carries the `cardShell` style through the end of its own
+  // opening tag (the next bare `>` before the following JSX element).
+  // FIX4F moved cardShell's inline marginTop off onto SheetPull's own style
+  // (see the FIX4F describe block below), which turned this from an array
+  // style (`style={[styles.cardShell, {…}]}`) into a bare reference
+  // (`style={styles.cardShell}`) — the pattern accepts either shape so this
+  // anchor survives that change and any future one like it.
+  const cardShellTag = /<(\w+)\s*\n?\s*style={(?:\[)?styles\.cardShell(?:,[\s\S]*?\])?}[\s\S]*?\n\s*>/.exec(legend);
 
   it('finds the cardShell node at all (a broken anchor would make every check below vacuous)', () => {
     expect(cardShellTag).not.toBeNull();
@@ -77,7 +82,66 @@ describe('FIX4E — expanded Legend: the SheetPull→ScrollView ancestor stays a
   it('never reintroduces a Pressable at the cardShell style site', () => {
     // Belt-and-braces against a partial revert: even if a future edit renamed
     // the captured group's anchor, this fails loudly on the exact regression
-    // shape (a Pressable whose style array opens with styles.cardShell).
-    expect(legend).not.toMatch(/<Pressable\s*\n?\s*style={\[styles\.cardShell,/);
+    // shape (a Pressable carrying the cardShell style, array or bare).
+    expect(legend).not.toMatch(/<Pressable\s*\n?\s*style={(?:\[)?styles\.cardShell/);
+  });
+});
+
+/**
+ * UI polish FIX4F (2026-08-30) — the expanded Legend scrolled correctly
+ * (FIX4E) but the grabber's at-top pull-to-dismiss did not commit, even for
+ * a full-length human drag.
+ *
+ * ─── WHAT WAS WRONG ────────────────────────────────────────────────────────
+ * SheetPull measures `cardHeight.current` from the node it wraps directly —
+ * the Animated.View carrying `pullExpanded` — and uses it to compute the
+ * dismiss-distance gate: `max(COMMIT_FLOOR_PT, cardHeight * COMMIT_FRACTION)`.
+ * `cardShell`'s own `marginTop: insets.top + spacing.sm` used to live INSIDE
+ * that measured node (as an inline style on cardShell, cardShell's parent
+ * being the very node SheetPull measures), so the measured height included a
+ * band of empty margin the visible card doesn't occupy. Confirmed live: the
+ * measured wrap was 874px against the card's own true 804px (the exact
+ * 70px = insets.top + spacing.sm gap) — inflating an already-large "expanded"
+ * sheet's gate from a truthful 241.2px to 262.2px.
+ *
+ * Fix: move the SAME marginTop from cardShell's style onto SheetPull's own
+ * `style` prop instead. Same visual position either way (the margin still
+ * sits between the backdrop's top edge and the card's top edge — only which
+ * side of the flex boundary it's on changes), but now the node SheetPull
+ * measures ends exactly where the visible card ends. Confirmed live: wrap
+ * and cardShell both measure 804px, and a real drag now commits
+ * (translationY=672 > distanceGate=241.2 → commit() → onDismiss fires →
+ * Legend closes) — a class of failure that never fires in the guard test
+ * because it needs a live PanGestureHandler.
+ *
+ * A source scan can't run a gesture. What it CAN pin, permanently, is the
+ * one-line cause: which of these two sibling nodes carries the margin.
+ * Moving it back onto cardShell reintroduces the exact bug this fixes.
+ */
+describe('FIX4F — expanded Legend: SheetPull measures the true visible card height', () => {
+  const legend = read('screens/LegendModal.tsx');
+
+  // The <SheetPull …> opening tag, so its own `style` prop can be inspected.
+  const sheetPullTag = /<SheetPull[\s\S]*?\n\s*>/.exec(legend);
+
+  it('finds the SheetPull node at all (a broken anchor would make the checks below vacuous)', () => {
+    expect(sheetPullTag).not.toBeNull();
+  });
+
+  it('SheetPull itself carries the top margin (the node it measures for its dismiss gate)', () => {
+    // A flat object, not a style array: SheetPull's own `style` prop is typed
+    // as plain `ViewStyle`, not `StyleProp<ViewStyle>` (confirmed by
+    // `npm run typecheck` — an array here does not compile).
+    const tag = (sheetPullTag as RegExpExecArray)?.[0] ?? '';
+    expect(tag).toMatch(/style={{\s*\.\.\.styles\.pullExpanded,\s*marginTop:\s*insets\.top \+ spacing\.sm\s*}}/);
+  });
+
+  it('cardShell no longer carries its own marginTop — the phantom-height regression shape', () => {
+    // The bug this pins: an inline marginTop back on cardShell would once
+    // again push the visible card's top edge down WITHOUT shrinking the node
+    // SheetPull measures, reopening the exact 70px (insets.top + spacing.sm)
+    // gap between cardHeight.current and the card's own true height.
+    expect(legend).not.toMatch(/style={\[styles\.cardShell,\s*{\s*marginTop:/);
+    expect(legend).not.toMatch(/style={styles\.cardShell}[\s\S]{0,5}marginTop/);
   });
 });
