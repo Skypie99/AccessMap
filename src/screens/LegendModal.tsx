@@ -1,6 +1,18 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+// RNGH ScrollView, not react-native's: SheetPull's PanGestureHandler passes
+// `simultaneousHandlers={scrollRef}` so the pull-to-dismiss and the body
+// scroll can both recognize the same touch. RNGH resolves that ref via
+// `ref.current.handlerTag` (utils.ts `transformIntoHandlerTags`) — a field
+// only `createNativeWrapper`-wrapped components (this ScrollView) set on
+// their ref. A plain react-native ScrollView ref has no `.handlerTag`, so the
+// relation silently resolves to an empty array on native: SheetPull's handler
+// stays the sole recognizer for the gesture and the ScrollView's own native
+// pan never activates — an upward swipe reports success but no pixel moves.
+// Web is unaffected (SheetPull returns `children` directly there, per its own
+// `Platform.OS === 'web'` branch), which is why this only showed on device.
+import { ScrollView } from 'react-native-gesture-handler';
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
