@@ -118,6 +118,15 @@ npm run web        # browser (uses react-leaflet)
 npm run typecheck  # tsc --noEmit, must pass before shipping
 ```
 
+**Before any iOS simulator/device audit or local Xcode build**, read
+`docs/IOS_SIMULATOR_OPERATING_CONTRACT.md` first. It has the pinned toolchain
+(Xcode version/path, primary simulator UDID), the exact working `xcodebuild`/
+CocoaPods/Podfile commands for this machine, worktree `.env` provisioning
+(never display values), the simulator-automation fallback ladder (specialized
+tool → general desktop control → Human Drive Mode), Dynamic Type/appearance
+`simctl` commands, and the anti-waste circuit breakers. Don't rediscover any
+of that from scratch — it's already been paid for once.
+
 ---
 
 ## Gotchas (the load-bearing ones)

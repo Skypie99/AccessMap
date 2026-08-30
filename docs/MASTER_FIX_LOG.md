@@ -11,6 +11,7 @@
 - **"Permanently fixed in main"** = the code change is committed and will never need redoing (Phase 5 and 6 automatically inherit it).
 - **"Periodic manual action"** = something Apple/EAS/Supabase controls outside the codebase that may need repeating (credentials expiry, agreement renewals, etc.).
 - If a build fails and you don't know why, skim the category headers. The symptom descriptions should point you to the right section.
+- **This log is about EAS cloud builds and TestFlight/App Store submission.** For local Xcode/simulator development and acceptance-testing workflow (booting the audit simulator, building locally with `xcodebuild`, CocoaPods/Xcode 27 quirks, worktree `.env` setup, Dynamic Type/appearance testing, screenshot evidence, simulator-automation fallbacks) — a durable, separate lesson from the same "stop rediscovering the same environment every session" principle this log embodies — see [`docs/IOS_SIMULATOR_OPERATING_CONTRACT.md`](IOS_SIMULATOR_OPERATING_CONTRACT.md).
 
 ---
 
