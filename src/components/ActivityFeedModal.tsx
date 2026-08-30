@@ -305,20 +305,6 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               })}
           </View>
 
-          {loadError ? (
-            <View style={styles.errorBanner}>
-              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
-              <Pressable
-                onPress={load}
-                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
-                accessibilityRole="button"
-                accessibilityLabel="Retry loading activity"
-              >
-                <AppText variant="label" style={styles.retryText}>Retry</AppText>
-              </Pressable>
-            </View>
-          ) : null}
-
           {loading && flags.length === 0 && !loadError ? (
             // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
             <View accessibilityLabel="Loading recent activity" accessibilityLiveRegion="polite">
@@ -338,7 +324,28 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               renderItem={renderItem}
               accessibilityRole="list"
               stickySectionHeadersEnabled={false}
-              contentContainerStyle={sections.length === 0 ? styles.center : styles.list}
+              // A11Y-XXXL: the error banner (below, via ListHeaderComponent) needs a
+              // top-aligned, natural-height container — `styles.center`'s
+              // alignItems/justifyContent:'center' would shrink it to its intrinsic
+              // width and vertically center it, which is exactly what let it get
+              // clipped by the Sheet's own 85% cap instead of scrolling into view.
+              // The genuine empty state (no error, zero sections) keeps centering.
+              contentContainerStyle={!loadError && sections.length === 0 ? styles.center : styles.list}
+              ListHeaderComponent={
+                loadError ? (
+                  <View style={styles.errorBanner}>
+                    <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
+                    <Pressable
+                      onPress={load}
+                      style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Retry loading activity"
+                    >
+                      <AppText variant="label" style={styles.retryText}>Retry</AppText>
+                    </Pressable>
+                  </View>
+                ) : null
+              }
               renderSectionHeader={({ section: { title, data } }) => (
                 <View style={styles.sectionHeader}>
                   <AppText variant="heading" style={styles.sectionHeaderText}>{title}</AppText>
@@ -435,6 +442,9 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
+      // Rendered via ListHeaderComponent now — this replaces the gap the card's
+      // own `cardPadded` used to provide when the banner was a direct sibling.
+      marginBottom: spacing.md,
     },
     errorText: {
       color: color.errorFg,
