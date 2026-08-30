@@ -40,10 +40,14 @@
 --   pg_get_functiondef confirmed the same logic, same signature, SECURITY
 --   DEFINER, and the same search_path (production's def is keyword-case-
 --   normalized by Postgres, not literally byte-identical to this file's
---   text, but equivalent in behavior). It never passes through the
---   insecure intermediate state, so
---   `20260727075547_sr018_verify_webhook_secret_revoke.sql` remains a
---   harmless no-op revoke on replay, exactly as it already is on production.
+--   text, but equivalent in behavior). The reconciliation migration
+--   explicitly revokes EXECUTE from PUBLIC, anon, and authenticated and
+--   grants EXECUTE to service_role before subsequent replay reaches
+--   SR-018. Acceptance is based on verification of the final effective
+--   ACL, not on any claim about transaction-internal visibility of an
+--   intermediate state — so on replay,
+--   `20260727075547_sr018_verify_webhook_secret_revoke.sql` finds the same
+--   safe ACL already in place, exactly as it already is on production.
 --
 -- BLAST RADIUS: NONE. Production already contains this exact object. The
 --   only caller is the notify-flag-status Edge Function, which calls this RPC
