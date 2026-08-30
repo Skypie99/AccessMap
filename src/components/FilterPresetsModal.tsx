@@ -31,12 +31,15 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Pressable,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
+// RNGH FlatList, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { FlatList } from 'react-native-gesture-handler';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { Sheet } from '@/components/ui/Sheet';
@@ -98,7 +101,9 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
-  const scrollRef = useRef(null);
+  // Holds the native scroll node, not the FlatList instance — see the ref
+  // callback below for why.
+  const scrollRef = useRef<unknown>(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
   const { user } = useAuth();
@@ -518,7 +523,13 @@ export default function FilterPresetsModal({ visible, onClose, onApply }: Props)
           ) : (
             <FlatList
               data={presets}
-              ref={scrollRef}
+              // FlatList's OWN ref exposes FlatList's imperative API
+              // (scrollToIndex, etc.), not the native node RNGH tags with
+              // .handlerTag — that only lands on whatever `renderScrollComponent`
+              // renders internally, which is RNGH's ScrollView now that FlatList
+              // itself is imported from react-native-gesture-handler.
+              // getNativeScrollRef() reaches through to exactly that node.
+              ref={(r) => { scrollRef.current = r?.getNativeScrollRef() ?? null; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(item) => item.id}

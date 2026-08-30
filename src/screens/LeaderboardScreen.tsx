@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState , useRef} from 'react';
 import {
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   View,
 } from 'react-native';
+// RNGH FlatList, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { FlatList } from 'react-native-gesture-handler';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
@@ -246,7 +249,9 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
-  const scrollRef = useRef(null);
+  // Holds the native scroll node, not the FlatList instance — see the ref
+  // callback below for why.
+  const scrollRef = useRef<unknown>(null);
   // SW-45: this sheet ran flush to the screen bottom while the tab bar sits at
   // 861-914, so scrolled rows painted straight over a ghosted "Home / Tasks /
   // Profile" — the red Tasks badge showed through behind the 4th-place row's
@@ -424,7 +429,13 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           ) : (
             <FlatList
               data={entries}
-              ref={scrollRef}
+              // FlatList's OWN ref exposes FlatList's imperative API
+              // (scrollToIndex, etc.), not the native node RNGH tags with
+              // .handlerTag — that only lands on whatever `renderScrollComponent`
+              // renders internally, which is RNGH's ScrollView now that FlatList
+              // itself is imported from react-native-gesture-handler.
+              // getNativeScrollRef() reaches through to exactly that node.
+              ref={(r) => { scrollRef.current = r?.getNativeScrollRef() ?? null; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(e) => e.id}

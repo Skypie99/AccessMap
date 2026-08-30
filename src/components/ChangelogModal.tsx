@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState , useRef} from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+// RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { ScrollView } from 'react-native-gesture-handler';
 import { initialExpanded } from '@/lib/changelogExpanded';
 import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { font, radius, shadow, spacing } from '@/theme';

@@ -35,11 +35,14 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Platform,
-  ScrollView,
   StyleSheet,
   View,
   type AccessibilityRole,
 } from 'react-native';
+// RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { ScrollView } from 'react-native-gesture-handler';
 import { AppText } from '@/components/ui/AppText';
 import { Sheet } from '@/components/ui/Sheet';
 import { useAtTop } from '@/components/ui/SheetPull';
