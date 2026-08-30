@@ -55,7 +55,10 @@ const FLATLIST_SHEETS = [
 describe('FIX4B — FlatList-based sheets import RNGH FlatList, not react-native\'s', () => {
   it.each(FLATLIST_SHEETS)('%s imports FlatList from react-native-gesture-handler', (_n, rel) => {
     const src = read(rel);
-    expect(src).toMatch(/import\s*\{\s*FlatList\s*\}\s*from\s*'react-native-gesture-handler'/);
+    // FlatList need not be the only name in that import — FIX4C added ScrollView
+    // to this same line in MyReportsModal/MyWatchedModal (their stateBody
+    // scroller). The invariant is "FlatList comes from RNGH", not "alone".
+    expect(src).toMatch(/import\s*\{[^}]*\bFlatList\b[^}]*\}\s*from\s*'react-native-gesture-handler'/);
   });
 
   it.each(FLATLIST_SHEETS)('%s does not shadow it with a react-native FlatList', (_n, rel) => {

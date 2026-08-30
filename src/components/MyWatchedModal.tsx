@@ -8,15 +8,13 @@ import {
   AccessibilityInfo,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-// RNGH FlatList, not react-native's — its ref exposes .handlerTag, which
-// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
-// pull-to-dismiss on native. Full mechanism: LegendModal.tsx. (The ScrollView
-// import above stays react-native's — it's not wired to scrollRef.)
-import { FlatList } from 'react-native-gesture-handler';
+// RNGH FlatList AND ScrollView, not react-native's — their refs expose
+// .handlerTag, which SheetPull's simultaneousHandlers={scrollRef} needs to
+// coexist with pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -509,6 +507,11 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           ) : (
             <ScrollView
               style={styles.stateBody}
+              // scrollRef is typed unknown so it can hold either bridge's
+              // node (see the FlatList ref above). RNGH's ScrollView carries
+              // .handlerTag directly on its own ref — no getNativeScrollRef()
+              // indirection needed here, that's a FlatList-only quirk.
+              ref={(r) => { scrollRef.current = r; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.stateBodyContent}
