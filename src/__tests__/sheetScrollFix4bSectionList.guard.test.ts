@@ -123,3 +123,68 @@ describe('FIX4C — ActivityFeedModal (SectionList) bridges renderScrollComponen
     );
   });
 });
+
+/**
+ * FIX4C follow-up — the loadError banner lives INSIDE the scrollable, not
+ * beside it.
+ *
+ * At accessibility-XXXL the banner's own text can grow taller than the
+ * Sheet's 85% cap. A sibling View above <SectionList> has no scroll
+ * mechanism of its own, so anything the Sheet's `overflow: hidden` card
+ * clips is gone for good — verified on the real iOS 26.5 simulator
+ * (Flagstone Audit iPhone 17 Pro): "That feature isn't available yet."
+ * was cut off mid-word, "yet." and the Retry button's row never reachable.
+ *
+ * Fix: the banner renders via <SectionList>'s own `ListHeaderComponent`,
+ * so it scrolls with the list instead of sitting outside it — same
+ * scrollable, same SectionListScrollRefBridge, no second ScrollView.
+ * `contentContainerStyle` has to stop forcing `styles.center` whenever
+ * there's an error, too: centering shrinks the header to its intrinsic
+ * width and pins it to the middle instead of the top, which is what let
+ * it get clipped in the first place — the genuine empty state (no error,
+ * zero sections) keeps centering, since EmptyState's icon+title+body
+ * layout depends on it.
+ */
+describe('FIX4C follow-up — ActivityFeedModal error banner scrolls inside SectionList, not beside it', () => {
+  it('does not render the error banner as a sibling before the list (the pre-fix clipped shape)', () => {
+    const src = read(FILE);
+    // The old shape: a standalone `{loadError ? (<View style={styles.errorBanner}>` block
+    // sitting between the filter row and the loading/SectionList branch.
+    expect(src).not.toMatch(/\{loadError \? \(\s*<View style=\{styles\.errorBanner\}>/);
+  });
+
+  it('passes the error banner to SectionList via ListHeaderComponent', () => {
+    const src = read(FILE);
+    expect(src).toMatch(/<SectionList[\s\S]*?ListHeaderComponent=\{/);
+    expect(src).toMatch(/ListHeaderComponent=\{\s*loadError \? \(\s*<View style=\{styles\.errorBanner\}>/);
+  });
+
+  it('the header still carries the full error text and a working Retry button', () => {
+    const src = read(FILE);
+    // Scoped to the ListHeaderComponent block so this can't pass by matching
+    // some other, unrelated banner elsewhere in the file.
+    const headerMatch = src.match(/ListHeaderComponent=\{([\s\S]*?)\n {14}\}/);
+    expect(headerMatch).not.toBeNull();
+    const header = headerMatch![1];
+    expect(header).toMatch(/<AppText variant="body" style=\{styles\.errorText\}>\{loadError\}<\/AppText>/);
+    expect(header).toMatch(/onPress=\{load\}/);
+    expect(header).toMatch(/accessibilityLabel="Retry loading activity"/);
+  });
+
+  it('contentContainerStyle only centers the genuine empty state, never the error state', () => {
+    const src = read(FILE);
+    // Must NOT be the old unconditional `sections.length === 0 ? styles.center` —
+    // that centers (and thus can clip) the error banner too.
+    expect(src).not.toMatch(/contentContainerStyle=\{sections\.length === 0 \? styles\.center/);
+    expect(src).toMatch(
+      /contentContainerStyle=\{!loadError && sections\.length === 0 \? styles\.center : styles\.list\}/,
+    );
+  });
+
+  it('ListEmptyComponent still renders nothing extra on top of the header during an error', () => {
+    const src = read(FILE);
+    // Unchanged contract: the header IS the error state's only content;
+    // EmptyState must not double up alongside it.
+    expect(src).toMatch(/ListEmptyComponent=\{\s*loadError \? null : \(/);
+  });
+});
