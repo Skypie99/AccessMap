@@ -98,12 +98,25 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
           simultaneousHandlers={scrollRef}
           style={styles.pullExpanded}
         >
-        <Pressable
+        <View
           style={[styles.cardShell, { marginTop: insets.top + spacing.sm }]}
-          // Swallow taps on the card so they don't dismiss via the backdrop.
-          // (The tap-swallow + accessibilityViewIsModal stay on this Pressable;
-          //  the bulk-glass material is the child so the guard is preserved.)
-          onPress={() => {}}
+          // FIX4E: a plain View, not Pressable. Pressable claims React Native's
+          // classic responder system on touch-start (to track press state) even
+          // with a no-op onPress, and that responder claim sits, in the touch
+          // tree, between SheetPull's PanGestureHandler above and the RNGH
+          // ScrollView below — starving the ScrollView's own native pan of the
+          // touch stream it needs to activate. Confirmed live at XXXL: with this
+          // node as a Pressable, SheetPull's handler correctly ran
+          // BEGAN→FAILED (yielding the gesture, as `activeOffsetY` intends) yet
+          // the ScrollView's onScroll fired zero times across repeated real
+          // upward drags against content ~9x taller than the viewport. A plain
+          // View never enters the responder system, so it swallows taps by
+          // ordinary paint-order hit-testing (still opaque to the sibling scrim
+          // behind it) without standing in the RNGH handlers' way. Sheet.tsx's
+          // own equivalent wrapper (`cardShadow`, used by every other adopter)
+          // is a plain View for the same reason — this brings Legend in line
+          // with the pattern everywhere else already uses.
+          //
           // A11Y-214 / SR-072: a Pressable is accessible-by-default, so this
           // shell was one giant UNNAMED VoiceOver element spanning the whole
           // card — swallowing every row and the in-card "Close legend" button
@@ -127,7 +140,7 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
               was the direct cause of "Anonymous report" clipping against it.
               A screen-reader user who scrolls to the end still has two ways
               out without scrolling back: the VoiceOver escape scrub
-              (`onAccessibilityEscape` on the card Pressable below, fires from
+              (`onAccessibilityEscape` on the card shell below, fires from
               anywhere in the modal) and `onRequestClose`/the hardware back
               gesture. Sighted users keep the backdrop tap and this X. */}
           <View style={styles.headerRow}>
@@ -316,7 +329,7 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
             </TypeBlock>
           </ScrollView>
         </GlassSurface>
-        </Pressable>
+        </View>
         </SheetPull>
       </View>
     </Modal>
@@ -334,8 +347,9 @@ const makeStyles = (color: ColorTheme) =>
   // flexGrow to have a definite band to grow into — same wiring as Sheet's
   // `pullExpanded`.
   pullExpanded: { width: '100%', flexGrow: 1 },
-  // Tap-swallow shell (the Pressable) — bounds the sheet height; the bulk-glass
-  // material is its child, so the backdrop-dismiss guard is preserved.
+  // Tap-swallow shell (a View — FIX4E, see the render for why not Pressable) —
+  // bounds the sheet height; the bulk-glass material is its child, so the
+  // backdrop-dismiss guard is preserved.
   // VP1 fix3 (Global Fix 3): grows to fill from the top margin down to the
   // backdrop's own bottom (the literal screen edge — this Modal renders above
   // the tab bar, same as every other legend/list overlay) instead of
