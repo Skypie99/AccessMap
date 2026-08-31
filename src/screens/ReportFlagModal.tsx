@@ -876,10 +876,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             // isn't hidden behind the keyboard. iOS-only prop; false elsewhere.
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
-          {/* T3: the sheet's own header cluster — title + the coordinates line
-              under it — on one multiplier. The mono line used to cap at 1.4 and
-              the heading at 1.5; neither matched the other or the labels below. */}
-          <TypeBlock cap={TYPE_BLOCK.header}>
+          {/* P1: the report title and location prompt are reading content inside
+              a scrollable sheet, not fixed chrome. Keep the pair on one uncapped
+              multiplier so both visibly follow accessibility Dynamic Type. */}
+          <TypeBlock cap={TYPE_BLOCK.content}>
           <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
@@ -957,6 +957,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               an in-sheet retry so recovery doesn't mean abandoning the flow.
               requestLocation announces its own outcome (found / permission
               denied), so this one control drives the whole recover loop. */}
+          {/* P1: these recovery actions must scale with the system setting too.
+              The local content block overrides AppText's default label cap. */}
+          <TypeBlock cap={TYPE_BLOCK.content}>
           {!location && onRequestLocation && (
             <Pressable
               onPress={() => {
@@ -995,6 +998,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               <AppText variant="label" style={styles.useLocationText}>Place the pin on the map</AppText>
             </Pressable>
           )}
+          </TypeBlock>
 
           {/* SW-37 (guest half): the dead end, explained. A guest with location
               denied has no manual-placement route by design, so leaving them
@@ -1058,6 +1062,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
 
           {/* Quick-fill templates — auth only; hidden in anon mode to keep
               the simplified form focused on the three core fields. */}
+          {/* P1: quick-fill and category controls live in scrollable rails, so
+              their labels can grow without the default label multiplier cap. */}
+          <TypeBlock cap={TYPE_BLOCK.content}>
           {!isAnon && templates.length > 0 && (
             <>
               <AppText variant="label" style={styles.label} accessibilityRole="header">
@@ -1148,6 +1155,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           </ScrollView>
           <OverflowFade visible={categoriesFade.hasMore} />
           </View>
+          </TypeBlock>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Severity</AppText>
           {/* F4 / X7 — at >=1.5x the five-across picker becomes the Legend's rows.
@@ -1877,6 +1885,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       alignSelf: 'flex-start',
+      maxWidth: '100%',
       gap: spacing.tight,
       minHeight: a11y.minTargetSize,
       paddingHorizontal: 12,
@@ -1889,6 +1898,7 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       fontWeight: font.weight.bold,
       color: color.brandOnSoft,
+      flexShrink: 1,
     },
     // S15: submit-moment caption — small muted line above the sticky footer.
     submitMoment: {

@@ -1,9 +1,10 @@
 /**
  * P1 — ReportFlagModal dynamic type regression guard.
  *
- * The existing form copy must keep the same Dynamic Type behavior as the rest
- * of Flagstone screens. This suite locks in the modal’s intended text-primitives
- * (no hard-coded small-size literals in the copied callout rows).
+ * Live XXXL QA proved that tokenized font sizes alone are not a scaling guard:
+ * AppText can still deliver a finite maxFontSizeMultiplier to native Text.
+ * Rendered cap behavior is covered in ReportFlagModal.test.tsx; this narrow
+ * source guard locks the local TypeBlock boundaries and wrap-safe geometry.
  */
 import fs from 'fs';
 import path from 'path';
@@ -14,6 +15,34 @@ const read = (rel: string) => stripComments(fs.readFileSync(path.join(__dirname,
 const FILE = 'ReportFlagModal.tsx';
 
 describe('P1 — ReportFlagModal respects intended Dynamic Type text scaling', () => {
+  it('puts only the remaining title/location and chip groups in uncapped content blocks', () => {
+    const src = read(FILE);
+
+    expect(src).toMatch(
+      /<TypeBlock cap=\{TYPE_BLOCK\.content\}>\s*<AppText ref=\{titleRef\}[\s\S]*?Location is off for Flagstone[\s\S]*?<\/TypeBlock>/,
+    );
+    expect(src).toMatch(
+      /<TypeBlock cap=\{TYPE_BLOCK\.content\}>\s*\{!location && onRequestLocation[\s\S]*?Use my location[\s\S]*?Place the pin on the map[\s\S]*?<\/TypeBlock>/,
+    );
+    expect(src).toMatch(
+      /<TypeBlock cap=\{TYPE_BLOCK\.content\}>\s*\{!isAnon && templates\.length[\s\S]*?styles\.templateChipText[\s\S]*?styles\.pillText[\s\S]*?<\/TypeBlock>/,
+    );
+    expect(src).not.toMatch(
+      /<TypeBlock cap=\{TYPE_BLOCK\.header\}>\s*<AppText ref=\{titleRef\}/,
+    );
+  });
+
+  it('gives the long location action room to wrap instead of clipping', () => {
+    const src = read(FILE);
+    const button = src.match(/useLocationBtn:\s*\{([\s\S]*?)\n\s*\},/)?.[1] ?? '';
+    const label = src.match(/useLocationText:\s*\{([\s\S]*?)\n\s*\},/)?.[1] ?? '';
+
+    expect(button).toMatch(/maxWidth:\s*'100%'/);
+    expect(button).not.toMatch(/height:/);
+    expect(label).toMatch(/flexShrink:\s*1/);
+    expect(label).not.toMatch(/numberOfLines/);
+  });
+
   it('keeps modal body helper copy on tokenized app text sizes', () => {
     const src = read(FILE);
     expect(src).toMatch(/sevHint:\s*\{[\s\S]*fontSize:\s*font\.size\.sm/);

@@ -354,6 +354,13 @@ const mockWindow = useWindowDimensions as unknown as jest.Mock;
 const setFontScale = (fontScale: number) =>
   mockWindow.mockReturnValue({ width: 390, height: 844, scale: 3, fontScale });
 
+function expectUncappedText(node: {
+  props: { maxFontSizeMultiplier?: number; allowFontScaling?: boolean };
+}) {
+  expect(node.props.maxFontSizeMultiplier).toBeUndefined();
+  expect(node.props.allowFontScaling).not.toBe(false);
+}
+
 function rate(utils: ReturnType<typeof render>, level: number) {
   // The live meaning line's own label also starts "Severity 3:" once a level is
   // chosen, so match the DISC by its role rather than by prefix alone.
@@ -395,6 +402,7 @@ function renderAuth(
     severity: number | null;
     location: typeof LOCATION | null;
     locationSource: 'gps' | 'pin';
+    locationDenied: boolean;
     onClose: () => void;
     onRequestLocation: () => void;
     onPlaceOnMap: () => void;
@@ -408,6 +416,7 @@ function renderAuth(
         visible={props.visible ?? true}
         location={location}
         locationSource={props.locationSource}
+        locationDenied={props.locationDenied}
         onClose={props.onClose ?? jest.fn()}
         onCreated={jest.fn()}
         onRequestLocation={props.onRequestLocation}
@@ -468,6 +477,7 @@ beforeEach(() => {
   });
   mockCancelFlagPhotoUpload.mockResolvedValue(undefined);
   mockBatchInsertFlagPhotos.mockResolvedValue(undefined);
+  (validReportTemplates as jest.Mock).mockReturnValue([]);
 });
 
 // handleSubmit keeps running after a test's `waitFor` resolves
@@ -2060,6 +2070,71 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
     expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(true);
     fireEvent.press(utils.getByLabelText('Apply template: Snow-blocked ramp'));
     expect(utils.getByLabelText('Submit report').props.accessibilityState.disabled).toBe(false);
+  });
+});
+
+// ===========================================================================
+// P1 — the remaining Report controls genuinely inherit XXXL Dynamic Type
+//
+// The earlier source guard only distinguished numeric sizes from theme tokens.
+// Both still scale identically in React Native; the live failure was the finite
+// maxFontSizeMultiplier that reached these Text nodes. Assert the rendered
+// contract instead: undefined means the system setting is not capped.
+// ===========================================================================
+
+describe('P1 — remaining Report controls are uncapped at XXXL', () => {
+  it('uncaps the title, location prompt, and both location recovery labels', () => {
+    setFontScale(3.1);
+    const utils = renderAuth(
+      { id: 'user-abc' },
+      {
+        location: null,
+        locationDenied: true,
+        onRequestLocation: jest.fn(),
+        onPlaceOnMap: jest.fn(),
+        severity: null,
+      },
+    );
+
+    for (const label of [
+      'Report a flag',
+      'Location is off for Flagstone',
+      'Use my location',
+      'Place the pin on the map',
+    ]) {
+      expectUncappedText(utils.getByText(label));
+    }
+
+    expect(StyleSheet.flatten(utils.getByText('Place the pin on the map').props.style)).toMatchObject({
+      flexShrink: 1,
+    });
+  });
+
+  it('uncaps quick-fill and category labels while preserving corrected lower copy', () => {
+    setFontScale(3.1);
+    (validReportTemplates as jest.Mock).mockReturnValue([
+      { id: 'snow-ramp', label: 'Snow-blocked ramp', category: 'no_ramp', severity: 4 },
+    ]);
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null });
+
+    for (const label of [
+      'Quick-fill templates (optional)',
+      'Snow-blocked ramp',
+      'Category',
+      'No ramp',
+      'Broken sidewalk',
+      'Blocked path',
+      'Missing signal',
+      'Steep grade',
+      'Other',
+    ]) {
+      expectUncappedText(utils.getByText(label));
+    }
+
+    // Already-correct lower reading copy stays uncapped as the focused wrappers
+    // above change; this is the preservation seam live QA asked us to keep.
+    expectUncappedText(utils.getByText('Location is removed from your photos automatically.'));
+    expectUncappedText(utils.getByText(/Your report appears on the map right away/));
   });
 });
 
