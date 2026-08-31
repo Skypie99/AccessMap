@@ -806,6 +806,86 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     }
   };
 
+  // A sticky action row is useful at normal text, but at AX it subtracts a
+  // fixed block from an already keyboard-reduced viewport. Keep one action
+  // drawing and move it into the form scroller only for the large-text
+  // composition, where it remains reachable without covering form content.
+  const actionsInScroll = axRecompose;
+  const actions = (
+    <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
+      <Pressable
+        onPress={() => void requestClose()}
+        disabled={submitting}
+        style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Cancel and close"
+        {...a11yToggle({ disabled: submitting })}
+      >
+        <AppText variant="label" style={styles.cancelText}>Cancel</AppText>
+      </Pressable>
+      <Pressable
+        onPress={handleSubmit}
+        disabled={submitting || submitBlocked}
+        style={[
+          styles.actionBtn,
+          styles.submitBtn,
+          // C5: ONE disabled grammar. A blocked fill wears the soft-tint
+          // pair (brandSoft/brandOnSoft) — the same grammar the rest of
+          // the estate's inert fills use — instead of a glowing brand
+          // gradient held at 0.6 opacity, which reads as a live button
+          // somebody dimmed. The BUSY state is not this: it keeps the
+          // gradient and the white ink, because a button mid-flight is
+          // working, not inert.
+          submitBlocked && styles.submitBtnBlocked,
+          submitting && styles.submitBtnDisabled,
+        ]}
+        accessibilityRole="button"
+        // Q6: one label, seen and spoken. The visible word and the
+        // accessible name are the SAME string now — see the label below.
+        accessibilityLabel={isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
+        // SW-37: never point a blocked user at the ONE control that cannot
+        // help them. Under a denial "Use my location" only re-asks a
+        // question the OS has already answered.
+        accessibilityHint={blockedReason()}
+        {...a11yToggle({ disabled: submitting || submitBlocked, busy: submitting })}
+      >
+        {({ pressed }) => (
+          <>
+            {!submitBlocked && (
+            <LinearGradient
+              colors={gradient.brand}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
+              pointerEvents="none"
+            />
+            )}
+            {/* T4: pressed scrim ABOVE the gradient, BELOW the label — the
+                brand CTA answers the finger without dimming its white text. */}
+            {pressed && (
+              <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.submitPressedScrim]} />
+            )}
+            {submitting ? (
+              // T9 (F5-09): keep WORDS beside the spinner — a silent spinner
+              // makes the wait wordless; "Filing your report…" says what's happening.
+              <View style={styles.submitBusyRow}>
+                <ActivityIndicator color={color.textOnBrand} />
+                <AppText variant="label" style={styles.submitText}>Filing your report…</AppText>
+              </View>
+            ) : (
+              <AppText
+                variant="label"
+                style={[styles.submitText, submitBlocked && styles.submitTextBlocked]}
+              >
+                {isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
+              </AppText>
+            )}
+          </>
+        )}
+      </Pressable>
+    </View>
+  );
+
   return (
     // WCAG 2.3.3 (Animation from Interactions): skip the slide animation
     // when the user has requested reduced motion.
@@ -820,11 +900,11 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
-            uses screen coordinates, so the sticky footer truly rides above
-            the keyboard. Nesting it inside the card measured parent-relative
-            frames and under-lifted (adversarial-review finding). Safe now
-            that the card no longer carries flex:1. The 88% cap lives on the
-            KAV so the percentage resolves against the full-height backdrop. */}
+            uses screen coordinates, so the normal sticky footer and the AX
+            body scroller both end above the keyboard. Nesting it inside the
+            card measured parent-relative frames and under-lifted
+            (adversarial-review finding). The 88% normal cap lives on the KAV
+            so the percentage resolves against the full-height backdrop. */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={[styles.kav, (axRecompose || keyboardVisible) && styles.kavExpanded]}
@@ -866,8 +946,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               it with a real gesture; this one had no pill at all. AT-hidden by
               the primitive — the labelled Cancel is the screen-reader door. */}
           <SheetGrabber />
-          {/* WCAG 1.4.4: content scrolls within the available viewport;
-              Cancel/Report buttons stay pinned as sticky footer. */}
+          {/* WCAG 1.4.4: content scrolls within the available viewport. Normal
+              actions stay pinned; AX actions join this scroller so the footer
+              cannot consume the editor's keyboard-safe reveal space. */}
           <ScrollView
             ref={scrollRef}
             style={[
@@ -1732,6 +1813,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           <AppText variant="body" style={styles.submitMoment}>
             Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn&apos;t notify the city — see Resources.
           </AppText>
+          {actionsInScroll ? actions : null}
           </ScrollView>
 
           {/* S11: in-sheet "still trying" overlay for a slow WRITE. The insert
@@ -1745,80 +1827,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             </View>
           ) : null}
 
-          {/* BP-5: the house sheet-bottom pattern — spacing floor, inset-aware
-              so Cancel/Submit clear the home indicator on notched devices. */}
-          <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
-            <Pressable
-              onPress={() => void requestClose()}
-              disabled={submitting}
-              style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel and close"
-              {...a11yToggle({ disabled: submitting })}
-            >
-              <AppText variant="label" style={styles.cancelText}>Cancel</AppText>
-            </Pressable>
-            <Pressable
-              onPress={handleSubmit}
-              disabled={submitting || submitBlocked}
-              style={[
-                styles.actionBtn,
-                styles.submitBtn,
-                // C5: ONE disabled grammar. A blocked fill wears the soft-tint
-                // pair (brandSoft/brandOnSoft) — the same grammar the rest of
-                // the estate's inert fills use — instead of a glowing brand
-                // gradient held at 0.6 opacity, which reads as a live button
-                // somebody dimmed. The BUSY state is not this: it keeps the
-                // gradient and the white ink, because a button mid-flight is
-                // working, not inert.
-                submitBlocked && styles.submitBtnBlocked,
-                submitting && styles.submitBtnDisabled,
-              ]}
-              accessibilityRole="button"
-              // Q6: one label, seen and spoken. The visible word and the
-              // accessible name are the SAME string now — see the label below.
-              accessibilityLabel={isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
-              // SW-37: never point a blocked user at the ONE control that cannot
-              // help them. Under a denial "Use my location" only re-asks a
-              // question the OS has already answered.
-              accessibilityHint={blockedReason()}
-              {...a11yToggle({ disabled: submitting || submitBlocked, busy: submitting })}
-            >
-              {({ pressed }) => (
-                <>
-                  {!submitBlocked && (
-                  <LinearGradient
-                    colors={gradient.brand}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
-                    pointerEvents="none"
-                  />
-                  )}
-                  {/* T4: pressed scrim ABOVE the gradient, BELOW the label — the
-                      brand CTA answers the finger without dimming its white text. */}
-                  {pressed && (
-                    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.submitPressedScrim]} />
-                  )}
-                  {submitting ? (
-                    // T9 (F5-09): keep WORDS beside the spinner — a silent spinner
-                    // makes the wait wordless; "Filing your report…" says what's happening.
-                    <View style={styles.submitBusyRow}>
-                      <ActivityIndicator color={color.textOnBrand} />
-                      <AppText variant="label" style={styles.submitText}>Filing your report…</AppText>
-                    </View>
-                  ) : (
-                    <AppText
-                      variant="label"
-                      style={[styles.submitText, submitBlocked && styles.submitTextBlocked]}
-                    >
-                      {isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
-                    </AppText>
-                  )}
-                </>
-              )}
-            </Pressable>
-          </View>
+          {/* BP-5: normal text keeps the sticky house footer. At AX the same
+              action row is the final item in the body scroller above. */}
+          {actionsInScroll ? null : actions}
         </GlassSurface>
         </SheetPull>
         </KeyboardAvoidingView>
@@ -1837,8 +1848,8 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'flex-end',
     },
     // Normal text preserves the content-hugging 88% presentation. Keyboard and
-    // accessibility layouts opt into the expanded chain below so the body owns
-    // real remaining height instead of losing it to the pinned action footer.
+    // accessibility layouts opt into the expanded chain below; at AX the action
+    // row also joins the body scroller instead of reserving a fixed footer.
     kav: { width: '100%', maxHeight: '88%' },
     kavExpanded: { maxHeight: '100%', flexGrow: 1 },
     pullExpanded: { width: '100%', flexGrow: 1 },
@@ -1853,9 +1864,8 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: 0,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      // The bulk variant owns the surface; clip it to the rounded top. The
-      // sticky footer, KAV/88% cap, and severity-button architecture are
-      // untouched — material only (PROTECT-3).
+      // The bulk variant owns the surface; clip it to the rounded top. Footer
+      // placement is chosen at render time; the material remains unchanged.
       overflow: 'hidden',
     },
     cardExpanded: { maxHeight: '100%', flexGrow: 1 },
@@ -1925,7 +1935,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.brandOnSoft,
       flexShrink: 1,
     },
-    // S15: submit-moment caption — small muted line above the sticky footer.
+    // S15: submit-moment caption — small muted line before the action row.
     submitMoment: {
       fontSize: font.size.xs,
       color: color.inkGlassMuted,

@@ -9,7 +9,7 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 // RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
 // SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
 // pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
@@ -35,7 +35,7 @@ import {
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
-import { decorativeProps } from '@/lib/accessibility';
+import { decorativeProps, isAxRecompose } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -90,6 +90,8 @@ export default function NotificationPrefsModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   // The pull gesture must not fight the body's own scroll: `useAtTop`
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
@@ -171,6 +173,7 @@ export default function NotificationPrefsModal({
       title="Updates"
       subtitle="Choose which flag updates surface on your Profile."
       subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}
+      reflowHeaderTitle={axRecompose}
       closeLabel="Close updates settings"
       closeHint="Closes the update preferences panel"
       glass
@@ -214,6 +217,7 @@ export default function NotificationPrefsModal({
                   subtitle={description}
                   value={prefs[prefKey]}
                   onValueChange={(v) => handleToggle(prefKey, v)}
+                  reflow={axRecompose}
                   leading={
                     /* Decorative — the Switch already carries the full
                        accessible label + state, so announcing the badge would

@@ -550,6 +550,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               // including the emphasis on the control's name.
               <EmptyState
                 title="No watched flags yet"
+                style={axRecompose ? styles.emptyStateAx : undefined}
+                bodyStyle={axRecompose ? styles.emptyStateBodyAx : undefined}
                 body={
                   <>
                     Open any flag on the map or in Tasks and tap{' '}
@@ -561,6 +563,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               <EmptyState
                 title="No matches"
                 body="Try a different search term or status filter."
+                style={axRecompose ? styles.emptyStateAx : undefined}
+                bodyStyle={axRecompose ? styles.emptyStateBodyAx : undefined}
               />
               ) : null}
             </ScrollView>
@@ -615,6 +619,16 @@ const makeStyles = (color: ColorTheme) =>
     // that a ScrollView cannot reveal. Start at the top only at AX sizes; the
     // body remains scrollable and normal-text composition stays centered.
     stateBodyContentAx: { justifyContent: 'flex-start' },
+    // The top-align fix made the leading sentence reachable, but the shared
+    // EmptyState's generous normal-size padding still forced its last line
+    // below this control-heavy sheet's AX viewport. Spend that padding only
+    // here; normal text and every other EmptyState keep the shared recipe.
+    emptyStateAx: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: 0,
+      gap: spacing.tight,
+    },
+    emptyStateBodyAx: { maxWidth: '100%' },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     // M-40 error-banner (self-contained solid pin — errorBg + errorFg, the
     // MyReports/ActivityFeed sibling pattern; no new arbiter pair, stacks _doc).

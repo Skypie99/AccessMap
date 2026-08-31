@@ -101,4 +101,18 @@ describe('ui/Sheet presentation', () => {
       TYPE_BLOCK.header,
     );
   });
+
+  it('gives a title natural vertical height only when a bounded consumer opts in', () => {
+    const standard = mount({ subtitle: 'Supporting line' });
+    expect(StyleSheet.flatten(standard.utils.getByText('Expanded sheet').props.style)).toMatchObject({
+      flex: 1,
+    });
+
+    const reflowed = mount({ subtitle: 'Supporting line', reflowHeaderTitle: true });
+    expect(StyleSheet.flatten(reflowed.utils.getByText('Expanded sheet').props.style)).toMatchObject({
+      flexGrow: 0,
+      flexShrink: 0,
+      flexBasis: 'auto',
+    });
+  });
 });

@@ -10,6 +10,7 @@
 import React from 'react';
 import fs from 'fs';
 import path from 'path';
+import { StyleSheet } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { EmptyState } from '../EmptyState';
 import { AppText } from '../AppText';
@@ -57,6 +58,20 @@ describe('the recipe', () => {
       <EmptyState title="All caught up" mark={<AppText>SPARKLE</AppText>} />,
     );
     expect(getByText('SPARKLE')).toBeTruthy();
+  });
+
+  it('keeps the default line length unless a constrained adopter opts out', () => {
+    const normal = render(<EmptyState title="Nothing here" body="Helpful explanation" />);
+    expect(StyleSheet.flatten(normal.getByText('Helpful explanation').props.style)).toMatchObject({
+      maxWidth: 280,
+    });
+
+    const wide = render(
+      <EmptyState title="Nothing here" body="Helpful explanation" bodyStyle={{ maxWidth: '100%' }} />,
+    );
+    expect(StyleSheet.flatten(wide.getByText('Helpful explanation').props.style)).toMatchObject({
+      maxWidth: '100%',
+    });
   });
 });
 

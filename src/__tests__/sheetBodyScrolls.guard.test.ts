@@ -202,3 +202,30 @@ describe('VFW2 — Profile-launched text-heavy sheets use the expanded reading v
     expect(src).toContain('subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}');
   });
 });
+
+describe('VFW2B — Profile text-heavy sheets recompose their constrained rows only at AX', () => {
+  it('Achievements preserves the normal row and gives AX body copy full row width', () => {
+    const src = stripComments(read('components/AchievementsModal.tsx'));
+
+    expect(src).toContain('const axRecompose = isAxRecompose(fontScale);');
+    expect(src).toContain('reflowHeaderTitle={axRecompose}');
+    expect(src).toContain('axRecompose={axRecompose}');
+    expect(src).toMatch(/\{axRecompose \? \([\s\S]*?styles\.rowHeader[\s\S]*?\) : \(/);
+    expect(src).toMatch(/rowHeader:\s*\{[^}]*flexDirection:\s*'row'/);
+    expect(src).toMatch(
+      /rowAx:\s*\{[^}]*flexDirection:\s*'column'[^}]*alignItems:\s*'stretch'[^}]*gap:\s*spacing\.sm/,
+    );
+  });
+
+  it('Updates opts into the shared row reflow without changing its normal branch', () => {
+    const modal = stripComments(read('components/NotificationPrefsModal.tsx'));
+    const row = stripComments(read('components/ui/PrefsRow.tsx'));
+
+    expect(modal).toContain('const axRecompose = isAxRecompose(fontScale);');
+    expect(modal).toContain('reflowHeaderTitle={axRecompose}');
+    expect(modal).toContain('reflow={axRecompose}');
+    expect(row).toContain('reflow = false');
+    expect(row).toMatch(/rowReflow:\s*\{[^}]*flexDirection:\s*'column'[^}]*alignItems:\s*'stretch'/);
+    expect(row).toMatch(/reflowHeader:\s*\{[^}]*flexDirection:\s*'row'/);
+  });
+});

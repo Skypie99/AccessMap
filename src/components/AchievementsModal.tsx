@@ -9,7 +9,7 @@
  * already has the data.
  */
 import React, { useMemo , useRef} from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 // RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
 // SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
 // pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Sheet } from '@/components/ui/Sheet';
 import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { useAtTop } from '@/components/ui/SheetPull';
+import { isAxRecompose } from '@/lib/accessibility';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -94,6 +95,16 @@ const makeStyles = (color: ColorTheme) =>
       borderColor: color.borderSubtle,
       minHeight: 56,
     },
+    rowAx: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      gap: spacing.sm,
+    },
+    rowHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
     rowDimmed: { opacity: 0.7 },
     iconCircle: {
       width: 44,
@@ -104,7 +115,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     iconCircleEarned: { backgroundColor: color.achievementEarnedBg }, // earned-state amber wash — token carries a dark-mode variant (#3D2A00)
     iconCircleLocked: { backgroundColor: color.surfaceNeutral },
-    rowText: { flex: 1, gap: 2 },
+    rowText: { flex: 1, minWidth: 0, gap: 2 },
     rowTitle: {
       fontSize: font.size.md,
       fontWeight: font.weight.bold,
@@ -132,6 +143,8 @@ const makeStyles = (color: ColorTheme) =>
 export default function AchievementsModal({ visible, onClose, achievements }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   // The pull gesture must not fight the body's own scroll: `useAtTop`
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
@@ -160,6 +173,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
       subtitle={`${totalEarned} of ${achievements.length} earned`}
       subtitleLabel={`${totalEarned} of ${achievements.length} achievements earned`}
       subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}
+      reflowHeaderTitle={axRecompose}
       closeLabel="Close achievements"
       glass
       engineered
@@ -191,7 +205,7 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
               <AppText variant="heading" style={styles.sectionHeader}>{CATEGORY_LABEL[cat]}</AppText>
               <View style={styles.list}>
                 {items.map((a) => (
-                  <AchievementRow key={a.id} achievement={a} />
+                  <AchievementRow key={a.id} achievement={a} axRecompose={axRecompose} />
                 ))}
               </View>
             </View>
@@ -202,42 +216,65 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
   );
 }
 
-function AchievementRow({ achievement: a }: { achievement: Achievement }) {
+function AchievementRow({
+  achievement: a,
+  axRecompose,
+}: {
+  achievement: Achievement;
+  axRecompose: boolean;
+}) {
   const color = useColor();
   const styles = makeStyles(color);
   const stateText = a.earned ? "Earned" : `${a.progress} of ${a.threshold}`;
   const a11yLabel =
     `${a.title}, ${a.description} ` +
     (a.earned ? "Earned." : `Progress: ${a.progress} of ${a.threshold}.`);
+  const Icon = ACH_ICON[a.icon] ?? Award;
+  const icon = (
+    <View
+      style={[styles.iconCircle, a.earned ? styles.iconCircleEarned : styles.iconCircleLocked]}
+    >
+      <Icon size={22} color={a.earned ? color.goldDark : color.textSubtle} strokeWidth={2.2} />
+    </View>
+  );
+  const statePill = (
+    <View style={[styles.statePill, a.earned ? styles.statePillEarned : styles.statePillLocked]}>
+      <AppText
+        variant="label"
+        style={[styles.stateText, a.earned ? styles.stateTextEarned : styles.stateTextLocked]}
+      >
+        {stateText}
+      </AppText>
+    </View>
+  );
 
   return (
     <View
-      style={[styles.row, !a.earned && styles.rowDimmed]}
+      style={[styles.row, axRecompose && styles.rowAx, !a.earned && styles.rowDimmed]}
       accessible={true}
       accessibilityLabel={a11yLabel}
     >
-      <View
-        style={[styles.iconCircle, a.earned ? styles.iconCircleEarned : styles.iconCircleLocked]}
-      >
-        {(() => {
-          const Icon = ACH_ICON[a.icon] ?? Award;
-          return (
-            <Icon size={22} color={a.earned ? color.goldDark : color.textSubtle} strokeWidth={2.2} />
-          );
-        })()}
-      </View>
-      <View style={styles.rowText}>
-        <AppText variant="label" style={styles.rowTitle}>{a.title}</AppText>
-        <AppText variant="body" style={styles.rowDesc}>{a.description}</AppText>
-      </View>
-      <View style={[styles.statePill, a.earned ? styles.statePillEarned : styles.statePillLocked]}>
-        <AppText
-          variant="label"
-          style={[styles.stateText, a.earned ? styles.stateTextEarned : styles.stateTextLocked]}
-        >
-          {stateText}
-        </AppText>
-      </View>
+      {axRecompose ? (
+        <>
+          <View style={styles.rowHeader}>
+            {icon}
+            <View style={styles.rowText}>
+              <AppText variant="label" style={styles.rowTitle}>{a.title}</AppText>
+            </View>
+            {statePill}
+          </View>
+          <AppText variant="body" style={styles.rowDesc}>{a.description}</AppText>
+        </>
+      ) : (
+        <>
+          {icon}
+          <View style={styles.rowText}>
+            <AppText variant="label" style={styles.rowTitle}>{a.title}</AppText>
+            <AppText variant="body" style={styles.rowDesc}>{a.description}</AppText>
+          </View>
+          {statePill}
+        </>
+      )}
     </View>
   );
 }

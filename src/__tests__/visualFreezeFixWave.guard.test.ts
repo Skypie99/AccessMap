@@ -124,7 +124,7 @@ describe('FV-3 — local Dynamic Type hierarchy and recomposition', () => {
 });
 
 describe('FV-4 — bounded container owners use accessibility-safe geometry', () => {
-  it('starts the Watched Flags empty state at a reachable top edge at AX sizes', () => {
+  it('fits the Watched Flags empty instruction into its reachable AX body', () => {
     const src = read('components/MyWatchedModal.tsx');
 
     expect(src).toContain('const axRecompose = isAxRecompose(fontScale);');
@@ -132,6 +132,21 @@ describe('FV-4 — bounded container owners use accessibility-safe geometry', ()
     expect(src).toMatch(
       /stateBodyContentAx:\s*\{[^}]*justifyContent:\s*'flex-start'/,
     );
+    expect(src).toContain('style={axRecompose ? styles.emptyStateAx : undefined}');
+    expect(src).toContain('bodyStyle={axRecompose ? styles.emptyStateBodyAx : undefined}');
+    expect(src).toMatch(
+      /emptyStateAx:\s*\{[^}]*paddingVertical:\s*spacing\.sm[^}]*paddingHorizontal:\s*0/,
+    );
+    expect(src).toMatch(/emptyStateBodyAx:\s*\{[^}]*maxWidth:\s*'100%'/);
+  });
+
+  it('puts Report actions in the body scroller at AX and keeps normal sticky', () => {
+    const src = read('screens/ReportFlagModal.tsx');
+
+    expect(src).toContain('const actionsInScroll = axRecompose;');
+    expect(src).toMatch(/\{actionsInScroll \? actions : null\}\s*<\/ScrollView>/);
+    expect(src).toMatch(/\{actionsInScroll \? null : actions\}\s*<\/GlassSurface>/);
+    expect(src.match(/accessibilityLabel="Cancel and close"/g)).toHaveLength(1);
   });
 
   it('bounds native map-callout text and derives camera headroom from the same scale', () => {
