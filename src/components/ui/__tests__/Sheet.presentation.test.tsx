@@ -102,7 +102,7 @@ describe('ui/Sheet presentation', () => {
     );
   });
 
-  it('gives a title natural vertical height only when a bounded consumer opts in', () => {
+  it('removes the flexible zero basis only when a bounded title opts into natural height', () => {
     const standard = mount({ subtitle: 'Supporting line' });
     expect(StyleSheet.flatten(standard.utils.getByText('Expanded sheet').props.style)).toMatchObject({
       flex: 1,
@@ -110,9 +110,8 @@ describe('ui/Sheet presentation', () => {
 
     const reflowed = mount({ subtitle: 'Supporting line', reflowHeaderTitle: true });
     expect(StyleSheet.flatten(reflowed.utils.getByText('Expanded sheet').props.style)).toMatchObject({
-      flexGrow: 0,
+      flex: 0,
       flexShrink: 0,
-      flexBasis: 'auto',
     });
   });
 });

@@ -547,9 +547,13 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             ) : flags.length === 0 ? (
               // W5: Star and Search, two glyphs for two flavours of the same
               // nothing, become one mark. Every word is the shipped word,
-              // including the emphasis on the control's name.
+              // including the emphasis on the control's name. At AX the
+              // required title + instruction already fill this control-heavy
+              // viewport; the path is decorative, so it yields its height to
+              // the copy instead of forcing the final line below the edge.
               <EmptyState
                 title="No watched flags yet"
+                mark={axRecompose ? false : undefined}
                 style={axRecompose ? styles.emptyStateAx : undefined}
                 bodyStyle={axRecompose ? styles.emptyStateBodyAx : undefined}
                 body={
@@ -619,16 +623,19 @@ const makeStyles = (color: ColorTheme) =>
     // that a ScrollView cannot reveal. Start at the top only at AX sizes; the
     // body remains scrollable and normal-text composition stays centered.
     stateBodyContentAx: { justifyContent: 'flex-start' },
-    // The top-align fix made the leading sentence reachable, but the shared
-    // EmptyState's generous normal-size padding still forced its last line
-    // below this control-heavy sheet's AX viewport. Spend that padding only
-    // here; normal text and every other EmptyState keep the shared recipe.
+    // The top-align and width fixes made the leading sentence reachable, but
+    // the decorative mark, remaining vertical pad, and normal 1.4 body leading
+    // still put the final AX line below this control-heavy viewport. Spend that
+    // space on the required instruction; normal text keeps the shared recipe.
     emptyStateAx: {
-      paddingVertical: spacing.sm,
+      paddingVertical: 0,
       paddingHorizontal: 0,
       gap: spacing.tight,
     },
-    emptyStateBodyAx: { maxWidth: '100%' },
+    emptyStateBodyAx: {
+      maxWidth: '100%',
+      lineHeight: font.lineHeight.sm,
+    },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     // M-40 error-banner (self-contained solid pin — errorBg + errorFg, the
     // MyReports/ActivityFeed sibling pattern; no new arbiter pair, stacks _doc).

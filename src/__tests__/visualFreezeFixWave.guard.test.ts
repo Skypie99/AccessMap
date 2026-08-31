@@ -124,7 +124,7 @@ describe('FV-3 — local Dynamic Type hierarchy and recomposition', () => {
 });
 
 describe('FV-4 — bounded container owners use accessibility-safe geometry', () => {
-  it('fits the Watched Flags empty instruction into its reachable AX body', () => {
+  it('gives the complete Watched Flags instruction the reachable AX body', () => {
     const src = read('components/MyWatchedModal.tsx');
 
     expect(src).toContain('const axRecompose = isAxRecompose(fontScale);');
@@ -134,10 +134,13 @@ describe('FV-4 — bounded container owners use accessibility-safe geometry', ()
     );
     expect(src).toContain('style={axRecompose ? styles.emptyStateAx : undefined}');
     expect(src).toContain('bodyStyle={axRecompose ? styles.emptyStateBodyAx : undefined}');
+    expect(src).toContain('mark={axRecompose ? false : undefined}');
     expect(src).toMatch(
-      /emptyStateAx:\s*\{[^}]*paddingVertical:\s*spacing\.sm[^}]*paddingHorizontal:\s*0/,
+      /emptyStateAx:\s*\{[^}]*paddingVertical:\s*0[^}]*paddingHorizontal:\s*0/,
     );
-    expect(src).toMatch(/emptyStateBodyAx:\s*\{[^}]*maxWidth:\s*'100%'/);
+    expect(src).toMatch(
+      /emptyStateBodyAx:\s*\{[^}]*maxWidth:\s*'100%'[^}]*lineHeight:\s*font\.lineHeight\.sm/,
+    );
   });
 
   it('puts Report actions in the body scroller at AX and keeps normal sticky', () => {

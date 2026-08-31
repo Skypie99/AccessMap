@@ -22,7 +22,6 @@ import {
   StyleSheet,
   View,
   type Text,
-  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
@@ -502,13 +501,14 @@ const styles = StyleSheet.create({
   titleWrap: { flex: 1, gap: 2 },
   title: { flex: 1 },
   // `flex:1` is correct for the compact one-line header, but in a tall
-  // title/subtitle stack it turns the title into the only vertically flexible
-  // child. An AX subtitle can then consume the row and collapse the title.
-  // This override is additive and opt-in; non-adopters keep the exact default.
+  // title/subtitle stack it turns the title into a zero-basis flexible child.
+  // The first AX repair added longhands beside that shorthand; the flattened
+  // native style still carried `flex:1`, and Yoga continued to collapse the
+  // title while measuring the subtitle. Override the shorthand itself so the
+  // title contributes its intrinsic height. Non-adopters keep the exact default.
   titleReflow: {
-    flexGrow: 0,
+    flex: 0,
     flexShrink: 0,
-    flexBasis: 'auto' as TextStyle['flexBasis'],
   },
   // `padded` case: the card already supplies the gutter, so the header must
   // not add a second one.
