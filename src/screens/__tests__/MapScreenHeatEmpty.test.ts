@@ -1,15 +1,11 @@
 /**
  * MapScreenHeatEmpty.test.ts — B7-A (L7-11) source invariants.
  *
- * The heat disclaimer states the k-threshold RULE but is silent about the
- * OUTCOME: when heat is on and there IS data but nothing clusters enough to
- * qualify, the tinted layer is simply blank — which reads as broken. B7-A adds
- * a complementary line naming that outcome so "on + empty" ≠ "broken".
- *
- * The empty-when-no-cluster DATA condition is already covered by the k-anonymity
- * tests in MapScreen.heatmap.test.tsx (cells with count < 3 are filtered out).
- * Here we pin the RENDER — a full MapScreen render pulls maps/navigation/context,
- * so these are SOURCE-LEVEL invariants on stable semantic anchors.
+ * The map keeps one visible Heat Zone notice: the top k-anonymity disclaimer.
+ * The former lower "no zones qualify" companion was a duplicate information
+ * surface that crowded the controls at large Dynamic Type and is intentionally
+ * absent. A full MapScreen render pulls maps/navigation/context, so these are
+ * SOURCE-LEVEL invariants on stable semantic anchors.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -22,38 +18,23 @@ function around(haystack: string, anchor: string, len = 1400): string {
   return haystack.slice(i, i + len);
 }
 
-describe('B7-A — heat "no zones qualify yet" companion', () => {
-  it('renders only when heat is on, there is data, and no cell qualifies', () => {
-    // filteredFlags.length > 0 scopes it to the "data exists but blank" case —
-    // an empty dataset has its own broader empty state.
-    expect(map).toContain(
-      'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0',
-    );
+describe('Map Heat — one top informational notice', () => {
+  it('keeps the top k-anonymity notice', () => {
+    expect(map).toContain('heatmapEnabled && !heatNoticeDismissed && (');
+    expect(map).toContain('Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.');
   });
 
-  it('states the outcome (complements, not duplicates, the k-rule disclaimer)', () => {
-    const block = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0');
-    expect(block).toContain('No heat zones qualify yet');
-    expect(block).toContain('coverage grows as more reports come in');
+  it('removes the lower duplicate and its layout style', () => {
+    expect(map).not.toContain('emptyHeatNoticeDismissed');
+    expect(map).not.toContain('No heat zones qualify yet');
+    expect(map).not.toContain('emptyHeatNotice:');
+    expect(map).not.toContain('Dismiss empty heat map notice');
   });
 
-  it('is announced as a polite live region', () => {
-    const block = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0');
+  it('retains the top notice live region and 44pt dismissal', () => {
+    const block = around(map, 'heatmapEnabled && !heatNoticeDismissed && (');
     expect(block).toContain('accessibilityLiveRegion="polite"');
-  });
-
-  it('caps notice text as a single chrome container at large Dynamic Type', () => {
-    const rule = around(map, 'heatmapEnabled && !heatNoticeDismissed', 1500);
-    const outcome = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0', 1500);
-    expect(rule).toContain('<TypeBlock cap={TYPE_BLOCK.chrome}>');
-    expect(outcome).toContain('<TypeBlock cap={TYPE_BLOCK.chrome}>');
-  });
-
-  it('has its own accessible 44pt dismissal and resets when heat is re-enabled', () => {
-    const block = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0');
-    expect(block).toContain('accessibilityLabel="Dismiss empty heat map notice"');
-    expect(block).toContain('setEmptyHeatNoticeDismissed(true)');
-    expect(map).toContain('setEmptyHeatNoticeDismissed(false)');
+    expect(block).toContain('accessibilityLabel="Dismiss heat map notice"');
     expect(map).toContain('width: a11y.minTargetSize');
     expect(map).toContain('height: a11y.minTargetSize');
   });

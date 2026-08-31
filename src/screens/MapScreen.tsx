@@ -603,9 +603,6 @@ export default function MapScreen() {
   // Q1 (Sky): the Art. 7 heat notice gains a session-dismiss X, re-shown on
   // every heat re-enable (the reset effect lives just after the persist effect).
   const [heatNoticeDismissed, setHeatNoticeDismissed] = useState(false);
-  // The outcome notice is also a session-local choice. Re-enabling the layer
-  // gives the user its explanation again, without introducing persistence.
-  const [emptyHeatNoticeDismissed, setEmptyHeatNoticeDismissed] = useState(false);
   const [heatmapHydrated, setHeatmapHydrated] = useState(false);
   const [activeCategories, setActiveCategories] = useState<Set<FlagCategory>>(new Set());
   const [minSeverity, setMinSeverity] = useState<FlagSeverity>(1);
@@ -830,7 +827,6 @@ export default function MapScreen() {
   useEffect(() => {
     if (heatmapEnabled) {
       setHeatNoticeDismissed(false);
-      setEmptyHeatNoticeDismissed(false);
     }
   }, [heatmapEnabled]);
 
@@ -2847,43 +2843,6 @@ export default function MapScreen() {
           </GlassSurface>
         )}
 
-        {/* B7-A (L7-11): the disclaimer above states the k-threshold RULE but is
-            silent about the OUTCOME. When heat is on and there IS data but no
-            cell clusters enough to qualify, the tinted layer is simply blank —
-            which reads as broken. This complementary line names the outcome so
-            "on + empty" ≠ "broken". (heatCells is the global loaded set, not a
-            viewport query, so the copy stays honest about coverage, not "view".) */}
-        {heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0 && (
-          <GlassSurface
-            style={styles.emptyHeatNotice}
-            borderRadius={radius.md}
-            tint="light"
-            tintColor="rgba(255,255,255,0.65)"
-            solidColor="rgba(255,255,255,0.95)"
-          >
-            <View style={styles.heatNoticeRow}>
-              <TypeBlock cap={TYPE_BLOCK.chrome}>
-                <AppText
-                  variant="body"
-                  style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
-                  accessible
-                  accessibilityRole="text"
-                  accessibilityLiveRegion="polite"
-                >
-                  No heat zones qualify yet; coverage grows as more reports come in.
-                </AppText>
-              </TypeBlock>
-              <Pressable
-                style={styles.heatNoticeClose}
-                onPress={() => setEmptyHeatNoticeDismissed(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Dismiss empty heat map notice"
-              >
-                <X size={16} color="#414B5A" strokeWidth={2.4} />
-              </Pressable>
-            </View>
-          </GlassSurface>
-        )}
         </View>
 
         {/* Bottom bar: legend (left) + FABs (right) */}
@@ -4068,17 +4027,6 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.md,
       paddingHorizontal: 12,
       paddingVertical: 7,
-      marginBottom: 8,
-    },
-    // The empty-state explanation is deliberately quieter than the mandatory
-    // k-anonymity notice, while retaining the same independent 44pt dismiss
-    // affordance and readable pinned-light ink.
-    emptyHeatNotice: {
-      alignSelf: 'stretch',
-      borderRadius: radius.md,
-      paddingLeft: 12,
-      paddingRight: spacing.xs,
-      paddingVertical: spacing.xs,
       marginBottom: 8,
     },
     heatNoticeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
