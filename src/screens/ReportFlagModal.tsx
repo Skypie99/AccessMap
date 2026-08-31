@@ -1998,15 +1998,15 @@ const makeStyles = (color: ColorTheme) =>
       lineHeight: font.lineHeight.base,
     },
     sevHint: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.text,
       fontFamily: font.family.bodyMedium,
-      lineHeight: 18,
+      lineHeight: font.lineHeight.sm,
       marginTop: -4,
     },
     sevHintLabel: { fontWeight: font.weight.bold, color: color.textStrong },
     charCounter: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.inkGlassMuted,
       fontFamily: font.family.bodyMedium,
       textAlign: 'right',
@@ -2097,7 +2097,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     anonBannerBody: { flex: 1 },
     anonBannerTitle: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       fontWeight: font.weight.semibold,
       color: color.brandOnSoft,
     },
@@ -2108,7 +2108,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     anonBannerLinkText: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       fontWeight: font.weight.bold,
       color: color.brandOnSoft,
       textDecorationLine: 'underline',
@@ -2160,7 +2160,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     anonPhotoNudgeText: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.inkGlassMuted,
       fontFamily: font.family.bodyMedium,
     },

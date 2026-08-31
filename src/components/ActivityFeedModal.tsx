@@ -440,7 +440,8 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.md,
       padding: spacing.md,
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
+      flexWrap: 'wrap',
       gap: spacing.md,
       // Rendered via ListHeaderComponent now — this replaces the gap the card's
       // own `cardPadded` used to provide when the banner was a direct sibling.
@@ -449,8 +450,8 @@ const makeStyles = (color: ColorTheme) =>
     errorText: {
       color: color.errorFg,
       flex: 1,
+      minWidth: 0,
       fontSize: font.size.sm,
-      lineHeight: 18,
     },
     retryBtn: {
       paddingHorizontal: spacing.md + 2,
@@ -458,6 +459,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.md,
       backgroundColor: color.error,
       minHeight: 44,
+      alignSelf: 'flex-start',
       justifyContent: 'center',
     },
     retryText: {
