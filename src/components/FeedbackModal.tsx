@@ -241,6 +241,10 @@ export default function FeedbackModal({ visible, onClose }: Props) {
             <ScrollView
               style={styles.body}
               ref={scrollRef}
+              onLayout={() => {
+                bodyReveal.onViewportLayout();
+                contactReveal.onViewportLayout();
+              }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.bodyContent}
@@ -297,7 +301,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 })}
               </View>
 
-              <AppText variant="label" style={styles.label}>Your feedback</AppText>
+              <AppText variant="label" style={styles.label} onLayout={bodyReveal.onLayout}>Your feedback</AppText>
               <TextInput
                 value={body}
                 onChangeText={setBody}
@@ -306,7 +310,6 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 maxLength={MAX_FEEDBACK_LEN}
                 placeholder="What's on your mind?"
                 placeholderTextColor={color.placeholderText}
-                onLayout={bodyReveal.onLayout}
                 onFocus={() => {
                   setBodyFocused(true);
                   bodyReveal.onFocus();
@@ -316,20 +319,20 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                   bodyReveal.onBlur();
                 }}
                 style={[styles.bodyInput, bodyFocused && { borderColor: color.brand }, kbVisible && styles.bodyInputKbUp]}
+                maxFontSizeMultiplier={TYPE_BLOCK.header}
                 editable={!sending}
                 textAlignVertical="top"
                 accessibilityLabel="Feedback message"
                 accessibilityHint={`Type the feedback you'd like to send. Up to ${MAX_FEEDBACK_LEN} characters.`}
               />
 
-              <AppText variant="label" style={styles.label}>Reply email (optional)</AppText>
+              <AppText variant="label" style={styles.label} onLayout={contactReveal.onLayout}>Reply email (optional)</AppText>
               <TextInput
                 value={contact}
                 onChangeText={setContact}
                 maxLength={MAX_EMAIL_LEN}
                 placeholder="you@example.com"
                 placeholderTextColor={color.placeholderText}
-                onLayout={contactReveal.onLayout}
                 onFocus={() => {
                   setContactFocused(true);
                   contactReveal.onFocus();
@@ -339,6 +342,7 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                   contactReveal.onBlur();
                 }}
                 style={[styles.contactInput, contactFocused && { borderColor: color.brand }]}
+                maxFontSizeMultiplier={TYPE_BLOCK.header}
                 editable={!sending}
                 autoCapitalize="none"
                 autoCorrect={false}

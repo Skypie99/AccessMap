@@ -4,6 +4,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { fireEvent, render } from '@testing-library/react-native';
 
 import { spacing } from '@/theme';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { Sheet } from '../Sheet';
 import { SheetPull } from '../SheetPull';
 
@@ -88,5 +89,16 @@ describe('ui/Sheet presentation', () => {
     fireEvent.press(utils.getByLabelText('Close Expanded sheet'));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(utils.UNSAFE_getByType(SheetPull).props).toMatchObject({ enabled: false, atTop: true });
+  });
+
+  it('caps a subtitle only when a bounded consumer explicitly opts in', () => {
+    const { utils } = mount({
+      subtitle: 'A text-heavy sheet subtitle',
+      subtitleMaxFontSizeMultiplier: TYPE_BLOCK.header,
+    });
+
+    expect(utils.getByText('A text-heavy sheet subtitle').props.maxFontSizeMultiplier).toBe(
+      TYPE_BLOCK.header,
+    );
   });
 });

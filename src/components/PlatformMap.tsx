@@ -1,6 +1,7 @@
 import React, { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import CategoryIcon from '@/components/CategoryIcon';
 import { Check } from 'lucide-react-native';
@@ -47,7 +48,12 @@ const PIN_ANCHOR = {
   y: (PIN_WRAP_SIZE / 2 + PIN_TIP_BELOW_CENTER) / PIN_WRAP_SIZE,
 };
 
-const CALLOUT_HEADROOM_PX = 220;
+const CALLOUT_BASE_HEADROOM_PX = 220;
+
+export function calloutHeadroomPx(fontScale: number): number {
+  const boundedScale = Math.max(1, Math.min(fontScale, TYPE_BLOCK.chrome));
+  return Math.round(CALLOUT_BASE_HEADROOM_PX * boundedScale);
+}
 
 // T1 (F2-01): bias a callout-bound camera target so the pin lands BELOW the
 // persistent top chrome, leaving the callout (which extends upward from the
@@ -69,6 +75,7 @@ export function biasRegionForCallout(
   },
   chromeClearPx: number,
   mapHeightPx: number,
+  fontScale = 1,
 ): PlatformMapRegion {
   const base: PlatformMapRegion = {
     latitude: region.latitude,
@@ -78,7 +85,12 @@ export function biasRegionForCallout(
   };
   if (!chromeClearPx || chromeClearPx <= 0 || !mapHeightPx || mapHeightPx <= 0) return base;
   const clamped = Math.min(chromeClearPx, Math.round(mapHeightPx * 0.45));
-  const f = Math.min(0.65, Math.max(0.5, (clamped + CALLOUT_HEADROOM_PX) / mapHeightPx));
+  const headroom = calloutHeadroomPx(fontScale);
+  const lastFullyVisiblePinFraction = Math.max(0.5, 1 - PIN_WRAP_SIZE / mapHeightPx);
+  const f = Math.min(
+    lastFullyVisiblePinFraction,
+    Math.max(0.5, (clamped + headroom) / mapHeightPx),
+  );
   return { ...base, latitude: base.latitude + (f - 0.5) * base.latitudeDelta };
 }
 
@@ -197,7 +209,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
 ) {
   // T1 (F2-01): the map fills the screen on this app, so the window height is
   // the honest map-height stand-in for the callout-clear bias math.
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, fontScale } = useWindowDimensions();
   const color = useColor();
   const styles = makeStyles(color);
   // Ref to ClusteredMapView — cast to MapView for animateToRegion calls
@@ -263,7 +275,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       void Promise.all([map.pointForCoordinate(coord), map.getMapBoundaries()])
         .then(([pt, bounds]) => {
           const clamped = Math.min(chromeClearPx, Math.round(windowHeight * 0.45));
-          if (pt.y >= clamped + CALLOUT_HEADROOM_PX) return; // already clear
+          if (pt.y >= clamped + calloutHeadroomPx(fontScale)) return; // already clear
           // Preserve the CURRENT visible span so the nudge keeps zoom. Guard
           // the deltas: across the antimeridian getMapBoundaries' longitude
           // span goes negative, and a bad reading could yield 0 — either would
@@ -279,13 +291,14 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
               },
               chromeClearPx,
               windowHeight,
+              fontScale,
             ),
             reducedMotion ? 0 : 600,
           );
         })
         .catch(() => {});
     },
-    [animateToRegion, chromeInsetTop, windowHeight, reducedMotion],
+    [animateToRegion, chromeInsetTop, fontScale, windowHeight, reducedMotion],
   );
 
   useImperativeHandle(
@@ -297,7 +310,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       // targeting.
       animateTo: (r, opts) => {
         const target: PlatformMapRegion = opts?.calloutClear
-          ? biasRegionForCallout(r, chromeInsetTop ?? 0, windowHeight)
+          ? biasRegionForCallout(r, chromeInsetTop ?? 0, windowHeight, fontScale)
           : {
               latitude: r.latitude,
               longitude: r.longitude,
@@ -372,7 +385,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         );
       },
     }),
-    [animateToRegion, reducedMotion, chromeInsetTop, windowHeight],
+    [animateToRegion, reducedMotion, chromeInsetTop, fontScale, windowHeight],
   );
 
   return (
@@ -595,50 +608,52 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
                 {...decorativeProps}
               />
               <View style={styles.calloutBody}>
-                <AppText
-                  variant="label"
-                  style={styles.calloutTitle}
-                  // dynamic-type-ok — fixed-width callout bubble anchored to a pin;
-                  // horizontally hard-bounded by the marker, so one-line truncation
-                  // is the intended design (was the guard's ALLOW_LIST entry).
-                  numberOfLines={1}
-                >
-                  {CATEGORY_LABELS[f.category]}
-                </AppText>
-                <AppText variant="body" style={styles.calloutMeta}>
-                  Severity {f.severity} of 5 · {SEVERITY_LABELS[f.severity]} · {STATUS_LABELS[f.status]}
-                </AppText>
-                {/* S3 (L3-12): a freshness line so even a quick glance shows how
-                    recent the report is — the read-half of the trust ledger. */}
-                <AppText variant="body" style={styles.calloutFresh}>
-                  Reported {relativeTime(f.created_at)}
-                </AppText>
-                {f.photo_url ? (
-                  <RemoteImage
-                    uri={f.photo_url}
-                    style={styles.calloutPhoto}
-                    // photo_alt (2026-08-19): speak the reporter's description
-                    // when there is one; otherwise stay decorative inside the
-                    // already-labeled callout as before.
-                    {...(f.photo_alt
-                      ? { accessible: true, accessibilityLabel: `Photo: ${f.photo_alt}` }
-                      : { /* Decorative thumbnail inside an already-labeled callout. */ ...decorativeProps })}
-                  />
-                ) : null}
-                {f.description ? (
-                  <AppText variant="body" style={styles.calloutDesc} numberOfLines={3}>
-                    {f.description}
+                <TypeBlock cap={TYPE_BLOCK.chrome}>
+                  <AppText
+                    variant="label"
+                    style={styles.calloutTitle}
+                    // dynamic-type-ok — fixed-width callout bubble anchored to a pin;
+                    // horizontally hard-bounded by the marker, so one-line truncation
+                    // is the intended design (was the guard's ALLOW_LIST entry).
+                    numberOfLines={1}
+                  >
+                    {CATEGORY_LABELS[f.category]}
                   </AppText>
-                ) : null}
-                {/* S3 (L3-12): the affordance that finally cashes the "open for
-                    details" promise — opens FlagDetailModal via Callout.onPress. */}
-                {onOpenDetails ? (
-                  <View style={styles.calloutCta}>
-                    <AppText variant="label" style={styles.calloutCtaText}>
-                      Open details ›
+                  <AppText variant="body" style={styles.calloutMeta}>
+                    Severity {f.severity} of 5 · {SEVERITY_LABELS[f.severity]} · {STATUS_LABELS[f.status]}
+                  </AppText>
+                  {/* S3 (L3-12): a freshness line so even a quick glance shows how
+                      recent the report is — the read-half of the trust ledger. */}
+                  <AppText variant="body" style={styles.calloutFresh}>
+                    Reported {relativeTime(f.created_at)}
+                  </AppText>
+                  {f.photo_url ? (
+                    <RemoteImage
+                      uri={f.photo_url}
+                      style={styles.calloutPhoto}
+                      // photo_alt (2026-08-19): speak the reporter's description
+                      // when there is one; otherwise stay decorative inside the
+                      // already-labeled callout as before.
+                      {...(f.photo_alt
+                        ? { accessible: true, accessibilityLabel: `Photo: ${f.photo_alt}` }
+                        : { /* Decorative thumbnail inside an already-labeled callout. */ ...decorativeProps })}
+                    />
+                  ) : null}
+                  {f.description ? (
+                    <AppText variant="body" style={styles.calloutDesc} numberOfLines={3}>
+                      {f.description}
                     </AppText>
-                  </View>
-                ) : null}
+                  ) : null}
+                  {/* S3 (L3-12): the affordance that finally cashes the "open for
+                      details" promise — opens FlagDetailModal via Callout.onPress. */}
+                  {onOpenDetails ? (
+                    <View style={styles.calloutCta}>
+                      <AppText variant="label" style={styles.calloutCtaText}>
+                        Open details ›
+                      </AppText>
+                    </View>
+                  ) : null}
+                </TypeBlock>
               </View>
             </View>
           </Callout>

@@ -7,9 +7,10 @@
  * BP1's native leg, pinned here:
  *
  *   • biasRegionForCallout (pure): callout-bound camera targets aim the pin
- *     at the screen fraction where chrome + callout headroom end — f clamped
- *     [0.5, 0.65], chrome clamped ≤45% of map height (mirrors the web
- *     clampChromeInset). Un-occluded geometry is the identity.
+ *     at the screen fraction where chrome + callout headroom end. Headroom
+ *     follows the callout's bounded Dynamic Type scale; the pin stays fully
+ *     visible and chrome remains clamped ≤45% of map height. Un-occluded
+ *     geometry is the identity.
  *   • animateTo(region, { calloutClear: true }) applies the bias; every
  *     non-callout move keeps EXACT targeting.
  *   • a direct pin tap (Marker onPress) nudges the camera only when the pin
@@ -28,6 +29,7 @@ import { Dimensions } from 'react-native';
 import { render, act } from '@testing-library/react-native';
 import PlatformMap, {
   biasRegionForCallout,
+  calloutHeadroomPx,
   type PlatformMapHandle,
 } from '../PlatformMap';
 import type { FlagRow } from '@/types/database';
@@ -142,10 +144,17 @@ describe('biasRegionForCallout — the pure math', () => {
     expect(out.latitudeDelta).toBe(0.01);
   });
 
-  it('caps the bias at f = 0.65 — the pin stays comfortably on-screen', () => {
-    // Runaway chrome 800 → clamped to 360; f = (360 + 220) / 800 = 0.725 → 0.65.
+  it('uses the required clearance while keeping the full pin on-screen', () => {
+    // Runaway chrome 800 → clamped to 360; f = (360 + 220) / 800 = 0.725.
     const out = biasRegionForCallout(region, 800, 800);
-    expect(out.latitude).toBeCloseTo(region.latitude + 0.15 * 0.01, 10);
+    expect(out.latitude).toBeCloseTo(region.latitude + 0.225 * 0.01, 10);
+  });
+
+  it('scales headroom with the same bounded multiplier as callout text', () => {
+    expect(calloutHeadroomPx(1)).toBe(220);
+    expect(calloutHeadroomPx(2.3)).toBe(286);
+    const out = biasRegionForCallout(region, 300, 800, 2.3);
+    expect(out.latitude).toBeCloseTo(region.latitude + 0.2325 * 0.01, 10);
   });
 
   it('defaults absent deltas to 0.005 (the app’s standard focus zoom)', () => {
@@ -260,10 +269,10 @@ describe('T1 — direct pin tap: the chrome-band nudge (code-inferred; R2-D12)',
         await flush();
       });
       const [region] = mockMap.current.animateToRegion.mock.calls[0];
-      // f = clamp((300 + 220) / 700 = 0.743) → 0.65; shift = 0.15 × latSpan.
+      // f = (300 + 220) / 700 = 0.743; the 44pt pin remains fully on-screen.
       const latSpan = 37.85 - 37.73;
       expect(region.latitude).toBeGreaterThan(FLAG.lat); // biased SOUTH of the pin
-      expect(region.latitude).toBeCloseTo(FLAG.lat + 0.15 * latSpan, 10);
+      expect(region.latitude).toBeCloseTo(FLAG.lat + ((520 / 700) - 0.5) * latSpan, 10);
     } finally {
       spy.mockRestore();
     }

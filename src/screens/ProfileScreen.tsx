@@ -100,7 +100,7 @@ import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'luci
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { setLastSeenPoints } from '@/lib/points';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   getLifetimeReportOutcomes,
   getPointEventHistory,
@@ -186,6 +186,7 @@ export default function ProfileScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
   const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   const navChevronSize = Math.round(
     18 * Math.max(1, Math.min(fontScale, TYPE_BLOCK.header)),
   );
@@ -1263,66 +1264,83 @@ export default function ProfileScreen() {
           style={styles.pointHistoryCard}
           borderRadius={radius.lg}
         >
-          <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
-            Recent point activity
-          </AppText>
-          {pointEvents.length === 0 ? (
-            <AppText variant="bodyMedium" style={styles.pointHistoryEmpty}>
-              Start reporting barriers to earn points!
+          <TypeBlock cap={TYPE_BLOCK.content}>
+            <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
+              Recent point activity
             </AppText>
-          ) : (
-            <View accessibilityRole="list">
-              {pointEvents.slice(0, 5).map((ev, i, arr) => {
-                const isGain = ev.delta >= 0;
-                const absPoints = Math.abs(ev.delta);
-                const action = isGain ? 'Earned' : 'Lost';
-                const sign = isGain ? '+' : '';
-                const dateStr = formatRelativeTime(ev.created_at);
-                return (
-                  <View
-                    key={ev.id}
-                    style={[styles.pointHistoryRow, i < arr.length - 1 && styles.pointHistoryRowDivider]}
-                    accessible
-                    role="listitem"
-                    accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
-                  >
-                    <AppText
-                      variant="label"
-                      style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]} {...decorativeProps}
+            {pointEvents.length === 0 ? (
+              <AppText variant="bodyMedium" style={styles.pointHistoryEmpty}>
+                Start reporting barriers to earn points!
+              </AppText>
+            ) : (
+              <View accessibilityRole="list">
+                {pointEvents.slice(0, 5).map((ev, i, arr) => {
+                  const isGain = ev.delta >= 0;
+                  const absPoints = Math.abs(ev.delta);
+                  const action = isGain ? 'Earned' : 'Lost';
+                  const sign = isGain ? '+' : '';
+                  const dateStr = formatRelativeTime(ev.created_at);
+                  return (
+                    <View
+                      key={ev.id}
+                      style={[
+                        styles.pointHistoryRow,
+                        axRecompose && styles.pointHistoryRowAx,
+                        i < arr.length - 1 && styles.pointHistoryRowDivider,
+                      ]}
+                      accessible
+                      role="listitem"
+                      accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
                     >
-                      {isGain ? (
-                        <ArrowUp
-                          size={14}
-                          // Dark row glass needs a brighter green/red than the
-                          // light-optimized successStrong/error (they go dim on
-                          // the dark floor). Direction is also carried by the
-                          // arrow shape + the +/- sign, never color alone.
-                          color={color.scheme === 'dark' ? color.success : color.successStrong}
-                          strokeWidth={2.4}
-                        />
-                      ) : (
-                        <ArrowDown
-                          size={14}
-                          color={color.scheme === 'dark' ? color.errorFg : color.error}
-                          strokeWidth={2.4}
-                        />
-                      )}
-                    </AppText>
-                    <AppText variant="bodyMedium" style={styles.pointHistoryLabel} numberOfLines={2}>
-                      {pointEventLabel(ev.event_type)}
-                    </AppText>
-                    <AppText variant="body" style={styles.pointHistoryDate}>{dateStr}</AppText>
-                    <AppText
-                      variant="monoBold"
-                      style={styles.pointHistoryDelta}
-                    >
-                      {sign}{ev.delta} pts
-                    </AppText>
-                  </View>
-                );
-              })}
-            </View>
-          )}
+                      <View style={[styles.pointHistorySummary, axRecompose && styles.pointHistorySummaryAx]}>
+                        <AppText
+                          variant="label"
+                          style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
+                          {...decorativeProps}
+                        >
+                          {isGain ? (
+                            <ArrowUp
+                              size={14}
+                              // Dark row glass needs a brighter green/red than the
+                              // light-optimized successStrong/error (they go dim on
+                              // the dark floor). Direction is also carried by the
+                              // arrow shape + the +/- sign, never color alone.
+                              color={color.scheme === 'dark' ? color.success : color.successStrong}
+                              strokeWidth={2.4}
+                            />
+                          ) : (
+                            <ArrowDown
+                              size={14}
+                              color={color.scheme === 'dark' ? color.errorFg : color.error}
+                              strokeWidth={2.4}
+                            />
+                          )}
+                        </AppText>
+                        <AppText
+                          variant="bodyMedium"
+                          style={styles.pointHistoryLabel}
+                          numberOfLines={axRecompose ? undefined : 2}
+                        >
+                          {pointEventLabel(ev.event_type)}
+                        </AppText>
+                      </View>
+                      <View style={[styles.pointHistoryMeta, axRecompose && styles.pointHistoryMetaAx]}>
+                        <AppText
+                          variant="body"
+                          style={[styles.pointHistoryDate, axRecompose && styles.pointHistoryDateAx]}
+                        >
+                          {dateStr}
+                        </AppText>
+                        <AppText variant="monoBold" style={styles.pointHistoryDelta}>
+                          {sign}{ev.delta} pts
+                        </AppText>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </TypeBlock>
         </GlassSurface>
 
         <GlassSurface
@@ -2581,7 +2599,7 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e1,
     },
     pointHistoryTitle: {
-      fontSize: font.size.xs,
+      fontSize: font.size.md,
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
@@ -2592,6 +2610,29 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.sm,
       minHeight: a11y.minTargetSize, // WCAG 2.5.5 — these are VoiceOver-focusable rows; meet the 44pt target
+    },
+    pointHistoryRowAx: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      paddingVertical: spacing.sm,
+    },
+    pointHistorySummary: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    pointHistorySummaryAx: { flex: 0 },
+    pointHistoryMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flexShrink: 0,
+    },
+    pointHistoryMetaAx: {
+      justifyContent: 'space-between',
+      paddingLeft: spacing.xl + spacing.sm,
     },
     // Hairline divider between point-history rows (all but the last) so the list
     // scans cleanly instead of running together. A neutral hairline (not text),
@@ -2622,6 +2663,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textAlign: 'right',
     },
+    pointHistoryDateAx: { textAlign: 'left', flexShrink: 1 },
     // Neutral high-contrast delta number. On the light row-over-stage worst case
     // the semantic green (successStrong) measures 4.28:1 (<4.5), so the NUMBER
     // takes textStrong (arbiter-forced) and the gain/loss color lives on the

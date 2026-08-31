@@ -220,6 +220,10 @@ describe('(3) adoption — the blocks are actually mounted, and nothing shrinks 
     // is why the discs inside the Legend and Nearby content blocks do not appear
     // here — a fixed box should carry its cap with it, not at every call site.
     //
+    // Profile's 1.3 is the points hero numeral, outside the new point-history
+    // content block. It is a fixed display composition and carries its existing
+    // call-site rationale; this file-level inventory intentionally lists it.
+    //
     // RE-PINNED (GSP-06). ReportFlagModal joined this list when its large-type
     // severity picker gained a content block (the Legend's rows, made
     // selectable). The 1.3 it carries is NOT on anything inside that block: it
@@ -228,7 +232,10 @@ describe('(3) adoption — the blocks are actually mounted, and nothing shrinks 
     // SeverityDisc — so it is precisely the fixed-box case this list exists to
     // enumerate, and its rationale has been stated at that call site since the
     // XXL review. The two branches are never mounted together.
-    expect(found).toEqual(['screens/ReportFlagModal.tsx:1.3']);
+    expect(found).toEqual([
+      'screens/ProfileScreen.tsx:1.3',
+      'screens/ReportFlagModal.tsx:1.3',
+    ]);
   });
 });
 

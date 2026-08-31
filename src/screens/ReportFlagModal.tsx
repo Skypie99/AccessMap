@@ -827,11 +827,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             KAV so the percentage resolves against the full-height backdrop. */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+          style={[styles.kav, (axRecompose || keyboardVisible) && styles.kavExpanded]}
         >
         {/* Pull-down-to-dismiss. The card is the drag target; the containment
-            node, the escape handler and the 88%-cap chain below are untouched —
-            SheetPull only adds a transform wrapper. `onDismiss={requestClose}`
+            node and escape handler are unchanged. SheetPull only adds a
+            transform wrapper, with an expanded viewport at XXXL or while the
+            keyboard is visible. `onDismiss={requestClose}`
             is the same guard the Cancel button and onRequestClose use, so the
             swipe inherits the focus-return contract instead of forking a second
             dismissal path. Guarded by !submitting exactly like Cancel: the
@@ -841,11 +842,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           enabled={!submitting && !keyboardVisible}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
+          style={(axRecompose || keyboardVisible) ? styles.pullExpanded : undefined}
         >
         <GlassSurface
           variant="bulk"
           borderRadius={0}
-          style={styles.card}
+          style={[
+            styles.card,
+            (axRecompose || keyboardVisible) && styles.cardExpanded,
+            (axRecompose || keyboardVisible) && { marginTop: insets.top + spacing.sm },
+          ]}
           accessibilityViewIsModal
           // G1 + G9: the same `!submitting` guard the visible Cancel and
           // onRequestClose use. This is the LIVE containment node — RN's Modal
@@ -860,12 +866,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               it with a real gesture; this one had no pill at all. AT-hidden by
               the primitive — the labelled Cancel is the screen-reader door. */}
           <SheetGrabber />
-          {/* WCAG 1.4.4: content scrolls under the 88% cap; Cancel/Report
-              buttons stay pinned as sticky footer. */}
+          {/* WCAG 1.4.4: content scrolls within the available viewport;
+              Cancel/Report buttons stay pinned as sticky footer. */}
           <ScrollView
             ref={scrollRef}
-            style={styles.scrollContent}
+            style={[
+              styles.scrollContent,
+              (axRecompose || keyboardVisible) && styles.scrollContentExpanded,
+            ]}
             contentContainerStyle={styles.scrollContentContainer}
+            onLayout={descriptionReveal.onViewportLayout}
             keyboardShouldPersistTaps="handled"
             // Drag #1 puts the keyboard away (the pull is gated off while it is
             // up); drag #2, from the top, dismisses the sheet. Without this the
@@ -1331,7 +1341,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           )}
           </TypeBlock>
 
-          <AppText variant="label" style={styles.label} accessibilityRole="header">Description (optional)</AppText>
+          <AppText
+            variant="label"
+            style={styles.label}
+            accessibilityRole="header"
+            onLayout={descriptionReveal.onLayout}
+          >
+            Description (optional)
+          </AppText>
           <TextInput
             value={description}
             onChangeText={(text) => {
@@ -1349,7 +1366,6 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             // Cap the input here too so the user can't paste a wall of
             // text only to get a Postgres error after upload+insert.
             maxLength={2000}
-            onLayout={descriptionReveal.onLayout}
             onFocus={descriptionReveal.onFocus}
             onBlur={descriptionReveal.onBlur}
             // L4: TextInput has no `disabled` prop — editable={false} is the
@@ -1820,10 +1836,12 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
-    // WCAG 1.4.4: the 88% cap lives HERE (direct child of the full-height
-    // backdrop) so the percentage resolves; on the card it would resolve
-    // against the auto-height KAV and silently become no cap at all.
+    // Normal text preserves the content-hugging 88% presentation. Keyboard and
+    // accessibility layouts opt into the expanded chain below so the body owns
+    // real remaining height instead of losing it to the pinned action footer.
     kav: { width: '100%', maxHeight: '88%' },
+    kavExpanded: { maxHeight: '100%', flexGrow: 1 },
+    pullExpanded: { width: '100%', flexGrow: 1 },
     card: {
       // No flex:1 — the sheet sizes to its content (the 3-field anonymous form
       // used to be stretched to 88% with a blank band; sweep minor) and only
@@ -1840,9 +1858,11 @@ const makeStyles = (color: ColorTheme) =>
       // untouched — material only (PROTECT-3).
       overflow: 'hidden',
     },
+    cardExpanded: { maxHeight: '100%', flexGrow: 1 },
     // Shrink-to-cap, never grow: the body yields inside the 88% card so the
     // long form still scrolls, while a short form hugs its content.
     scrollContent: { flexGrow: 0, flexShrink: 1, minHeight: 0 },
+    scrollContentExpanded: { flexGrow: 1 },
     scrollContentContainer: { gap: spacing.md, paddingBottom: spacing.tight },
     title: {
       fontSize: font.size.xxl,

@@ -186,3 +186,19 @@ describe('SW-45 — every sheet in the family clears the tab bar', () => {
     expect(src).not.toContain('useBottomTabBarHeight()');
   });
 });
+
+describe('VFW2 — Profile-launched text-heavy sheets use the expanded reading viewport', () => {
+  const PROFILE_TEXT_SHEETS = [
+    ['AchievementsModal', 'components/AchievementsModal.tsx', 'styles.body'],
+    ['NotificationPrefsModal', 'components/NotificationPrefsModal.tsx', 'styles.list'],
+  ] as const;
+
+  it.each(PROFILE_TEXT_SHEETS)('%s expands and gives its body the remaining viewport', (_n, rel, bodyStyle) => {
+    const src = stripComments(read(rel));
+    expect(src).toContain('presentation="expanded"');
+    expect(src).not.toContain('shrinkStyle={styles.cap}');
+    expect(src).toContain(bodyStyle);
+    expect(src).toMatch(/flexGrow:\s*1[^}]*flexShrink:\s*1[^}]*minHeight:\s*0/);
+    expect(src).toContain('subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}');
+  });
+});

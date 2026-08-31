@@ -49,6 +49,9 @@ export interface SheetHeaderProps {
   /** Second line under the title, inside the header block (T3: one container,
    *  one multiplier). Achievements' "N of M earned" is this. */
   subtitle?: string;
+  /** Optional local cap for text-heavy headers whose body expands at AX sizes.
+   *  Omitted consumers retain the existing AppText body policy. */
+  subtitleMaxFontSizeMultiplier?: number;
   /** Spoken form of `subtitle` when the written one is abbreviated. */
   subtitleLabel?: string;
   /** Hint on the close button, for the sheets whose siblings carry one. */
@@ -120,6 +123,7 @@ export function SheetHeader({
   right,
   accessory,
   subtitle,
+  subtitleMaxFontSizeMultiplier,
   subtitleLabel,
   flush,
   titleRef,
@@ -151,6 +155,7 @@ export function SheetHeader({
               variant="body"
               size={font.size.sm}
               color={color.inkGlassMuted}
+              maxFontSizeMultiplier={subtitleMaxFontSizeMultiplier}
               accessibilityLabel={subtitleLabel}
             >
               {subtitle}
@@ -198,6 +203,8 @@ export interface SheetProps {
   headerAccessory?: React.ReactNode;
   /** Second header line, and its spoken form. */
   subtitle?: string;
+  /** Forwarded to the subtitle only; default behavior remains unchanged. */
+  subtitleMaxFontSizeMultiplier?: number;
   subtitleLabel?: string;
   /** Close button label + hint, when the default `Close {title}` is not the
    *  wording the surface already ships. */
@@ -274,6 +281,7 @@ export function Sheet({
   headerRight,
   headerAccessory,
   subtitle,
+  subtitleMaxFontSizeMultiplier,
   subtitleLabel,
   closeLabel,
   closeHint,
@@ -310,6 +318,7 @@ export function Sheet({
         right={headerRight}
         accessory={headerAccessory}
         subtitle={subtitle}
+        subtitleMaxFontSizeMultiplier={subtitleMaxFontSizeMultiplier}
         subtitleLabel={subtitleLabel}
         closeLabel={closeLabel}
         closeHint={closeHint}

@@ -17,6 +17,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Sheet } from '@/components/ui/Sheet';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { useAtTop } from '@/components/ui/SheetPull';
 import type { Achievement, AchievementCategory } from '@/lib/achievements';
 import { font, radius, spacing } from '@/theme';
@@ -70,10 +71,7 @@ const CATEGORY_ORDER: AchievementCategory[] = ['reporting', 'resolution', 'point
 // Defined before both components so AchievementRow can call it without a hoisting issue.
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at
-    // 85% and its content is a long scroller, so the tighter cap is content,
-    // not chrome, and it comes with the sheet rather than replacing it.
-    cap: { maxHeight: '85%' },
+    body: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
     scroll: { paddingBottom: spacing.md, gap: spacing.lg },
     section: { gap: spacing.sm },
     sectionHeader: {
@@ -161,17 +159,18 @@ export default function AchievementsModal({ visible, onClose, achievements }: Pr
       title="Achievements"
       subtitle={`${totalEarned} of ${achievements.length} earned`}
       subtitleLabel={`${totalEarned} of ${achievements.length} achievements earned`}
+      subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}
       closeLabel="Close achievements"
       glass
       engineered
       padded
-      shrinkStyle={styles.cap}
+      presentation="expanded"
       minBottomPad={spacing.xl}
       atTop={atTop}
       scrollRef={scrollRef}
       testID="achievementsModal-backdrop"
     >
-      <ScrollView contentContainerStyle={styles.scroll}
+      <ScrollView style={styles.body} contentContainerStyle={styles.scroll}
               ref={scrollRef}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}>

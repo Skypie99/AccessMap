@@ -9,6 +9,7 @@ import {
   Pressable,
   RefreshControl,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 // RNGH FlatList AND ScrollView, not react-native's — their refs expose
@@ -42,7 +43,7 @@ import {
 } from '@/lib/watchedFlagsFilter';
 import { a11y, font, radius, spacing } from '@/theme';
 import { ArrowDown, MapPin, RefreshCw, Star } from 'lucide-react-native';
-import { a11yToggle, decorativeProps } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -112,6 +113,8 @@ export function sortWatchedFlags(items: FlagRow[], mode: WatchedSort): FlagRow[]
 export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewOnMap, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   // The pull gesture must not fight the body's own scroll: `useAtTop`
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
@@ -514,7 +517,10 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               ref={(r) => { scrollRef.current = r; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
-              contentContainerStyle={styles.stateBodyContent}
+              contentContainerStyle={[
+                styles.stateBodyContent,
+                axRecompose && styles.stateBodyContentAx,
+              ]}
               keyboardShouldPersistTaps="handled"
             >
             {loading ? (
@@ -605,6 +611,10 @@ const makeStyles = (color: ColorTheme) =>
     // that the sheet footer then clips.
     stateBody: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
     stateBodyContent: { flexGrow: 1, justifyContent: 'center' },
+    // Centering a taller-than-viewport empty state creates negative overflow
+    // that a ScrollView cannot reveal. Start at the top only at AX sizes; the
+    // body remains scrollable and normal-text composition stays centered.
+    stateBodyContentAx: { justifyContent: 'flex-start' },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     // M-40 error-banner (self-contained solid pin — errorBg + errorFg, the
     // MyReports/ActivityFeed sibling pattern; no new arbiter pair, stacks _doc).

@@ -356,6 +356,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       onClose={onClose}
       title="Leaderboard"
       subtitle={tab === 'month' ? 'Top 20 contributors this month' : 'Top 20 contributors by points'}
+      subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}
       closeLabel="Close leaderboard"
       glass
       engineered
@@ -500,7 +501,10 @@ function makeStyles(color: ColorTheme) {
     card: { paddingTop: spacing.tight },
     // Placement only — the control's own drawing lives in the primitive.
     segment: { marginHorizontal: spacing.xl, marginBottom: spacing.md },
-    list: { flexGrow: 0 },
+    // Own the remaining expanded-sheet viewport. Without shrink/minHeight the
+    // list lays out at content height, crushes the header, and cannot scroll to
+    // the lower rows at accessibility sizes.
+    list: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
     row: {
       flexDirection: 'row',
       alignItems: 'center',

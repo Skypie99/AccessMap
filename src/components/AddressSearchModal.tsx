@@ -218,7 +218,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
         >
         {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
             wander onto the map behind it (every other modal sets this). */}
-        <View style={styles.cardWrap}>
+        <View style={[styles.cardWrap, { marginTop: insets.top + spacing.sm }]}>
         <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
           <View style={styles.headerRow}>
             <AppText variant="heading" style={styles.title} accessibilityRole="header">
@@ -413,17 +413,15 @@ function makeStyles(color: ColorTheme) {
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
-    // G6/SR-099 — THE CAP LIVES HERE, not on the card. A percentage maxHeight
-    // only resolves against a parent with a *definite* height; backdrop → KAV →
-    // cardWrap → card means the card's own '85%' resolves against a
-    // content-sized cardWrap and is therefore inert. Only the KAV's parent (the
-    // flex:1 backdrop) is definite, so the cap sits on the KAV and cardWrap/card
-    // just need permission to shrink into it. This is the defect Sky hit on
-    // device: the sheet grew past the screen and the input sat under the
-    // keyboard. Same stack as FeedbackModal (the reference).
+    // Address Search is a keyboard workspace, not a compact content-hugging
+    // sheet. Every node in this chain must spend the definite backdrop height:
+    // otherwise the KAV reserves keyboard space but the card stops at its
+    // intrinsic height, leaving the focused input clipped in a tiny viewport.
+    // The card's safe-area margin is applied at render time above.
     kav: {
       width: '100%',
-      maxHeight: '85%',
+      maxHeight: '100%',
+      flexGrow: 1,
       flexShrink: 1,
     },
     card: {
@@ -433,8 +431,8 @@ function makeStyles(color: ColorTheme) {
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.sm,
-      maxHeight: '85%',
-      // G6/SR-099: shrink into the KAV's cap (see the kav block).
+      maxHeight: '100%',
+      flexGrow: 1,
       flexShrink: 1,
       // The bulk variant owns the surface; overflow:hidden clips it to the
       // rounded top (the up-shadow moves to cardWrap — GlassSurface contract).
@@ -443,6 +441,8 @@ function makeStyles(color: ColorTheme) {
     // Bulk-glass up-shadow on the outer wrapper (an overflow:hidden view clips
     // its own shadow). Mode tint identical to FeedbackModal/AboutScreen.
     cardWrap: {
+      maxHeight: '100%',
+      flexGrow: 1,
       flexShrink: 1,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,

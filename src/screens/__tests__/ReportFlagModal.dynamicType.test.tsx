@@ -18,7 +18,7 @@ describe('P1 — ReportFlagModal respects intended Dynamic Type text scaling', (
   it('scales the XXXL severity digits and keeps the selected caption uncapped', () => {
     const src = read(FILE);
     const severityStart = src.indexOf('>Severity</AppText>');
-    const severityEnd = src.indexOf('>Description (optional)</AppText>', severityStart);
+    const severityEnd = src.indexOf('Description (optional)', severityStart);
     const severitySection = src.slice(severityStart, severityEnd);
     const largePicker = severitySection.match(/\{axRecompose \? \(([\s\S]*?)\) : \(/)?.[1] ?? '';
 
