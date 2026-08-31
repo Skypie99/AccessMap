@@ -16,8 +16,7 @@ Changed files:
 - Base/source commit: `d7b33fd23917c643d083d2dd549c07ec12891351`
 - Base/source tree: `0eba3bbd7af5249c9f670e46fadc867a0ccd326d`
 - Current HEAD before commit: `d7b33fd23917c643d083d2dd549c07ec12891351`
-- Resulting local commit: `eb2b827` (`fix(a11y): contain map heat notices at large type`)
-- Resulting commit tree: `7368e5e5d46b1f0c2869301a4a1f63cad06314d6`
+- Resulting local commit: `70de4e0d2e5cc3a8facab0f42b536eaf6da4ca98` (`fix(a11y): contain map heat notices at large type`)
 
 The repair was performed only in this dedicated worktree. The primary checkout and `/Users/skypie/AccessMap-prompt-c-final` were not edited.
 
