@@ -366,6 +366,7 @@ export default function MapScreen() {
   // (see barCenter below). `fontScale` off useWindowDimensions is the reactive
   // read of the same native value PixelRatio.getFontScale() returns.
   const barTitleHidden = isAxRecompose(fontScale);
+  const axRecompose = barTitleHidden;
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // S8: the map wears its own editorial header inside the box-none overlay now
   // (the dark nav bar is gone), so it drives the drawer + Feedback itself.
@@ -2585,6 +2586,44 @@ export default function MapScreen() {
           </GlassSurface>
         )}
 
+        {/* Jordan Art. 7 disclaimer — the single retained Heat Zone information
+            card stays immediately below the command/filter surface so the map
+            controls below it retain the reclaimed viewport. The copy is
+            byte-frozen; only its stack position is intentional here. */}
+        {heatmapEnabled && !heatNoticeDismissed && (
+          <GlassSurface
+            style={styles.heatNotice}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
+          >
+            <View style={styles.heatNoticeRow}>
+              <TypeBlock cap={TYPE_BLOCK.chrome}>
+                <AppText
+                  variant="body"
+                  style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
+                  accessible
+                  accessibilityRole="text"
+                  accessibilityLiveRegion="polite"
+                >
+                  Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
+                  Coverage is based on community reports and varies by area.
+                </AppText>
+              </TypeBlock>
+              <Pressable
+                style={styles.heatNoticeClose}
+                onPress={() => setHeatNoticeDismissed(true)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss heat map notice"
+              >
+                <X size={16} color="#414B5A" strokeWidth={2.4} />
+              </Pressable>
+            </View>
+          </GlassSurface>
+        )}
+
         {loadError && (
           <Pressable
             onPress={() => { refreshFlags().catch(() => {}); }}
@@ -2766,7 +2805,7 @@ export default function MapScreen() {
 
         {permissionDenied && (
           <GlassSurface
-            style={styles.banner}
+            style={[styles.banner, !axRecompose && styles.bannerInline]}
             onLayout={onLocationBannerLayout}
             borderRadius={radius.md}
             tint="light"
@@ -2776,7 +2815,7 @@ export default function MapScreen() {
             accessibilityLiveRegion="assertive"
           >
             <TypeBlock cap={TYPE_BLOCK.chrome}>
-            <AppText variant="body" style={styles.bannerText}>
+            <AppText variant="body" style={[styles.bannerText, !axRecompose && styles.bannerInlineText]}>
               Location is off, so the map shows the most recent flags, not ones near you. Turn on
               location access to find flags nearby.
             </AppText>
@@ -2789,7 +2828,7 @@ export default function MapScreen() {
             {permissionLocked && canOpenSettings && (
               <Pressable
                 onPress={() => void Linking.openSettings()}
-                style={({ pressed }) => [styles.bannerLink, pressed && styles.bannerLinkPressed]}
+                style={({ pressed }) => [styles.bannerLink, !axRecompose && styles.bannerLinkInline, pressed && styles.bannerLinkPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Open Settings"
                 accessibilityHint="Opens this app's settings, where location access can be turned back on"
@@ -2798,48 +2837,6 @@ export default function MapScreen() {
               </Pressable>
             )}
             </TypeBlock>
-          </GlassSurface>
-        )}
-
-        {/* Jordan Art. 7 disclaimer — shown whenever the heat layer is active.
-            Must be visible (not buried in the filter panel) per the conditional
-            pass. The black #1a1a1a slab becomes a translucent always-light 0.65
-            pin (8.28→6.52:1 on #222, the map glows through it). Q1 (Sky): a
-            session-dismiss X, re-shown on every heat re-enable. Copy is
-            BYTE-FROZEN (Jordan-verified — LENS6 C2). A11Y-213: the GlassSurface
-            is not an accessible leaf; the text node carries the role + live
-            region, the X is its own reachable button. */}
-        {heatmapEnabled && !heatNoticeDismissed && (
-          <GlassSurface
-            style={styles.heatNotice}
-            borderRadius={radius.md}
-            tint="light"
-            tintColor="rgba(255,255,255,0.65)"
-            solidColor="rgba(255,255,255,0.95)"
-          >
-            <View style={styles.heatNoticeRow}>
-              <TypeBlock cap={TYPE_BLOCK.chrome}>
-                <AppText
-                  variant="body"
-                  style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
-                  accessible
-                  accessibilityRole="text"
-                  accessibilityLiveRegion="polite"
-                >
-                  Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
-                  Coverage is based on community reports and varies by area.
-                </AppText>
-              </TypeBlock>
-              <Pressable
-                style={styles.heatNoticeClose}
-                onPress={() => setHeatNoticeDismissed(true)}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Dismiss heat map notice"
-              >
-                <X size={16} color="#414B5A" strokeWidth={2.4} />
-              </Pressable>
-            </View>
           </GlassSurface>
         )}
 
@@ -3878,12 +3875,22 @@ const makeStyles = (color: ColorTheme) =>
     banner: {
       alignSelf: 'stretch',
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+      paddingVertical: spacing.xs,
       borderRadius: radius.md,
       flexDirection: 'column',
-      gap: spacing.sm,
+      gap: spacing.xs,
       alignItems: 'stretch',
     },
+    // At ordinary text sizes, keep the actionable Settings route alongside
+    // the sentence so this informational banner stays compact. XXXL uses the
+    // stacked `banner` composition above so the link remains independently
+    // reachable and the sentence can wrap without horizontal clipping.
+    bannerInline: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    bannerInlineText: { flex: 1, minWidth: 0 },
     // Compact variant of `banner` for the "Finding your location…" info pill —
     // same pinned-light material, laid out as a centered row instead of a
     // stretched column.
@@ -3910,6 +3917,11 @@ const makeStyles = (color: ColorTheme) =>
       minHeight: a11y.minTargetSize,
       justifyContent: 'center',
       paddingRight: spacing.sm,
+    },
+    bannerLinkInline: {
+      alignSelf: 'center',
+      marginTop: 0,
+      paddingRight: 0,
     },
     bannerLinkPressed: { opacity: 0.7 },
     // Pinned-light literal (light theme's own inkSelect) — dark theme's

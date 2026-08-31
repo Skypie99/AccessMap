@@ -38,4 +38,20 @@ describe('Map Heat — one top informational notice', () => {
     expect(map).toContain('width: a11y.minTargetSize');
     expect(map).toContain('height: a11y.minTargetSize');
   });
+
+  it('places the retained Heat card above the unchanged location card', () => {
+    const heatAt = map.indexOf('heatmapEnabled && !heatNoticeDismissed && (');
+    const locationAt = map.indexOf('style={[styles.bannerText, !axRecompose && styles.bannerInlineText]}');
+    expect(heatAt).toBeGreaterThan(-1);
+    expect(locationAt).toBeGreaterThan(-1);
+    expect(heatAt).toBeLessThan(locationAt);
+  });
+
+  it('keeps a compact inline Settings action below recomposition size', () => {
+    expect(map).toContain('style={[styles.banner, !axRecompose && styles.bannerInline]}');
+    expect(map).toContain('style={[styles.bannerText, !axRecompose && styles.bannerInlineText]}');
+    expect(map).toContain('!axRecompose && styles.bannerLinkInline');
+    expect(map).toContain('bannerInline:');
+    expect(map).toContain('bannerLinkInline:');
+  });
 });
