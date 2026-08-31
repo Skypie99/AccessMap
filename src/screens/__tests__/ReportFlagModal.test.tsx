@@ -507,7 +507,7 @@ describe('anon form (user === null)', () => {
 
   it('shows the identity-not-stored banner', () => {
     const { getByText } = renderAnon();
-    expect(getByText('Reporting anonymously — your identity is not stored.')).toBeTruthy();
+    expect(getByText('Reporting anonymously. Your identity is not stored.')).toBeTruthy();
   });
 
   it('shows the anon sign-in-to-add-a-photo note instead of the photo section', () => {
@@ -603,7 +603,7 @@ describe('auth form (user !== null)', () => {
 
   it('does NOT show the identity-not-stored banner', () => {
     const { queryByText } = renderAuth();
-    expect(queryByText('Reporting anonymously — your identity is not stored.')).toBeNull();
+    expect(queryByText('Reporting anonymously. Your identity is not stored.')).toBeNull();
   });
 
   it('does NOT show the "Sign in to attach a photo" note', () => {
@@ -1110,11 +1110,15 @@ describe('active-severity cue (WCAG 1.4.1 — non-color selection signal)', () =
   const hasCheckTick = (btn: { findAll: (p: (n: { type: unknown }) => boolean) => unknown[] }) =>
     btn.findAll((n) => typeof n.type === 'string' && /svg/i.test(String(n.type))).length > 0;
 
-  // The severity Pressable's label is `Severity N: <label> — <desc>` (the
-  // em-dash distinguishes it from the live-region hint, whose label is just
-  // `Severity N: <desc>` with no em-dash). Grab the BUTTON for a given level.
-  const sevButton = (utils: ReturnType<typeof renderAuth>, n: number) =>
-    utils.getByLabelText(new RegExp(`^Severity ${n}:.*\\u2014`));
+  // The live meaning line's label also starts "Severity N:". Grab the BUTTON
+  // by role so this guard does not couple selection semantics to punctuation.
+  const sevButton = (utils: ReturnType<typeof renderAuth>, n: number) => {
+    const button = utils
+      .getAllByLabelText(new RegExp(`^Severity ${n}:`))
+      .find((el) => el.props.accessibilityRole === 'button');
+    if (!button) throw new Error(`no severity ${n} button`);
+    return button;
+  };
 
   it('selects severity 3 by default and marks exactly one severity button selected', () => {
     const utils = renderAuth();
@@ -1232,7 +1236,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
       act(() => {
         jest.advanceTimersByTime(12_000);
       });
-      expect(utils.getByText('Still trying — check your signal')).toBeTruthy();
+      expect(utils.getByText('Still trying. Check your signal')).toBeTruthy();
       expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
 
       // Resolve — exactly one flag lands and the overlay clears.
@@ -1274,7 +1278,7 @@ describe('S10 — confirm the submit', () => {
     await waitFor(() => {
       expect(mockSetLiveStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringMatching(/Report filed — thanks for flagging this barrier/),
+          message: expect.stringMatching(/Report filed\. Thanks for flagging this barrier/),
           tone: 'success',
         }),
       );

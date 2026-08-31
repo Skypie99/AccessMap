@@ -674,7 +674,7 @@ export default function ProfileScreen() {
       } catch {
         if (mountedRef.current) {
           setDefaultTabValue(defaultTab);
-          notify("Couldn't save that preference", 'Your change was not saved — please try again.');
+          notify("Couldn't save that preference", 'Your change was not saved. Please try again.');
         }
       } finally {
         if (mountedRef.current) setSavingTab(false);
@@ -694,7 +694,7 @@ export default function ProfileScreen() {
           value ? 'Real-time flag updates enabled.' : 'Real-time flag updates disabled.',
         );
       } catch {
-        notify("Couldn't save preference", 'Your change was not saved — please try again.');
+        notify("Couldn't save preference", 'Your change was not saved. Please try again.');
       } finally {
         if (mountedRef.current) setSavingRealtime(false);
       }
@@ -1251,7 +1251,7 @@ export default function ProfileScreen() {
             </>
           ) : nextMilestone === null ? (
             <AppText variant="label" style={styles.heroSubtitle}>
-              You&apos;ve reached the top milestone — {TOP_MILESTONE_LABEL} earned.
+              You&apos;ve reached the top milestone: {TOP_MILESTONE_LABEL} earned.
             </AppText>
           ) : null}
         </GlassSurface>
@@ -1376,7 +1376,7 @@ export default function ProfileScreen() {
             accessibilityRole="summary"
             accessibilityLabel={
               streak.current === 1
-                ? `1 day streak — welcome${streak.longest > 1 ? `. Best ever: ${streak.longest} days.` : ''}`
+                ? `1 day streak. Welcome${streak.longest > 1 ? `. Best ever: ${streak.longest} days.` : ''}`
                 : `${streak.current} day streak${streak.longest > streak.current ? `. Best ever: ${streak.longest} days.` : '. New personal best!'}`
             }
           >
@@ -1565,7 +1565,7 @@ export default function ProfileScreen() {
             <AppText variant="label" style={styles.myReportsTitle}>My Reports</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               {stats.reported === 0
-                ? "You haven't reported any barriers yet — your first one will show up here."
+                ? "You haven't reported any barriers yet. Your first one will show up here."
                 : "Every barrier you've reported, in one place."}
             </AppText>
           </View>
@@ -1616,7 +1616,7 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Recent Activity</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
-              What the community has been up to — newest first.
+              What the community has been up to, newest first.
             </AppText>
           </View>
           <ChevronRight
@@ -1841,7 +1841,7 @@ export default function ProfileScreen() {
           <View style={[styles.toggleRow, savingRealtime && styles.toggleRowBusy]}>
             <View style={styles.toggleTextWrap}>
               <AppText variant="label" style={styles.toggleLabel}>Show new flags in real-time</AppText>
-              <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged — no pulling to refresh.</AppText>
+              <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged. No pull needed.</AppText>
             </View>
             <Switch
               value={realtimeEnabled}
@@ -1849,7 +1849,7 @@ export default function ProfileScreen() {
               disabled={savingRealtime}
               accessibilityRole="switch"
               accessibilityLabel="Show new flags in real-time"
-              accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
+              accessibilityHint="When on, the map updates automatically as new flags are reported or triaged, with no need to refresh manually"
               {...a11yToggle({ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime })}
               trackColor={{ false: color.borderStrong, true: color.brand }}
               thumbColor={
@@ -2245,7 +2245,7 @@ export default function ProfileScreen() {
             <AppText variant="body" style={styles.tierFooter}>
               {nextTier
                 ? `You're ${tierGap} ${tierGap === 1 ? 'point' : 'points'} away from ${nextTier.label}`
-                : `You've reached the top tier — keep contributing!`}
+                : `You've reached the top tier. Keep contributing!`}
             </AppText>
             </ScrollView>
           </View>

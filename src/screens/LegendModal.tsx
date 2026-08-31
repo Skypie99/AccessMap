@@ -244,7 +244,7 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
                   <SeverityDisc severity={s} size={32} digitSize={font.size.base} />
                   <View style={styles.rowText}>
                     <AppText variant="label" style={styles.rowTitle}>
-                      {s} — {label}
+                      {s}: {label}
                     </AppText>
                     <AppText variant="body" style={styles.rowDesc}>{desc}</AppText>
                   </View>
@@ -262,8 +262,8 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
             {/* S1: define the trust word "Verified" in one line — the first place
                 any decision surface says what it means (reuses the FAQ sentence). */}
             <AppText variant="body" style={styles.rowDesc}>
-              Open — reported, not yet checked. Verified — another person checked the spot and
-              confirmed the issue is real. Resolved — the issue has been fixed.
+              Open: reported, not yet checked. Verified: another person checked the spot and
+              confirmed the issue is real. Resolved: the issue has been fixed.
             </AppText>
             {/* The two visual channels a sighted user decodes on the map itself. */}
             <View

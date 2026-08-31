@@ -93,7 +93,7 @@ describe('T7 (BP13) — the undetermined no-location voice + true frame', () => 
 
   it('the undetermined (never-asked) arrival shows a status-neutral hint — never "off"', () => {
     const hint = around(map, 'const NO_LOCATION_HINT', 160);
-    expect(hint).toContain("Location isn't on yet —");
+    expect(hint).toContain("Location isn't on yet.");
     expect(hint).not.toContain('is off'); // never tell a never-asked user access is off
   });
 

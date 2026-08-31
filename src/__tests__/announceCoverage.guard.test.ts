@@ -60,7 +60,7 @@ describe('A11Y-205 — every Tasks flash is a status message', () => {
   });
 
   it('the refresh-reconcile failure — an action with no other feedback — rides that path', () => {
-    const failures = src.match(/showFlash\("Couldn't refresh — pull down to update\.", 'muted'\)/g);
+    const failures = src.match(/showFlash\("Couldn't refresh\. Pull down to update\.", 'muted'\)/g);
     // Both post-action reconcile sites (bulk and single).
     expect(failures).toHaveLength(2);
   });

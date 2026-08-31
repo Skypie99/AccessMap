@@ -153,7 +153,7 @@ const DEFAULT_REGION: PlatformMapRegion = {
 // access is off. The assertive DENIED banner keeps its own stronger wording.
 // PROPOSED (BP13, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
 const NO_LOCATION_HINT =
-  "Location isn't on yet — showing the most recent flags, not ones near you.";
+  "Location isn't on yet. Showing the most recent flags, not ones near you.";
 
 // T7 (F4-03 / F5-03): fit a region to the loaded flags for the honest no-location
 // arrival — a TRUE frame instead of the hardcoded San-Francisco default, so a
@@ -275,7 +275,7 @@ const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
 // B10 (L7-07): the web locate-failure copy, shared by the setter (in the catch)
 // and the message-targeted clear (at the start of each locate attempt) so they
 // agree on exactly which banner to dismiss.
-const LOCATE_FAILED_MSG = "Couldn't find your location — check your connection and try again.";
+const LOCATE_FAILED_MSG = "Couldn't find your location. Check your connection and try again.";
 
 // M3 (re-sweep 2026-06-09): a deep-linked flag can live outside the first
 // page of loaded flags, in which case animateTo centers the map on empty
@@ -2038,7 +2038,7 @@ export default function MapScreen() {
                       ? 'Loading…'
                       : 'Updating…'
                     : loadError && flags.length === 0
-                      ? '—'
+                      ? '…'
                       : filtersActive
                         ? `${filteredFlags.length} of ${flags.length}`
                         : `${flags.length} flag${flags.length === 1 ? '' : 's'}`}
@@ -2453,7 +2453,7 @@ export default function MapScreen() {
                   })}
                 </View>
                 {activeStatuses.size === 0 && (
-                  <AppText variant="bodyMedium" style={styles.statusHint}>Pick at least one status — otherwise nothing will show up.</AppText>
+                  <AppText variant="bodyMedium" style={styles.statusHint}>Pick at least one status; otherwise nothing will show up.</AppText>
                 )}
 
                 {/* "Who does this affect?" — disability filter (Sprint 3). A
@@ -2715,7 +2715,7 @@ export default function MapScreen() {
             >
               <AppText variant="heading" style={styles.emptyCardTitle}>No barriers reported here yet</AppText>
               <AppText variant="body" style={styles.emptyCardBody}>
-                Be the first — tap Report to drop a pin on an accessibility barrier you know about.
+                Be the first: tap Report to drop a pin on an accessibility barrier you know about.
               </AppText>
             </View>
           </GlassSurface>
@@ -2830,7 +2830,7 @@ export default function MapScreen() {
                 accessibilityLiveRegion="polite"
               >
                 Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
-                Based on community reports — coverage varies by area.
+                Coverage is based on community reports and varies by area.
               </AppText>
               <Pressable
                 style={styles.heatNoticeClose}
@@ -2867,7 +2867,7 @@ export default function MapScreen() {
                 accessibilityRole="text"
                 accessibilityLiveRegion="polite"
               >
-                No heat zones qualify yet — coverage grows as more reports come in.
+                No heat zones qualify yet; coverage grows as more reports come in.
               </AppText>
               <Pressable
                 style={styles.heatNoticeClose}

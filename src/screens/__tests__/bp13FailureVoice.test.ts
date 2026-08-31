@@ -57,7 +57,7 @@ describe('T9 — Home never announces a false census; the wait is worded', () =>
     // The count branch must sit BEHIND the error gate so a settled failure never
     // computes `${flags.length} barriers` with flags.length === 0.
     expect(headline).toContain('error && flags.length === 0');
-    expect(headline).toContain("? '—'");
+    expect(headline).toContain("? '…'");
   });
 
   it('the first-load wait says "Loading…" instead of a bare display-size em-dash', () => {

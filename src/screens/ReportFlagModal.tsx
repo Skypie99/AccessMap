@@ -660,12 +660,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         if (Platform.OS === 'web') {
           notify(
             'Daily limit reached',
-            "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
+            "You've reported 5 barriers today. Thanks for contributing! Sign in to report more.",
           );
         } else {
           Alert.alert(
             'Daily limit reached',
-            "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
+            "You've reported 5 barriers today. Thanks for contributing! Sign in to report more.",
             [
               { text: 'Sign In', onPress: onClose },
               { text: 'OK', style: 'cancel' },
@@ -692,7 +692,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         // web-anonymous cohort — via the persistent-mounted, guest-reachable
         // live region (visible + announced). Fires after onClose (PROTECT-3).
         setLiveStatus({
-          message: 'Report filed — thanks for flagging this barrier',
+          message: 'Report filed. Thanks for flagging this barrier',
           tone: 'success',
           autoDismissMs: 4000,
         });
@@ -749,7 +749,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         console.warn('[report] photo link insert failed:', photoLinkErr);
         if (preparedPhotos.length > 0) {
           notify(
-            'Report filed — photos not attached',
+            'Report filed. Photos not attached',
             'Your report was saved, but its photos could not be attached. You can add photos again from the flag details.',
           );
         }
@@ -779,8 +779,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       setLiveStatus({
         message:
           preparedPhotos.length > 0
-            ? 'Report filed — thanks for flagging this barrier. Location data was removed from your photos.'
-            : 'Report filed — thanks for flagging this barrier',
+            ? 'Report filed. Thanks for flagging this barrier. Location data was removed from your photos.'
+            : 'Report filed. Thanks for flagging this barrier',
         tone: 'success',
         autoDismissMs: 4000,
       });
@@ -1124,7 +1124,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               >
                 <Lock size={15} color={color.brandOnSoft} strokeWidth={2.2} {...decorativeProps} />
                 <View style={styles.anonBannerBody}>
-                  <AppText variant="label" style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</AppText>
+                  <AppText variant="label" style={styles.anonBannerTitle}>Reporting anonymously. Your identity is not stored.</AppText>
                 </View>
               </View>
               <Pressable
@@ -1287,7 +1287,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       submitting && styles.chipDisabled,
                     ]}
                     accessibilityRole="radio"
-                    accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
+                    accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]}. ${SEVERITY_DESCRIPTIONS[s]}`}
                     {...a11yToggle({ checked: active, disabled: submitting })}
                   >
                     {/* The Legend's atom, at the Legend's size. Decorative — the
@@ -1355,7 +1355,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     submitting && styles.chipDisabled,
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
+                  accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]}. ${SEVERITY_DESCRIPTIONS[s]}`}
                   {...a11yToggle({ pressed: active, disabled: submitting })}
                 >
                   {/* WCAG 1.4.1 (Use of Color): the active button is signalled by
@@ -1438,7 +1438,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               // template — stop showing its chip as 'applied'.
               if (appliedTemplateId) setAppliedTemplateId(null);
             }}
-            placeholder="Describe the barrier — e.g. broken curb cut on Main St"
+            placeholder="Describe the barrier, e.g. broken curb cut on Main St"
             placeholderTextColor={color.placeholderText}
             multiline
             // Mirror the DB check constraint
@@ -1531,7 +1531,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   context chips below — seasonal tags are just a subset of
                   context_tags. */}
               <AppText variant="label" style={styles.label} accessibilityRole="header">
-                Seasonal (optional) — does this change with the seasons?
+                Seasonal (optional): does this change with the seasons?
               </AppText>
               <View style={styles.row}>
                 {SEASONAL_TAGS.map((tag) => {
@@ -1753,7 +1753,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   the insert without the field — the user can still file the
                   report, the tags are just dropped. See flags.ts → createFlag. */}
               <AppText variant="label" style={styles.label} accessibilityRole="header">
-                Context (optional) — when is this most relevant?
+                Context (optional): when is this most relevant?
               </AppText>
               <View style={styles.row}>
                 {CONTEXT_TAGS.map((tag) => {
@@ -1811,7 +1811,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               the city non-relationship. The finish-line success banner is
               S10 (P5); this is the pre-click sentence. */}
           <AppText variant="body" style={styles.submitMoment}>
-            Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn&apos;t notify the city — see Resources.
+            Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn&apos;t notify the city. See Resources.
           </AppText>
           {actionsInScroll ? actions : null}
           </ScrollView>
@@ -1822,7 +1822,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           {submitStalled && submitting ? (
             <View style={styles.submitStall} accessibilityLiveRegion="polite">
               <AppText variant="label" style={styles.submitStallText}>
-                Still trying — check your signal
+                Still trying. Check your signal
               </AppText>
             </View>
           ) : null}

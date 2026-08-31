@@ -887,7 +887,7 @@ export default function FlagDetailModal({
       if (e instanceof FlagStatusConflictError) {
         notify(
           'This flag changed',
-          'It was updated (or removed) while you had it open — closing so you can see the latest.',
+          'It was updated (or removed) while you had it open. Closing so you can see the latest.',
         );
         // F64: don't strand the user on a stale snapshot with live buttons.
         onClose();
@@ -1169,7 +1169,7 @@ export default function FlagDetailModal({
       if (newCount === null) {
         // RPC unavailable on this backend (migration not applied) — be honest
         // rather than show a fake running tally.
-        const msg = 'Thanks — your reopen request was sent for review.';
+        const msg = 'Thanks. Your reopen request was sent for review.';
         setReopenMessage(msg);
         AccessibilityInfo.announceForAccessibility(msg);
         setShowReopenForm(false);
@@ -1216,7 +1216,7 @@ export default function FlagDetailModal({
       // web). Treat the conflict as benign and close so the user re-opens
       // fresh state.
       if (e instanceof FlagStatusConflictError) {
-        notify('Flag updated', 'This flag was just reopened or changed — your request was counted.');
+        notify('Flag updated', 'This flag was just reopened or changed, and your request was counted.');
         onClose();
       } else {
         notify('Could not submit reopen request', errorMessage(e));
@@ -1667,7 +1667,7 @@ export default function FlagDetailModal({
                     <AppText variant="label" style={styles.beforeAfterArrowGlyph}>→</AppText>
                   </View>
                   <View style={styles.beforeAfterItem}>
-                    <AppText variant="label" style={styles.beforeAfterCaption}>After — the fix</AppText>
+                    <AppText variant="label" style={styles.beforeAfterCaption}>After: the fix</AppText>
                     <RemoteImage
                       uri={afterPhoto.url}
                       style={styles.beforeAfterImage}
@@ -1699,7 +1699,7 @@ export default function FlagDetailModal({
                       "Add after photo" unreachable. The text speaks for itself;
                       the button stays an independent element. */}
                   <AppText variant="body" style={styles.afterTipText}>
-                    Show the fix — add an &ldquo;after&rdquo; photo so others can see this barrier was resolved.
+                    Show the fix: add an &ldquo;after&rdquo; photo so others can see this barrier was resolved.
                   </AppText>
                   <Pressable
                     onPress={handleAddPhoto}
@@ -2245,7 +2245,7 @@ export default function FlagDetailModal({
                         the real empty-state invite. */}
                     <AppText variant="body" style={styles.commentsEmptyLabel}>
                       {user
-                        ? 'No comments yet — share what you know.'
+                        ? 'No comments yet. Share what you know.'
                         : 'Sign in to see and add comments.'}
                     </AppText>
                   </View>

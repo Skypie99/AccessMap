@@ -41,7 +41,7 @@ interface FaqItem {
 const FAQS: FaqItem[] = [
   {
     q: 'How do I report a place that needs attention?',
-    a: 'From the Home screen, tap the "Report" button — or open the full map and press and hold (long-press) the spot. Pick a category (broken sidewalk, missing ramp, blocked path, etc.), set how severe it is from 1 to 5, and add a short description. Signed-in users can also attach a photo.',
+    a: 'From the Home screen, tap the "Report" button, or open the full map and press and hold (long-press) the spot. Pick a category (broken sidewalk, missing ramp, blocked path, etc.), set how severe it is from 1 to 5, and add a short description. Signed-in users can also attach a photo.',
   },
   {
     q: 'How do points work?',
@@ -50,7 +50,7 @@ const FAQS: FaqItem[] = [
     // also paying 5 for the report, 3 for a photo and 1 for a comment. Measured
     // on a real account: one flag took someone from 90 to 124. Every number
     // below now comes from POINTS, which covers all of it.
-    a: `You earn ${POINTS.submitReport} points for filing a report (signed in — anonymous reports don't earn points), ${POINTS.addPhoto} for adding a photo to it, and ${POINTS.addComment} for leaving a comment. When one of your reports is verified by someone else you earn ${POINTS.reporter.verify}, and another ${POINTS.reporter.resolve} when it's marked resolved. Helping out earns too: ${POINTS.actor.verify} points for verifying someone else's report and ${POINTS.actor.resolve} for marking one resolved. Rejecting a report awards no points.`,
+    a: `You earn ${POINTS.submitReport} points for filing a report (signed in; anonymous reports don't earn points), ${POINTS.addPhoto} for adding a photo to it, and ${POINTS.addComment} for leaving a comment. When one of your reports is verified by someone else you earn ${POINTS.reporter.verify}, and another ${POINTS.reporter.resolve} when it's marked resolved. Helping out earns too: ${POINTS.actor.verify} points for verifying someone else's report and ${POINTS.actor.resolve} for marking one resolved. Rejecting a report awards no points.`,
   },
   {
     q: 'What\'s the difference between "verified" and "resolved"?',
@@ -58,10 +58,10 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'Are my photos and location private?',
-    a: "Photos and the flag location are public — they're visible to everyone using the app, which is the whole point of a community map. Your email is never attached to a flag's public view. Your display name can be \u2014 it appears on the leaderboard and alongside comments, and other signed-in people can tell which reports are yours. Avoid including faces or identifying info in your photos.",
+    a: "Photos and the flag location are public; they're visible to everyone using the app, which is the whole point of a community map. Your email is never attached to a flag's public view. Your display name appears on the leaderboard and alongside comments, and other signed-in people can tell which reports are yours. Avoid including faces or identifying info in your photos.",
   },
   {
-    q: 'I use a screen reader — what should I know?',
+    q: 'I use a screen reader. What should I know?',
     a: "The full map automatically opens an accessible list of nearby flags when it detects a screen reader, so you can browse without the visual map. Every button is labeled, status changes are announced, and color is always paired with text. If something doesn't announce or focus correctly, please send feedback.",
   },
   {
@@ -70,7 +70,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: "Why can't I see flags I expected to see?",
-    a: 'You probably have a filter active. Open the full map and tap the filters icon (the sliders) at the top → check Categories, Minimum severity, and Status. The "Clear" link in the filter panel header resets everything. (The magnifying glass searches for an address — it doesn\'t filter.)',
+    a: 'You probably have a filter active. Open the full map and tap the filters icon (the sliders) at the top → check Categories, Minimum severity, and Status. The "Clear" link in the filter panel header resets everything. (The magnifying glass searches for an address; it doesn\'t filter.)',
   },
 ];
 

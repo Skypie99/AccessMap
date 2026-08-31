@@ -87,7 +87,7 @@ describe('1.2(c) — the filter is applied at the .map site and nowhere else', (
     expect(modal).toContain('commentsLoading && comments.length === 0');
     expect(modal).toContain(') : comments.length === 0 ? (');
     // The empty-state sentence is the thing those three protect.
-    expect(modal).toContain('No comments yet — share what you know.');
+    expect(modal).toContain('No comments yet. Share what you know.');
   });
 });
 

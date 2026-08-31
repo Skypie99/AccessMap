@@ -308,7 +308,7 @@ export function FlagsProvider({
     const stillTryingTimer = setTimeout(() => {
       if (seq !== fetchSeqRef.current) return;
       setLiveStatus({
-        message: 'Still trying — check your signal',
+        message: 'Still trying. Check your signal',
         tone: 'info',
         // .catch, not bare void: refresh() re-throws when there's no offline
         // cache, and a bare `void promise` from a button press surfaces as an

@@ -9,7 +9,7 @@
 import { relativeTime } from './relativeTime';
 
 /** Banner shown when a screen is serving the saved offline cache. */
-export const OFFLINE_BANNER_TEXT = 'Showing saved data — connect for the latest.';
+export const OFFLINE_BANNER_TEXT = 'Showing saved data; connect for the latest.';
 
 /**
  * B9 (L7-02): the offline banner, now stating the data's AGE when we know it.
@@ -20,7 +20,7 @@ export const OFFLINE_BANNER_TEXT = 'Showing saved data — connect for the lates
  */
 export function offlineBannerText(cachedAt?: string | null): string {
   return cachedAt
-    ? `Showing saved data from ${relativeTime(cachedAt)} — connect for the latest.`
+    ? `Showing saved data from ${relativeTime(cachedAt)}; connect for the latest.`
     : OFFLINE_BANNER_TEXT;
 }
 
@@ -176,7 +176,7 @@ export const BLOCK_CONTROL_LABEL = 'Block';
  * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
 export const BLOCK_CONFIRM_BODY =
-  "You won't see comments from this person again. They aren't told, and this doesn't stop them posting or seeing your reports. It applies on this device only and won't survive reinstalling the app. If something breaks the community guidelines, use Report instead — that's the one that reaches a person.";
+  "You won't see comments from this person again. They aren't told, and this doesn't stop them posting or seeing your reports. It applies on this device only and won't survive reinstalling the app. If something breaks the community guidelines, use Report instead; that's the one that reaches a person.";
 
 /**
  * Confirm-button label on the block dialog. AGENT-PROPOSED wording.
@@ -238,7 +238,7 @@ export const BLOCKED_PEOPLE_EMPTY = "You haven't blocked anyone on this device."
  * AGENT-PROPOSED wording.
  */
 export const PUSH_SIGNED_OUT_SUBTITLE =
-  'Sign in to turn on push notifications — they follow your account, not this device.';
+  'Sign in to turn on push notifications. They follow your account, not this device.';
 
 /**
  * The unblock action. Deliberately "Unblock everyone" rather than a per-person
@@ -672,7 +672,7 @@ export const HIDDEN_COMMENTS_EMPTY_BODY =
  * visibly does. Uses Sky's own "is wrong" so the answer echoes the control.
  * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
-export const DISPUTE_RECORDED_MESSAGE = "Thanks — we've recorded that you think this flag is wrong.";
+export const DISPUTE_RECORDED_MESSAGE = "Thanks. We've recorded that you think this flag is wrong.";
 
 /**
  * Shown when this device has already spent its one vote on this flag
@@ -889,7 +889,7 @@ export const PRIVACY_SECTIONS = [
   },
   {
     heading: 'Who else sees your data.',
-    body: "My hosting provider (Supabase) stores it so the app can work. When you type into the address search, that text goes to OpenStreetMap's Nominatim service to look up the place — that's the only thing it receives. Apple sees whatever Apple normally sees when you download an app from the App Store. That's it. I don't sell your data, I don't share it for advertising, and there are no third-party trackers in the app.",
+    body: "My hosting provider (Supabase) stores it so the app can work. When you type into the address search, that text goes to OpenStreetMap's Nominatim service to look up the place. That's the only thing it receives. Apple sees whatever Apple normally sees when you download an app from the App Store. That's it. I don't sell your data, I don't share it for advertising, and there are no third-party trackers in the app.",
   },
   {
     heading: 'Getting a copy of your data.',

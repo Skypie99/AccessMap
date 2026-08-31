@@ -33,7 +33,7 @@ describe('B9b — Home surfaces a refresh that failed while data is on screen', 
 
   it('shows an honest, tappable message', () => {
     const block = around(home, 'error && flags.length > 0 && !isOfflineCache');
-    expect(block).toContain('refresh — showing older data');
+    expect(block).toContain('refresh. Showing older data');
     expect(block).toContain('Tap to try again');
   });
 

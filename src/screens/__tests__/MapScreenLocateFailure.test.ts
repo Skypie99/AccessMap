@@ -42,7 +42,7 @@ describe('B10 — web locate-failure gets a visible + spoken outcome', () => {
     expect(block).toContain('requestLocationRef.current()');
     // The failure copy is a shared const so the setter + clearer agree.
     expect(map).toContain(
-      'const LOCATE_FAILED_MSG = "Couldn\'t find your location — check your connection and try again."',
+      'const LOCATE_FAILED_MSG = "Couldn\'t find your location. Check your connection and try again."',
     );
   });
 

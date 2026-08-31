@@ -33,13 +33,13 @@ const STEPS = [
     icon: Flag,
     number: '1',
     title: 'Report a problem',
-    body: "Open the map and add a barrier wherever you see one — a broken sidewalk, missing ramp, blocked path, missing signal, or steep grade. Set how severe it is (signed-in users can add a photo, too) — a few seconds from you could save someone a real headache.",
+    body: "Open the map and add a barrier wherever you see one: a broken sidewalk, missing ramp, blocked path, missing signal, or steep grade. Set how severe it is (signed-in users can add a photo, too). A few seconds from you could save someone a real headache.",
   },
   {
     icon: CheckCircle2,
     number: '2',
     title: 'Verify flags near you',
-    body: "Head to the Tasks tab to see flags waiting to be verified. Confirm the barrier is still there — or mark it resolved if it's been fixed. Verifying earns you points and keeps the map accurate.",
+    body: "Head to the Tasks tab to see flags waiting to be verified. Confirm the barrier is still there, or mark it resolved if it's been fixed. Verifying earns you points and keeps the map accurate.",
   },
   {
     icon: Users,
@@ -51,7 +51,7 @@ const STEPS = [
     icon: Star,
     number: '4',
     title: 'Earn points',
-    body: "Every report and verification earns points on your profile. It's a small token — but it reflects real value your contributions add to the community.",
+    body: "Every report and verification earns points on your profile. It's a small token, but it reflects real value your contributions add to the community.",
   },
 ];
 
@@ -173,7 +173,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
             variant="banner"
             style={styles.callout}
             accessible
-            accessibilityLabel="Every contribution — big or small — makes the world more accessible for people with mobility disabilities. Thank you."
+            accessibilityLabel="Every contribution, big or small, makes the world more accessible for people with mobility disabilities. Thank you."
           >
             {/* Heart is decorative (a11y-hidden) — same 1.4.11 exemption. */}
             <Heart
@@ -182,7 +182,7 @@ export default function HowToHelpScreen({ visible, onClose }: Props) {
               strokeWidth={2} {...decorativeProps}
             />
             <AppText variant="bodyMedium" style={styles.calloutText}>
-              Every contribution — big or small — makes the world more accessible
+              Every contribution, big or small, makes the world more accessible
               for people with mobility disabilities. Thank you.
             </AppText>
           </GlassSurface>

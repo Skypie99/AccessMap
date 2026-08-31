@@ -367,7 +367,7 @@ export default function HomeScreen() {
             // error card below carries the words; the headline stays a neutral
             // placeholder, never a false census. (F5-01) word the first-load wait.
             error && flags.length === 0
-              ? '—'
+              ? '…'
               : showFirstLoad
                 ? 'Loading…'
                 : `${flags.length} ${flags.length === 1 ? 'barrier' : 'barriers'}`
@@ -605,11 +605,11 @@ export default function HomeScreen() {
             dimOnPress={false}
             accessibilityRole="button"
             accessibilityLiveRegion="polite"
-            accessibilityLabel="Couldn’t refresh — showing older data. Tap to try again."
+            accessibilityLabel="Couldn’t refresh. Showing older data. Tap to try again."
           >
             <RefreshCw size={15} color={color.warningFg} strokeWidth={2.2} />
             <AppText variant="body" style={styles.offlineText}>
-              Couldn’t refresh — showing older data. Tap to try again.
+              Couldn’t refresh. Showing older data. Tap to try again.
             </AppText>
           </PressableScale>
         )}

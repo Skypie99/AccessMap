@@ -84,7 +84,7 @@
         '<summary><span class="a11y-icon" aria-hidden="true">◎</span> Display settings for this site</summary>' +
         '<div class="a11y-body">' +
           '<p class="a11y-note">These change how this website looks and are remembered on this device. ' +
-            'They don’t affect the Flagstone app itself — the app follows your phone’s own accessibility settings.</p>' +
+            'They don’t affect the Flagstone app itself. The app follows your phone’s own accessibility settings.</p>' +
 
           '<div class="a11y-control">' +
             '<label class="a11y-label" for="a11y-size">Text size</label>' +

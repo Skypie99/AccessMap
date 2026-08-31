@@ -596,7 +596,7 @@ export default function TasksScreen() {
         // one of the same flags). The optimistic updates already gave instant
         // feedback; if the reconcile fails, nudge the user to pull-to-refresh
         // instead of silently swallowing it.
-        refresh().catch(() => showFlash("Couldn't refresh — pull down to update.", 'muted'));
+        refresh().catch(() => showFlash("Couldn't refresh. Pull down to update.", 'muted'));
 
         const past = action === 'verify' ? 'Verified' : 'Resolved';
         if (succeeded > 0) {
@@ -742,7 +742,7 @@ export default function TasksScreen() {
       // feedback; if the reconcile fails, nudge the user to pull-to-refresh
       // instead of silently swallowing it. The refresh also updates the Map
       // tab's pin count through the shared context.
-      refresh().catch(() => showFlash("Couldn't refresh — pull down to update.", 'muted'));
+      refresh().catch(() => showFlash("Couldn't refresh. Pull down to update.", 'muted'));
     },
     [refresh, patchFlag, removeFlag, showFlash],
   );
@@ -785,7 +785,7 @@ export default function TasksScreen() {
         // covering both the conflict and generic branches.
         hapticNotify('error');
         if (e instanceof FlagStatusConflictError) {
-          notify('This flag changed', 'It was updated by someone else just now — refreshing the list.');
+          notify('This flag changed', 'It was updated by someone else just now. Refreshing the list.');
           refresh().catch(() => {});
         } else {
           notify("Couldn't update this flag", errorMessage(e));
@@ -1535,7 +1535,7 @@ export default function TasksScreen() {
                       ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
                       : hasMore
                         ? 'None of the reports loaded so far need attention, but there are more to load. Use "Load more" below to keep looking.'
-                        : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."
+                        : "You're all caught up. Nice work! New reports show up here as the community adds them. Pull down to refresh anytime."
               }
             />
           </GlassSurface>
@@ -1580,7 +1580,7 @@ export default function TasksScreen() {
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
-                  {"That's everything nearby — you're up to date"}
+                  {"That's everything nearby. You're up to date"}
                 </AppText>
               )}
             </View>
@@ -1905,7 +1905,7 @@ const TaskCard = memo(function TaskCard({
       ? [{
           key: 'verify',
           label: 'Verify',
-          a11yLabel: `Verify this flag — ${actionSubject}`,
+          a11yLabel: `Verify this flag: ${actionSubject}`,
           a11yHint: 'Confirms this barrier report is real',
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
           haptic: 'none',
@@ -1914,7 +1914,7 @@ const TaskCard = memo(function TaskCard({
     {
       key: 'resolved',
       label: 'Resolved',
-      a11yLabel: `Mark this flag resolved — ${actionSubject}`,
+      a11yLabel: `Mark this flag resolved: ${actionSubject}`,
       a11yHint: 'Marks this barrier as fixed',
       onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
       haptic: 'none',
@@ -1927,7 +1927,7 @@ const TaskCard = memo(function TaskCard({
       ? [{
           key: 'reject',
           label: 'Reject',
-          a11yLabel: `Reject this flag — ${actionSubject}`,
+          a11yLabel: `Reject this flag: ${actionSubject}`,
           a11yHint: 'Dismisses this report; asks you to confirm first',
           onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
           haptic: 'none',
@@ -1936,7 +1936,7 @@ const TaskCard = memo(function TaskCard({
     {
       key: 'details',
       label: 'Details',
-      a11yLabel: `View flag details — ${actionSubject}`,
+      a11yLabel: `View flag details: ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsLink,
@@ -1948,7 +1948,7 @@ const TaskCard = memo(function TaskCard({
     {
       key: 'sign-in',
       label: 'Sign in to review',
-      a11yLabel: `Sign in to review — ${actionSubject}`,
+      a11yLabel: `Sign in to review: ${actionSubject}`,
       a11yHint: 'Opens the Profile tab, where you can sign in',
       onPress: onSignInToReview,
       haptic: 'selection',
@@ -1956,7 +1956,7 @@ const TaskCard = memo(function TaskCard({
     {
       key: 'details',
       label: 'Details',
-      a11yLabel: `View flag details — ${actionSubject}`,
+      a11yLabel: `View flag details: ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsLink,
