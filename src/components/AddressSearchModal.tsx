@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -14,11 +13,13 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { AlertTriangle, ChevronRight, Clock, MapPin, Search, X } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
+import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll';
 import { searchAddressStrict, type GeocodeResult } from '@/lib/geocode';
 import {
   addRecent,
@@ -63,6 +64,8 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
   // Keyboard-up bottom-inset reclaim (Recipe F step 3): with the keyboard up the
   // home-indicator inset is covered, so paying for it twice just steals rows.
   const keyboardVisible = useKeyboardVisible();
+  const bodyScrollRef = useRef<ScrollView>(null);
+  const searchReveal = useFocusedInputScroll(bodyScrollRef, keyboardVisible, spacing.lg);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -232,7 +235,20 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             </Pressable>
           </View>
 
-          <AppText variant="body" style={styles.subtitle}>
+          <ScrollView
+            ref={bodyScrollRef}
+            style={styles.body}
+            contentContainerStyle={styles.bodyContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+            showsVerticalScrollIndicator={false}
+          >
+          <AppText
+            variant="body"
+            style={styles.subtitle}
+            maxFontSizeMultiplier={TYPE_BLOCK.header}
+          >
             Type at least 3 characters. Results come from OpenStreetMap.
           </AppText>
 
@@ -245,7 +261,11 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             placeholder="e.g. 1 Infinite Loop, Cupertino"
             placeholderTextColor={color.placeholderText}
             style={styles.input}
+            maxFontSizeMultiplier={TYPE_BLOCK.header}
             returnKeyType="search"
+            onLayout={searchReveal.onLayout}
+            onFocus={searchReveal.onFocus}
+            onBlur={searchReveal.onBlur}
             accessibilityLabel="Address search"
             accessibilityHint="Type a street address, place name, or landmark to find it on the map."
           />
@@ -266,14 +286,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   <AppText variant="label" style={styles.clearRecentText}>Clear</AppText>
                 </Pressable>
               </View>
-              {/* Rows scroll inside the card's 85% bound — at large type on
-                  short phones they used to clip past the card edge with no way
-                  to reach them (sweep M13). Header + input stay pinned above. */}
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.recentListContent}
-              >
+              <View style={styles.recentListContent}>
               {recents.map((entry, idx) => (
                 <Pressable
                   // displayName + index is stable enough for a list capped
@@ -296,7 +309,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                   />
                 </Pressable>
               ))}
-              </ScrollView>
+              </View>
             </View>
           )}
 
@@ -355,14 +368,10 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
           )}
 
           {!loading && results.length > 0 && (
-            <FlatList
-              data={results}
-              keyExtractor={(r) => r.id}
-              keyboardShouldPersistTaps="handled"
-              removeClippedSubviews
-              contentContainerStyle={styles.resultsList}
-              renderItem={({ item }) => (
+            <View style={styles.resultsList}>
+              {results.map((item) => (
                 <Pressable
+                  key={item.id}
                   onPress={() => handlePick(item)}
                   style={({ pressed }) => [styles.resultRow, pressed && styles.resultRowPressed]}
                   accessibilityRole="button"
@@ -384,9 +393,10 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
                     strokeWidth={2.2} {...decorativeProps}
                   />
                 </Pressable>
-              )}
-            />
+              ))}
+            </View>
           )}
+          </ScrollView>
         </GlassSurface>
         </View>
         </KeyboardAvoidingView>
@@ -441,6 +451,15 @@ function makeStyles(color: ColorTheme) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
+    },
+    body: {
+      flexGrow: 1,
+      flexShrink: 1,
+      minHeight: 0,
+    },
+    bodyContent: {
+      gap: spacing.sm,
+      paddingBottom: spacing.tight,
     },
     title: {
       flex: 1,

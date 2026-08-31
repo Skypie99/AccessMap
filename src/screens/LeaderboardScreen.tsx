@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState , useRef} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   RefreshControl,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 // RNGH FlatList, not react-native's — its ref exposes .handlerTag, which
@@ -12,11 +13,12 @@ import { FlatList } from 'react-native-gesture-handler';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Sheet } from '@/components/ui/Sheet';
 import { useAtTop } from '@/components/ui/SheetPull';
-import { decorativeProps } from '@/lib/accessibility';
+import { decorativeProps, isAxRecompose } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -159,6 +161,8 @@ interface LeaderboardRowProps {
   isCurrentUser: boolean;
   styles: ReturnType<typeof makeStyles>;
   color: ColorTheme;
+  axRecompose: boolean;
+  avatarSize: number;
 }
 
 // Extracted so React.memo can skip re-renders when the same leaderboard data
@@ -174,6 +178,8 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
   isCurrentUser,
   styles,
   color,
+  axRecompose,
+  avatarSize,
 }: LeaderboardRowProps) {
   const name = displayName ?? 'Member';
   // SW-44. This used to be `name.slice(0, 2).toUpperCase()` on the line above,
@@ -218,26 +224,33 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
       >
         {ordinalLabel(rank)}
       </AppText>
-      <AvatarCircle uri={avatarUrl} initials={initials} size={AVATAR_SIZE} color={color} />
-      <View style={styles.nameWrap}>
+      <AvatarCircle uri={avatarUrl} initials={initials} size={avatarSize} color={color} />
+      <View style={[styles.rowContent, axRecompose && styles.rowContentAx]}>
+        <View style={[styles.nameWrap, axRecompose && styles.nameWrapAx]}>
+          <AppText
+            variant="body"
+            style={[styles.name, isCurrentUser && styles.nameSelf]}
+          >
+            {name}
+          </AppText>
+          {isCurrentUser ? (
+            <AppText variant="label" style={styles.youBadge} {...decorativeProps}>
+              you
+            </AppText>
+          ) : null}
+          {verifiedCount > 0 ? (
+            <AppText variant="label" style={styles.verifiedBadge} {...decorativeProps}>
+              {verifiedCount} verified
+            </AppText>
+          ) : null}
+        </View>
         <AppText
-          variant="body"
-          style={[styles.name, isCurrentUser && styles.nameSelf]}
+          variant="mono"
+          style={[styles.points, axRecompose && styles.pointsAx]}
         >
-          {name}
+          {points.toLocaleString()} pts
         </AppText>
-        {isCurrentUser ? (
-          <AppText variant="label" style={styles.youBadge} {...decorativeProps}>
-            you
-          </AppText>
-        ) : null}
-        {verifiedCount > 0 ? (
-          <AppText variant="label" style={styles.verifiedBadge} {...decorativeProps}>
-            {verifiedCount} verified
-          </AppText>
-        ) : null}
       </View>
-      <AppText variant="mono" style={styles.points}>{points.toLocaleString()} pts</AppText>
     </View>
   );
 });
@@ -245,6 +258,11 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
 export default function LeaderboardScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
+  const avatarSize = Math.round(
+    AVATAR_SIZE * Math.max(1, Math.min(fontScale, TYPE_BLOCK.chrome)),
+  );
   // The pull gesture must not fight the body's own scroll: `useAtTop`
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
@@ -325,9 +343,11 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
         isCurrentUser={item.id === user?.id}
         styles={styles}
         color={color}
+        axRecompose={axRecompose}
+        avatarSize={avatarSize}
       />
     ),
-    [user?.id, styles, color],
+    [user?.id, styles, color, axRecompose, avatarSize],
   );
 
   return (
@@ -503,6 +523,18 @@ function makeStyles(color: ColorTheme) {
     // rankTop: brand → brandText — brand (#1466E0) hit ≈4.45 on the dark
     // podiumGold row (FAIL); brandText is the arbitrated on-glass select ink.
     rankTop: { color: color.brandText, fontWeight: font.weight.bold },
+    rowContent: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    rowContentAx: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      gap: spacing.tight,
+    },
     nameWrap: {
       flex: 1,
       flexDirection: 'row',
@@ -510,6 +542,7 @@ function makeStyles(color: ColorTheme) {
       flexWrap: 'wrap',
       gap: 5, // compact badge gap — intentional between tight(4) and xs(6)
     },
+    nameWrapAx: { flex: 0, alignSelf: 'stretch' },
     name: {
       fontSize: font.size.base,
       color: color.text,
@@ -545,6 +578,7 @@ function makeStyles(color: ColorTheme) {
       minWidth: 60,
       textAlign: 'right',
     },
+    pointsAx: { minWidth: 0, textAlign: 'left' },
     stateWrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: spacing.xl },
     stateText: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center' },
     stateHint: {

@@ -34,14 +34,14 @@ describe('P1 — ReportFlagModal respects intended Dynamic Type text scaling', (
     );
   });
 
-  it('puts only the remaining title/location and chip groups in uncapped content blocks', () => {
+  it('keeps reading content uncapped and bounded location actions on the chrome contract', () => {
     const src = read(FILE);
 
     expect(src).toMatch(
       /<TypeBlock cap=\{TYPE_BLOCK\.content\}>\s*<AppText ref=\{titleRef\}[\s\S]*?Location is off for Flagstone[\s\S]*?<\/TypeBlock>/,
     );
     expect(src).toMatch(
-      /<TypeBlock cap=\{TYPE_BLOCK\.content\}>\s*\{!location && onRequestLocation[\s\S]*?Use my location[\s\S]*?Place the pin on the map[\s\S]*?<\/TypeBlock>/,
+      /<TypeBlock cap=\{TYPE_BLOCK\.chrome\}>\s*\{!location && onRequestLocation[\s\S]*?Use my location[\s\S]*?Place the pin on the map[\s\S]*?<\/TypeBlock>/,
     );
     expect(src).toMatch(
       /<TypeBlock cap=\{TYPE_BLOCK\.content\}>\s*\{!isAnon && templates\.length[\s\S]*?styles\.templateChipText[\s\S]*?styles\.pillText[\s\S]*?<\/TypeBlock>/,

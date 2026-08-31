@@ -25,6 +25,7 @@ import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
 import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
 import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
+import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
@@ -237,7 +238,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // are the two exits that still keep everything.
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const keyboardVisible = useKeyboardVisible();
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const descriptionReveal = useFocusedInputScroll(scrollRef, keyboardVisible, spacing.lg);
   // Non-throwing context read — render tests mount without a provider (the
   // M15 family recipe; see MyWatchedModal).
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
@@ -957,9 +959,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               an in-sheet retry so recovery doesn't mean abandoning the flow.
               requestLocation announces its own outcome (found / permission
               denied), so this one control drives the whole recover loop. */}
-          {/* P1: these recovery actions must scale with the system setting too.
-              The local content block overrides AppText's default label cap. */}
-          <TypeBlock cap={TYPE_BLOCK.content}>
+          {/* These bounded recovery controls use the shared chrome multiplier:
+              their labels still scale, while the fixed MapPin glyphs and the
+              lower form remain proportionate at accessibility sizes. */}
+          <TypeBlock cap={TYPE_BLOCK.chrome}>
           {!location && onRequestLocation && (
             <Pressable
               onPress={() => {
@@ -1346,6 +1349,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             // Cap the input here too so the user can't paste a wall of
             // text only to get a Postgres error after upload+insert.
             maxLength={2000}
+            onLayout={descriptionReveal.onLayout}
+            onFocus={descriptionReveal.onFocus}
+            onBlur={descriptionReveal.onBlur}
             // L4: TextInput has no `disabled` prop — editable={false} is the
             // RN way to lock it while the submit is in flight.
             editable={!submitting}
@@ -1836,7 +1842,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     // Shrink-to-cap, never grow: the body yields inside the 88% card so the
     // long form still scrolls, while a short form hugs its content.
-    scrollContent: { flexGrow: 0, flexShrink: 1 },
+    scrollContent: { flexGrow: 0, flexShrink: 1, minHeight: 0 },
     scrollContentContainer: { gap: spacing.md, paddingBottom: spacing.tight },
     title: {
       fontSize: font.size.xxl,

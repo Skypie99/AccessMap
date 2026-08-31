@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Switch,
   type Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
@@ -91,6 +92,7 @@ import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { Input } from '@/components/ui/Input';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -183,6 +185,10 @@ function milestoneProgress(points: number): {
 export default function ProfileScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  const { fontScale } = useWindowDimensions();
+  const navChevronSize = Math.round(
+    18 * Math.max(1, Math.min(fontScale, TYPE_BLOCK.header)),
+  );
   const reduceMotion = useReducedMotion();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const tabBarHeight = useBottomTabBarHeight();
@@ -1407,7 +1413,7 @@ export default function ProfileScreen() {
                 </AppText>
               </View>
               <ChevronRight
-                size={18}
+                size={navChevronSize}
                 color={color.brandOnSoft}
                 strokeWidth={2.2} {...decorativeProps}
               />
@@ -1523,6 +1529,7 @@ export default function ProfileScreen() {
         <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
           Your reports
         </AppText>
+        <TypeBlock cap={TYPE_BLOCK.content}>
         <GlassSurface variant="row" forceEngineered style={styles.navGroup}>
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
@@ -1545,7 +1552,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1570,7 +1577,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1595,7 +1602,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1629,7 +1636,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1637,6 +1644,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         </GlassSurface>
+        </TypeBlock>
 
         {/* PLACEHOLDER SECTION NAME (SKY-WORDS-REQUIRED). The split is by what
             the row is ABOUT: the four above are your own record, these three
@@ -1644,6 +1652,7 @@ export default function ProfileScreen() {
         <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
           Community & account
         </AppText>
+        <TypeBlock cap={TYPE_BLOCK.content}>
         <GlassSurface variant="row" forceEngineered style={styles.navGroup}>
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
@@ -1660,7 +1669,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1685,7 +1694,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1708,13 +1717,14 @@ export default function ProfileScreen() {
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>See the messages you&apos;ve sent to the team.</AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
           </View>
         </Pressable>
         </GlassSurface>
+        </TypeBlock>
 
         <View style={styles.section}>
           <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
@@ -1861,7 +1871,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1881,7 +1891,7 @@ export default function ProfileScreen() {
             <AppText variant="bodyMedium" style={styles.aboutSubtitle}>See what we shipped recently.</AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1903,7 +1913,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />

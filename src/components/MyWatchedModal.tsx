@@ -599,13 +599,11 @@ const makeStyles = (color: ColorTheme) =>
     // palette — the accent bar takes `error` so the left edge reads too.
     refreshErrorBanner: { backgroundColor: color.errorBg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: color.error },
     refreshErrorText: { fontSize: font.size.sm, color: color.errorFg, lineHeight: 18 },
-    // SW-42: the non-list states' scroller. flexShrink:1 is the load-bearing
-    // half — it is what lets the body absorb the card's shrink by scrolling
-    // instead of letting overflow:'hidden' eat it (FeedbackModal `body`, the
-    // reference Recipe F implementation, carries exactly this). flexGrow:1 +
-    // centring on the CONTENT container keeps a short empty state optically
-    // centred when there is room, which is how it looked before.
-    stateBody: { flexShrink: 1 },
+    // SW-42 / FV-4: the non-list scroller owns the sheet's remaining viewport.
+    // flexShrink keeps overflow scrollable under the cap; flexGrow + minHeight
+    // stop accessibility text from being laid out in a content-sized viewport
+    // that the sheet footer then clips.
+    stateBody: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
     stateBodyContent: { flexGrow: 1, justifyContent: 'center' },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     // M-40 error-banner (self-contained solid pin — errorBg + errorFg, the

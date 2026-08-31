@@ -107,6 +107,13 @@ describe('SW-42 — a shrinking sheet scrolls its body instead of clipping it', 
     expect(empty).toBeGreaterThan(scroller);
   });
 
+  it('MyWatched gives accessibility text a definite remaining viewport', () => {
+    const src = stripComments(read('components/MyWatchedModal.tsx'));
+    expect(src).toMatch(
+      /stateBody:\s*\{[^}]*flexGrow:\s*1[^}]*flexShrink:\s*1[^}]*minHeight:\s*0/,
+    );
+  });
+
   it.each(SHRINKING_SHEETS)('%s does NOT nest its VirtualizedList in that scroller', (_n, rel) => {
     // Wrapping a FlatList in a ScrollView trades a clipping bug for a
     // virtualization one. The list already scrolls; it never needed wrapping.

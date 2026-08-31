@@ -23,6 +23,7 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // import/first happy.
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 
 const mockConfirm = jest.fn().mockResolvedValue(true);
 
@@ -2082,8 +2083,8 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
 // contract instead: undefined means the system setting is not capped.
 // ===========================================================================
 
-describe('P1 — remaining Report controls are uncapped at XXXL', () => {
-  it('uncaps the title, location prompt, and both location recovery labels', () => {
+describe('P1 — remaining Report controls preserve their XXXL hierarchy', () => {
+  it('uncaps reading content and bounds the two fixed-glyph location controls', () => {
     setFontScale(3.1);
     const utils = renderAuth(
       { id: 'user-abc' },
@@ -2096,13 +2097,14 @@ describe('P1 — remaining Report controls are uncapped at XXXL', () => {
       },
     );
 
-    for (const label of [
-      'Report a flag',
-      'Location is off for Flagstone',
-      'Use my location',
-      'Place the pin on the map',
-    ]) {
+    for (const label of ['Report a flag', 'Location is off for Flagstone']) {
       expectUncappedText(utils.getByText(label));
+    }
+
+    for (const label of ['Use my location', 'Place the pin on the map']) {
+      const node = utils.getByText(label);
+      expect(node.props.maxFontSizeMultiplier).toBe(TYPE_BLOCK.chrome);
+      expect(node.props.allowFontScaling).not.toBe(false);
     }
 
     expect(StyleSheet.flatten(utils.getByText('Place the pin on the map').props.style)).toMatchObject({

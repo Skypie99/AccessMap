@@ -76,6 +76,20 @@ describe('the three controls that were pointing at a closed door', () => {
     );
   });
 
+  it('keeps the banner bounded and includes its measured height in callout clearance', () => {
+    expect(map).toContain('const [locationBannerPx, setLocationBannerPx] = useState(0);');
+    expect(map).toContain('onLayout={onLocationBannerLayout}');
+    expect(map).toMatch(
+      /<TypeBlock cap=\{TYPE_BLOCK\.chrome\}>[\s\S]*?Location is off,[\s\S]*?Open Settings[\s\S]*?<\/TypeBlock>/,
+    );
+    expect(map).toContain(
+      'const locationBannerInset = permissionDenied ? locationBannerPx + spacing.sm : 0;',
+    );
+    expect(map).toMatch(
+      /chromeInsetTop=\{insets\.top \+ OVERLAY_TOP_PAD \+ chromeBandPx \+ locationBannerInset \+ CALLOUT_CHROME_MARGIN\}/,
+    );
+  });
+
   it('the recenter button stops pretending it can recenter', () => {
     expect(map).toMatch(
       /permissionLocked && canOpenSettings\s*\n\s*\? \(\) => void Linking\.openSettings\(\)\s*\n\s*: requestLocation/,

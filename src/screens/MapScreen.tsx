@@ -101,6 +101,7 @@ import PlatformMap, {
 } from '@/components/PlatformMap';
 import type { DetailAction } from '@/components/FlagDetailModal';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { OverflowFade } from '@/components/ui/OverflowFade';
@@ -536,10 +537,15 @@ export default function MapScreen() {
   // onLayout is a passive read — the box-none overlay law is untouched.
   const commandBarH = useRef(0);
   const [chromeBandPx, setChromeBandPx] = useState(0);
+  const [locationBannerPx, setLocationBannerPx] = useState(0);
   const onCommandBarLayout = useCallback((e: LayoutChangeEvent) => {
     commandBarH.current = e.nativeEvent.layout.height;
     setChromeBandPx(Math.round(commandBarH.current));
   }, []);
+  const onLocationBannerLayout = useCallback((e: LayoutChangeEvent) => {
+    setLocationBannerPx(Math.round(e.nativeEvent.layout.height));
+  }, []);
+  const locationBannerInset = permissionDenied ? locationBannerPx + spacing.sm : 0;
 
   // S4 / D6 — ONE SURFACE AT A TIME ABOVE THE MAP.
   //
@@ -1915,9 +1921,9 @@ export default function MapScreen() {
         heatCells={heatCells}
         heatmapMode={HEATMAP_MODE}
         // T1 (F2-01): the full vertical band a callout must clear — safe area +
-        // overlay padding + the measured persistent chrome rows + margin. The
-        // map clamps it (≤45% of its own height) before use.
-        chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + CALLOUT_CHROME_MARGIN}
+        // overlay padding + measured persistent chrome and denied-location
+        // banner + margin. The map clamps it (≤45% of its own height) before use.
+        chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + locationBannerInset + CALLOUT_CHROME_MARGIN}
       />
 
       <View
@@ -2765,6 +2771,7 @@ export default function MapScreen() {
         {permissionDenied && (
           <GlassSurface
             style={styles.banner}
+            onLayout={onLocationBannerLayout}
             borderRadius={radius.md}
             tint="light"
             tintColor="rgba(255,255,255,0.65)"
@@ -2772,6 +2779,7 @@ export default function MapScreen() {
             accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
           >
+            <TypeBlock cap={TYPE_BLOCK.chrome}>
             <AppText variant="body" style={styles.bannerText}>
               Location is off, so the map shows the most recent flags, not ones near you. Turn on
               location access to find flags nearby.
@@ -2793,6 +2801,7 @@ export default function MapScreen() {
                 <AppText variant="label" style={styles.bannerLinkText}>Open Settings</AppText>
               </Pressable>
             )}
+            </TypeBlock>
           </GlassSurface>
         )}
 

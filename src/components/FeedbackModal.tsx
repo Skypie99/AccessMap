@@ -16,6 +16,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { a11y, font, radius, spacing } from '@/theme';
 import { a11yToggle, decorativeProps, useReduceTransparency } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { confirm } from '@/lib/confirm';
 import { Sheet } from '@/components/ui/Sheet';
@@ -32,6 +33,7 @@ import { FEEDBACK_CATEGORY_ICONS } from '@/components/feedbackCategoryIcons';
 import { submitFeedback } from '@/lib/feedbackStore';
 import { MAX_BODY_CHARS } from '@/lib/feedback';
 import { X } from 'lucide-react-native';
+import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll';
 
 interface Props {
   visible: boolean;
@@ -114,6 +116,8 @@ export default function FeedbackModal({ visible, onClose }: Props) {
       hide.remove();
     };
   }, []);
+  const bodyReveal = useFocusedInputScroll(scrollRef, kbVisible, spacing.lg);
+  const contactReveal = useFocusedInputScroll(scrollRef, kbVisible, spacing.lg);
 
   // Mirrors public.feedback.body check constraint (1..=5000 chars) from
   // supabase/migrations/2026-05-23_feedback_table.sql. F19: cap the input at
@@ -242,7 +246,11 @@ export default function FeedbackModal({ visible, onClose }: Props) {
               contentContainerStyle={styles.bodyContent}
               keyboardShouldPersistTaps="handled"
             >
-              <AppText variant="bodyMedium" style={styles.subtitle}>
+              <AppText
+                variant="bodyMedium"
+                style={styles.subtitle}
+                maxFontSizeMultiplier={TYPE_BLOCK.header}
+              >
                 Tell us what&apos;s working, what isn&apos;t, or what you wish Flagstone did. Tapping Send opens
                 your email app with the message prefilled.
               </AppText>
@@ -298,8 +306,15 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 maxLength={MAX_FEEDBACK_LEN}
                 placeholder="What's on your mind?"
                 placeholderTextColor={color.placeholderText}
-                onFocus={() => setBodyFocused(true)}
-                onBlur={() => setBodyFocused(false)}
+                onLayout={bodyReveal.onLayout}
+                onFocus={() => {
+                  setBodyFocused(true);
+                  bodyReveal.onFocus();
+                }}
+                onBlur={() => {
+                  setBodyFocused(false);
+                  bodyReveal.onBlur();
+                }}
                 style={[styles.bodyInput, bodyFocused && { borderColor: color.brand }, kbVisible && styles.bodyInputKbUp]}
                 editable={!sending}
                 textAlignVertical="top"
@@ -314,8 +329,15 @@ export default function FeedbackModal({ visible, onClose }: Props) {
                 maxLength={MAX_EMAIL_LEN}
                 placeholder="you@example.com"
                 placeholderTextColor={color.placeholderText}
-                onFocus={() => setContactFocused(true)}
-                onBlur={() => setContactFocused(false)}
+                onLayout={contactReveal.onLayout}
+                onFocus={() => {
+                  setContactFocused(true);
+                  contactReveal.onFocus();
+                }}
+                onBlur={() => {
+                  setContactFocused(false);
+                  contactReveal.onBlur();
+                }}
                 style={[styles.contactInput, contactFocused && { borderColor: color.brand }]}
                 editable={!sending}
                 autoCapitalize="none"
@@ -386,10 +408,13 @@ export default function FeedbackModal({ visible, onClose }: Props) {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // Scrollable body between the pinned header and actions. flexShrink lets it
-    // give up height so the card honors maxHeight and the body scrolls (G9).
+    // Scrollable body between the pinned header and actions. It owns the
+    // remaining viewport so focused fields can scroll clear of the keyboard
+    // and pinned footer at every Dynamic Type size.
     body: {
+      flexGrow: 1,
       flexShrink: 1,
+      minHeight: 0,
     },
     bodyContent: {
       gap: spacing.sm,
