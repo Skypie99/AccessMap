@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { SharedModalsProvider } from '@/lib/sharedModalsContext';
-import { AccessibilityInfo, Alert, Modal, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Alert, Modal, StyleSheet, Text, View } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // Mocked below — jest.mock calls are hoisted above all imports, so this
 // resolves to the mock module. Imported here (not mid-file) to keep
@@ -2177,6 +2177,43 @@ describe('F4 / X7 — the picker becomes the Legend at large type', () => {
     }
     // The compact discs are gone, not stacked underneath.
     expect(bySeverity(utils, 3, 'button')).toBeUndefined();
+  });
+
+  it('at XXXL all five digits scale with their discs and the selected caption is uncapped', () => {
+    setFontScale(3.1);
+    const utils = renderAnon({ severity: null });
+
+    for (const n of [1, 2, 3, 4, 5]) {
+      const row = bySeverity(utils, n, 'radio');
+      if (!row) throw new Error(`missing severity ${n} radio row`);
+
+      const digit = row
+        .findAllByType(Text)
+        .find((node) => node.props.children === n);
+      if (!digit) throw new Error(`missing severity ${n} numeric digit`);
+      expect(StyleSheet.flatten(digit.props.style).fontSize).toBe(font.size.base * 2);
+      expect(digit.props.allowFontScaling).not.toBe(false);
+
+      const disc = row
+        .findAllByType(View)
+        .find((node) => node.props.accessibilityElementsHidden === true);
+      if (!disc) throw new Error(`missing severity ${n} decorative disc`);
+      expect(StyleSheet.flatten(disc.props.style)).toMatchObject({ width: 64, height: 64 });
+    }
+
+    fireEvent.press(bySeverity(utils, 3, 'radio')!);
+    const caption = utils
+      .getAllByLabelText(/^Severity 3:/)
+      .find((node) => node.props.accessibilityLiveRegion === 'polite');
+    if (!caption) throw new Error('missing selected-severity caption');
+    expectUncappedText(caption);
+
+    const captionLabel = caption
+      .findAllByType(Text)
+      .find((node) => node.props.children === '3');
+    if (!captionLabel) throw new Error('missing selected-severity caption label');
+    expectUncappedText(captionLabel);
+    expect(bySeverity(utils, 3, 'radio')?.props.accessibilityState).toMatchObject({ checked: true });
   });
 
   it('a row says exactly what the disc said — the name survives the recomposition', () => {

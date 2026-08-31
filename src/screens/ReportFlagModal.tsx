@@ -1198,7 +1198,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   >
                     {/* The Legend's atom, at the Legend's size. Decorative — the
                         row above carries the whole authored label. */}
-                    <SeverityDisc severity={s} size={32} digitSize={font.size.base} />
+                    <SeverityDisc
+                      severity={s}
+                      size={32}
+                      digitSize={font.size.base}
+                      scaleWithType
+                    />
                     {/* T3, and the device caught this one. The word sat on
                         `label` (cap 1.6) over a meaning on uncapped `body`, so
                         at accessibility sizes "Minor" was drawn SMALLER than
@@ -1292,21 +1297,15 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           )}
 
           {/* Inline hint: updates as the user taps a severity level so
-              they know what each number means before submitting.
-              T3 (X7): uncapped `body` made this the LARGEST text on the sheet at
-              accessibility-extra-large — bigger than "Report anonymously" itself.
-              It labels the picker above it, so it belongs to the form's header
-              block, not to the reading copy. Capped with the title it sits under.
-              Deliberately NOT applied to the sheet's honest prose (the anon
-              banner, the photo nudge, the submission explainer): that is reading
-              content and stays uncapped, because capping body copy at 1.6 would
-              stop it short of the 200% that WCAG 1.4.4 asks for. */}
+              they know what each number means before submitting. It is the
+              readable meaning of the selected value, so it follows the same
+              uncapped content contract as the large-type severity rows. */}
           {/* Q5: with nothing chosen there is no meaning to state, so the line
               carries the ASK instead of a meaning nobody selected. The live
               region is the same one — a screen-reader user hears the instruction
               become the answer the moment they rate.
               PLACEHOLDER COPY (SKY-WORDS-REQUIRED): the instruction sentence. */}
-          <TypeBlock cap={TYPE_BLOCK.header}>
+          <TypeBlock cap={TYPE_BLOCK.content}>
           {severity === null ? (
             <AppText
               variant="body"

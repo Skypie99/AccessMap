@@ -15,6 +15,25 @@ const read = (rel: string) => stripComments(fs.readFileSync(path.join(__dirname,
 const FILE = 'ReportFlagModal.tsx';
 
 describe('P1 — ReportFlagModal respects intended Dynamic Type text scaling', () => {
+  it('scales the XXXL severity digits and keeps the selected caption uncapped', () => {
+    const src = read(FILE);
+    const severityStart = src.indexOf('>Severity</AppText>');
+    const severityEnd = src.indexOf('>Description (optional)</AppText>', severityStart);
+    const severitySection = src.slice(severityStart, severityEnd);
+    const largePicker = severitySection.match(/\{axRecompose \? \(([\s\S]*?)\) : \(/)?.[1] ?? '';
+
+    expect(severityStart).toBeGreaterThanOrEqual(0);
+    expect(severityEnd).toBeGreaterThan(severityStart);
+    expect(largePicker).toMatch(/<SeverityDisc[\s\S]*?scaleWithType/);
+    expect(largePicker).not.toMatch(/maxFontSizeMultiplier/);
+    expect(severitySection).toMatch(
+      /<TypeBlock cap=\{TYPE_BLOCK\.content\}>\s*\{severity === null \? \(/,
+    );
+    expect(severitySection).not.toMatch(
+      /<TypeBlock cap=\{TYPE_BLOCK\.header\}>\s*\{severity === null \? \(/,
+    );
+  });
+
   it('puts only the remaining title/location and chip groups in uncapped content blocks', () => {
     const src = read(FILE);
 
