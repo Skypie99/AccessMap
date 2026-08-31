@@ -40,9 +40,18 @@ export function useFocusedInputScroll<T extends ScrollTarget>(
     focusedRef.current = false;
   }, []);
 
+  // On iOS, keyboardWillShow leads the KeyboardAvoidingView animation. A
+  // scroll viewport can therefore resize after the keyboard-visible effect
+  // has already run. Consumers with a keyboard-resized body can opt into this
+  // callback on that body's onLayout to reveal the focused field again once
+  // the viewport owns its final geometry.
+  const onViewportLayout = useCallback(() => {
+    if (keyboardVisible && focusedRef.current) reveal();
+  }, [keyboardVisible, reveal]);
+
   useEffect(() => {
     if (keyboardVisible && focusedRef.current) reveal();
   }, [keyboardVisible, reveal]);
 
-  return { onLayout, onFocus, onBlur };
+  return { onLayout, onFocus, onBlur, onViewportLayout };
 }

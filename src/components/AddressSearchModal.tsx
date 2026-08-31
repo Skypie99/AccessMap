@@ -239,6 +239,7 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
             ref={bodyScrollRef}
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
+            onLayout={searchReveal.onViewportLayout}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}

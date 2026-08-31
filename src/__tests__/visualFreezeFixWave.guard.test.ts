@@ -19,7 +19,7 @@ describe('FV-1 — focused fields stay in their owning scroller', () => {
     const src = read('components/AddressSearchModal.tsx');
 
     expect(src).toMatch(
-      /<ScrollView[\s\S]*?ref=\{bodyScrollRef\}[\s\S]*?<TextInput[\s\S]*?onFocus=\{searchReveal\.onFocus\}[\s\S]*?\{results\.map/,
+      /<ScrollView[\s\S]*?ref=\{bodyScrollRef\}[\s\S]*?onLayout=\{searchReveal\.onViewportLayout\}[\s\S]*?<TextInput[\s\S]*?onFocus=\{searchReveal\.onFocus\}[\s\S]*?\{results\.map/,
     );
     expect(src).not.toContain('<FlatList');
     expect(src).toMatch(
