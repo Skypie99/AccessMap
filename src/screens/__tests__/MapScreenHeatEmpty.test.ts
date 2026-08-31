@@ -42,6 +42,13 @@ describe('B7-A — heat "no zones qualify yet" companion', () => {
     expect(block).toContain('accessibilityLiveRegion="polite"');
   });
 
+  it('caps notice text as a single chrome container at large Dynamic Type', () => {
+    const rule = around(map, 'heatmapEnabled && !heatNoticeDismissed', 1500);
+    const outcome = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0', 1500);
+    expect(rule).toContain('<TypeBlock cap={TYPE_BLOCK.chrome}>');
+    expect(outcome).toContain('<TypeBlock cap={TYPE_BLOCK.chrome}>');
+  });
+
   it('has its own accessible 44pt dismissal and resets when heat is re-enabled', () => {
     const block = around(map, 'heatmapEnabled && !emptyHeatNoticeDismissed && heatCells.length === 0 && filteredFlags.length > 0');
     expect(block).toContain('accessibilityLabel="Dismiss empty heat map notice"');

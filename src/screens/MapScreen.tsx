@@ -2822,16 +2822,18 @@ export default function MapScreen() {
             solidColor="rgba(255,255,255,0.95)"
           >
             <View style={styles.heatNoticeRow}>
-              <AppText
-                variant="body"
-                style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
-                accessible
-                accessibilityRole="text"
-                accessibilityLiveRegion="polite"
-              >
-                Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
-                Coverage is based on community reports and varies by area.
-              </AppText>
+              <TypeBlock cap={TYPE_BLOCK.chrome}>
+                <AppText
+                  variant="body"
+                  style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
+                  accessible
+                  accessibilityRole="text"
+                  accessibilityLiveRegion="polite"
+                >
+                  Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
+                  Coverage is based on community reports and varies by area.
+                </AppText>
+              </TypeBlock>
               <Pressable
                 style={styles.heatNoticeClose}
                 onPress={() => setHeatNoticeDismissed(true)}
@@ -2860,15 +2862,17 @@ export default function MapScreen() {
             solidColor="rgba(255,255,255,0.95)"
           >
             <View style={styles.heatNoticeRow}>
-              <AppText
-                variant="body"
-                style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
-                accessible
-                accessibilityRole="text"
-                accessibilityLiveRegion="polite"
-              >
-                No heat zones qualify yet; coverage grows as more reports come in.
-              </AppText>
+              <TypeBlock cap={TYPE_BLOCK.chrome}>
+                <AppText
+                  variant="body"
+                  style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
+                  accessible
+                  accessibilityRole="text"
+                  accessibilityLiveRegion="polite"
+                >
+                  No heat zones qualify yet; coverage grows as more reports come in.
+                </AppText>
+              </TypeBlock>
               <Pressable
                 style={styles.heatNoticeClose}
                 onPress={() => setEmptyHeatNoticeDismissed(true)}
@@ -4082,7 +4086,8 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.caption,
       color: '#222', // pinned-light literal, ≥500 weight (glass type law)
       fontWeight: font.weight.medium,
-      lineHeight: 15,
+      lineHeight: 20,
+      minWidth: 0,
     },
     // In the dismissible (row) form the text grows so the X pins to the right.
     heatNoticeTextGrow: { flex: 1 },
