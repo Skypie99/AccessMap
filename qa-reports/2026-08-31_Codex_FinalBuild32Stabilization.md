@@ -81,25 +81,25 @@ SUPABASE / PRODUCTION CHANGED:
 NO. Read-only schema/catalog inspection only. No RPC, migration, policy, bucket, row, auth, or configuration mutation occurred.
 
 LARGE TEXT:
-FAIL — the complete named surface/height/copy/close-control/keyboard sweep rendered, but the required touch-swipe row remains unproven because the available local control layer did not generate a reliable iOS drag. No app failure was reproduced by the visible Close controls.
+PASS — the complete named surface/height/copy/close-control/keyboard sweep rendered. After the automated drag control proved unreliable, Sky supplied one real downward Simulator swipe per required sheet while Codex captured and inspected each transition. Every sheet closed exactly once and remained closed.
 
 XXXL:
-FAIL — every named surface rendered at true `accessibility-extra-extra-extra-large`; one visible two-line truncation was reproduced and repaired in My Reports and Recent Activity, then reverified without ellipses. The required touch-swipe row and Saved Places naming keyboard state remain unproven.
+PASS — every named surface rendered at true `accessibility-extra-extra-extra-large`; one visible two-line truncation was reproduced and repaired in My Reports and Recent Activity, then reverified without ellipses. The previously blocked Saved Places naming field was opened with the approved fixed synthetic Simulator location and verified with the software keyboard at XXXL without saving.
 
 ABOUT FLAGSTONE CONTROL:
 PASS — rendered at Large and Accessibility XXXL with the native page-sheet geometry, complete accessibility tree, reachable Close control, and no source change.
 
 CLOSE FLICKER:
-PASS for the visible Close-control path across every named sheet at both sizes: each dismissal returned once and remained closed. The swipe-specific lifecycle remains NOT VERIFIED.
+PASS — the visible Close-control path passed across every named sheet at both sizes. The real swipe path also passed for My Reports, Watched Flags, Recent Activity, Achievements, Leaderboard, Updates, My Feedback, Help & FAQ, What's New, Send Feedback, About Flagstone, Map Legend, Filter Flags, Saved Places, and Search by Address. Each recording contained one open-to-closed transition and no later reopen or flicker.
 
 SHEET HEIGHT:
 PASS — My Reports, Recent Activity, My Feedback, Help & FAQ, What's New, Filter Flags, and Saved Places all rendered with expanded usable height at Large and Accessibility XXXL.
 
 SWIPE DISMISS:
-FAIL — automated shared-gesture/lifecycle coverage remains green, but the local control layer treated attempted drags as clicks or no-ops. A real iOS one-swipe/one-close observation is still required for each touched sheet before readiness can be claimed.
+PASS — Sky performed one real downward Simulator swipe on each required sheet while Codex recorded the Simulator display. Frame-sequence inspection showed one dismissal transition followed by a stable closed state for every sheet. Accessibility state independently confirmed the expected Profile or Map surface after each close. Temporary recordings and extracted frames were deleted after inspection.
 
 KEYBOARD AVOIDANCE:
-FAIL — My Reports, Help & FAQ, Send Feedback, and Search by Address kept the active field and Close control visible with the software keyboard at Large/XXXL. Saved Places could not enter its naming state because simulator location is off; no location permission or synthetic location was applied without authorization.
+PASS — My Reports, Help & FAQ, Send Feedback, and Search by Address kept the active field and Close control visible with the software keyboard at Large/XXXL. For Saved Places, the approved fixed, non-personal Simulator coordinate enabled the naming state at Large and XXXL; `Synthetic test place` entered successfully, the field plus Cancel/Save/Close controls remained reachable, and the software keyboard rendered without obscuring the naming controls. Save was never selected, the synthetic name was discarded, and the synthetic location plus temporary location permission were cleared afterward.
 
 TASK→MAP CARD FLICKER:
 PASS — recorded and observed at Large and Accessibility XXXL. The selected barrier resolved to one stable Map card; it remained presented through the final 15-second observation with no repeated opening or closing.
@@ -111,31 +111,28 @@ FILTER FLAGS:
 PASS — expanded sheet, full option accessibility tree, visible controls, and stable Close-control dismissal rendered at Large and Accessibility XXXL.
 
 SAVED PLACES:
-FAIL — expanded height and complete empty-state copy passed at Large and Accessibility XXXL. The naming-field/keyboard row is NOT VERIFIED because current location is unavailable and no location state was changed.
+PASS — expanded height and complete empty-state copy passed at Large and Accessibility XXXL. The naming field, software keyboard, input, Cancel, Save, and Close controls were rendered and reachable at both sizes using only the approved fixed synthetic Simulator coordinate. No place was saved and no production mutation occurred. Its real downward swipe closed once with no reopen or flicker.
 
 AVATAR SOURCE FLOW:
 BLOCKED FOR DEVICE — the local Profile control requested photo-library access and opened the native photo picker successfully. No photo was selected because that would immediately write to configured Storage/profile state without the separately required mutation approval. Focused tests start with an APP1 fixture containing explicit `Exif` and `GPS` bytes, prove uploaded bytes contain neither marker, prove the exact missing-RPC response selects the owner-scoped fallback only after sanitization, and prove the users row receives the sanitized URL. Existing report-photo sanitizer tests also passed; shared sanitizer source did not change.
 
 DYNAMIC TYPE RESTORED TO LARGE:
-YES — queried as `large`, changed once to `accessibility-extra-extra-extra-large`, then restored once and queried as `large` again.
+YES — the main sweep queried `large`, changed once to `accessibility-extra-extra-extra-large`, then restored once. The explicitly approved Saved Places completion row made one additional bounded Large → XXXL → Large check. Final Simulator state was queried as `large`.
 
-UNRESOLVED RELEASE BLOCKERS:
-1. Real iOS one-swipe/one-close rendered proof for every touched sheet. The available local drag control could not produce a trustworthy touch gesture.
-2. Saved Places naming-field keyboard proof at Large and Accessibility XXXL. This requires an explicitly authorized synthetic simulator location or equivalent non-production location state.
-3. The later physical TestFlight avatar proof remains required after the one Build 32 exists: select a known-location-metadata photo, upload, retrieve the stored object, and independently prove GPS/location and other source metadata are absent.
-4. Because local items 1–2 remain open, no EAS build is authorized by this receipt.
+UNRESOLVED LOCAL RELEASE BLOCKERS:
+NONE.
 
 PHYSICAL-DEVICE CHECKS STILL REQUIRED:
-1. After the two local blockers pass and Sky independently launches the one Build 32 binary, use a photo with known GPS/location EXIF as the avatar.
+1. After Sky independently launches the one Build 32 binary and it reaches physical TestFlight, use a photo with known GPS/location EXIF as the avatar.
 2. Confirm selection and upload succeed without the Build 31 unavailable-feature error.
 3. Retrieve/inspect the stored image and prove GPS/location, EXIF, and the other source metadata removed by the shared sanitizer are absent.
 4. The shared sanitizer source did not change, so no normal report-photo device recheck is required by the consolidation rule.
 
 BUILD 32 READY:
-NO
+YES
 
 NEXT:
-Provide real swipe observations for the touched sheets and authorize a synthetic non-production simulator location for the Saved Places keyboard row. Then update this same receipt. Do not launch EAS from this receipt.
+Sky may initiate the single consolidated Build 32. Codex did not launch EAS. After that one binary reaches physical TestFlight, perform only the avatar upload/retrieval/metadata inspection listed above.
 
 ## Gates and actual results
 
@@ -148,30 +145,26 @@ Provide real swipe observations for the touched sheets and authorize a synthetic
 - Package/lock audit: PASS — no package or lockfile changes.
 - Approved local runtime launch: PASS — the ignored runtime links were checked for existence only; values and link targets were not inspected, printed, copied, or modified.
 - Focused post-render repair checks: PASS — 3 suites, 23 tests, 0 failed. Existing My Reports tests emitted pre-existing React `act(...)` warnings but passed.
-- Rendered Large → Accessibility XXXL → Large session: PARTIAL — all named presentation/copy/control rows ran; Dynamic Type sequence and restoration were confirmed. Swipe touch and Saved Places naming keyboard remain unproven as described above.
+- Rendered Large → Accessibility XXXL → Large session: PASS — all named presentation/copy/control rows ran; Dynamic Type restoration was confirmed. The approved completion session then closed the Saved Places naming/keyboard row at both sizes and supplied recorded real-touch swipe evidence for every required sheet.
 - Rendered XXXL regression repair: PASS — removed only the two `rowDesc` line caps in My Reports and Recent Activity; both re-rendered with complete descriptions, and the new source guard passed.
+- Real swipe capture matrix: PASS — 15 sheets; each sequence was open → dismissal transition → stable closed, with no later open state. All temporary video/frame evidence was deleted after inspection.
+- Synthetic Saved Places completion: PASS — fixed non-personal Simulator coordinate only; synthetic name discarded; Save never selected; location cleared; temporary permission revoked; final Dynamic Type `large`.
 
 ## What's left
 
-Only real touch-swipe proof and the Saved Places naming keyboard state remain before local readiness. Physical avatar upload/storage metadata inspection remains deliberately deferred until the one authorized Build 32 reaches TestFlight. The candidate is deliberately not marked ready.
+Only the physical avatar upload/storage metadata inspection remains, deliberately deferred until the one authorized Build 32 reaches physical TestFlight. Local rendered acceptance is complete and the source candidate is ready for that single build.
 
 ## DECISIONS FOR SKY
 
 ### 1. Synthetic simulator location for Saved Places keyboard proof
 
-- Decision: whether Codex may set a fixed, non-personal simulator location and grant only the local Flagstone simulator app location access long enough to open the Saved Places naming field, without pressing Save.
-- Recommendation: authorize that bounded local-only step.
-- Why: current location is off, so the naming field cannot be reached; no production write is needed to test keyboard avoidance.
-- Alternative: perform the Saved Places naming/keyboard check manually in a separately controlled local environment.
-- Impact: without one of these paths, `KEYBOARD AVOIDANCE` and `SAVED PLACES` remain unproven and `BUILD 32 READY` remains `NO`.
+- Decision: RESOLVED — Sky authorized one fixed, clearly synthetic, non-personal Simulator location for this row only.
+- Result: PASS at Large and XXXL without pressing Save. The synthetic name was discarded, then the location and temporary permission were cleared.
 
 ### 2. Real touch-swipe observations
 
-- Decision: how to supply the required one-swipe/one-close observations when the available automation control produces clicks/no-ops rather than trustworthy iOS drags.
-- Recommendation: Sky performs the downward swipe on the visible handle for each touched sheet while Codex observes the resulting state in this same simulator candidate.
-- Why: passing unit/guard tests and clean Close-button dismissal do not substitute for the requested rendered touch proof.
-- Alternative: use an approved iOS UI automation mechanism that can synthesize a real touch path.
-- Impact: until every touched sheet closes once without flicker, `SWIPE DISMISS` and overall readiness remain `FAIL`.
+- Decision: RESOLVED — Sky supplied one real downward Simulator swipe per required sheet while Codex recorded and inspected the transitions.
+- Result: PASS for all 15 sheets; each closed once and stayed closed with no reopen/flicker.
 
 ### 3. Build authorization after local acceptance
 
