@@ -61,6 +61,13 @@ describe('Build 32 affected-sheet adoption', () => {
     expect(source).toContain('lineHeight: font.lineHeight.sm');
   });
 
+  it.each([
+    'components/MyReportsModal.tsx',
+    'components/ActivityFeedModal.tsx',
+  ])('%s does not truncate report descriptions at accessibility text sizes', (file) => {
+    expect(read(file)).not.toMatch(/style=\{styles\.rowDesc\}\s+numberOfLines/);
+  });
+
   it('About Flagstone remains the native page-sheet reference control', () => {
     const source = read('screens/AboutScreen.tsx');
     expect(source).toContain('presentationStyle="pageSheet"');

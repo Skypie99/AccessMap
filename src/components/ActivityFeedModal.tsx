@@ -228,7 +228,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               ) : null}
               <View style={styles.rowBodyText}>
                 {item.description ? (
-                  <AppText variant="body" style={styles.rowDesc} numberOfLines={2}>
+                  <AppText variant="body" style={styles.rowDesc}>
                     {item.description}
                   </AppText>
                 ) : null}

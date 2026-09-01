@@ -266,7 +266,7 @@ export default function MyReportsModal({
             ) : null}
             <View style={styles.rowBodyText}>
               {item.description ? (
-                <AppText variant="body" style={styles.rowDesc} numberOfLines={2}>
+                <AppText variant="body" style={styles.rowDesc}>
                   {item.description}
                 </AppText>
               ) : (
