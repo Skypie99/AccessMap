@@ -128,6 +128,7 @@ export default function ChangelogModal({ visible, onClose }: Props) {
       onClose={onClose}
       title="What's New"
       glass
+      presentation="expanded"
       atTop={atTop}
       scrollRef={scrollRef}
       testID="changelogModal-backdrop"

@@ -78,7 +78,7 @@ describe('MapScreen command bar — the menu button keeps the drawer contract', 
     expect(SRC).toMatch(/const barTitleHidden = isAxRecompose\(fontScale\);/);
     // fontScale comes off the hook the screen already calls, so a text-size
     // change mid-session re-renders the bar instead of stranding "Ex…".
-    expect(SRC).toMatch(/const \{ height: windowHeight, fontScale \} = useWindowDimensions\(\);/);
+    expect(SRC).toMatch(/const \{ fontScale \} = useWindowDimensions\(\);/);
   });
 
   it('the accessibility stand-in is clipped, never zero-sized or transparent (iOS drops those)', () => {

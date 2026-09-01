@@ -284,8 +284,9 @@ export default function SavedPlacesModal({
       closeLabel="Close saved places"
       glass
       padded
+      presentation="expanded"
       keyboardAvoiding
-      shrinkStyle={styles.kav}
+      pullEnabled={!saving && !keyboardVisible}
       cardStyle={keyboardVisible ? styles.cardKeyboard : undefined}
       minBottomPad={spacing.xxl}
       atTop={atTop}

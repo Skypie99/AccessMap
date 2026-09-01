@@ -33,7 +33,7 @@ import { AppText } from '@/components/ui/AppText';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle } from '@/components/ui/SheetPull';
 import { Check, X } from 'lucide-react-native';
 
 interface Props {
@@ -72,8 +72,19 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
   // just the dismiss-vs-scroll rule over the severity/category list.
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const scrollRef = React.useRef(null);
+  const pullRef = React.useRef<SheetPullHandle>(null);
   return (
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} onDismiss={onDismiss} aria-label="Map legend">
+    <Modal
+      visible={visible}
+      animationType={reducedMotion ? 'none' : 'slide'}
+      transparent
+      onRequestClose={onClose}
+      onDismiss={() => {
+        pullRef.current?.resetAfterDismiss();
+        onDismiss?.();
+      }}
+      aria-label="Map legend"
+    >
       <View style={styles.backdrop}>
         {/* S9 (L6-21): the scrim is an absolute SIBLING of the card, not its
             ancestor — a screen reader never lands on a giant "Close" button that
@@ -93,6 +104,7 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
             Close button and onRequestClose all use. The legend is read-only and
             never busy, so the gesture has no state to guard against. */}
         <SheetPull
+          ref={pullRef}
           onDismiss={onClose}
           atTop={atTop}
           simultaneousHandlers={scrollRef}

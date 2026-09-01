@@ -38,7 +38,7 @@
  * so screen-reader users dismiss with the escape scrub or the Close button, both
  * untouched. This wrapper adds no accessible node.
  */
-import React, { useCallback, useRef } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { Animated, Easing, Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { PanGestureHandler, State, type PanGestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 import { hapticSelection } from '@/lib/haptics';
@@ -92,6 +92,16 @@ export interface SheetPullProps {
   testID?: string;
 }
 
+export interface SheetPullHandle {
+  /**
+   * Reset the native-driven translation after the owning Modal has actually
+   * dismissed. Resetting before that lifecycle event makes a completed pull
+   * jump back on-screen for one frame while React Native runs its own closing
+   * animation: the visible close → reopen/flash → close defect.
+   */
+  resetAfterDismiss: () => void;
+}
+
 /**
  * The scroll-position half of the arm test, as a one-liner for adopters:
  *
@@ -115,7 +125,7 @@ export function useAtTop() {
   return { atTop, onScroll, scrollEventThrottle: 16 as const };
 }
 
-export function SheetPull({
+export const SheetPull = forwardRef<SheetPullHandle, SheetPullProps>(function SheetPull({
   children,
   onDismiss,
   enabled = true,
@@ -123,7 +133,7 @@ export function SheetPull({
   simultaneousHandlers,
   style,
   testID,
-}: SheetPullProps) {
+}, ref) {
   const reducedMotion = useReducedMotion();
   const rawY = useRef(new Animated.Value(0)).current;
   const cardHeight = useRef(0);
@@ -141,6 +151,12 @@ export function SheetPull({
   const onGestureEvent = useRef(
     Animated.event([{ nativeEvent: { translationY: rawY } }], { useNativeDriver: true }),
   ).current;
+
+  useImperativeHandle(
+    ref,
+    () => ({ resetAfterDismiss: () => rawY.setValue(0) }),
+    [rawY],
+  );
 
   const settleBack = useCallback(() => {
     if (reducedMotion) {
@@ -161,9 +177,9 @@ export function SheetPull({
     // native driver exists to avoid. Device pass can tell us if it's worth it.
     hapticSelection();
     const finish = () => {
-      // Reset BEFORE handing over, so reopening the sheet never flashes the
-      // half-dragged position from last time.
-      rawY.setValue(0);
+      // Keep the card below the viewport while the owning Modal completes its
+      // native dismissal. The owner resets rawY from Modal.onDismiss, which is
+      // the first lifecycle point where a reset cannot flash the card back in.
       onDismiss();
     };
     if (reducedMotion) {
@@ -222,7 +238,7 @@ export function SheetPull({
       </Animated.View>
     </PanGestureHandler>
   );
-}
+});
 
 const styles = StyleSheet.create({
   // flexShrink mirrors what every adopting card already carries, so inserting

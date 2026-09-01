@@ -1,25 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
-  type Text,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { ScrollView } from 'react-native-gesture-handler';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { ChevronDown, ChevronRight, Search, X } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, Search } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
 import { POINTS } from '@/lib/points';
 import SearchInputRow from '@/components/SearchInputRow';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 
 interface Props {
   visible: boolean;
@@ -85,10 +82,9 @@ const FAQS: FaqItem[] = [
 export default function HelpModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = React.useRef(null);
+  const keyboardVisible = useKeyboardVisible();
   // Tracks which FAQ is expanded by question text (not index) — using
   // text means the "expanded" state survives filtering. If we keyed on
   // array index instead, filtering the list down would shift items and
@@ -111,48 +107,21 @@ export default function HelpModal({ visible, onClose }: Props) {
   // re-renders (e.g. when only openQuestion changes).
   const filteredFaqs = useMemo(() => filterFaqs(FAQS, query), [query]);
   const showEmpty = query.trim().length > 0 && filteredFaqs.length === 0;
-  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
-
   return (
-    <Modal
-      aria-label="Help & FAQ"
+    <Sheet
       visible={visible}
-      animationType={reducedMotion ? 'none' : 'slide'}
-      transparent
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Help & FAQ"
+      closeLabel="Close help"
+      glass
+      presentation="expanded"
+      keyboardAvoiding
+      pullEnabled={!keyboardVisible}
+      minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="helpModal-backdrop"
     >
-      {/* accessibilityViewIsModal tells iOS VoiceOver that everything
-          behind this view is inert while the modal is up — focus can't
-          wander out of the modal and read the underlying screen. Alex P5.
-          (We intentionally don't set importantForAccessibility on the
-          backdrop itself — "no-hide-descendants" would hide the modal's
-          own contents from TalkBack. Android relies on RN Modal's own
-          focus trap and the elevation/z-index of the backdrop.) */}
-      <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose} testID="helpModal-backdrop">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
-        >
-        <View style={styles.cardWrap}>
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              Help & FAQ
-            </AppText>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close help"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
           {/* Search row — sits between the header and the scrollable FAQ
               list. Extracted to SearchInputRow for reuse across modals. */}
           <SearchInputRow
@@ -170,9 +139,12 @@ export default function HelpModal({ visible, onClose }: Props) {
           />
 
           <ScrollView
+            ref={scrollRef}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
             keyboardShouldPersistTaps="handled"
             style={styles.body}
-            contentContainerStyle={[styles.bodyContent, { paddingBottom: Math.max(spacing.lg, insets.bottom) }]}
+            contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >
             {showEmpty && (
@@ -231,11 +203,7 @@ export default function HelpModal({ visible, onClose }: Props) {
               </Pressable>
             </View>
           </ScrollView>
-        </GlassSurface>
-        </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 

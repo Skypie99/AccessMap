@@ -2,25 +2,21 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AccessibilityInfo,
   ActivityIndicator,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
-  type Text,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { MessageCircle, RefreshCw, Search, X } from 'lucide-react-native';
+import { MessageCircle, RefreshCw, Search } from 'lucide-react-native';
 import { FEEDBACK_CATEGORY_LABELS } from '@/lib/feedback';
 import { FEEDBACK_CATEGORY_ICONS } from '@/components/feedbackCategoryIcons';
 import { listFeedbackByUser } from '@/lib/feedbackStore';
@@ -63,10 +59,8 @@ interface Props {
 export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = useRef(null);
   const { user } = useAuth();
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -132,65 +126,37 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
     () => filterFeedbackByQuery(filterFeedback(rows, filter), searchQuery),
     [rows, filter, searchQuery],
   );
-  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
-  const reducedMotion = useReducedMotion();
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
 
   return (
-    <Modal
-      aria-label="My Feedback"
+    <Sheet
       visible={visible}
-      animationType={reducedMotion ? 'none' : 'slide'}
-      transparent
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="My Feedback"
+      closeLabel="Close my feedback"
+      glass
+      presentation="expanded"
+      keyboardAvoiding
+      pullEnabled={!keyboardVisible}
+      minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="myFeedbackModal-backdrop"
+      headerAccessory={
+        <Pressable
+          onPress={() => void load()}
+          hitSlop={12}
+          style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh"
+          accessibilityHint="Reloads your feedback without pulling down the list"
+          {...a11yToggle({ busy: loading })}
+        >
+          <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
+        </Pressable>
+      }
     >
-      {/* accessibilityViewIsModal — VoiceOver treats everything behind
-          this view as inert while the modal is up. Same pattern as
-          HelpModal; see that file for the longer comment. Alex P5. */}
-      <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose} testID="myFeedbackModal-backdrop">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
-        >
-        <View style={styles.cardWrap}>
-        <GlassSurface
-          variant="bulk"
-          borderRadius={0}
-          style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.sm, insets.bottom) }]}
-        >
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              My Feedback
-            </AppText>
-            {/* A11Y-222 (2.5.7): pull-to-refresh is a DRAG. This is the
-              single-pointer alternative, in the same 44pt circle recipe as
-              Close beside it — and it is discoverable, which close+reopen
-              was not. */}
-            <Pressable
-              onPress={() => void load()}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Refresh"
-              accessibilityHint="Reloads your feedback without pulling down the list"
-              {...a11yToggle({ busy: loading })}
-            >
-              <RefreshCw size={18} color={color.text} strokeWidth={2.2} {...decorativeProps} />
-            </Pressable>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close my feedback"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
           {/* Free-text search — only shown when there's more than one row
               to filter (matching MyReportsModal's guard). Searches the
               feedback body text; works in combination with the category
@@ -250,6 +216,9 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
           )}
 
           <FlatList
+            ref={scrollRef}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
             keyboardShouldPersistTaps="handled"
             data={filteredRows}
             keyExtractor={(r) => r.id}
@@ -298,11 +267,7 @@ export default function MyFeedbackModal({ visible, onClose, refreshKey = 0 }: Pr
               </View>
             }
           />
-        </GlassSurface>
-        </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 

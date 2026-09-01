@@ -137,8 +137,12 @@ describe('SW-28 — the sheet exposes the moment the map is safe to move', () =>
 
     const visibleModals = UNSAFE_getAllByType(Modal).filter((m) => m.props.visible);
     expect(visibleModals.length).toBeGreaterThan(0);
-    // The sheet's own Modal — the one whose dismissal re-attaches the map.
-    expect(visibleModals.some((m) => m.props.onDismiss === onDismiss)).toBe(true);
+    // The sheet's own Modal — its lifecycle wrapper resets pull translation,
+    // then forwards the dismissal-complete event that re-attaches the map.
+    const sheetModal = visibleModals.find((m) => typeof m.props.onDismiss === 'function');
+    expect(sheetModal).toBeDefined();
+    sheetModal?.props.onDismiss();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });
 

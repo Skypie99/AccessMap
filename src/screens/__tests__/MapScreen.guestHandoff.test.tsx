@@ -229,6 +229,7 @@ jest.mock('@/lib/accessibility', () => {
     isAxRecompose: actual.isAxRecompose,
     useScreenReader: () => false,
     useReducedMotion: () => true,
+    useFocusOnOpen: () => ({ current: null }),
     useSurfaceTrigger,
   };
 });

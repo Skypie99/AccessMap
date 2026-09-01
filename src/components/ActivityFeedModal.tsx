@@ -275,7 +275,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
       glass
       engineered
       padded
-      shrinkStyle={styles.cap}
+      presentation="expanded"
       minBottomPad={spacing.xl}
       atTop={atTop}
       scrollRef={scrollRef}

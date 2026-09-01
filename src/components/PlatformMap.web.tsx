@@ -44,7 +44,9 @@ export interface PlatformMapHandle {
     },
     opts?: { calloutClear?: boolean },
   ) => void;
-  showCallout: (flagId: string) => void;
+  /** Returns false while the requested marker is not mounted, allowing the
+   * caller to retry readiness without reopening an already-visible popup. */
+  showCallout: (flagId: string) => boolean;
   /** S4 / D6 — parity with the native handle. Leaflet keeps one popup open per
    *  map, so this is `closePopup()`, not a sweep. */
   hideCallout: () => void;
@@ -1009,7 +1011,10 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       showCallout: (id) => {
         // Opening fires popupopen synchronously; under RM the listener above
         // delivers the instant clear in the same frame (F3-06).
-        markerRefs.current[id]?.openPopup();
+        const marker = markerRefs.current[id];
+        if (!marker) return false;
+        marker.openPopup();
+        return true;
       },
       hideCallout: () => {
         // Leaflet holds at most one open popup per map, so the map itself is the

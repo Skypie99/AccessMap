@@ -31,7 +31,7 @@ import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessi
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { GlassSurface } from './GlassSurface';
-import { SheetPull } from './SheetPull';
+import { SheetPull, type SheetPullHandle } from './SheetPull';
 
 export interface SheetHeaderProps {
   title: string;
@@ -190,6 +190,9 @@ export function SheetHeader({
 export interface SheetProps {
   visible: boolean;
   onClose: () => void;
+  /** Native dismissal-complete hook for owners that must present a successor
+   * surface only after this sheet has actually left the iOS hierarchy. */
+  onDismiss?: () => void;
   title: string;
   children: React.ReactNode;
   /** Override the card style (e.g. a different surface or paddingTop). */
@@ -280,6 +283,7 @@ export interface SheetProps {
 export function Sheet({
   visible,
   onClose,
+  onDismiss,
   title,
   children,
   cardStyle,
@@ -311,6 +315,7 @@ export function Sheet({
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const reducedMotion = useReducedMotion();
+  const pullRef = React.useRef<SheetPullHandle>(null);
   const expanded = presentation === 'expanded';
   const expandedTopMargin = insets.top + spacing.sm;
   // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
@@ -393,6 +398,10 @@ export function Sheet({
       transparent
       animationType={reducedMotion ? 'none' : 'slide'}
       onRequestClose={onClose}
+      onDismiss={() => {
+        pullRef.current?.resetAfterDismiss();
+        onDismiss?.();
+      }}
     >
       {/* G1/SR-063 — the VoiceOver escape gesture (two-finger Z) lands HERE,
           on the containment node, NOT on <Modal>. RN's Modal.render() forwards
@@ -419,6 +428,7 @@ export function Sheet({
             `onRequestClose` and `onAccessibilityEscape` already take, so the
             focus-return choreography is inherited rather than forked. */}
         <SheetPull
+          ref={pullRef}
           onDismiss={onClose}
           enabled={pullEnabled}
           atTop={atTop}

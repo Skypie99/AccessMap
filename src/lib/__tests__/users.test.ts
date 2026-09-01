@@ -37,11 +37,12 @@ const mockUpload = jest.fn();
 const mockGetPublicUrl = jest.fn();
 const mockStorageFrom = jest.fn();
 const mockRpc = jest.fn();
+const mockFrom = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
-    from: jest.fn(), // not used by uploadAvatar — present so TypeScript is satisfied
+    from: (...args: unknown[]) => mockFrom(...args),
     rpc: (...args: unknown[]) => mockRpc(...args),
     storage: {
       from: (...args: unknown[]) => mockStorageFrom(...args),
@@ -110,6 +111,7 @@ describe('uploadAvatar()', () => {
       upload: mockUpload,
       getPublicUrl: mockGetPublicUrl,
     });
+    mockFrom.mockReset();
     mockRpc.mockImplementation((name: unknown) => ({
       single: jest.fn().mockResolvedValue(
         name === 'prepare_flag_photo_upload'
@@ -127,10 +129,14 @@ describe('uploadAvatar()', () => {
    * marker segments, so fixtures must be well-formed — magic bytes alone now
    * fail closed as malformed.
    */
-  function makeJpegBuffer(opts?: { withExifSegment?: boolean }): ArrayBuffer {
+  function makeJpegBuffer(opts?: { withExifSegment?: boolean; withGpsMetadata?: boolean }): ArrayBuffer {
     const bytes: number[] = [0xff, 0xd8]; // SOI
     if (opts?.withExifSegment) {
-      bytes.push(0xff, 0xe1, 0x00, 0x08, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00); // APP1 "Exif\0\0"
+      const payload = opts.withGpsMetadata
+        ? [0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x47, 0x50, 0x53, 0x00] // Exif\0\0GPS\0
+        : [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]; // Exif\0\0
+      const segmentLength = payload.length + 2;
+      bytes.push(0xff, 0xe1, segmentLength >> 8, segmentLength & 0xff, ...payload);
     }
     bytes.push(0xff, 0xe0, 0x00, 0x04, 0x4a, 0x46); // APP0, len 4
     bytes.push(0xff, 0xda, 0x00, 0x04, 0x01, 0x00); // SOS, len 4
@@ -155,6 +161,59 @@ describe('uploadAvatar()', () => {
     expect(result.url).toMatch(/^https:\/\//);
     expect(mockUpload).toHaveBeenCalledTimes(1);
     expect(mockGetPublicUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the sanitized owner path when the upload-intent RPC is not deployed', async () => {
+    const sourceWithExifAndGps = makeJpegBuffer({ withExifSegment: true, withGpsMetadata: true });
+    const cleanBuffer = makeJpegBuffer();
+    let fetchCallCount = 0;
+    (global as unknown as { fetch: unknown }).fetch = async () => ({
+      // The first read represents a selected source photo carrying an APP1
+      // EXIF container (where GPS tags live). The manipulator output is clean.
+      arrayBuffer: async () => (fetchCallCount++ === 0 ? sourceWithExifAndGps : cleanBuffer),
+    });
+    mockRpc.mockImplementation((name: unknown) => ({
+      single: jest.fn().mockResolvedValue(
+        name === 'prepare_flag_photo_upload'
+          ? { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } }
+          : { data: null, error: new Error(`Unexpected RPC: ${String(name)}`) },
+      ),
+    }));
+    mockUpload.mockResolvedValueOnce({ error: null });
+    mockGetPublicUrl.mockReturnValueOnce({
+      data: { publicUrl: 'https://cdn.example.com/user-abc-123/avatar/clean.jpg' },
+    });
+
+    const profile = {
+      id: USER_ID,
+      display_name: 'Alice',
+      avatar_url: 'https://cdn.example.com/user-abc-123/avatar/clean.jpg',
+      avatar_object_key: null,
+      points: 0,
+      created_at: '2026-01-01T00:00:00Z',
+    };
+    const single = jest.fn().mockResolvedValue({ data: profile, error: null });
+    const select = jest.fn().mockReturnValue({ single });
+    const eq = jest.fn().mockReturnValue({ select });
+    const update = jest.fn().mockReturnValue({ eq });
+    mockFrom.mockReturnValue({ update });
+
+    const result = await uploadAvatar(USER_ID, 'file:///tmp/photo-with-location.jpg');
+
+    expect(mockUpload).toHaveBeenCalledTimes(1);
+    const [path, uploadedBytes] = mockUpload.mock.calls[0];
+    expect(path).toMatch(/^user-abc-123\/avatar\/\d+\.jpg$/);
+    expect(new Uint8Array(uploadedBytes as ArrayBuffer)).toEqual(new Uint8Array(cleanBuffer));
+    const uploadedText = String.fromCharCode(...new Uint8Array(uploadedBytes as ArrayBuffer));
+    expect(String.fromCharCode(...new Uint8Array(sourceWithExifAndGps))).toContain('GPS');
+    expect(uploadedText).not.toContain('Exif');
+    expect(uploadedText).not.toContain('GPS');
+    expect(update).toHaveBeenCalledWith({
+      avatar_url: result.url,
+      avatar_object_key: null,
+    });
+    expect(result.profile).toEqual(profile);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
   });
 
   // ── Error path 1: bad extension ───────────────────────────────────────────
@@ -317,17 +376,13 @@ describe('updateUserProfile()', () => {
   const mockUpdate = jest.fn();
   const mockFromUsers = jest.fn();
 
-  const mockSupabase = jest.requireMock('../supabase').supabase as {
-    from: jest.Mock;
-  };
-
   beforeEach(() => {
     mockSingle.mockReset();
     mockSelect.mockReset().mockReturnValue({ single: mockSingle });
     mockEq.mockReset().mockReturnValue({ select: mockSelect });
     mockUpdate.mockReset().mockReturnValue({ eq: mockEq });
     mockFromUsers.mockReset().mockReturnValue({ update: mockUpdate });
-    mockSupabase.from.mockImplementation(() => ({ update: mockUpdate }));
+    mockFrom.mockReset().mockImplementation(() => ({ update: mockUpdate }));
   });
 
   const USER_ID = 'user-abc';

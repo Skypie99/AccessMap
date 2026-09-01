@@ -77,7 +77,8 @@ describe('S4 — every sheet that opens from the map calls it', () => {
     ['Nearby — the screen-reader auto-open', 'nearbyTrigger.register();\n      clearMapSurfaces();'],
     ['Address search', 'onPress={() => { clearMapSurfaces(); setSearchOpen(true); }}'],
     ['Saved places', 'onPress={() => { clearMapSurfaces(); setPlacesOpen(true); }}'],
-    ['Filter presets', 'onPress={() => { clearMapSurfaces(); setPresetsModalOpen(true); }}'],
+    ['Filter flags', 'clearMapSurfaces();\n                  setFiltersOpen(true);'],
+    ['Filter presets', "onPress={() => closeFiltersThenOpen('presets')}"],
   ];
 
   it.each(OPENERS)('%s', (_name, snippet) => {
@@ -99,14 +100,12 @@ describe('S4 — every sheet that opens from the map calls it', () => {
 
   it('no OPENER still closes the tool sheet by hand — that path forgets the callout', () => {
     // Before S4, `setToolsOpen(false)` was the idiom at every one of these sites
-    // and it put away exactly one of the three surfaces. Four uses survive, and
+    // and it put away exactly one of the three surfaces. Three uses survive, and
     // none of them opens a sheet:
     const byHand = MAP.match(/setToolsOpen\(false\)/g) ?? [];
-    expect(byHand.length).toBe(4);
+    expect(byHand.length).toBe(3);
     //   1. inside clearMapSurfaces itself, and 2. the tab-blur cleanup (above);
-    //   3. the filter button, which SWAPS one inline panel for the other;
-    expect(MAP).toContain('onPress={() => { setToolsOpen(false); setFiltersOpen((v) => !v); }}');
-    //   4. Refresh flags, which opens nothing — so the callout correctly stays.
+    //   3. Refresh flags, which opens nothing — so the callout correctly stays.
     expect(MAP).toContain('onPress={() => { setToolsOpen(false); refreshFlags().catch(() => {}); }}');
   });
 });

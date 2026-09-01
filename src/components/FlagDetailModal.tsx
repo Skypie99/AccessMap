@@ -25,7 +25,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle } from '@/components/ui/SheetPull';
 import { TYPE_BLOCK, TypeBlock } from '@/components/ui/TypeBlock';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import {
@@ -213,6 +213,7 @@ export default function FlagDetailModal({
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const keyboardVisible = useKeyboardVisible();
   const bodyScrollRef = useRef(null);
+  const pullRef = useRef<SheetPullHandle>(null);
   const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
   // Prompt B B2/Fable B-UX-002: the gallery's own loading/error state, owned
   // here (not the write-path throw COR-3 already relies on). photosRetryToken
@@ -1432,7 +1433,17 @@ export default function FlagDetailModal({
 
   return (
     <>
-      <Modal aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`} visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} onDismiss={onDismiss}>
+      <Modal
+        aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
+        visible={visible}
+        animationType={reducedMotion ? 'none' : 'slide'}
+        transparent
+        onRequestClose={onClose}
+        onDismiss={() => {
+          pullRef.current?.resetAfterDismiss();
+          onDismiss?.();
+        }}
+      >
         <View style={styles.backdrop}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we
@@ -1447,6 +1458,7 @@ export default function FlagDetailModal({
               this card and swallow touches themselves, so the pan cannot fire
               underneath them. */}
           <SheetPull
+            ref={pullRef}
             onDismiss={onClose}
             enabled={!busy && !keyboardVisible}
             atTop={atTop}

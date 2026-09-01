@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -10,14 +8,15 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
 import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
-import { GlassSurface } from '@/components/ui/GlassSurface';
-import { AlertTriangle, ChevronRight, Clock, MapPin, Search, X } from 'lucide-react-native';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
+import { AlertTriangle, ChevronRight, Clock, MapPin, Search } from 'lucide-react-native';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { decorativeProps, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps } from '@/lib/accessibility';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll';
 import { searchAddressStrict, type GeocodeResult } from '@/lib/geocode';
@@ -56,11 +55,7 @@ const DEBOUNCE_MS = 350;
 export default function AddressSearchModal({ visible, onClose, onSelect }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   // Keyboard-up bottom-inset reclaim (Recipe F step 3): with the keyboard up the
   // home-indicator inset is covered, so paying for it twice just steals rows.
   const keyboardVisible = useKeyboardVisible();
@@ -207,39 +202,28 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
   const showRecents = visible && query.trim().length === 0 && recents.length > 0;
 
   return (
-    <Modal aria-label="Search by address" visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        {/* KAV lifts the sheet above the keyboard the autoFocus input opens.
-            iOS 'padding'; Android already resizes (adjustResize default).
-            width:100% (not flex:1) preserves the backdrop's flex-end anchor. */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
-        >
-        {/* WCAG 2.4.3: contain VoiceOver focus inside the sheet so it can't
-            wander onto the map behind it (every other modal sets this). */}
-        <View style={[styles.cardWrap, { marginTop: insets.top + spacing.sm }]}>
-        <GlassSurface variant="bulk" borderRadius={0} style={[styles.card, { paddingBottom: keyboardVisible ? spacing.md : Math.max(spacing.xl, insets.bottom) }]} accessibilityViewIsModal onAccessibilityEscape={onClose}>
-          <View style={styles.headerRow}>
-            <AppText variant="heading" style={styles.title} accessibilityRole="header">
-              Search by address
-            </AppText>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close address search"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
-          <ScrollView
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Search by address"
+      closeLabel="Close address search"
+      glass
+      padded
+      presentation="expanded"
+      keyboardAvoiding
+      pullEnabled={!keyboardVisible}
+      minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={bodyScrollRef}
+      testID="addressSearchModal-backdrop"
+    >
+          <GestureScrollView
             ref={bodyScrollRef}
             style={styles.body}
             contentContainerStyle={styles.bodyContent}
             onLayout={searchReveal.onViewportLayout}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
@@ -397,12 +381,8 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
               ))}
             </View>
           )}
-          </ScrollView>
-        </GlassSurface>
-        </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+          </GestureScrollView>
+    </Sheet>
   );
 }
 
@@ -475,11 +455,12 @@ function makeStyles(color: ColorTheme) {
       backgroundColor: color.surfaceNeutral,
       alignItems: 'center',
       justifyContent: 'center',
-    },    subtitle: {
+    },
+    subtitle: {
       fontSize: font.size.sm,
       color: color.inkGlassMuted,
       fontFamily: font.family.bodyMedium,
-      lineHeight: 18,
+      lineHeight: font.lineHeight.sm,
     },
     input: {
       borderWidth: 1,

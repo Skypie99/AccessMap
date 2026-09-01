@@ -109,7 +109,9 @@ export interface PlatformMapHandle {
     },
     opts?: { calloutClear?: boolean },
   ) => void;
-  showCallout: (flagId: string) => void;
+  /** Returns false while the requested marker is not mounted, allowing the
+   * caller to retry readiness without reopening an already-visible callout. */
+  showCallout: (flagId: string) => boolean;
   /** S4 / D6: put the callout away. Opening a sheet from the map used to leave
    *  the callout up UNDER it — the walk found three surfaces stacked, with
    *  "SEVERITY 4 OF 5" peeking above the report sheet's top edge and the
@@ -324,7 +326,10 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         );
       },
       showCallout: (id) => {
-        markerRefs.current[id]?.showCallout();
+        const marker = markerRefs.current[id];
+        if (!marker) return false;
+        marker.showCallout();
+        return true;
       },
       hideCallout: () => {
         // react-native-maps offers no "which callout is open" query, and calling

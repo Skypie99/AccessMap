@@ -90,6 +90,7 @@ export async function uploadAvatar(
   srcHeight?: number,
 ): Promise<{ url: string; profile: UserRow }> {
   let intentId = '';
+  let useLegacyOwnerPath = false;
   try {
     const upload = await uploadStrippedImage(
       userId,
@@ -98,6 +99,15 @@ export async function uploadAvatar(
         const { data, error } = await supabase
           .rpc('prepare_flag_photo_upload', { p_extension: finalExt, p_kind: 'avatar' })
           .single();
+        // Build 31 shipped before the upload-intent RPCs reached the backend.
+        // Preserve the proven pre-intent owner-scoped Storage path only for
+        // that exact deployment gap. Crucially, buildPath runs *after* the
+        // shared report-photo re-encode, metadata sanitizer, and fail-closed
+        // verification gates, so this fallback can never upload source bytes.
+        if (error && isFunctionMissing(error)) {
+          useLegacyOwnerPath = true;
+          return `${userId}/avatar/${Date.now()}.${finalExt}`;
+        }
         if (error || !data) throw error ?? new Error('Avatar upload could not be prepared.');
         intentId = data.intent_id;
         return data.object_key;
@@ -106,6 +116,19 @@ export async function uploadAvatar(
       srcWidth,
       srcHeight,
     );
+    if (useLegacyOwnerPath) {
+      // The currently deployed users UPDATE policy permits an owner to update
+      // this row. Clear a possibly stale canonical key so presentation uses
+      // the newly sanitized public URL rather than resolving an older object.
+      const { data, error } = await supabase
+        .from('users')
+        .update({ avatar_url: upload.url, avatar_object_key: null })
+        .eq('id', userId)
+        .select('id, display_name, avatar_url, avatar_object_key, points, created_at')
+        .single();
+      if (error || !data) throw error ?? new Error('Avatar profile could not be updated.');
+      return { url: upload.url, profile: withAvatarDisplayUrl(data as UserRow) };
+    }
     if (!intentId) throw new Error('Avatar upload intent was not created.');
     const { data, error } = await supabase.rpc('commit_avatar_photo_upload', { p_intent_id: intentId }).single();
     if (error || !data) throw error ?? new Error('Avatar upload could not be verified.');

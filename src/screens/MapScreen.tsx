@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
 import type { LayoutChangeEvent } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
@@ -31,8 +32,6 @@ import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus';
 import { confirm, notify } from '@/lib/confirm';
 import {
   AlertTriangle,
-  ChevronDown,
-  ChevronRight,
   HelpCircle,
   List,
   LocateFixed,
@@ -68,7 +67,6 @@ import {
 } from '@/lib/contextTags';
 import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import { haversineKm, regionForNearestFlags } from '@/lib/distance';
-import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
 import { loadHeatmapEnabled, saveHeatmapEnabled } from '@/lib/heatmapPrefs';
 import {
   DEFAULT_HEATMAP_MODE,
@@ -76,6 +74,8 @@ import {
   type HeatmapMode,
 } from '@/lib/heatmap';
 import { useHeatCells } from '@/components/HeatmapLayer';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import {
   deleteSet,
   FilterSetError,
@@ -189,13 +189,6 @@ function regionForFlags(rows: readonly { lat: number; lng: number }[]): Platform
   };
 }
 
-// Filter-panel height budget (G5). OVERLAY_PADDING mirrors styles.overlay's
-// padding; PANEL_BRACKET_ALLOWANCE reserves room for the action bar above the
-// panel and the FAB bottom bar below it. flexShrink on filterPanel corrects any
-// imprecision, so these only need to be in the right ballpark.
-const OVERLAY_PADDING = 16;
-const PANEL_BRACKET_ALLOWANCE = 160;
-
 // Sky's refinement ① (map-chrome B-refined, 2026-08-12): the command bar hugs
 // the status bar — the overlay's top pad drops from safe-area+16 to safe-area+8,
 // so the bar's top edge sits at insets.top + 8 (asserted by mapChromeBudget).
@@ -215,22 +208,29 @@ const CALLOUT_CHROME_MARGIN = 8;
 // the COMMON case the marker is already there, and rung 0 lands the payoff in
 // the same frame as the camera move (T1/F3-06: under Reduce Motion that means
 // jump + callout as one designed cut — the old ≥250ms dead beat is gone).
-// showCallout/openPopup are idempotent, so the extra calls are harmless once
-// it lands. `isCancelled` lets the caller abort (effect cleanup, or a newer
-// focus) so we never pop a stale callout. Returns a canceller that clears the
-// pending timers. Exported for the jest guards.
+// A successful attempt STOPS the ladder. Reopening an already-visible native
+// callout is not idempotent: repeated showCallout calls produced the visible
+// open → close → open pulse on Tasks → Map. `isCancelled` lets the caller abort
+// (effect cleanup, or a newer focus) so we never pop a stale callout. The map
+// handle is read at every rung because it may mount after scheduling.
 export function retryShowCallout(
-  map: PlatformMapHandle | null,
+  getMap: () => PlatformMapHandle | null,
   flagId: string,
   isCancelled: () => boolean,
 ): () => void {
-  if (!isCancelled()) map?.showCallout(flagId);
+  let settled = false;
+  const attempt = () => {
+    if (settled || isCancelled()) return;
+    settled = getMap()?.showCallout(flagId) === true;
+  };
+  attempt();
   const timers = [250, 400, 550, 700].map((ms) =>
-    setTimeout(() => {
-      if (!isCancelled()) map?.showCallout(flagId);
-    }, ms),
+    setTimeout(attempt, ms),
   );
-  return () => timers.forEach(clearTimeout);
+  return () => {
+    settled = true;
+    timers.forEach(clearTimeout);
+  };
 }
 
 // T1 (F3-04): ONE shared scheduler so every callout flow is last-tap-wins —
@@ -248,7 +248,7 @@ export function createCalloutScheduler(getMap: () => PlatformMapHandle | null): 
   return {
     schedule(flagId, isCancelled = () => false) {
       cancelCurrent(); // last-tap-wins: kill the previous flag's pending rungs
-      const cancel = retryShowCallout(getMap(), flagId, isCancelled);
+      const cancel = retryShowCallout(getMap, flagId, isCancelled);
       cancelCurrent = cancel;
       return cancel;
     },
@@ -356,10 +356,9 @@ export default function MapScreen() {
   // Phase 7a: the bottom tab bar is now absolute (frosted glass) on native, so
   // lift the bottom overlay (FAB tray + legend) above it.
   const tabBarHeight = useBottomTabBarHeight();
-  // Reactive viewport height (rotation-safe) + safe-area insets, used to bound
-  // the filter panel's maxHeight so it can't cover the FABs (G5). Context form
-  // (non-throwing) since a provider isn't guaranteed in every render path.
-  const { height: windowHeight, fontScale } = useWindowDimensions();
+  // Reactive font scale drives the command-bar recomposition below. Safe-area
+  // insets are read separately through the non-throwing context fallback.
+  const { fontScale } = useWindowDimensions();
   // D1 / T4: the one-line command bar has no room for the word "Explore" at
   // large Dynamic Type — it rendered "Ex…". At the recomposition point the bar
   // drops the word and keeps ☰ · count · tools; the header landmark survives
@@ -431,13 +430,19 @@ export default function MapScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
   // Direction B: the command bar's ⋯ overflow reveals an inline tool sheet
-  // (Send feedback / Map legend / Refresh flags / Save a place) — a panel-class
-  // surface like the filter panel, not a Modal.
+  // (Send feedback / Map legend / Refresh flags / Save a place). Unlike the
+  // expanded Filter flags sheet, this compact tool surface is not a Modal.
   const [toolsOpen, setToolsOpen] = useState(false);
   // Declared here, beside the tool sheet, rather than down with the rest of the
   // filter state: S4 made these two the pair that one function closes, and
   // `clearMapSurfaces` below has to be in scope for the effects that call it.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const {
+    atTop: filterAtTop,
+    onScroll: onFilterScroll,
+    scrollEventThrottle: filterScrollEventThrottle,
+  } = useAtTop();
+  const filterScrollRef = useRef(null);
   // G5 focus-return triggers. Each one owns the handle of the control that
   // opened its surface, so closing the surface hands the screen-reader cursor
   // back to that control instead of stranding it (WCAG 2.4.3). Local pairs
@@ -520,7 +525,7 @@ export default function MapScreen() {
   // (Direction B) The 7-tool scrolling action bar is gone — Search + Filters
   // live in the command bar, the ⋯ sheet holds Feedback/Legend/Refresh/Save,
   // Recenter moved to the FAB column, and the severity/category cycles retired to
-  // the filter panel — so the tray's overflow-fade measure chain retires with it.
+  // the Filter flags sheet — so the tray's overflow-fade measure chain retires.
 
   // T14 (F2-07): the two silent filter-panel chip rails earn the same overflow
   // scent as the action bar, from the one shared contract (never a fork).
@@ -550,19 +555,19 @@ export default function MapScreen() {
 
   // S4 / D6 — ONE SURFACE AT A TIME ABOVE THE MAP.
   //
-  // The walk opened the filter panel, tapped a pin, went to Home, came back and
+  // The walk opened filters, tapped a pin, went to Home, came back and
   // tapped Report: the report sheet landed on a map that still had the filter
-  // panel AND the callout open under it, with "SEVERITY 4 OF 5" peeking above
+  // filter surface AND the callout open under it, with "SEVERITY 4 OF 5" peeking above
   // the sheet's top edge and the callout's blue button ghosting through the
   // panel and the legend (§16, §18, D3, D5 — five sightings, worst in dark).
   // Nothing ever put the map's own surfaces away, so they accumulated.
   //
-  // This is the one place that does. It closes the two INLINE panel-class
-  // surfaces (the filter panel and the ⋯ tool sheet — neither is a Modal) and
+  // This is the one place that does. It closes both map-owned filter/tool
+  // surfaces (the expanded filter Sheet and the inline ⋯ tool sheet) and
   // hides the callout, which is owned by the marker and therefore has to be
-  // dismissed imperatively. It does NOT close modals: the Nearby list stays up
-  // under the detail sheet on purpose (the screen-reader path returns focus to
-  // its row), and it does NOT touch the camera or `focusedFlagId` — where the
+  // dismissed imperatively. It does not close unrelated content modals: the
+  // Nearby list stays up under the detail sheet on purpose (the screen-reader
+  // path returns focus to its row), and it does not touch the camera or `focusedFlagId` — where the
   // map is looking, and which pin the user came for, both survive a sheet.
   const clearMapSurfaces = useCallback(() => {
     setFiltersOpen(false);
@@ -589,13 +594,6 @@ export default function MapScreen() {
     // object, so this does not re-run every render — and the same is true of
     // clearMapSurfaces, which closes over setters and a ref only.
   }, [screenReaderOn, nearbyTrigger, clearMapSurfaces]);
-  // Whether the filter panel (when open) shows just its header row or all
-  // sections. Persists across launches via filterPanelPrefs. Hydrated
-  // alongside the filter values; the save-effect below is gated on
-  // filterPanelHydrated so we don't clobber the stored value with the
-  // initial default during the brief mount→load window.
-  const [panelCollapsed, setPanelCollapsed] = useState(false);
-  const [panelCollapsedHydrated, setPanelCollapsedHydrated] = useState(false);
   // Heat-map toggle — defaults to OFF (Dani's design compile: don't obscure
   // pins on first load). Persisted via heatmapPrefs.ts. `heatmapHydrated`
   // gates the save-effect so we don't clobber the stored value during the
@@ -661,6 +659,29 @@ export default function MapScreen() {
   const [presetNameModalOpen, setPresetNameModalOpen] = useState(false);
   const [presetNameDraft, setPresetNameDraft] = useState('');
   const [savingPreset, setSavingPreset] = useState(false);
+  const pendingFilterSurfaceRef = useRef<'save-set' | 'save-preset' | 'presets' | null>(null);
+
+  const finishPendingFilterSurface = useCallback(() => {
+    const pending = pendingFilterSurfaceRef.current;
+    pendingFilterSurfaceRef.current = null;
+    if (pending === 'save-set') setNameModalOpen(true);
+    else if (pending === 'save-preset') setPresetNameModalOpen(true);
+    else if (pending === 'presets') setPresetsModalOpen(true);
+  }, []);
+
+  const closeFiltersThenOpen = useCallback(
+    (surface: 'save-set' | 'save-preset' | 'presets') => {
+      pendingFilterSurfaceRef.current = surface;
+      setFiltersOpen(false);
+      // RN exposes Modal.onDismiss only on iOS. Other platforms hand off after
+      // the current interaction queue, which is a lifecycle boundary rather
+      // than an animation-duration guess.
+      if (Platform.OS !== 'ios') {
+        InteractionManager.runAfterInteractions(finishPendingFilterSurface);
+      }
+    },
+    [finishPendingFilterSurface],
+  );
 
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
@@ -737,7 +758,7 @@ export default function MapScreen() {
 
   // (Direction B, 2026-08-12) The severity + category QUICK-CYCLE buttons that
   // used to live in the persistent top tray are removed. Their surviving home is
-  // the filter panel's severity discs + category chips (SPEC §11 B) — the
+  // the Filter flags sheet's severity discs + category chips (SPEC §11 B) — the
   // persistent chrome no longer carries a one-tap cycle. `minSeverity` /
   // `activeCategories` state and every panel control that reads them are intact.
 
@@ -773,11 +794,10 @@ export default function MapScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [saved, sets, storedDefault, collapsed, heatOn] = await Promise.all([
+      const [saved, sets, storedDefault, heatOn] = await Promise.all([
         loadMapFilters(),
         listSets(),
         getDefaultSetId(),
-        loadFilterPanelCollapsed(),
         loadHeatmapEnabled(),
       ]);
       if (cancelled) return;
@@ -798,24 +818,14 @@ export default function MapScreen() {
       if (saved) setMaxDistanceKm(saved.maxDistanceKm);
       setSavedSets(sets);
       setDefaultIdState(defaultSet ? defaultSet.id : null);
-      setPanelCollapsed(collapsed);
       setHeatmapEnabled(heatOn);
       setFiltersHydrated(true);
-      setPanelCollapsedHydrated(true);
       setHeatmapHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
-
-  // Persist the panel collapsed/expanded toggle. Same fire-and-forget
-  // pattern as mapFilters — the worst case on a storage failure is the
-  // user's next session opens with the default (expanded) state.
-  useEffect(() => {
-    if (!panelCollapsedHydrated) return;
-    saveFilterPanelCollapsed(panelCollapsed);
-  }, [panelCollapsed, panelCollapsedHydrated]);
 
   // Persist the heat-map visibility toggle. Same fire-and-forget pattern.
   useEffect(() => {
@@ -913,8 +923,8 @@ export default function MapScreen() {
   // Open the save-name modal with an empty draft.
   const openSaveModal = useCallback(() => {
     setNameDraft('');
-    setNameModalOpen(true);
-  }, []);
+    closeFiltersThenOpen('save-set');
+  }, [closeFiltersThenOpen]);
 
   // Commit the draft name. saveSet does the cap + duplicate checks; we
   // map its typed error onto a single user-facing Alert. On success the
@@ -943,8 +953,8 @@ export default function MapScreen() {
   // Open the per-user preset save-name prompt with an empty draft.
   const openPresetSaveModal = useCallback(() => {
     setPresetNameDraft('');
-    setPresetNameModalOpen(true);
-  }, []);
+    closeFiltersThenOpen('save-preset');
+  }, [closeFiltersThenOpen]);
 
   // Snapshot the current filter triple as a new named preset for the
   // signed-in user. Loads the existing list, appends via addPreset (which
@@ -1392,11 +1402,18 @@ export default function MapScreen() {
     // (realtime + the freshness window keep the list current). Saves a
     // round-trip — and the radio/battery cost — on every card tap.
     void refreshFlagsIfStale();
+    // Consume the navigation intent after the final readiness rung. Clearing
+    // sooner would run this effect's cleanup and cancel the ladder before a
+    // slow marker can mount; leaving it set replays the old intent on remount.
+    const clearFocusTimer = setTimeout(() => {
+      navigation.setParams({ focusFlag: undefined, ts: undefined });
+    }, 800);
     return () => {
       cancelled = true;
       cancelCallout();
+      clearTimeout(clearFocusTimer);
     };
-  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale, calloutScheduler]);
+  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale, calloutScheduler, navigation]);
 
   // Phase 7a: Home's "Report" pill navigates here with openReport:true so the
   // report sheet opens on arrival. Clear the param right away (mirroring the L9
@@ -2057,7 +2074,13 @@ export default function MapScreen() {
             </PressableScale>
             {/* Filters — glows ctaFill when the panel is open or a filter is active */}
             <PressableScale
-              onPress={() => { setToolsOpen(false); setFiltersOpen((v) => !v); }}
+              onPress={() => {
+                if (filtersOpen) setFiltersOpen(false);
+                else {
+                  clearMapSurfaces();
+                  setFiltersOpen(true);
+                }
+              }}
               style={[styles.barBtn, (filtersOpen || filtersActive) && styles.barBtnActive]}
               pressedTint={filtersOpen || filtersActive ? color.ctaFillPressed : color.borderPressed}
               accessibilityRole="button"
@@ -2111,8 +2134,8 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* ⋯ tool sheet (Direction B) — an inline panel-class surface (mirrors
-            the filter panel), NOT a Modal, so it never joins the dismissal-
+        {/* ⋯ tool sheet (Direction B) — a compact inline panel-class surface,
+            NOT a Modal, so it never joins the dismissal-
             standard Modal census. It carries the four tools demoted from the old
             tray. The saved-places quick-jump chip row is retired (Q4): place
             jumps live in SavedPlacesModal (reached via "Save a place"). */}
@@ -2139,7 +2162,7 @@ export default function MapScreen() {
                 // bottom bar, which now holds legendTrigger.ref (M4): it is the
                 // legend's own door and it survives this sheet closing, where a
                 // ⋯ tool row does not. clearMapSurfaces closes this sheet
-                // (and the filter panel, and the callout) so nothing is left
+                // (and the filter sheet, and the callout) so nothing is left
                 // stranded behind the modal.
                 clearMapSurfaces();
                 legendTrigger.register();
@@ -2177,65 +2200,37 @@ export default function MapScreen() {
           </GlassSurface>
         )}
 
-        {filtersOpen && (
-          <GlassSurface
-            style={[
-              styles.filterPanel,
-              // Bound the panel to the viewport minus overlay padding and the
-              // space reserved for the action bar + FAB tray, so the FABs stay
-              // visible; flexShrink on filterPanel trims any imprecision (G5).
-              {
-                maxHeight:
-                  windowHeight -
-                  insets.top -
-                  insets.bottom -
-                  OVERLAY_PADDING * 2 -
-                  spacing.sm -
-                  PANEL_BRACKET_ALLOWANCE,
-              },
-            ]}
-            variant="row"
-            overlayTint={color.glassMapWash}
-            borderRadius={radius.lg}
-          >
-            <View style={styles.filterHeaderRow}>
+        <Sheet
+          visible={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          onDismiss={finishPendingFilterSurface}
+          title="Filter flags"
+          closeLabel="Close filters"
+          glass
+          padded
+          presentation="expanded"
+          minBottomPad={spacing.xl}
+          atTop={filterAtTop}
+          scrollRef={filterScrollRef}
+          testID="mapFilterSheet"
+          headerAccessory={
+            filtersActive ? (
               <Pressable
-                onPress={() => setPanelCollapsed((v) => !v)}
+                onPress={clearFilters}
                 hitSlop={8}
-                style={({ pressed }) => [styles.filterTitleRow, pressed && styles.filterPillPressed]}
+                style={({ pressed }) => [styles.clearBtn, pressed && styles.filterPillPressed]}
                 accessibilityRole="button"
-                accessibilityLabel={
-                  panelCollapsed ? 'Expand filter panel' : 'Collapse filter panel'
-                }
-                accessibilityHint={
-                  panelCollapsed
-                    ? 'Shows saved filters, categories, severity, and status'
-                    : 'Hides the filter sections, leaving just the header'
-                }
-                {...a11yToggle({ expanded: !panelCollapsed })}
+                accessibilityLabel="Clear all filters"
               >
-                <AppText variant="heading" style={styles.filterTitle}>Filter flags</AppText>
-                {panelCollapsed ? (
-                  <ChevronRight size={16} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
-                ) : (
-                  <ChevronDown size={16} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
-                )}
+                <AppText variant="label" style={styles.clearLink}>Clear</AppText>
               </Pressable>
-              {filtersActive && (
-                <Pressable
-                  onPress={clearFilters}
-                  hitSlop={8}
-                  style={({ pressed }) => [styles.clearBtn, pressed && styles.filterPillPressed]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear all filters"
-                >
-                  <AppText variant="label" style={styles.clearLink}>Clear</AppText>
-                </Pressable>
-              )}
-            </View>
-
-            {!panelCollapsed && (
-              <ScrollView
+            ) : undefined
+          }
+        >
+              <GestureScrollView
+                ref={filterScrollRef}
+                onScroll={onFilterScroll}
+                scrollEventThrottle={filterScrollEventThrottle}
                 style={styles.filterPanelScroll}
                 contentContainerStyle={styles.filterPanelScrollContent}
                 showsVerticalScrollIndicator
@@ -2399,7 +2394,6 @@ export default function MapScreen() {
 
                 {/* Heat-map toggle — sits above Status because it's a render
                 axis (what gets drawn) not a fetch axis (what gets fetched).
-                Hidden under panelCollapsed alongside the rest of the panel.
                 Off by default per Dani's design compile. */}
                 <AppText variant="heading" style={styles.filterSubLabel}>Layers</AppText>
                 <View style={styles.filterRow}>
@@ -2566,7 +2560,7 @@ export default function MapScreen() {
                         </View>
                       </Pressable>
                       <Pressable
-                        onPress={() => { clearMapSurfaces(); setPresetsModalOpen(true); }}
+                        onPress={() => closeFiltersThenOpen('presets')}
                         style={({ pressed }) => [
                           styles.presetBtn,
                           styles.presetBtnSecondary,
@@ -2581,10 +2575,8 @@ export default function MapScreen() {
                     </View>
                   </>
                 )}
-              </ScrollView>
-            )}
-          </GlassSurface>
-        )}
+              </GestureScrollView>
+        </Sheet>
 
         {/* Jordan Art. 7 disclaimer — the single retained Heat Zone information
             card stays immediately below the command/filter surface so the map
@@ -3707,8 +3699,8 @@ const makeStyles = (color: ColorTheme) =>
     // rail gets so its absolute OverflowFade edge pins to that rail's right edge
     // (not the panel). Redundant on native, required on the web export.
     overflowFadeWrap: { position: 'relative' },
-    // ⋯ tool sheet — a right-aligned inline panel (mirrors the filter panel's
-    // washed row material). Holds the four demoted tools as labelled rows.
+    // ⋯ tool sheet — a right-aligned inline panel using the washed row
+    // material. Holds the four demoted tools as labelled rows.
     toolSheet: {
       alignSelf: 'flex-end',
       marginBottom: spacing.sm,
@@ -3743,47 +3735,13 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
-    filterPanel: {
-      marginTop: spacing.sm,
-      // flexShrink lets the panel give up height inside the absolute-fill overlay
-      // so it can't grow past its siblings and cover the FABs (G5, layer 1).
-      flexShrink: 1,
-      // Frosted-glass surface supplied by <GlassSurface> (translucent + blur with
-      // an AA contrast floor); falls back to a solid fill under Reduce Transparency.
-      // No backgroundColor here — GlassSurface owns the surface.
-      borderRadius: radius.lg,
-      padding: spacing.md,
-      gap: spacing.sm,
-      // No border here — the row variant paints its own hairline edge (a second
-      // border would double it). Shadow light-only (over the engineered/blur
-      // dark panel the dark drop reads as fringing, not lift).
-      ...(color.scheme === 'light' ? shadow.e2 : {}),
-    },
-    // The scrollable region holding the 8 filter sections. flexShrink lets it
-    // shrink within the maxHeight-bounded panel so filterHeaderRow stays pinned
-    // and the sections scroll (G5, layer 2). Content gap replaces the panel gap
-    // the sections lose by moving into the scroll container.
+    // The shared expanded Sheet owns the viewport and safe-area cap; this
+    // scroll region owns all filter sections inside that stable frame.
     filterPanelScroll: {
       flexShrink: 1,
     },
     filterPanelScrollContent: {
       gap: spacing.sm,
-    },
-    filterHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    filterTitle: { fontSize: font.size.base, fontWeight: font.weight.bold, color: color.textStrong },
-    filterTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingVertical: 4,
-      // The header row itself is the tap target; combined with the parent
-      // panel padding this gives a comfortable 44pt area despite the small
-      // visible glyph.
-      minHeight: 32,
     },
     // Bare text link on the washed panel (4.5 floor): light brandTextAlt
     // #0E4499 / dark inkSelect #B4CFFA. Plain brand was 4.25:1 L / failed dark.

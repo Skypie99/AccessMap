@@ -23,7 +23,7 @@ import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle } from '@/components/ui/SheetPull';
 import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
 import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll';
 import { SeverityDisc } from '@/components/SeverityDisc';
@@ -239,6 +239,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const keyboardVisible = useKeyboardVisible();
   const scrollRef = useRef<ScrollView>(null);
+  const pullRef = useRef<SheetPullHandle>(null);
   const descriptionReveal = useFocusedInputScroll(scrollRef, keyboardVisible, spacing.lg);
   // Non-throwing context read — render tests mount without a provider (the
   // M15 family recipe; see MyWatchedModal).
@@ -896,7 +897,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the same thing was correctly inert. S11 escalates-never-aborts, so the
     // insert continues after the close and a re-filled resubmit duplicates it.
     // This removes the asymmetry; it does not invent a new trap.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => void requestClose()} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
+    <Modal
+      visible={visible}
+      animationType={reducedMotion ? 'none' : 'slide'}
+      transparent
+      onRequestClose={() => void requestClose()}
+      onDismiss={() => {
+        pullRef.current?.resetAfterDismiss();
+        onDismiss?.();
+      }}
+      aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}
+    >
       <View style={styles.backdrop}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
@@ -918,6 +929,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             dismissal path. Guarded by !submitting exactly like Cancel: the
             gesture must never be the one door that closes a submitting sheet. */}
         <SheetPull
+          ref={pullRef}
           onDismiss={() => void requestClose()}
           enabled={!submitting && !keyboardVisible}
           atTop={atTop}
