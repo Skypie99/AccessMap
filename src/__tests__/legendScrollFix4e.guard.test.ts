@@ -122,7 +122,9 @@ describe('FIX4F — expanded Legend: SheetPull measures the true visible card he
   const legend = read('screens/LegendModal.tsx');
 
   // The <SheetPull …> opening tag, so its own `style` prop can be inspected.
-  const sheetPullTag = /<SheetPull[\s\S]*?\n\s*>/.exec(legend);
+  // Require whitespace after the component name so the generic
+  // `useRef<SheetPullHandle>` declaration cannot become the source anchor.
+  const sheetPullTag = /<SheetPull\s[\s\S]*?\n\s*>/.exec(legend);
 
   it('finds the SheetPull node at all (a broken anchor would make the checks below vacuous)', () => {
     expect(sheetPullTag).not.toBeNull();

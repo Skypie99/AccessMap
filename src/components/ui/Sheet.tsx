@@ -15,6 +15,7 @@
 
 import React from 'react';
 import {
+  Animated,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -27,11 +28,11 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen } from '@/lib/accessibility';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { GlassSurface } from './GlassSurface';
-import { SheetPull, type SheetPullHandle } from './SheetPull';
+import { SheetPull, type SheetPullHandle, useSheetPullDismissLifecycle } from './SheetPull';
 
 export interface SheetHeaderProps {
   title: string;
@@ -314,8 +315,8 @@ export function Sheet({
   // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
   const pullRef = React.useRef<SheetPullHandle>(null);
+  const { modalAnimationType, backdropOpacity, beginPullDismiss } = useSheetPullDismissLifecycle(visible);
   const expanded = presentation === 'expanded';
   const expandedTopMargin = insets.top + spacing.sm;
   // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
@@ -396,7 +397,7 @@ export function Sheet({
       aria-label={title}
       visible={visible}
       transparent
-      animationType={reducedMotion ? 'none' : 'slide'}
+      animationType={modalAnimationType}
       onRequestClose={onClose}
       onDismiss={() => {
         pullRef.current?.resetAfterDismiss();
@@ -411,8 +412,8 @@ export function Sheet({
           typecheck, satisfy any naive guard, and do absolutely nothing. On a
           View it is real: RCTView.m:447 accessibilityPerformEscape.
           One edit here covers both Sheet consumers. */}
-      <View
-        style={[styles.backdrop, { backgroundColor: color.scrim }]}
+      <Animated.View
+        style={[styles.backdrop, { backgroundColor: color.scrim, opacity: backdropOpacity }]}
         accessibilityViewIsModal
         onAccessibilityEscape={onClose}
         testID={testID}
@@ -430,10 +431,12 @@ export function Sheet({
         <SheetPull
           ref={pullRef}
           onDismiss={onClose}
+          onDismissStart={beginPullDismiss}
           enabled={pullEnabled}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
           style={expanded ? styles.pullExpanded : styles.pull}
+          visible={visible}
         >
           {keyboardAvoiding ? (
             <KeyboardAvoidingView
@@ -446,7 +449,7 @@ export function Sheet({
             card
           )}
         </SheetPull>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }

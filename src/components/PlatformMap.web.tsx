@@ -359,6 +359,12 @@ function ensureCalloutStyles() {
   const el = document.createElement('style');
   el.id = CALLOUT_CSS_ID;
   el.textContent =
+    // The native callout already paints `color.surface` — an opaque, proven
+    // reading surface. Do not let Leaflet's version-dependent popup defaults
+    // turn the web twin into translucent map chrome: the barrier/card reading
+    // layer must own its white floor and dark ink over every tile.
+    '.am-map-callout .leaflet-popup-content-wrapper,.am-map-callout .leaflet-popup-tip{background:#fff!important;color:#222!important;opacity:1}' +
+    '.am-map-callout .leaflet-popup-content-wrapper{border-radius:12px;overflow:hidden}' +
     '.am-callout-btn{background:#1466E0;transition:background-color .12s}' +
     '.am-callout-btn:hover{background:#0F53BE}' +
     '.am-callout-btn:active{background:#0F53BE}' +
@@ -507,6 +513,7 @@ function ClusteredMarkers({
                 stamped onto live popups by the effect in PlatformMap (react-
                 leaflet never diffs popup options after construction). */}
             <Popup
+              className="am-map-callout"
               autoPan={!reducedMotion}
               autoPanPaddingTopLeft={
                 popupInsetTop > 0 ? [POPUP_AUTOPAN_PAD_X, popupInsetTop] : undefined

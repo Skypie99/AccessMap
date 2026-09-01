@@ -178,6 +178,10 @@ describe('S3 source invariants — native callout (PlatformMap.tsx)', () => {
     expect(native).toContain('Reported {relativeTime(f.created_at)}');
     expect(native).toContain('Open details ›');
   });
+
+  it('keeps the native callout on its explicit opaque surface', () => {
+    expect(native).toContain('backgroundColor: color.surface');
+  });
 });
 
 describe('S3 source invariants — web popup (PlatformMap.web.tsx)', () => {
@@ -193,5 +197,12 @@ describe('S3 source invariants — web popup (PlatformMap.web.tsx)', () => {
     expect(web).toContain('Reported {relativeTime(flag.created_at)}');
     expect(web).toContain('onClick={() => onOpenDetails(flag)}');
     expect(web).toContain('Open details');
+  });
+
+  it('pins the web popup to the same opaque reading-card contract', () => {
+    expect(web).toContain('className="am-map-callout"');
+    expect(web).toContain('.am-map-callout .leaflet-popup-content-wrapper');
+    expect(web).toContain('background:#fff!important');
+    expect(web).toContain('color:#222!important');
   });
 });

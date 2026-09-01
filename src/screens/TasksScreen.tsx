@@ -17,6 +17,9 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+// The filter-sheet body needs an RNGH ref so SheetPull can yield to its
+// vertical scroll at Accessibility XXXL.
+import { ScrollView } from 'react-native-gesture-handler';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -78,6 +81,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -259,6 +263,15 @@ export default function TasksScreen() {
   const [searchText, setSearchText] = useState('');
   // D3/C3: the consolidated filter sheet's open state.
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  // The expanded sheet keeps its Close control fixed while the filter body
+  // scrolls at large Dynamic Type. A native RNGH ref preserves body drags
+  // until the content returns to its top, where SheetPull may dismiss.
+  const {
+    atTop: filterSheetAtTop,
+    onScroll: onFilterSheetScroll,
+    scrollEventThrottle: filterSheetScrollEventThrottle,
+  } = useAtTop();
+  const filterSheetScrollRef = useRef<unknown>(null);
   // The ⋯ tool sheet. Holds the controls that are neither the search nor the
   // filters — today "Select multiple", and "Clear filters" while one is active.
   const [toolSheetOpen, setToolSheetOpen] = useState(false);
@@ -1169,45 +1182,66 @@ export default function TasksScreen() {
           grammar (runtime-proven by ChangelogModal) and costs ZERO against the
           blur budget, so Tasks still owns exactly one live pane.
 
-          Every handler, every accessibility prop and every label inside is
-          byte-identical to the rows this replaced. Two things did change, both
-          forced by the new container: the category strip WRAPS instead of
-          scrolling horizontally (which is a gain — all seven categories are
-          visible at once; the strip only ever showed about three), and the chip
-          fills take the shipped SOLID pair, because a translucent glass-chip
-          fill over an opaque card would be a composite nobody has arbitrated. */}
+          Handlers and selected-state semantics remain unchanged. The body now
+          uses the existing expanded Sheet pattern so its background owns the
+          bottom safe area and its controls can scroll at XXXL; the two group
+          headers distinguish the separate All choices. The category strip
+          WRAPS instead of scrolling horizontally (which is a gain — all seven
+          categories are visible at once; the strip only ever showed about
+          three), and the chip fills take the shipped SOLID pair, because a
+          translucent glass-chip fill over an opaque card would be a composite
+          nobody has arbitrated. */}
       <Sheet
         visible={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
         title="Filter &amp; sort"
         glass={false}
+        presentation="expanded"
+        minBottomPad={spacing.xxl}
+        atTop={filterSheetAtTop}
+        scrollRef={filterSheetScrollRef}
+      >
+      <ScrollView
+        ref={(node) => { filterSheetScrollRef.current = node; }}
+        style={styles.filterSheetBody}
+        contentContainerStyle={styles.filterSheetContent}
+        onScroll={onFilterSheetScroll}
+        scrollEventThrottle={filterSheetScrollEventThrottle}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        accessibilityLabel="Filter and sort options"
       >
       {/* Mine-only toggle — shown only when signed in. A chip row that
           switches between "All flags" and "My flags" without opening the
           full filter panel. Resets to All when the tab loses focus? No —
           we keep it until the user taps again; it's a deliberate choice. */}
       {userId && (
-        <View style={styles.mineToggleRow}>
-          <Pressable
-            onPress={() => handleScopeChange(false)}
-            disabled={!mineOnlyHydrated}
-            style={({ pressed }) => [styles.sheetChip, !mineOnly && styles.sheetChipActive, mineOnly && pressed && styles.chipPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Show all flags"
-            {...a11yToggle({ pressed: !mineOnly, disabled: !mineOnlyHydrated })}
-          >
-            <AppText variant="label" style={[styles.sheetChipText, !mineOnly && styles.sheetChipTextActive]}>All</AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => handleScopeChange(true)}
-            disabled={!mineOnlyHydrated}
-            style={({ pressed }) => [styles.sheetChip, mineOnly && styles.sheetChipActive, !mineOnly && pressed && styles.chipPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Mine, show only my flags"
-            {...a11yToggle({ pressed: mineOnly, disabled: !mineOnlyHydrated })}
-          >
-            <AppText variant="label" style={[styles.sheetChipText, mineOnly && styles.sheetChipTextActive]}>Mine</AppText>
-          </Pressable>
+        <View>
+          <AppText variant="label" accessibilityRole="header" style={styles.filterGroupLabel}>
+            Reports
+          </AppText>
+          <View style={styles.mineToggleRow}>
+            <Pressable
+              onPress={() => handleScopeChange(false)}
+              disabled={!mineOnlyHydrated}
+              style={({ pressed }) => [styles.sheetChip, !mineOnly && styles.sheetChipActive, mineOnly && pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Reports, All"
+              {...a11yToggle({ pressed: !mineOnly, disabled: !mineOnlyHydrated })}
+            >
+              <AppText variant="label" style={[styles.sheetChipText, !mineOnly && styles.sheetChipTextActive]}>All</AppText>
+            </Pressable>
+            <Pressable
+              onPress={() => handleScopeChange(true)}
+              disabled={!mineOnlyHydrated}
+              style={({ pressed }) => [styles.sheetChip, mineOnly && styles.sheetChipActive, !mineOnly && pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Reports, Mine, show only my flags"
+              {...a11yToggle({ pressed: mineOnly, disabled: !mineOnlyHydrated })}
+            >
+              <AppText variant="label" style={[styles.sheetChipText, mineOnly && styles.sheetChipTextActive]}>Mine</AppText>
+            </Pressable>
+          </View>
         </View>
       )}
       {/* Category quick-filter — horizontally scrollable chip strip
@@ -1215,35 +1249,40 @@ export default function TasksScreen() {
           strip is stable as flags come and go. Tapping the active chip
           clears it (toggles to All). Session-only — resets with the tab. */}
       {flags.length > 0 && (
-        <View style={styles.categoryWrapRow} accessibilityLabel="Filter by category">
-          <Pressable
-            onPress={() => handleCategoryChange(null)}
-            style={({ pressed }) => [styles.sheetChip, categoryFilter === null && styles.sheetChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Show all categories"
-            {...a11yToggle({ pressed: categoryFilter === null })}
-          >
-            <AppText variant="label" style={[styles.sheetChipText, categoryFilter === null && styles.sheetChipTextActive]}>
-              All
-            </AppText>
-          </Pressable>
-          {CATEGORY_ORDER.map((cat) => {
-            const active = categoryFilter === cat;
-            return (
-              <Pressable
-                key={cat}
-                onPress={() => handleCategoryChange(active ? null : cat)}
-                style={({ pressed }) => [styles.sheetChip, active && styles.sheetChipActive, !active && pressed && styles.chipPressed]}
-                accessibilityRole="button"
-                accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
-                {...a11yToggle({ pressed: active })}
-              >
-                <AppText variant="label" style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
-                  {CATEGORY_LABELS[cat]}
-                </AppText>
-              </Pressable>
-            );
-          })}
+        <View>
+          <AppText variant="label" accessibilityRole="header" style={styles.filterGroupLabel}>
+            Category
+          </AppText>
+          <View style={styles.categoryWrapRow} accessibilityLabel="Filter by category">
+            <Pressable
+              onPress={() => handleCategoryChange(null)}
+              style={({ pressed }) => [styles.sheetChip, categoryFilter === null && styles.sheetChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Category, All"
+              {...a11yToggle({ pressed: categoryFilter === null })}
+            >
+              <AppText variant="label" style={[styles.sheetChipText, categoryFilter === null && styles.sheetChipTextActive]}>
+                All
+              </AppText>
+            </Pressable>
+            {CATEGORY_ORDER.map((cat) => {
+              const active = categoryFilter === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => handleCategoryChange(active ? null : cat)}
+                  style={({ pressed }) => [styles.sheetChip, active && styles.sheetChipActive, !active && pressed && styles.chipPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Category, ${CATEGORY_LABELS[cat]}`}
+                  {...a11yToggle({ pressed: active })}
+                >
+                  <AppText variant="label" style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
+                    {CATEGORY_LABELS[cat]}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       )}
       {/* Sort segmented control — sits below the filter rows so the
@@ -1258,31 +1297,31 @@ export default function TasksScreen() {
           >
             Sort:
           </AppText>
-          {TASKS_SORT_ORDER.map((mode) => {
-            const active = sortMode === mode;
-            return (
-              <Pressable
-                key={mode}
-                onPress={() => handleSortChange(mode)}
-                style={({ pressed }) => [styles.sheetSortChip, active && styles.sheetSortChipActive, !active && pressed && styles.chipPressed]}
-                accessibilityRole="tab"
-                accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
-                {...a11yToggle({ selected: active })}
-              >
-                <AppText
-                  variant="label"
-                  style={[styles.sheetSortChipText, active && styles.sheetSortChipTextActive]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
+          <View style={styles.sortChipWrap}>
+            {TASKS_SORT_ORDER.map((mode) => {
+              const active = sortMode === mode;
+              return (
+                <Pressable
+                  key={mode}
+                  onPress={() => handleSortChange(mode)}
+                  style={({ pressed }) => [styles.sheetSortChip, active && styles.sheetSortChipActive, !active && pressed && styles.chipPressed]}
+                  accessibilityRole="tab"
+                  accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
+                  {...a11yToggle({ selected: active })}
                 >
-                  {TASKS_SORT_LABELS[mode]}
-                </AppText>
-              </Pressable>
-            );
-          })}
+                  <AppText
+                    variant="label"
+                    style={[styles.sheetSortChipText, active && styles.sheetSortChipTextActive]}
+                  >
+                    {TASKS_SORT_LABELS[mode]}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       )}
+      </ScrollView>
       </Sheet>
       {/* The ⋯ tool sheet. The map's tool-sheet RECIPE — a short column of
           icon + label rows, each its own 44pt control — inside this screen's
@@ -2718,9 +2757,23 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     sheetChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
     sheetChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.textStrong, flexShrink: 0 },
     sheetChipTextActive: { color: color.textOnBrand },
+    // The sheet owns the bottom-safe-area background; this viewport owns only
+    // overflowing controls at Accessibility XXXL.
+    filterSheetBody: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
+    filterSheetContent: { paddingBottom: spacing.lg },
+    // These headers distinguish the two otherwise identical visible "All"
+    // values before each button's pressed state is announced.
+    filterGroupLabel: {
+      color: color.textStrong,
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+    },
     sheetSortChip: {
       flexGrow: 1,
       flexBasis: 0,
+      minWidth: 96,
       minHeight: 44,
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
@@ -2812,13 +2865,13 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // the severity row above. The label is a11y-hidden because the chip
     // labels already say "Sort by …".
     sortRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'stretch',
       gap: spacing.xs,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
     },
+    sortChipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
     sortLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.semibold,

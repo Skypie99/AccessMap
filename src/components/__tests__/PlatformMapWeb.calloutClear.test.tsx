@@ -278,6 +278,11 @@ describe('T1 — the Popup carries the measured chrome inset (guard a)', () => {
     renderMap({ reducedMotion: true, chromeInsetTop: 300 });
     expect(rl().recorded.popups[0].autoPan).toBe(false);
   });
+
+  it('uses the explicit opaque reading-card class instead of Leaflet defaults', () => {
+    renderMap({ chromeInsetTop: 300 });
+    expect(rl().recorded.popups[0].className).toBe('am-map-callout');
+  });
 });
 
 describe('T1 — re-measure stamps the LIVE popup instances (react-leaflet never diffs)', () => {

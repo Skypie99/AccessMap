@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
@@ -23,7 +24,7 @@ import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop, type SheetPullHandle } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle, useSheetPullDismissLifecycle } from '@/components/ui/SheetPull';
 import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
 import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll';
 import { SeverityDisc } from '@/components/SeverityDisc';
@@ -80,7 +81,7 @@ import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
 import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
@@ -226,7 +227,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     }
   };
 
-  const reducedMotion = useReducedMotion();
+  const { modalAnimationType, backdropOpacity, beginPullDismiss } = useSheetPullDismissLifecycle(visible);
   // Pull-to-dismiss gating (map-gestures SPEC §2.6). `atTop` is the half of the
   // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
   // ScrollView, never to the dismissal. `keyboardVisible` is the other gate —
@@ -899,7 +900,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // This removes the asymmetry; it does not invent a new trap.
     <Modal
       visible={visible}
-      animationType={reducedMotion ? 'none' : 'slide'}
+      animationType={modalAnimationType}
       transparent
       onRequestClose={() => void requestClose()}
       onDismiss={() => {
@@ -908,7 +909,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       }}
       aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}
     >
-      <View style={styles.backdrop}>
+      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
             uses screen coordinates, so the normal sticky footer and the AX
@@ -931,10 +932,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         <SheetPull
           ref={pullRef}
           onDismiss={() => void requestClose()}
+          onDismissStart={beginPullDismiss}
           enabled={!submitting && !keyboardVisible}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
           style={(axRecompose || keyboardVisible) ? styles.pullExpanded : undefined}
+          visible={visible}
         >
         <GlassSurface
           variant="bulk"
@@ -1845,7 +1848,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         </GlassSurface>
         </SheetPull>
         </KeyboardAvoidingView>
-      </View>
+      </Animated.View>
       {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
       {legal.sheets}
     </Modal>

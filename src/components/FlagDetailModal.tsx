@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
@@ -25,7 +26,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop, type SheetPullHandle } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle, useSheetPullDismissLifecycle } from '@/components/ui/SheetPull';
 import { TYPE_BLOCK, TypeBlock } from '@/components/ui/TypeBlock';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import {
@@ -113,7 +114,6 @@ import {
   decorativeProps,
   isAxRecompose,
   useFocusOnOpen,
-  useReducedMotion,
 } from '@/lib/accessibility';
 
 // 'reopen' = community threshold met, resolved→open. It is its own action
@@ -190,7 +190,7 @@ export default function FlagDetailModal({
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
   const isAdmin = useIsAdmin();
-  const reducedMotion = useReducedMotion();
+  const { modalAnimationType, backdropOpacity, beginPullDismiss } = useSheetPullDismissLifecycle(visible);
   // F4: at 1.5x and up a fixed composition recomposes instead of squeezing —
   // here the segmented control's cells stop sharing a row and become
   // full-width rows. `useWindowDimensions` is the reactive read, so changing
@@ -1436,7 +1436,7 @@ export default function FlagDetailModal({
       <Modal
         aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
         visible={visible}
-        animationType={reducedMotion ? 'none' : 'slide'}
+        animationType={modalAnimationType}
         transparent
         onRequestClose={onClose}
         onDismiss={() => {
@@ -1444,7 +1444,7 @@ export default function FlagDetailModal({
           onDismiss?.();
         }}
       >
-        <View style={styles.backdrop}>
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we
             render the lightbox as a sibling Modal (Android-stable pattern),
@@ -1460,10 +1460,12 @@ export default function FlagDetailModal({
           <SheetPull
             ref={pullRef}
             onDismiss={onClose}
+            onDismissStart={beginPullDismiss}
             enabled={!busy && !keyboardVisible}
             atTop={atTop}
             simultaneousHandlers={bodyScrollRef}
             style={styles.pullExpanded}
+            visible={visible}
           >
           <GlassSurface
             variant="bulk"
@@ -2521,7 +2523,7 @@ export default function FlagDetailModal({
             ) : null}
           </GlassSurface>
           </SheetPull>
-        </View>
+        </Animated.View>
         {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
       {legal.sheets}
       {/* ── EVERY sheet opened FROM this one is mounted INSIDE it ───────────

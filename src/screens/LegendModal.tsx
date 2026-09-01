@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 // RNGH ScrollView, not react-native's: SheetPull's PanGestureHandler passes
 // `simultaneousHandlers={scrollRef}` so the pull-to-dismiss and the body
@@ -25,7 +25,7 @@ import {
 } from '@/lib/flags';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
 import { FLOATING_TAB_BAR_CAPSULE_HEIGHT } from '@/navigation/tabBarGeometry';
 import CategoryIcon from '@/components/CategoryIcon';
 import { SeverityDisc } from '@/components/SeverityDisc';
@@ -33,7 +33,7 @@ import { AppText } from '@/components/ui/AppText';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop, type SheetPullHandle } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle, useSheetPullDismissLifecycle } from '@/components/ui/SheetPull';
 import { Check, X } from 'lucide-react-native';
 
 interface Props {
@@ -58,7 +58,7 @@ interface Props {
 
 export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight }: Props) {
   const color = useColor();
-  const reducedMotion = useReducedMotion();
+  const { modalAnimationType, backdropOpacity, beginPullDismiss } = useSheetPullDismissLifecycle(visible);
   const { fontScale } = useWindowDimensions();
   const styles = makeStyles(color);
   // Read the inset context directly (zero fallback) instead of
@@ -76,7 +76,7 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
   return (
     <Modal
       visible={visible}
-      animationType={reducedMotion ? 'none' : 'slide'}
+      animationType={modalAnimationType}
       transparent
       onRequestClose={onClose}
       onDismiss={() => {
@@ -85,7 +85,7 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
       }}
       aria-label="Map legend"
     >
-      <View style={styles.backdrop}>
+      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
         {/* S9 (L6-21): the scrim is an absolute SIBLING of the card, not its
             ancestor — a screen reader never lands on a giant "Close" button that
             wraps the whole dialog. Hidden from the a11y tree on web; SR users
@@ -106,8 +106,10 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
         <SheetPull
           ref={pullRef}
           onDismiss={onClose}
+          onDismissStart={beginPullDismiss}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
+          visible={visible}
           // FIX4F: the top margin moved here from cardShell (below), onto the
           // node SheetPull itself measures for its dismiss-distance gate. See
           // the cardShell comment for why the old placement made that gate
@@ -369,7 +371,7 @@ export default function LegendModal({ visible, onClose, onDismiss, tabBarHeight 
         </GlassSurface>
         </View>
         </SheetPull>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }

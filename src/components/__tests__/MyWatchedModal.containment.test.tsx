@@ -123,11 +123,12 @@ describe('MyWatchedModal — SR containment (BP17 / T20)', () => {
       path.join(__dirname, '..', 'ui', 'Sheet.tsx'),
       'utf8',
     );
-    // Same TAG, not merely same file: collect every <View …> open tag and
-    // require exactly one of them to carry both props. A file-wide search would
-    // pass if a future edit split them across two nodes, which is the failure
-    // that matters.
-    const viewTags = [...primitive.matchAll(/<View\b[^>]*>/g)].map((m) => m[0]);
+    // Same TAG, not merely same file: collect every containment-capable View
+    // (including Animated.View, whose opacity is the shared pull-dismiss
+    // scrim) and require exactly one to carry both props. A file-wide search
+    // would pass if a future edit split them across two nodes, which is the
+    // failure that matters.
+    const viewTags = [...primitive.matchAll(/<(?:Animated\.)?View\b[^>]*>/g)].map((m) => m[0]);
     const both = viewTags.filter(
       (t) => t.includes('accessibilityViewIsModal') && t.includes('onAccessibilityEscape={onClose}'),
     );
