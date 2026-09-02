@@ -1,7 +1,7 @@
 // Flagstone Service Worker — offline support
 // Strategies: CacheFirst for tiles, NetworkFirst for Supabase API + navigations, StaleWhileRevalidate for hashed app shell
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = 'accessmap-' + CACHE_VERSION;
 const TILE_CACHE = 'accessmap-tiles-' + CACHE_VERSION;
 
@@ -63,20 +63,19 @@ self.addEventListener('fetch', (event) => {
   // Tiles rarely change; serve from cache immediately when available.
   // Falls back to network on a cache miss, then stores the response.
   //
-  // PL-5 (security audit 2026-07-31): this rule used to match
-  // `tile.openstreetmap.org`, which the app stopped using when it moved to
-  // CARTO basemaps. The consequences were not cosmetic: TILE_CACHE was dead
-  // code, and every map tile instead fell through to the app-shell
-  // StaleWhileRevalidate branch below — landing in the SAME cache as Supabase
-  // API responses, with no size bound. Panning the map grew that cache without
-  // limit, which is most of why the cache PL-2 now purges on sign-out was
-  // large in the first place.
+  // This rule follows the approved OpenFreeMap browser basemap. Bumping the
+  // cache version discards old CARTO imagery rather than retaining the
+  // provider's API-key watermark in an existing browser cache.
   //
-  // Host tests are exact/suffix matches, not substring: `.includes('supabase.co')`
-  // also matches `https://evil-supabase.co.attacker.test/`. Same reason the
-  // `/tiles/` path test is gone — it gave cache-first, never-revalidate
-  // treatment to any URL containing that segment, on any origin.
-  const isTile = url.hostname.endsWith('.basemaps.cartocdn.com');
+  // Vector style, sprite, font, and tile requests all use this documented host.
+  // CacheFirst preserves the existing offline web behavior; the requests carry
+  // only normal browser/network metadata and viewport-derived map geography.
+  // They do not include app identity, report data, or authentication tokens.
+  //
+  // Host tests are exact, not substring matches. A loose match could route an
+  // attacker-controlled host into the trusted cache.
+  //
+  const isTile = url.hostname === 'tiles.openfreemap.org';
 
   if (isTile) {
     event.respondWith(

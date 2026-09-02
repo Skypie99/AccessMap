@@ -7,10 +7,9 @@
  * talks to is asserted against the source that uses it, so if someone swaps the
  * tile provider or adds an API host, this fails instead of the live site.
  *
- * Phase A's own draft would have broken three things: it listed the OSM tile
- * host (the app migrated to CARTO), omitted CARTO from connect-src (tiles are
- * fetch()ed, not just <img>-ed), and omitted the wss:// origin that Supabase
- * Realtime needs. Those three are asserted explicitly below.
+ * The OpenFreeMap vector basemap requests styles, sprites, fonts, and tiles
+ * from one host. It must be admitted to both image and connection policies;
+ * Supabase Realtime still requires its websocket origin as well.
  */
 
 import fs from 'fs';
@@ -52,13 +51,11 @@ describe('PL-1 — the headers exist at all', () => {
 });
 
 describe('PL-1 — the CSP admits every origin the app really uses', () => {
-  it('allows the CARTO basemap host in BOTH img-src and connect-src', () => {
-    // connect-src is the one Phase A missed. PlatformMap.web fetch()es each
-    // tile to build the offline data-URI cache; without this the cache dies
-    // silently while tiles still render via the <img> fallback.
-    const carto = 'https://*.basemaps.cartocdn.com';
-    expect(csp).toMatch(new RegExp(`img-src[^;]*\\${carto.replace('*', '\\*')}`));
-    expect(csp).toMatch(new RegExp(`connect-src[^;]*\\${carto.replace('*', '\\*')}`));
+  it('allows the OpenFreeMap host in BOTH img-src and connect-src', () => {
+    const openFreeMap = 'https://tiles.openfreemap.org';
+    expect(csp).toMatch(new RegExp(`img-src[^;]*${openFreeMap}`));
+    expect(csp).toMatch(new RegExp(`connect-src[^;]*${openFreeMap}`));
+    expect(csp).not.toContain('cartocdn.com');
   });
 
   it('does NOT list the OpenStreetMap tile host the app no longer uses', () => {
