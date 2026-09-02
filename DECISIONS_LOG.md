@@ -4,6 +4,21 @@ Structural decisions, append-only. New entries at the top. Do NOT re-litigate en
 
 ---
 
+## 2026-09-01 — Web Demo Deploys From Frozen Build 33 Release Branch [WEB-DEPLOY-BUILD33-SPLIT]
+The public Flagstone web demo (`flagstone.skypistudio.com`) is intentionally served from the FROZEN release branch `release/web-4.1.1-build33-openfreemap` @ `ebf091c21066d39898160b1357bde0aa35bdb8bf` (tree `6cb842e3be0f4c3bfec569307829ad240d3f270a`). This is the exact submitted Build 33 application source `f5594171e75bc5ec92a87d0392c361601ddedfba` (v4.1.1, iOS build 33, tree `a4a5e70c1a413d39e457f5254af1bba91f08d7ed`) plus the accepted OpenFreeMap web-basemap repair; APP → WEB ancestry passes.
+
+Before this release, Vercel Production Branch was `main` at `a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50`, whose public demo still served CARTO with the `API KEY REQUIRED` watermark. Vercel Production Branch is now `release/web-4.1.1-build33-openfreemap`. The existing exact-SHA Preview deployment was promoted using Vercel's supported Promote to Production action, producing Production deployment `HMszH26wADRRDd1CqH4UkJ8kAugQ` at exact WEB_SHA. Custom domain settings, environment variables, domain settings, and build settings were not changed.
+
+Recruiter-path acceptance completed PASS WITH NOTES: portfolio → Flagstone case study → `LIVE MAP ↗` → public demo works; the CARTO/API-key failure is gone; OpenFreeMap is serving; Build 33-era UI is present; 13 real flags load; pan, wheel zoom, +/- zoom, marker popup, details, Nearby/Recent list, light mode, and dark mode all passed; no blocking recruiter-facing issue was found. Hard reload, repeat portfolio-path reload, and responsive checks were intentionally left unverified after the critical acceptance gates passed. Non-blocking polish observations are recorded in `qa-reports/2026-09-01_Build33_WebDeploymentDecision.md`.
+
+Canonical `main` release-code integration remains DEFERRED — SEPARATE RELEASE DECISION. This documentation-only commit does not constitute release-code convergence.
+
+This decision does NOT authorize main release-code integration · does NOT apply database migrations · does NOT deploy edge functions · does NOT alter the submitted iOS binary.
+
+EXIT CONDITION — retire this temporary main↔web split only when: (1) main is deliberately audited/approved to converge to the shipped release lineage; (2) main contains the accepted web source or an approved successor; (3) Vercel Production Branch is returned to `main`; (4) the live demo is re-verified; and (5) this production-branch exception is explicitly retired.
+
+Receipt: `qa-reports/2026-09-01_Build33_WebDeploymentDecision.md`. — 2026-09-01
+
 ## 2026-06-20 — Editorial Visual Transformation (Phases 7a–13) Merged + Pushed Live [EDITORIAL-OVERHAUL-LIVE]
 The full editorial visual transformation is COMPLETE + LIVE on `origin/main` **`45bca1a`** (each batch Sky-authorized, Rory `--no-ff` merge + Sky-said-"push"). AccessMap's identity flipped from dark-navy-chrome to **fully light editorial in light mode** (light headers + light frosted tab bar + light content + glass) / cohesively dark in dark mode. Phases: 7a editorial Home + 3-tab nav (full map → hidden `FullMap` route; Settings/Admin → drawer) + 4 HomeScreen defect fixes (fake-SF distances, masked nav bugs, missing states) + working search; 7b `ScreenHeader` extraction + editorial type (Profile/Leaderboard/Onboarding/FlagCard-modals/splash); 7c Tasks card polish; 8 light header chrome; 9 Profile light hero; 10 map glass chrome; 11 press feel + Leaderboard editorial + bigger titles; 12 light frosted tab bar; 13 full Tasks overhaul. Every phase: typecheck 0 · lint 0 errors · **1722 tests** · **FENCE INTACT** (zero data/auth/EXIF/RLS/RPC/points-trigger changes — presentation/nav/theme only). Per-merge rollback tags `backup/pre-phase<N>-merge-2026-06-*`. — 2026-06-20
 
