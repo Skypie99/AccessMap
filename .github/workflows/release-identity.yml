@@ -1,0 +1,85 @@
+name: Release Identity
+
+# Control-plane guard for the Flagstone release manifest (release/current.json).
+# See docs/RELEASE_IDENTITY.md.
+#
+# NETWORK-FREE BY DEFAULT: this job never calls production and never runs
+# `release:web:verify-live`. It proves the control plane is internally
+# consistent against real Git objects: SHAs exist, trees match, EAS source ==
+# intended source, web base == app source, descendant ancestry, overlay
+# metadata, deployment SHA consistency, generated CURRENT_RELEASE.md freshness.
+#
+# HISTORY DEPTH: ancestry checks need full history and the frozen release
+# branches. `fetch-depth: 0` fetches every branch; the verifier also refuses to
+# run on a shallow clone, so a shallow checkout can never create a false PASS.
+#
+# The release scripts use Node built-ins only, so no `npm ci` is needed here.
+# The focused Jest suite for these tools (scripts/__tests__/) runs in the
+# regular CI test job with the rest of the suite.
+
+on:
+  pull_request:
+    paths:
+      - 'release/**'
+      - 'docs/RELEASE_IDENTITY.md'
+      - 'qa-reports/CURRENT_RELEASE.md'
+      - 'qa-reports/releases/**'
+      - 'scripts/release-*.mjs'
+      - 'scripts/render-current-release.mjs'
+      - 'scripts/verify-release-state.mjs'
+      - 'scripts/verify-live-release.mjs'
+      - 'scripts/__tests__/**'
+      - 'package.json'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - '.github/workflows/release-identity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'release/**'
+      - 'docs/RELEASE_IDENTITY.md'
+      - 'qa-reports/CURRENT_RELEASE.md'
+      - 'qa-reports/releases/**'
+      - 'scripts/release-*.mjs'
+      - 'scripts/render-current-release.mjs'
+      - 'scripts/verify-release-state.mjs'
+      - 'scripts/verify-live-release.mjs'
+      - 'scripts/__tests__/**'
+      - 'package.json'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - '.github/workflows/release-identity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Release identity (control plane, no network)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history for every branch: ancestry + object checks are real.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Ensure frozen release refs and full history are present
+        run: |
+          git fetch --no-tags --prune origin '+refs/heads/release/*:refs/remotes/origin/release/*'
+          if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+            echo "::error::Shallow clone — the release verifier cannot prove ancestry. Use fetch-depth: 0."
+            exit 1
+          fi
+
+      - name: Release preflight (read-only)
+        run: npm run release:preflight
+
+      - name: Verify release control plane
+        run: npm run release:verify
+
+      - name: Release status
+        run: npm run release:status

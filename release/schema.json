@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Skypie99/AccessMap/release/schema.json",
+  "title": "Flagstone release control-plane manifest (schema v2)",
+  "description": "Reference shape for release/current.json. The enforced validator is validateManifestShape() in scripts/release-lib.mjs (kept in sync by hand; no schema library dependency). UNPROVEN is a first-class value for historically unknown facts and is never reported as PASS.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "product", "governance", "app", "web", "releaseTag", "lastVerified"],
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "shaOrUnproven": { "oneOf": [{ "$ref": "#/$defs/sha" }, { "const": "UNPROVEN" }] },
+    "timestamp": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,3})?)?(Z|[+-]\\d{2}:\\d{2}))?$" },
+    "timestampOrUnproven": { "oneOf": [{ "$ref": "#/$defs/timestamp" }, { "const": "UNPROVEN" }] }
+  },
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "product": { "type": "string", "minLength": 1 },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseCommit", "releaseCodeIntegration"],
+      "properties": {
+        "baseCommit": { "$ref": "#/$defs/sha", "description": "Known prior governance base (the origin/main SHA this control plane was established on). Not the release source." },
+        "releaseCodeIntegration": { "enum": ["deferred", "converged"] }
+      }
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "iosBuild", "sourceCommit", "sourceTree", "originMainAtBuild", "eas", "appStore"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "iosBuild": { "type": "integer", "minimum": 1, "description": "From EAS build details / verified release evidence. With appVersionSource=remote the local app.json buildNumber is diagnostic only." },
+        "sourceCommit": { "$ref": "#/$defs/sha" },
+        "sourceTree": { "$ref": "#/$defs/sha" },
+        "originMainAtBuild": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha" }], "description": "origin/main at the instant the EAS build started. null unless proven." },
+        "eas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["versionSource", "buildId", "sourceCommit", "profile", "status", "createdAt"],
+          "properties": {
+            "versionSource": { "enum": ["remote", "local"] },
+            "buildId": { "type": ["string", "null"], "minLength": 1 },
+            "sourceCommit": { "$ref": "#/$defs/sha", "description": "Must equal app.sourceCommit. An unproven EAS source is a release-identity failure." },
+            "profile": { "type": ["string", "null"], "minLength": 1 },
+            "status": { "type": "string", "minLength": 1, "description": "Proven EAS status, or UNPROVEN." },
+            "createdAt": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/timestamp" }] }
+          }
+        },
+        "appStore": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "submittedAt"],
+          "properties": {
+            "status": { "enum": ["not_submitted", "submitted_for_review", "in_review", "approved", "released", "rejected", "UNPROVEN"] },
+            "submittedAt": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/timestamp" }] }
+          }
+        }
+      }
+    },
+    "web": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["syncMode", "baseReleaseCommit", "sourceCommit", "sourceTree", "overlay", "deployment"],
+      "properties": {
+        "syncMode": { "enum": ["exact", "web-only-descendant"] },
+        "baseReleaseCommit": { "$ref": "#/$defs/sha", "description": "Must equal app.sourceCommit." },
+        "sourceCommit": { "$ref": "#/$defs/sha" },
+        "sourceTree": { "$ref": "#/$defs/sha" },
+        "overlay": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["baseCommit", "headCommit", "reason", "approved", "receipt"],
+              "properties": {
+                "baseCommit": { "$ref": "#/$defs/sha" },
+                "headCommit": { "$ref": "#/$defs/sha" },
+                "reason": { "type": "string", "minLength": 1 },
+                "approved": { "const": true },
+                "receipt": { "type": "string", "minLength": 1 }
+              }
+            }
+          ],
+          "description": "Required (non-null) in web-only-descendant mode; must be null in exact mode."
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "project", "team", "productionBranch", "deploymentId", "deployedCommit", "domains", "liveIdentityMode", "verifiedAt", "receipt"],
+          "properties": {
+            "provider": { "type": "string", "minLength": 1 },
+            "project": { "type": "string", "minLength": 1 },
+            "team": { "type": "string", "minLength": 1 },
+            "productionBranch": { "type": "string", "minLength": 1, "description": "Host's configured production branch, or UNPROVEN. Branch Tracking never proves the serving deployment." },
+            "deploymentId": { "type": "string", "minLength": 1 },
+            "deployedCommit": { "$ref": "#/$defs/shaOrUnproven", "description": "SHA actually serving production, or UNPROVEN. Must equal web.sourceCommit when proven." },
+            "domains": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "liveIdentityMode": { "enum": ["legacy-triangulated", "release-meta"] },
+            "verifiedAt": { "$ref": "#/$defs/timestampOrUnproven" },
+            "receipt": { "type": ["string", "null"], "minLength": 1 }
+          }
+        }
+      }
+    },
+    "releaseTag": { "type": ["string", "null"], "minLength": 1 },
+    "lastVerified": { "$ref": "#/$defs/timestamp", "description": "Stamped by release:finalize when the manifest is written after validation." }
+  }
+}

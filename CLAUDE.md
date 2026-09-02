@@ -7,6 +7,34 @@ A crowdsourced accessibility-flagging mobile app. Users drop pins at locations w
 **Live local path:** `~/AccessMap`
 **Owner:** skylerhalisky@gmail.com
 
+## Release source rule (HIGH PRIORITY — read before any release work)
+
+Before any **EAS build, App Store task, release work, production web deployment, web-demo
+repair meant to match the current app, or main/release convergence task**, read
+`release/current.json` (the one machine-readable release control plane) and
+`docs/RELEASE_IDENTITY.md`. Then:
+
+- Never infer release source from branch/worktree recency, `main`, the newest commit, or
+  "the branch that looks right". The manifest names the exact SHAs and trees.
+- Run `npm run release:preflight` first: it prints the real Git identity of the checkout.
+  A dirty tracked tree is not a build source.
+- `eas.json` uses `appVersionSource: "remote"`: `app.json` `ios.buildNumber` is
+  diagnostic only. The build number comes from EAS build details / verified evidence.
+- The EAS-built source SHA must equal the intended app source SHA (`release:finalize`
+  hard gate). `npm run release:verify` must pass before and after any control-plane change.
+- Web defaults to the app source (`exact`). Web-only divergence requires an approved
+  `web-only-descendant` overlay recorded in the manifest with a receipt.
+- Vercel Branch Tracking never proves the serving deployment: verify the serving deployment
+  ID, its SHA, and every production domain independently.
+- Never repair the current web UX from stale `main`.
+- Source identity PASS and recruiter/product acceptance are separate gates.
+- Sky retains final authority for `main` merge/push, tag push, production deployment, and
+  EAS / App Store submission.
+
+If the required identity is unavailable: `RELEASE SOURCE IDENTITY: UNPROVEN` — STOP.
+Production is intentionally served from the frozen Build 33 web branch; `main`
+release-code convergence is DEFERRED (separate release decision), not a problem to fix.
+
 ---
 
 ## Stack

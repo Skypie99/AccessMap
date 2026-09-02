@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 2,
+  "product": "Flagstone",
+  "governance": {
+    "baseCommit": "c4626479f6344011530396602422c746f4bb4cc9",
+    "releaseCodeIntegration": "deferred"
+  },
+  "app": {
+    "version": "4.1.1",
+    "iosBuild": 33,
+    "sourceCommit": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+    "sourceTree": "a4a5e70c1a413d39e457f5254af1bba91f08d7ed",
+    "originMainAtBuild": null,
+    "eas": {
+      "versionSource": "remote",
+      "buildId": null,
+      "sourceCommit": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+      "profile": null,
+      "status": "UNPROVEN",
+      "createdAt": null
+    },
+    "appStore": {
+      "status": "submitted_for_review",
+      "submittedAt": null
+    }
+  },
+  "web": {
+    "syncMode": "web-only-descendant",
+    "baseReleaseCommit": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+    "sourceCommit": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+    "sourceTree": "6cb842e3be0f4c3bfec569307829ad240d3f270a",
+    "overlay": {
+      "baseCommit": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+      "headCommit": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+      "reason": "Accepted OpenFreeMap web basemap repair for the Build 33 demo",
+      "approved": true,
+      "receipt": "qa-reports/2026-09-01_Build33_WebDeploymentDecision.md"
+    },
+    "deployment": {
+      "provider": "vercel",
+      "project": "access-map",
+      "team": "skypie99s-projects",
+      "productionBranch": "release/web-4.1.1-build33-openfreemap",
+      "deploymentId": "HMszH26wADRRDd1CqH4UkJ8kAugQ",
+      "deployedCommit": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+      "domains": [
+        "flagstone.skypistudio.com",
+        "accessmap.skypistudio.com"
+      ],
+      "liveIdentityMode": "legacy-triangulated",
+      "verifiedAt": "2026-09-02",
+      "receipt": "qa-reports/2026-09-01_Build33_WebDeploymentDecision.md"
+    }
+  },
+  "releaseTag": null,
+  "lastVerified": "2026-09-02T06:15:01Z"
+}
