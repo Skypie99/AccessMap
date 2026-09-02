@@ -139,8 +139,11 @@ hand to get around that.
   BUILD NUMBER AUTHORITATIVE: NO`.
 - `release:finalize` requires `--build` (or an evidence file's `appBuildVersion`) and fails with
   `BUILD NUMBER UNPROVEN` rather than reading `app.json`.
-- `docs/RELEASE_PLAYBOOK.md` still describes `autoIncrement` bumping `app.json` — that is the
-  local-source behaviour and is stale under remote sourcing. Trust this document and EAS.
+- EAS remote version state is authoritative for the iOS build number: `autoIncrement: true`
+  advances that remote value, and the local `app.json` `ios.buildNumber` is non-authoritative
+  under remote mode. The operational runbook `docs/RELEASE_PLAYBOOK.md` (§1c, §7) reflects this
+  correctly, including `eas build:version:get` / `build:version:set` for inspecting or
+  resynchronizing the remote value.
 
 ## 8. Release finalization
 

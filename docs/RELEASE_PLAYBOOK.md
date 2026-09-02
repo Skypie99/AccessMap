@@ -149,23 +149,32 @@ git rm -r --cached ios/ android/
 git commit -m "chore: remove native dirs from git (CNG mode)"
 ```
 
-### 1e. EAS secrets must be set
+### 1e. EAS environment variables must be set (production environment)
 
-EAS injects these into the build environment. Without them, the app builds but crashes immediately on launch (Supabase fails silently).
+The `testflight` profile has `environment: "production"`, so EAS injects the variables of the EAS **production** environment into the build. Two must exist there. Without them the app builds but crashes immediately on launch (Supabase fails silently).
+
+Both are client-exposed `EXPO_PUBLIC_*` values: they ship inside the app bundle and are configuration, not private secrets. The anon key is public by design; Supabase Row Level Security is the security boundary. Never put a private value (for example a Supabase secret / service-role key) in an `EXPO_PUBLIC_*` variable.
 
 ```bash
-eas secret:list
+eas env:list --environment production
 ```
 
 You must see:
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
-If either is missing, set it:
+If either is missing, create it in the production environment. Take the values from the Supabase dashboard; never paste them into this repository:
 ```bash
-eas secret:set EXPO_PUBLIC_SUPABASE_URL --value "https://yourproject.supabase.co"
-eas secret:set EXPO_PUBLIC_SUPABASE_ANON_KEY --value "eyJ..."
+eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value "https://<project-ref>.supabase.co" --visibility plaintext
+eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "<anon key from the Supabase dashboard>" --visibility plaintext
 ```
+
+To change an existing value:
+```bash
+eas env:update --environment production --variable-name EXPO_PUBLIC_SUPABASE_URL --value "<new value>"
+```
+
+The legacy `eas secret:*` commands are superseded by `eas env:*`. There is no `eas env:set` in the installed EAS CLI; `env:create` and `env:update` are the supported forms (check `eas env:create --help` after upgrading the CLI).
 
 ### 1f. TypeScript must pass
 
@@ -392,7 +401,7 @@ When you want to build a new TestFlight that includes additional feature branche
 - Check `babel-preset-expo` version in `package.json` — it must stay `~54.0.10` until an SDK upgrade.
 
 **App crashes immediately after install:**
-1. Run `eas secret:list` — confirm `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` are present.
+1. Run `eas env:list --environment production` — confirm `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` exist in the production environment (the one the `testflight` profile uses; see §1e).
 2. Check if a new native module was added to `package.json` but not registered in `app.json plugins`.
 3. Check if Sentry was partially re-added without a valid DSN.
 
@@ -427,5 +436,5 @@ These are not code changes. They need to happen periodically because they're con
 | Accept Apple Developer agreement | Apple releases updates roughly annually; also required before any new submission | Log in to appstoreconnect.apple.com — yellow banner appears if needed |
 | Rotate EAS distribution certificate | ~May 2027 (1 year after creation) | Run `eas credentials --platform ios` and generate a new cert |
 | Rotate app-specific password | If the current one is revoked | [appleid.apple.com](https://appleid.apple.com) → App-Specific Passwords → Create new → update GitHub Secret `EXPO_APPLE_PASSWORD` |
-| Update EAS Supabase secrets | If Supabase URL or anon key ever changes | `eas secret:set EXPO_PUBLIC_SUPABASE_URL --value "..."` and same for anon key |
+| Update EAS Supabase environment variables (production) | If the Supabase URL or anon key ever changes | `eas env:update --environment production --variable-name EXPO_PUBLIC_SUPABASE_URL --value "..."` and the same for `EXPO_PUBLIC_SUPABASE_ANON_KEY` (client-exposed values, not private secrets; see §1e) |
 | Seed reviewer test account | Once, before App Store submission (not needed for TestFlight) | Run `supabase/migrations/2026-05-31_reviewer_test_account.sql` in the Supabase SQL Editor |
