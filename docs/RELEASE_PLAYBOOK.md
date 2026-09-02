@@ -1,15 +1,28 @@
 # Flagstone — TestFlight Release Playbook
 
-**Last updated:** 2026-05-31
-**Purpose:** The single authoritative guide for building and submitting Flagstone to TestFlight. Follow this every time. Do not consult `EAS_SETUP.md` or the old `RELEASE_RUNBOOK.md` for build/submit steps — they predate several critical fixes and are partially incorrect.
+**Last updated:** 2026-09-02 (reconciled with the Release Source Lock; build/submit mechanics unchanged since 2026-05-31)
+**Purpose:** The operational runbook for building and submitting Flagstone to TestFlight. Follow it every time. It tells you HOW to build and submit — it is not the authority on WHICH source is the release. That hierarchy is:
+
+| Authority | File | Answers |
+|---|---|---|
+| Machine authority for current release identity | `release/current.json` | Which exact commits/trees/build are the current app and web release |
+| Human authority for release-source identity and governance | `docs/RELEASE_IDENTITY.md` | How identity is proven, the app ↔ web rules, the deploy/receipt runbook |
+| Operational TestFlight build/submission runbook | `docs/RELEASE_PLAYBOOK.md` (this file) | The EAS commands, their pre-conditions, and how to fix them when they break |
+
+Before any release-sensitive operation (an EAS build, a submission, a production web deploy) run the release identity gates in §0. Do not consult `EAS_SETUP.md` or the old `RELEASE_RUNBOOK.md` for build/submit steps — they predate several critical fixes and are partially incorrect.
 
 For a full history of every build failure and how it was resolved, see `docs/MASTER_FIX_LOG.md`.
 
 ---
 
-## Quick Reference (The Two Commands)
+## Quick Reference (Gates, Then Two Commands)
 
 ```bash
+# 0. Release identity gates — read-only, all three must PASS (see §0)
+npm run release:preflight -- --build-sensitive
+npm run release:verify
+npm run release:status
+
 # 1. Build (takes ~25 min on EAS cloud)
 eas build --platform ios --profile testflight --non-interactive
 
@@ -17,13 +30,30 @@ eas build --platform ios --profile testflight --non-interactive
 eas submit --platform ios --profile production --latest
 ```
 
-That's it. The rest of this document explains the pre-conditions, what these commands do, and how to fix things when they break.
+After the build, record what was actually built in the control plane with `npm run release:finalize` (`docs/RELEASE_IDENTITY.md` §8). The rest of this document explains the pre-conditions, what these commands do, and how to fix things when they break.
+
+---
+
+## 0. Release Identity Gates (run before every build)
+
+This playbook tells you how to build. `release/current.json` and `docs/RELEASE_IDENTITY.md` tell you which source IS the release and how that is proven. Never infer the release source from the branch or worktree you happen to be in.
+
+```bash
+npm run release:preflight -- --build-sensitive   # real Git identity of THIS checkout; a dirty tracked tree is a FAIL
+npm run release:verify                            # control plane vs real Git objects; exits non-zero on any contradiction
+npm run release:status                            # one screen: current app, web, live, and main convergence state
+```
+
+- All three must PASS. On any FAIL, or `RELEASE SOURCE IDENTITY: UNPROVEN`: STOP and resolve the identity problem first. Do not build.
+- Preflight prints `EAS VERSION SOURCE: REMOTE` and `LOCAL BUILD NUMBER AUTHORITATIVE: NO`. §1c explains what that means for the build number.
+- The checkout you run `eas build` from is the build source that EAS uploads. Preflight's `HEAD` is therefore the SHA you will later have to prove.
+- Full policy (exact vs web-only-descendant modes, the demo update gate, Vercel rules, the happy path): `docs/RELEASE_IDENTITY.md`. This file deliberately does not repeat it.
 
 ---
 
 ## 1. Pre-Build Checklist
 
-Everything below must be true before you run `eas build`. Most of these are already wired in permanently — you just need to verify they haven't drifted.
+Everything below must be true before you run `eas build`, and the §0 gates must PASS. Most of these are already wired in permanently — you just need to verify they haven't drifted.
 
 ### 1a. `eas.json` — `testflight` profile
 
@@ -33,6 +63,7 @@ The `testflight` build profile must look exactly like this:
 "testflight": {
   "distribution": "store",
   "autoIncrement": true,
+  "environment": "production",
   "ios": {
     "buildConfiguration": "Release",
     "simulator": false
@@ -46,7 +77,8 @@ The `testflight` build profile must look exactly like this:
 
 Key settings:
 - **`distribution: "store"`** — creates an App Store-signed IPA. The `preview` profile uses `"internal"` (ad-hoc), which Apple rejects at submission. This is the most common submission failure if profiles get confused.
-- **`autoIncrement: true`** — EAS automatically bumps `ios.buildNumber` in `app.json` before each build. You do not need to do this manually under normal circumstances.
+- **`autoIncrement: true`** — advances the iOS build number that EAS stores remotely (`cli.appVersionSource` is `"remote"`; see §1c). It does not edit `app.json` and nothing is committed to this repository. You never bump the build number by hand under normal circumstances.
+- **`environment: "production"`** — selects the EAS `production` environment for the build's environment variables.
 - **`buildConfiguration: "Release"`** — required for App Store submission; omitting this produces a debug IPA.
 - **`SENTRY_DISABLE_AUTO_UPLOAD: "true"`** — Sentry is currently removed from the codebase; this env var is a safety guard in case it ever gets partially re-added.
 
@@ -77,14 +109,26 @@ All three are set and permanent:
 "ios": {
   "bundleIdentifier": "com.accessmap.app",
   "appleTeamId": "S78F8ZA8QU",
-  "buildNumber": "15",   ← auto-managed by EAS; do not edit manually except to fix Apple conflicts
+  "buildNumber": "15",   ← NOT the submitted build number (see below); leave it alone
   "infoPlist": { ... }
 }
 ```
 
 Also verify at the top level:
-- `"version": "0.2.0"` — the user-visible version string shown in App Store Connect
+- `"version"` — the user-visible version string shown in App Store Connect. It comes from the current app configuration (`app.json` `expo.version`; `package.json` `version` should match). Do not copy a number from this playbook: read the live value with `npm run release:preflight` (`App version`) and compare it with the canonical current release in `release/current.json` via `npm run release:status`. A version bump for a new release is a deliberate commit on the release source, made before the build.
 - `"newArchEnabled": false` — React Native new architecture is **off**; do not enable without testing
+
+**Build number: remote, not `app.json`.** `eas.json` sets `cli.appVersionSource = "remote"`, which means:
+
+- EAS stores and manages the iOS build number on its servers. `autoIncrement: true` advances that remote value when a build starts.
+- The local `app.json` `ios.buildNumber` is non-authoritative while the version source is remote. It is a diagnostic leftover (it says `15`; Build 33 shipped). Do not "fix" it and do not edit it to influence a build.
+- The build number a submission actually carries must be read from EAS Build evidence — the build's page on expo.dev or `eas build:view --json` — and recorded through the release identity workflow (`npm run release:finalize -- --build <n> …`, `docs/RELEASE_IDENTITY.md` §8). Never infer it from `app.json`.
+- Inspect the current remote value at any time:
+  ```bash
+  eas build:version:get -p ios
+  ```
+  Add `-e testflight` to select the build profile you build with (`-e` defaults to `production`; both profiles build the same bundle ID).
+- If the remote value ever has to be resynchronized (for example after an Apple build-number conflict), use `eas build:version:set -p ios` as described in §7 — not a manual `app.json` edit.
 
 ### 1d. CNG mode — `ios/` and `android/` must be gitignored
 
@@ -152,14 +196,16 @@ eas build --platform ios --profile testflight --non-interactive
 ```
 
 **What this does:**
-1. Uploads your local source code to EAS cloud servers
+1. Uploads the source code of your current checkout to EAS cloud servers — this checkout is the build source, which is why the §0 gates must pass first
 2. Runs `npm ci` (clean install — same as CI)
 3. Runs `expo prebuild` to generate a fresh `ios/` directory from `app.json`
 4. Compiles the iOS app in Release configuration with your Apple distribution certificate
-5. Auto-increments `ios.buildNumber` in `app.json` and commits that change
+5. Assigns the build number from EAS's remote version store (`cli.appVersionSource = "remote"`; `autoIncrement: true` advances it before the build). Nothing in this repository changes: `app.json` is not edited and no commit is created
 6. Produces a signed `.ipa` file stored in EAS (not on your machine)
 
 **Duration:** ~25 minutes.
+
+**Record what was built:** the build's Git commit SHA and its build number are on the build's expo.dev page (or `eas build:view --json`). They are the evidence `npm run release:finalize` needs; its hard gate refuses to record a build whose EAS commit differs from the intended source SHA (`docs/RELEASE_IDENTITY.md` §8).
 
 **Monitoring the build:**
 - Watch in your terminal (it streams logs)
@@ -217,13 +263,13 @@ These are all permanently fixed in `main`. You should not need to redo any of th
 
 **Current state:** `/ios` is in `.gitignore`. EAS generates a clean `AppDelegate.swift` on every build. The committed native project problem can never recur as long as `ios/` stays out of git.
 
-### Build number conflict → `autoIncrement` + manual bump to 14
+### Build number conflict → remote version source + `autoIncrement`
 
 **Problem:** Apple rejected a build because the build number had already been used in a previous submission. Each submission to App Store Connect requires a strictly incrementing build number.
 
-**Fix:** `autoIncrement: true` in `eas.json` means EAS automatically increments `ios.buildNumber` before each build. When a conflict occurred (Apple already had that build number), the build number was manually bumped to 14 in commit `553574b` to clear the conflict.
+**Fix (at the time):** `autoIncrement: true` was enabled in `eas.json`, and when a conflict occurred the build number was manually bumped to 14 in commit `553574b`. That manual edit only worked because the version source was local then.
 
-**Current state:** `autoIncrement: true` handles future builds. Only manually edit `buildNumber` in `app.json` if Apple returns an error saying that build number is already used — bump it past the conflicting number.
+**Current state:** `eas.json` sets `cli.appVersionSource = "remote"`. EAS now stores the iOS build number on its servers and `autoIncrement: true` advances that remote value; `app.json`'s `buildNumber` is not consulted by builds at all (it still says `15`; Build 33 shipped). If Apple ever reports a conflict again, resynchronize the remote value with the EAS version tooling described in §7 — do not edit `app.json`.
 
 ### Provisioning profile → generated via `eas credentials`
 
@@ -252,6 +298,8 @@ These are all permanently fixed in `main`. You should not need to redo any of th
 ---
 
 ## 5. What's Currently in Main
+
+**Read this first (2026-09):** `main` is the governance base, not necessarily the shipped release source. The current release identity lives in `release/current.json` and `npm run release:status` reports `MAIN RELEASE-CODE CONVERGENCE` (DEFERRED at the time of writing). See `docs/RELEASE_IDENTITY.md` §10. The table below is a 2026-05-31 snapshot kept for history.
 
 As of 2026-05-31, `main` contains the following shipped features:
 
@@ -287,7 +335,7 @@ When you want to build a new TestFlight that includes additional feature branche
    git checkout main
    git merge feat/your-feature-branch
    ```
-   Only merge branches where QA has passed. Check `PROJECT_STATE.md` for branch status.
+   Only merge branches where QA has passed. Check `PROJECT_STATE.md` for branch status. Until `main` release-code convergence is completed (`npm run release:status` → `MAIN RELEASE-CODE CONVERGENCE`), confirm the intended release lineage in `docs/RELEASE_IDENTITY.md` §10 before assuming `main` is the build source.
 
 2. **Run typecheck locally**
    ```bash
@@ -306,17 +354,27 @@ When you want to build a new TestFlight that includes additional feature branche
    git push origin main
    ```
 
-5. **Build**
+5. **Run the release identity gates** (§0) from the exact checkout you will build from
+   ```bash
+   npm run release:preflight -- --build-sensitive
+   npm run release:verify
+   npm run release:status
+   ```
+   All three must PASS. Note the `HEAD` SHA preflight prints — that is the source you are about to build.
+
+6. **Build**
    ```bash
    eas build --platform ios --profile testflight --non-interactive
    ```
 
-6. **Submit** (after build completes)
+7. **Verify and record the build** — on the build's expo.dev page (or `eas build:view --json`) confirm the Git commit equals the `HEAD` from step 5 and read the build number EAS assigned. Then record it: `npm run release:finalize -- --version <x.y.z> --build <n> --source-sha <HEAD> --eas-source-sha <EAS commit> …` (dry run first; `--write` with approval). Details: `docs/RELEASE_IDENTITY.md` §8.
+
+8. **Submit** (after build completes)
    ```bash
    eas submit --platform ios --profile production --latest
    ```
 
-7. **Install on device** — Open TestFlight on iPhone → Install / Update.
+9. **Install on device** — Open TestFlight on iPhone → Install / Update.
 
 ---
 
@@ -338,11 +396,20 @@ When you want to build a new TestFlight that includes additional feature branche
 2. Check if a new native module was added to `package.json` but not registered in `app.json plugins`.
 3. Check if Sentry was partially re-added without a valid DSN.
 
-**Build number conflict from Apple:**
-- Apple returned `ITMS-90062` or similar "build already exists" error.
-- Manually bump `ios.buildNumber` in `app.json` to a number higher than any previously submitted build.
-- Commit the bump: `git commit -am "chore: bump iOS buildNumber to N to clear Apple conflict"`
-- Re-run the build command.
+**Build number conflict from Apple (`ITMS-90062` or similar "build already exists"):**
+- The build number is managed remotely by EAS (`cli.appVersionSource = "remote"`). Do NOT edit `app.json` — builds do not read it, so an edit there fixes nothing and creates a misleading commit.
+- Inspect the remote value EAS will increment from:
+  ```bash
+  eas build:version:get -p ios
+  ```
+  (add `-e testflight` to select the build profile you build with; `-e` defaults to `production`).
+- If that value is at or below a build number App Store Connect has already received, resynchronize it explicitly:
+  ```bash
+  eas build:version:set -p ios
+  ```
+  The command is interactive and asks for the new value. Choose a number strictly higher than every build App Store Connect has ever received for this app (App Store Connect → TestFlight → Builds). Same `-e` rule as above.
+- Verify the result with `eas build:version:get -p ios` again before rebuilding.
+- Re-run the §0 gates, then the build command. Nothing in this repository changes.
 
 **Push notifications not working after install:**
 - Confirm `expo-notifications` is in `app.json plugins` (it is; just verify it hasn't been accidentally removed).
