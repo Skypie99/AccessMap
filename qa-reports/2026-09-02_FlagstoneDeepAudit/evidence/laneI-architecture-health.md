@@ -125,6 +125,112 @@ Zero `@ts-ignore` anywhere. One `@ts-expect-error` total, in `src/lib/__tests__/
 | `src/components/LiveStatusRegion.tsx` | 1 | `react-hooks/exhaustive-deps` |
 | `src/components/FlashBanner.tsx` | 1 | `react-hooks/exhaustive-deps` |
 
-Every disable in this list targets one of three well-understood categories: (1) `require()` for conditionally-loaded native modules (push notifications, haptics — standard Expo pattern for optional native deps), (2) intentional `console.*` in dev-diagnostic paths, (3) the same explicit-`any` boundary crossings already inventoried above. Four `react-hooks/exhaustive-deps` suppressions (TasksScreen, MapScreen, LiveStatusRegion, FlashBanner) are the ones most worth re-verifying by hand, since a suppressed exhaustive-deps warning is exactly the shape of bug that produces stale-closure defects — see CAND-I-04.
+Every disable in this list targets one of three well-understood categories: (1) `require()` for conditionally-loaded native modules (push notifications, haptics — standard Expo pattern for optional native deps), (2) intentional `console.*` in dev-diagnostic paths, (3) the same explicit-`any` boundary crossings already inventoried above. **Update after manual review:** all four `react-hooks/exhaustive-deps` suppressions (`TasksScreen.tsx:336`, `MapScreen.tsx:1510`, `LiveStatusRegion.tsx:113`, `FlashBanner.tsx:116`) carry an explanatory comment immediately above stating *why* the omitted dependency is intentional (e.g. FlashBanner: `` `rendered` is intentionally omitted: this should react to message / reduced-motion changes, not to its own mount toggle``). These read as deliberate, documented one-shot-effect patterns rather than oversights — downgraded from an initial suspicion to LOW/DEBT, worth a spot-check but not a standout risk. Likewise `src/lib/comments.ts:161-168`'s `(supabase as any)` cast carries a multi-line comment naming it as a known, tracked residual (`// The ONE cast TYPE-3 could not retire (2026-08-06): ...`) pending a live-schema-default confirmation from Sky — self-documented debt, not a silent landmine. See CAND-I-01/02 for the two items still worth independent verification.
+
+---
+
+## Deprecated / risky APIs
+
+### `newArchEnabled: false`
+
+Confirmed in two places, consistent with each other: `app.json:15` (`"newArchEnabled": false`) and the prebuilt `ios/Podfile.properties.json` (`"newArchEnabled": "false"`). Command: `grep -n newArchEnabled app.json ios/Podfile.properties.json`.
+
+Implications for an Expo SDK 54 / RN 0.81 app:
+- SDK 54 / RN 0.81 ship with the New Architecture (Fabric + TurboModules) as the default for new projects; this app has explicitly opted back into the legacy (Paper) renderer/bridge.
+- None of the currently-installed direct dependencies (`react-native-maps`, `react-native-svg`, `react-native-screens`, `react-native-gesture-handler`, `react-native-safe-area-context`, `@react-navigation/*`) are New-Architecture-only at their installed majors, so `newArchEnabled: false` is not currently blocking any installed package — but it does mean the app is not exercised against Fabric at all, so any latent Paper-vs-Fabric behavioral difference (event timing, measure/layout edge cases) will surface for the first time whenever New Architecture is eventually turned on, with no incremental history to bisect against.
+- `newArchEnabled: false` is a common Expo escape hatch for exactly one reason: a native dependency or config plugin isn't Fabric-clean yet. The `./plugins/withFmtXcode26Fix` custom config plugin (`plugins/withFmtXcode26Fix.js`) suggests the team is already fighting toolchain/build issues on this project (an Xcode 26.6 / clang / fmt 11.0.2 consteval incompatibility, worked around by forcing the `fmt` CocoaPod to compile at `gnu++17`); it is unrelated to New Architecture directly but is evidence of a codebase already carrying custom native-build patches, which raises the cost of any future Fabric migration attempt (more moving parts to re-validate together). Not evidence of a required New Architecture blocker — just contextual load-bearing complexity in `ios/`.
+
+### Expo SDK 54 package-version cross-check (expo-doctor's failing check)
+
+Per the task brief, `expo-doctor` reported 16/17 checks passed, failing only "packages should match Expo SDK versions." Cross-referencing `package.json` against `node_modules/expo/bundledNativeModules.json` (command: Python diff of the two JSON files' overlapping keys) found **5 packages whose `package.json`-declared semver range differs from the SDK 54 bundled-expectation string**:
+
+| Package | package.json range | SDK 54 expects | Actually installed (`node_modules/<pkg>/package.json`) | Verdict |
+|---|---|---|---|---|
+| `expo-constants` | `~18.0.0` | `~18.0.13` | `18.0.13` | Installed version already matches SDK expectation; only the package.json floor is stale. |
+| `expo-font` | `~14.0.4` | `~14.0.12` | `14.0.12` | Same — installed matches SDK; package.json floor stale. |
+| `expo-status-bar` | `~3.0.0` | `~3.0.9` | `3.0.9` | Same — installed matches SDK; package.json floor stale. |
+| `jest-expo` | `~54.0.0` | `~54.0.17` | `54.0.17` | Dev-only dependency; same pattern, installed matches SDK. |
+| `react-native-web` | `^0.21.2` | `~0.21.0` | `0.21.2` | Different range *operator* (`^` vs `~`) but both resolve the same install (`0.21.2` is within both `^0.21.2` and `~0.21.0`); this is a string-format difference, not a real mismatch. |
+
+Command used for the "actually installed" column: `node -p "require('./node_modules/<pkg>/package.json').version"` for each of the 5.
+
+**Read on this finding: it is DEBT, not a DEFECT.** In every one of the 5 cases the version actually resolved into `node_modules` already satisfies what Expo SDK 54 expects — npm's resolver pulled forward to compatible patches despite the stale lower bounds in `package.json`. `expo-doctor`'s check is comparing declared ranges, not resolved installs, so it correctly flags a hygiene gap (the fix is normally `npx expo install --fix`, not run here per the no-`expo`-CLI constraint), but there is no evidence of an actual version conflict shipping in the built app. See CAND-I-05.
+
+### `react-leaflet` 5 + `legacy-peer-deps=true`
+
+`.npmrc:1` sets `legacy-peer-deps=true` (confirmed: `cat .npmrc` → `legacy-peer-deps=true`). `react-leaflet@5.0.0` is installed (`node_modules/react-leaflet/package.json`) with `peerDependencies: {"leaflet":"^1.9.0","react":"^19.0.0","react-dom":"^19.0.0"}` — all three are satisfied cleanly by the installed `leaflet@1.9.4`, `react@19.1.0`, `react-dom@19.1.0`. So react-leaflet 5 itself is not the thing forcing `legacy-peer-deps`.
+
+Investigation of what else might require it:
+- Direct-dependency peer ranges for `react`/`react-native` were checked programmatically across every package in `package.json` (`dependencies` + `devDependencies`) by reading each `node_modules/<pkg>/package.json`'s `peerDependencies` — none declare a `react` range that excludes 19.x (most use `"*"` or explicit `19.0.0` support, e.g. `lucide-react-native`, `@react-navigation/*`, `react-native-maps`).
+- `npm ls --all --offline` (fully local, no network — read-only listing of the resolved tree against `package-lock.json`) reports **zero** `invalid`/`UNMET`/`extraneous` lines anywhere in the tree.
+
+**Conclusion: with the tree as currently locked, no direct-dependency peer conflict against React 19 / RN 0.81 was found, and `npm ls --all --offline` shows the resolved tree is internally consistent.** `legacy-peer-deps=true` may be a defensive holdover from an earlier upgrade (e.g. the React 18→19 or react-leaflet 4→5 migration) that is no longer load-bearing — or it may be masking a transitive conflict that only manifests on a fresh `npm install` against the registry (which this audit cannot run — no network, no install). This is a genuine coverage gap, not a confirmed finding either way; see Coverage gaps and CAND-I-06.
+
+### RN/Expo deprecated-API grep sweep
+
+Commands and results (non-test `src` + `App.tsx`):
+- `Clipboard` from React Native core: 0 real hits — the only 2 matches are comments (`SettingsScreen.tsx:897`, a UI-copy note about a removed glyph; `webShare.ts:54,61`, comments describing web `navigator.clipboard` fallback logic, not the deprecated RN `Clipboard` export).
+- `ProgressBarAndroid` / `ProgressViewIOS` / `DatePickerIOS` / `TimePickerIOS` / `MaskedViewIOS` (all removed from RN core years ago): 0 hits.
+- `ViewPropTypes` / `prop-types`: 0 hits.
+- `ImageStore` / `ImageEditor` (deprecated RN image APIs): 0 hits.
+- `pointerEvents=` (still valid as a prop today, but RN's docs mark the top-level prop as legacy in favor of `style.pointerEvents` for Fabric parity): 59 hits — not urgent while `newArchEnabled: false`, but every one becomes a Fabric-migration touch point later. Not itemized per-file here (59 call sites, cosmetic/forward-compat only); re-grep at New Architecture migration time.
+- `shadowColor`/`shadowOffset`/`shadowOpacity`/`shadowRadius` (iOS-only shadow props; RN's New Architecture consolidates these into `boxShadow`, and the split-props form is being phased toward deprecated status): 44 hits. Same forward-compat note as `pointerEvents` — not a defect today, becomes a migration cost later.
+- `useNativeDriver: false`: 4 hits (not a deprecation — flagged here only because it's a common perf smell; Lane on performance owns follow-up, out of scope for this architecture pass beyond noting the count).
+
+No uses of RN-core `AsyncStorage` (project correctly uses the community `@react-native-async-storage/async-storage` package throughout — consistent with the SDK 54 bundled version).
+
+---
+
+## Navigation reachability
+
+**Method note (methodology correction made mid-audit):** the first pass grepped only `from '@/screens/X'` / `from '@/components/X'` absolute-alias imports and produced several false "zero mount" results. Re-run with a pattern that also catches same-directory relative imports (`from './X'`) and dynamic imports (`import('./X')`, used for `React.lazy`) resolved every one of them to a real mount point. Command used for the corrected sweep: `grep -rln "/<Name>'" src App.tsx --include="*.ts" --include="*.tsx" | grep -v "__tests__\|\.test\." | grep -vE "/<Name>\.tsx$"` run per surface. **Net result: no zero-mount (orphaned) screen or modal surface was found** among the 19 files in `src/screens/` or the ~20 modal-shaped components checked in `src/components/`.
+
+### Route tree (`src/navigation/RootNavigator.tsx`)
+
+`Tab.Navigator` (bottom tabs, `RootTabParamList`):
+
+| Route | Component | Tab-bar visible? | Notes |
+|---|---|---|---|
+| `Home` | `HomeScreen` | Yes (1st) | `initialRouteName` default; editorial landing surface, own header. |
+| `Tasks` | `TasksScreen` | Yes (2nd) | Badge = `computeTasksBadge(flags)`. |
+| `Profile` | `ProfileScreen` | Yes (3rd) | |
+| `FullMap` | `MapScreen` | Hidden (`tabBarButton:()=>null`) | Reached from Home ("Open full map"/"Report" pill), Tasks/Profile focus-flag links, and the `accessmap://flag/:flagId?` deep link (`src/navigation/linking.ts:34`). Params `focusFlag`/`ts`/`openReport` are all set by at least one caller (`TasksScreen.tsx:778`, `ProfileScreen.tsx:804/816/1455`, `HomeScreen.tsx:294/652/690/707`) and all four params (`focusFlag`, `ts`, `flagId`, `openReport`) are read inside `MapScreen.tsx` (confirmed at lines 1360-1629). `flagId` has no in-app caller — by design, it is deep-link-only, populated by React Navigation's own path-parsing per `linking.ts`'s `FullMap: 'flag/:flagId?'` config, not dead. |
+| `Settings` | `SettingsScreenLazy` (`React.lazy`) | Hidden | Reached only from the hamburger drawer (`DrawerHost.onNavigate('Settings')`, `RootNavigator.tsx:568`). Warmed pre-emptively on drawer-open (`RootNavigator.tsx:527-531`). |
+| `Admin` | `AdminScreenLazy` (`React.lazy`) | Hidden, and only *registered* when `isAdmin === true` (`RootNavigator.tsx:461`) | Reached from the drawer, gated twice: once by the conditional `<Tab.Screen>` registration, again inside `AdminScreen` itself per the code comment ("defense-in-depth"). Not verified independently in this pass — see Coverage gaps. |
+
+### Shared-modal pool (`src/lib/sharedModalsContext.tsx`, hosted once by `SharedModalsHost` in `RootNavigator.tsx:481-506`)
+
+`HelpModal`, `ChangelogModal`, `FeedbackModal`, `MyFeedbackModal`, `TermsScreen`, `PrivacyScreen` — six surfaces sharing one `open: SharedModalKey | null` slot so opening one implicitly closes another (matches historical one-modal-at-a-time behavior per the in-file comment). `TermsScreen`/`PrivacyScreen` are deliberately in this pool rather than mounted per-screen because their callers (`AboutScreen`, `SignInScreen`, the report sheet) are themselves modals, and native iOS refuses to present a new modal from a view controller already presenting one — documented in a detailed comment block at `RootNavigator.tsx:238-263` (also covers a real web z-index bug found "Run 2", 2026-08-19: DrawerHost must mount before SharedModalsHost so the shared-modal z-index always wins on react-native-web, which stacks every `<Modal>` at the same z-index and lets last-sibling win).
+
+### Drawer sub-screens (`src/components/HamburgerDrawer.tsx`)
+
+`ResourcesScreen`, `HowToHelpScreen`, `AboutScreen` — mounted directly inside `HamburgerDrawer` (lines 403-412), toggled by local `subScreen` state, not part of the tab navigator or the shared-modal pool. `AboutScreen` further mounts `TermsScreen`/`PrivacyScreen` via the shared pool (see `LegalSheets.tsx` below) and `SettingsScreen`.
+
+### `LegalSheets.tsx` — shared trigger helper
+
+`TermsScreen`/`PrivacyScreen` (the shared-pool pair above) are opened from 4 sites via a common helper: `src/screens/ReportFlagModal.tsx`, `src/screens/AboutScreen.tsx`, `src/components/ReportContentModal.tsx`, `src/components/FlagDetailModal.tsx` all import `useLegalSheets`/`LegalSheets` from `./LegalSheets` — a single hook wrapping `useSharedModals()` so each of those 4 surfaces gets a consistent "open Terms/Privacy" affordance without duplicating the open/close wiring.
+
+### Per-screen local modals
+
+Confirmed mount points (all reachable, all local `useState`-driven visibility unless noted):
+
+| Modal/sub-surface | Mounted from |
+|---|---|
+| `AchievementsModal`, `ActivityFeedModal`, `LeaderboardScreen`, `MyReportsModal`, `MyWatchedModal`, `UpdateBanner`, `RecentlyViewedRow`, `ReportsBreakdownCard`, `GuestProfile`, `SignInScreen` (as a sheet) | `src/screens/ProfileScreen.tsx` |
+| `AddressSearchModal`, `FilterPresetsModal`, `SavedPlacesModal`, `LegendModal`, `NearbyFlagsModal`, `ReportFlagModal` (`React.lazy`, `MapScreen.tsx:127`) | `src/screens/MapScreen.tsx` |
+| `AddressSearchModal` (2nd mount site) | `src/screens/HomeScreen.tsx` |
+| `PhotoLightboxModal` | `src/screens/TasksScreen.tsx` (standalone lightbox, separate implementation from `PhotoGallery`'s built-in one — see Duplicated constants / dead-code notes) |
+| `FlagDetailModal` | `src/screens/ProfileScreen.tsx`, `src/screens/TasksScreen.tsx`, `src/screens/MapScreen.tsx` (3 independent mount sites — see State ownership) |
+| `HiddenCommentsModal`, `NotificationPrefsModal`, `OnboardingModal` | `src/screens/SettingsScreen.tsx` |
+| `NotificationPreferencesScreen` | `src/screens/SettingsScreen.tsx` only |
+| `NotificationPrefsModal` (2nd mount site) | `src/screens/ProfileScreen.tsx`, deliberately a **separate, per-screen instance** rather than pooled (`ProfileScreen.tsx:62`: "`NotificationPrefsModal` stays mounted PER-SCREEN on Profile (not in ..."), documented intentionally. |
+| `ReportContentModal`, `StatusHistoryModal` | `src/components/FlagDetailModal.tsx` |
+| `OnboardingCards` | `App.tsx` (first-launch gate) and `src/screens/OnboardingModal.tsx` (re-viewable copy from Settings) |
+
+**Naming-collision note (not a functional bug, confirmed by reading both headers):** `src/screens/NotificationPreferencesScreen.tsx` (OS push-notification category toggles: flag-status/nearby/watched/bulk-digest) and `src/components/NotificationPrefsModal.tsx` (in-app "since your last visit" banner toggles — which status transitions count as an "update") are two different features with near-identical names. Confirmed via each file's header doc-comment (`NotificationPreferencesScreen.tsx:1-11` vs `NotificationPrefsModal.tsx:1-9`). Worth a rename for maintainability; not a reachability or duplication defect. See CAND-I-07.
+
+### Zero-mount / unreachable surfaces
+
+**None found in `src/screens/` or the modal-shaped components inventoried above.** Every surface checked resolves to at least one real import site outside its own file and outside tests.
 
 ---

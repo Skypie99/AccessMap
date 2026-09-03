@@ -12,3 +12,6 @@
 | 2026-09-02 17:1x | — | SESSION LIMIT HIT (Fable window). Resumed after reset. |
 | 2026-09-02 17:20 | Fable 5.1 | Production read-only DB proof captured (evidence/db-proof-flags-delete-authorization.md): admin DELETE policy + grant PRESENT; delete-flag Edge Function NOT deployed; mod1/d1f4 migrations NOT applied. |
 | 2026-09-02 17:22 | Fable 5.1 | Restored supabase/.temp/cli-latest (touched by `supabase --version`); relaunched subagents with incremental-write instruction; started Release simulator build of locked main (logs/ios-build-main-release.log). |
+| 2026-09-02 18:30 | Fable 5.1 | Checkpoint 2 pushed (b365d01): baselines, DB proof, FDA-001/002. |
+| 2026-09-02 18:35 | Fable 5.1 | iOS Release build #1 FAILED at `pod install` (CocoaPods 1.16.2 / Ruby 4.0.5 Unicode-normalize crash under non-UTF-8 locale) → ENVIRONMENT class; relaunched with LANG/LC_ALL=en_US.UTF-8 (logs/ios-build-main-release-2.log). |
+| 2026-09-02 18:38 | Fable 5.1 | EAS build list captured (evidence/eas-build-identity.md): Build 33 = f5594171 confirmed by EAS; Build 30 = a0bf4d04. Deployed delete-account v4 source read; FDA-003 written. |

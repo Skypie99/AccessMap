@@ -47,3 +47,10 @@ NOT deployed: delete-flag, account-deletion-review, account-deletion-status, acc
 ADMIN_DELETE_DB_AUTHORIZATION (direct Data API DELETE by an authenticated is_admin user): **YES** — grant present, permissive DELETE policy `admin delete any flag` present, `users.is_admin` SELECT grant present for the RLS subselect.
 Therefore a CURRENT_MAIN client (`supabase.from('flags').delete().eq('id', …).select('id')`) is authorized at the DB layer (subject to FK/trigger checks recorded separately).
 Whether the SUBMITTED_BUILD_33 client uses that path or the undeployed `delete-flag` Edge Function is recorded in evidence/build33-delete-path.md.
+
+## Addendum — FK / trigger / users-policy proof for a direct DELETE (read-only, 2026-09-02 18:2x PDT)
+
+FKs referencing public.flags: flag_comments, flag_edit_history, flag_photos, flag_status_history, flag_verifications → ON DELETE CASCADE; point_events.flag_id → ON DELETE SET NULL. No FK blocks a flag delete.
+Triggers on public.flags: 15, all INSERT/UPDATE (rate limits, status guards, points, updated_at, webhook, media-key guards). **No DELETE trigger.**
+public.users policies: `users readable by authenticated` (SELECT, qual true) — so the `admin delete any flag` subselect on users.is_admin evaluates for any signed-in caller; `users own row full select`; `users update own row` WITH CHECK pins is_admin via `private.current_user_is_admin()`.
+Conclusion: a CURRENT_MAIN-style direct `DELETE … RETURNING id` by an authenticated is_admin user is fully authorized and unobstructed at the database layer. Remaining risk for main = none at DB layer; owner path likewise (`flags delete own` + `flags_user_scoped`).

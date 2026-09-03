@@ -8,6 +8,7 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 |---|---|---|---|---|---|
 | FDA-001 | main lacks Build 33 product code (113 commits) | CONFIRMED | HIGH | release-truth | CURRENT_MAIN, NEXT_BUILD_ONLY |
 | FDA-002 | Build 33 admin Remove flag calls undeployed delete-flag Edge Function | CONFIRMED | HIGH | functional/backend-contract | SUBMITTED_BUILD_33, WEB_BUILD |
+| FDA-003 | Build 33 account deletion: deployed v4 returns 'deleted', client demands 'requested'; user told it failed | CONFIRMED | HIGH | functional/backend-contract/app-store | SUBMITTED_BUILD_33 |
 
 ## Findings
 
@@ -64,4 +65,31 @@ LIKELY_REPAIR_SIZE: SMALL for the client-only option (route `deleteFlag` back to
 DEPENDENCIES: FDA-001 (which lineage the fix lands on); FDA-003 (same class: other undeployed contract calls); Sky's decision on the D1F4 pipeline.
 RECOMMENDED_ACCEPTANCE_TEST: see ADMIN_FLAG_DELETE_ACCEPTANCE_PLAN in FINAL_AUDIT_REPORT.md.
 NOTES: ADMIN_DELETE_DB_AUTHORIZATION for a direct Data API DELETE by an is_admin user = YES in production today (grant + permissive policy + is_admin SELECT). The defect is a client→backend contract mismatch, not an RLS refusal.
+
+### FDA-003
+ID: FDA-003
+TITLE: Submitted Build 33 account deletion contract mismatch — the deployed `delete-account` (v4, pre-D1) deletes the account immediately and returns `status: 'deleted'`, but the Build 33 client requires `status: 'requested'`, then polls an undeployed status route; the user is told the request failed while the account is already gone
+STATUS: CONFIRMED (both sides read from source/production; runtime not exercised because it is destructive)
+SEVERITY: HIGH
+CATEGORY: functional / backend-contract / app-store (Guideline 5.1.1(v) account deletion) / privacy-adjacent
+AFFECTED_STATE: SUBMITTED_BUILD_33 (native). WEB_BUILD: Build 33 web has no deletion path by design (`accountDeletionStartAvailability(Platform.OS)` → "unavailable in this browser"). CURRENT_MAIN: NOT affected — main's `src/lib/account.ts` only checks `error` from the same function and is compatible with the deployed v4.
+CONFIDENCE: HIGH
+
+USER_IMPACT: In the shipped app, Profile → Delete Account → confirm: the server anonymises the user's flags and deletes the auth user (v4 behaviour), returns 200 `{status:'deleted'}`; the client throws "Deletion request was not accepted." because it wanted `'requested'`; ProfileScreen shows the alert "Could not confirm deletion request … Use Check deletion status below before trying again"; `signOut` is never reached (it runs after the status check), so the app keeps a dead session until the access token expires; "Check deletion status" calls `account-deletion-status` → 404 every time. The account IS deleted, but the person is told it was not. An App Store reviewer exercising account deletion sees a failure message.
+REPRODUCTION: source trace only. Build 33 `src/lib/account.ts:17-31` (invoke → `if (!data || data.status !== 'requested') throw`), Build 33 `src/screens/ProfileScreen.tsx` `handleDeleteAccount` catch branch (`notify('Could not confirm deletion request', …)` then `refreshAccountDeletionStatus()`), deployed `delete-account` v4 source (`return jsonResponse(200, { status: 'deleted' })` after `auth.admin.deleteUser`), probe `account-deletion-status` → 404 (evidence/build33-backend-contract-probe.md).
+EXPECTED: Confirm → durable REQUESTED (D1F4 design) or immediate deletion (legacy design) → clear success copy → signed out.
+ACTUAL: Deletion happens server-side; client reports failure; session lingers; status surface dead.
+
+ROOT_CAUSE_EVIDENCE: The D1F4 async pipeline (Build 33 supabase/functions/delete-account + account-deletion-{status,review,worker} + `request_account_deletion` RPC and tables under supabase/nonmanaged/proposed/…) was shipped in the client but never deployed; production still runs the 2026-05-31 cascade function (v4, updated_at 1780164326432).
+SOURCE_EVIDENCE: Build 33 src/lib/account.ts, src/lib/accountDeletionReceipt.ts:87-97, src/screens/ProfileScreen.tsx (handleDeleteAccount / refreshAccountDeletionStatus); Build 33 supabase/functions/delete-account/index.ts (expects operationId/receiptSecret, calls rpc `request_account_deletion`); main src/lib/account.ts (checks only `error`).
+RUNTIME_EVIDENCE: production Edge Function list + deployed v4 source (Supabase management API, read-only); `pg_proc` has no `request_account_deletion`.
+TEST_EVIDENCE: Build 33 `src/lib/__tests__/account.test.ts` mocks `functions.invoke` to return `{status:'requested'}`; `src/__tests__/d1OptionAAccountDeletion.guard.test.ts` greps the Edge Function SOURCE text — neither can observe deployment.
+VISUAL_EVIDENCE: none (not exercised)
+
+HISTORICAL_RELATION: D1 Option A / D1F4 (qa-reports 2026-08-27/28, "LOCAL SOURCE ONLY"); design-reviews/ship-ready/R1_ACCOUNT_DELETION_SWEEP.md; migration 2026-05-29_account_deletion_cascade.sql (main) — HISTORICAL_REGRESSED from the user's perspective: the May flow worked end-to-end; the Build 33 client broke it against the same backend.
+REGRESSION_RISK: Any fix must keep flags anonymisation + auth deletion atomic; the D1S-A live policies require a `public.users` row for writes, so a lingering dead session produces "Account is no longer active" errors until sign-out.
+LIKELY_REPAIR_SIZE: SMALL (client: accept `'deleted'` from the legacy function, sign out, show success; hide "Check deletion status" until the status route exists) vs LARGE (deploy the D1F4 pipeline: 4 Edge Functions, worker scheduling, nonmanaged migrations into the ledger, pgTAP proof).
+DEPENDENCIES: FDA-001 (target lineage); Sky's decision D1F4-vs-legacy; privacy review (account deletion touches auth — Const. Art. 7.6).
+RECOMMENDED_ACCEPTANCE_TEST: disposable account on a disposable environment → Delete Account → success copy → signed out → relaunch shows signed-out → `auth.users` row absent, flags anonymised → no error alert; web shows the intended unavailability copy.
+NOTES: Web demo cannot delete accounts at all (design decision in Build 33) — recorded under App Store/product notes, not as a separate defect.
 
