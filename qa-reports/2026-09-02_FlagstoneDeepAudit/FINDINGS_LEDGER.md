@@ -43,6 +43,8 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-035 | Help FAQ denies the −20 admin-rejection penalty the live trigger applies | CONFIRMED | MEDIUM | functional/copy/trust | BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33 |
 | FDA-036 | Web: Alert.alert is a no-op; 12 unguarded call sites lose errors/confirmations | CONFIRMED | MEDIUM | functional/UX web | WEB_BUILD |
 | FDA-037 | Architecture debt notes (grouped) | CONFIRMED | LOW | architecture/debt | CURRENT_MAIN |
+| FDA-038 | Guest mode not remembered across launches (sign-in wall every cold start) | CONFIRMED | LOW | functional/UX guest | CURRENT_MAIN, SUBMITTED_BUILD_33 |
+| FDA-039 | Main: address search sheet renders under the tab bar (input/results clipped) | CONFIRMED | MEDIUM | UI/functional search | CURRENT_MAIN |
 
 ## Findings
 
@@ -660,4 +662,33 @@ REPRODUCTION: production `handle_flag_status_change()`: `elsif new.status = 'rej
 EXPECTED: FAQ discloses the admin-rejection penalty (or the penalty is removed), and the reporter is told when it happens.
 HISTORICAL_RELATION: SW-53 (points reconciliation 2026-08-20) — reconciled CLAUDE.md, not the FAQ; Lane I CAND-I-01.
 LIKELY_REPAIR_SIZE: TINY (copy + POINTS constant) / SMALL (notification). DEPENDENCIES: FDA-020 (who may reject). RECOMMENDED_ACCEPTANCE_TEST: FAQ text test pins the penalty; point_events `flag_spam_penalty` surfaces in the user's activity feed.
+
+### FDA-038
+ID: FDA-038
+TITLE: "Browse without an account" is not remembered — every cold launch returns a guest to the sign-in wall
+STATUS: CONFIRMED (both simulators, relaunch after reboot; source)
+SEVERITY: LOW
+CATEGORY: functional / UX (guest journey)
+AFFECTED_STATE: CURRENT_MAIN, SUBMITTED_BUILD_33 (App.tsx identical: `const [guestMode, setGuestMode] = useState(false)`, no persistence)
+CONFIDENCE: HIGH
+USER_IMPACT: A person who deliberately chose to use Flagstone without an account (the reviewer notes and sign-in copy promote this) sees the full sign-in wall on every launch and must re-tap "Browse without an account →" before reaching the map. It also re-triggers the location pre-check path each time. Minor for one launch; corrosive over weeks of use.
+REPRODUCTION: screenshots/main-resume-01.png and b33-resume-01.png (both show the sign-in wall after a prior guest session); App.tsx:109-159 in both trees (guest latch is component state only).
+EXPECTED: guest choice persisted (AsyncStorage flag) with a visible "Sign in" affordance in Profile/drawer (already present as GuestProfile + drawer "Sign in").
+HISTORICAL_RELATION: F48 (guest trapped in modal sign-in) — related; no DECISIONS_LOG entry declares the wall-on-every-launch behaviour intentional.
+LIKELY_REPAIR_SIZE: TINY. DEPENDENCIES: none. RECOMMENDED_ACCEPTANCE_TEST: choose guest → kill app → relaunch → lands on Home as guest; signing in later clears the latch (existing test intent at App.tsx:131-142).
+
+### FDA-039
+ID: FDA-039
+TITLE: On main, the Home "Search by address" sheet renders beneath the bottom tab bar — the input and the first result row are partly covered by the Home/Tasks/Profile tabs
+STATUS: CONFIRMED (CURRENT_MAIN, simulator). SUBMITTED_BUILD_33: the Explore-path search sheet uses the expanded presentation and renders input + two result rows fully above the keyboard (screenshots/b33-map-06-search-open.png, b33-map-07-search-results.png) — FIXED there for the map path; the Home-path sheet on Build 33 not yet captured.
+SEVERITY: MEDIUM
+CATEGORY: UI / functional (search journey)
+AFFECTED_STATE: CURRENT_MAIN; SUBMITTED_BUILD_33 = to verify
+CONFIDENCE: HIGH (main)
+USER_IMPACT: Typing "Kelowna" produces a single result whose row is half hidden behind the tab bar; the input field itself sits under the tab bar before any text is entered. With the software keyboard up the visible area would be smaller still. A guest's first search — the reviewer-notes path to find the Kelowna data — looks broken.
+REPRODUCTION: Home → tap "Search a place" → screenshots/main-home-search-01-keyboard.png (sheet header visible, input clipped under the tab bar); type "Kelowna" → main-home-search-02-results.png (result row overlapped by tab labels). Simulator had ConnectHardwareKeyboard=0; the software keyboard did not render in the capture, so the clipping is by the tab bar, not the keyboard.
+EXPECTED: the sheet presents above the tab bar (or the tab bar hides) and the results list has bottom inset for keyboard + safe area.
+ACTUAL: sheet is mounted inside the tab navigator content and the tab bar paints over it.
+HISTORICAL_RELATION: Build 33 a1b40c2 (2026-08-30) "keep address search visible above keyboard"; Codex R2 forms/accessibility (2026-08-27).
+LIKELY_REPAIR_SIZE: SMALL. DEPENDENCIES: FDA-001 (port vs converge). RECOMMENDED_ACCEPTANCE_TEST: simulator with software keyboard: results list fully visible above keyboard and tab bar; XXXL text still shows ≥1 full result row.
 
