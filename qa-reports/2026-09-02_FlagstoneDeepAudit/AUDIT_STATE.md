@@ -25,21 +25,21 @@ PARTIAL_LANES: A (source identity + guards done; TestFlight/App Store status sti
 NOT_STARTED_LANES: B C D F G K
 BLOCKED_LANES: (none)
 
-FINDINGS_TOTAL: 18
+FINDINGS_TOTAL: 31
 BLOCKER: 0
-HIGH: 5
-MEDIUM: 4
-LOW: 8
-NOTE: 1
-FALSE_POSITIVE: 0
+HIGH: 8
+MEDIUM: 11
+LOW: 10
+NOTE: 2
+FALSE_POSITIVE: 1
 
 UI_FINDINGS: 0
 ACCESSIBILITY_FINDINGS: 0
-FUNCTIONAL_FINDINGS: 3
-PRIVACY_SECURITY_FINDINGS: 5
-PERFORMANCE_FINDINGS: 1
-APP_STORE_FINDINGS: 2
-RELEASE_FINDINGS: 3
+FUNCTIONAL_FINDINGS: 4
+PRIVACY_SECURITY_FINDINGS: 12
+PERFORMANCE_FINDINGS: 0
+APP_STORE_FINDINGS: 4
+RELEASE_FINDINGS: 4
 
 OPEN_EVIDENCE_GAPS:
 - Runtime reproduction of FDA-002 in the real Admin UI requires an admin sign-in (only 1 admin exists in production = Sky's account; credentials are never handled by the audit). Mechanism proven by catalog + endpoint probe; UI-path proof = EVIDENCE_GAP.

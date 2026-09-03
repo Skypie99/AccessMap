@@ -4,54 +4,11 @@ STATUS: IN PROGRESS — incremental write per resilience rule; regenerated from 
 
 ## Files read (list every file path you actually read; mark Build-33-only ones with [B33])
 
-docs/MASTER_FIX_LOG.md
-docs/PHASE_TESTFLIGHT_FIX_PLAN.md
-docs/TESTFLIGHT_ACTION_ITEMS.md
-qa-reports/2026-08-18_AppStore_Readiness_Audit.md
-qa-reports/2026-08-26_Codex_Wave1CurrentBinaryAcceptance.md [B33]
-qa-reports/2026-08-26_Codex_Wave1SharedFoundations.md [B33]
-qa-reports/2026-08-26_Codex_Wave2ScreenSpecificImplementation.md [B33]
-qa-reports/2026-08-26_Codex_Wave3ConsolidatedReleaseQA.md [B33]
-qa-reports/2026-08-27_Codex_D1F4AsyncDeletionSource.md [B33]
-qa-reports/2026-08-27_Codex_D1OptionAAccountDeletion.md [B33]
-qa-reports/2026-08-27_Codex_D1SADeployedSecurityContainment.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneE1DeterministicEvidenceHardening.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneE1FAsyncLifecycleRepair.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneE2IndependentR3Acceptance.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneH2AIndependentReview.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneM1CriticalMapAudit.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneR1SafeAreasFloatingChrome.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneR2FormsAccessibility.md [B33]
-qa-reports/2026-08-27_Codex_FlagstoneR3PromptPermissionGuestGating.md [B33]
-qa-reports/2026-08-28_Claude_D1F4R3_FIX3_ReviewAudit.md [B33]
-qa-reports/2026-08-28_Codex_D1F4R2_BlockedAuthorization.md [B33]
-qa-reports/2026-08-28_Codex_D1F4R2_SourceRepair.md [B33]
-qa-reports/2026-08-28_Codex_D1F4R3_FIX2.md [B33]
-qa-reports/2026-08-28_Codex_D1F4R3_LocalGateVerification.md [B33]
-qa-reports/2026-08-28_Codex_D1F4R3_SourceClosure.md [B33]
-qa-reports/2026-08-28_Codex_D1F4RSourceRepair.md [B33]
-qa-reports/2026-08-28_MOD1R_moderation_release_safety.md [B33]
-qa-reports/2026-08-28_MigrationMapRepair_Evidence.md [B33]
-qa-reports/2026-08-29_Spark_A11Y_C1_Primitives_Map.md [dangling commit 0c5b53f, outside strict source scope, cited by B33 file above]
-qa-reports/2026-08-30_Claude_ABFinalizeResidualClosure.md [B33]
-qa-reports/2026-08-30_Codex_ProductionSchemaContractP0.md [B33]
-qa-reports/2026-08-30_Codex_ReportModalXXXLClosure.md [B33]
-qa-reports/2026-08-30_Codex_SeverityXXXLFinalP1Closure.md [B33]
-qa-reports/2026-08-30_PromptC_Final_Accessibility_Closure.md [B33]
-qa-reports/2026-08-30_Spark_A11Y_C2A_Infrastructure.md [dangling commit 94d8623, outside strict source scope, cited by B33 file above]
-qa-reports/2026-08-31_Codex_FinalBuild32Stabilization.md [B33]
-qa-reports/2026-08-31_Codex_FinalEMD_PostMapFix.md [B33]
-qa-reports/2026-08-31_Codex_FinalPolishConsolidation.md [B33]
-qa-reports/2026-08-31_Codex_MapHeatDuplicateRemoval.md [B33]
-qa-reports/2026-08-31_Codex_MapHeatXXXL_Repair.md [B33]
-qa-reports/2026-08-31_Codex_MapOverlaySpaceRecovery.md [B33]
-qa-reports/2026-08-31_Codex_RCTFatalDiagnosisAndFilterXXXL.md [B33]
-qa-reports/2026-08-31_Codex_TargetedFinalPolishRuntimeAcceptance.md [B33]
-qa-reports/2026-08-31_Codex_VFW2BResidualLiveClosure.md [B33]
-qa-reports/2026-08-31_Codex_VFW2CFinalThreeStateClosure.md [B33]
-qa-reports/2026-08-31_Codex_VisualFixWave2LiveClosure.md [B33]
-qa-reports/2026-08-31_Codex_VisualFreezeFixWave1.md [B33]
-qa-reports/releases/2026-09-01_Flagstone_4.1.1_Build33_ReleaseIdentity.md
+Grouped by directory to save space; each entry is a filename within that directory (full path = directory + filename). [B33] = Build-33-only (git show f5594171:<dir><filename>).
+
+- **docs/**: MASTER_FIX_LOG.md, PHASE_TESTFLIGHT_FIX_PLAN.md, TESTFLIGHT_ACTION_ITEMS.md
+- **qa-reports/**: 2026-07-01_AppWide_Visual_Sweep.md [scan], 2026-07-01_Tier1_Fix.md [scan], 2026-07-02_SeverityBadge_AA_Fix.md [scan], 2026-07-02_Tasks_MaterialLab_Direction.md [scan], 2026-07-02_Tier2_Fix.md [scan], 2026-07-02_Tier3-4_Fix.md [scan], 2026-07-03_Glass_Rollout_W1.md [scan], 2026-07-03_Glass_Rollout_W2_Profile.md [scan], 2026-07-03_Tasks_Glass_Build.md [scan], 2026-07-03_Tasks_Glass_Merge_and_Build_Handoff.md [scan], 2026-07-04_Glass_Rollout_Map.md [scan], 2026-07-04_Uplift_P0_Copy_Report.md [scan], 2026-07-05_Uplift_P1_Access_Report.md [scan], 2026-07-20_PhotoPrivacyFix.md, 2026-07-25_DeviceTune_Phase1_Drawer.md [scan], 2026-07-25_DeviceTune_Phase2_DrawerMaterial.md [scan], 2026-07-26_DeviceTune_Phase3_HeaderMapPolish.md [scan], 2026-08-01_AccessMap_PreShip_UI_Polish_Report.md, 2026-08-18_AppStore_Readiness_Audit.md, 2026-08-19_Morgan_LegalSheets_Gestures_Investigation.md [scan], 2026-08-22_Morgan_v411_EAS_Readiness.md [scan], 2026-08-23_Flagstone_LegalPages_Migration.md [scan], 2026-08-26_Codex_Wave1CurrentBinaryAcceptance.md [B33], 2026-08-26_Codex_Wave1SharedFoundations.md [B33], 2026-08-26_Codex_Wave2ScreenSpecificImplementation.md [B33], 2026-08-26_Codex_Wave3ConsolidatedReleaseQA.md [B33], 2026-08-27_Codex_D1F4AsyncDeletionSource.md [B33], 2026-08-27_Codex_D1OptionAAccountDeletion.md [B33], 2026-08-27_Codex_D1SADeployedSecurityContainment.md [B33], 2026-08-27_Codex_FlagstoneE1DeterministicEvidenceHardening.md [B33], 2026-08-27_Codex_FlagstoneE1FAsyncLifecycleRepair.md [B33], 2026-08-27_Codex_FlagstoneE2IndependentR3Acceptance.md [B33], 2026-08-27_Codex_FlagstoneH2AIndependentReview.md [B33], 2026-08-27_Codex_FlagstoneM1CriticalMapAudit.md [B33], 2026-08-27_Codex_FlagstoneR1SafeAreasFloatingChrome.md [B33], 2026-08-27_Codex_FlagstoneR2FormsAccessibility.md [B33], 2026-08-27_Codex_FlagstoneR3PromptPermissionGuestGating.md [B33], 2026-08-28_Claude_D1F4R3_FIX3_ReviewAudit.md [B33], 2026-08-28_Codex_D1F4R2_BlockedAuthorization.md [B33], 2026-08-28_Codex_D1F4R2_SourceRepair.md [B33], 2026-08-28_Codex_D1F4R3_FIX2.md [B33], 2026-08-28_Codex_D1F4R3_LocalGateVerification.md [B33], 2026-08-28_Codex_D1F4R3_SourceClosure.md [B33], 2026-08-28_Codex_D1F4RSourceRepair.md [B33], 2026-08-28_MOD1R_moderation_release_safety.md [B33], 2026-08-28_MigrationMapRepair_Evidence.md [B33], 2026-08-29_Spark_A11Y_C1_Primitives_Map.md [dangling commit 0c5b53f, outside strict source scope, cited by B33 file above], 2026-08-30_Claude_ABFinalizeResidualClosure.md [B33], 2026-08-30_Codex_ProductionSchemaContractP0.md [B33], 2026-08-30_Codex_ReportModalXXXLClosure.md [B33], 2026-08-30_Codex_SeverityXXXLFinalP1Closure.md [B33], 2026-08-30_PromptC_Final_Accessibility_Closure.md [B33], 2026-08-30_Spark_A11Y_C2A_Infrastructure.md [dangling commit 94d8623, outside strict source scope, cited by B33 file above], 2026-08-31_Codex_FinalBuild32Stabilization.md [B33], 2026-08-31_Codex_FinalEMD_PostMapFix.md [B33], 2026-08-31_Codex_FinalPolishConsolidation.md [B33], 2026-08-31_Codex_MapHeatDuplicateRemoval.md [B33], 2026-08-31_Codex_MapHeatXXXL_Repair.md [B33], 2026-08-31_Codex_MapOverlaySpaceRecovery.md [B33], 2026-08-31_Codex_RCTFatalDiagnosisAndFilterXXXL.md [B33], 2026-08-31_Codex_TargetedFinalPolishRuntimeAcceptance.md [B33], 2026-08-31_Codex_VFW2BResidualLiveClosure.md [B33], 2026-08-31_Codex_VFW2CFinalThreeStateClosure.md [B33], 2026-08-31_Codex_VisualFixWave2LiveClosure.md [B33], 2026-08-31_Codex_VisualFreezeFixWave1.md [B33], 2026-09-01_Build33_WebDeploymentDecision.md [scan], cycle-2026-07-05-iron-lantern-weekly.md [scan], cycle-2026-07-12-iron-lantern-weekly.md [scan], cycle-2026-07-18-morgan-bp13-unblock.md [scan], cycle-2026-07-19-iron-lantern-weekly.md [scan], cycle-2026-07-26-iron-lantern-weekly.md [scan], cycle-2026-07-30-morgan-eas-readiness.md, cycle-2026-08-02-iron-lantern-weekly.md [scan], cycle-2026-08-03-morgan-appstore-distance.md, cycle-2026-08-09-iron-lantern-weekly.md [scan], cycle-2026-08-13-morgan-preflight.md [scan], cycle-2026-08-18-morgan-appstore.md [scan], qa-2026-08-18-deep-sweep.md [scan]
+- **qa-reports/releases/**: 2026-09-01_Flagstone_4.1.1_Build33_ReleaseIdentity.md
 
 ## P2 reports located (file → ID range/count, one line each)
 
@@ -180,6 +137,11 @@ qa-reports/releases/2026-09-01_Flagstone_4.1.1_Build33_ReleaseIdentity.md
 | S17 | qa-reports/2026-08-18_AppStore_Readiness_Audit.md | 2026-08-18 | flags table anon-readable incl. reporter user_id + precise lat/lng; schema.sql comment "flags contain no PII" is false | anon SELECT on all 16 columns confirmed live | OPEN | PRIV-SEC | N | N | N |
 | S18 | qa-reports/2026-08-18_AppStore_Readiness_Audit.md | 2026-08-18 | Policy "flags status update by any authenticated" is UPDATE qual=true, broader than name implies; status_transition_guard migration never deployed | BEFORE UPDATE trigger bounds damage via column-lock | OPEN | PRIV-SEC | N | N | N |
 | S19 | qa-reports/2026-08-18_AppStore_Readiness_Audit.md | 2026-08-18 | getUserLeaderboardRank fails 42501 permission denied; authenticated only has SELECT on 6 of public.users columns | Live-executed: set local role authenticated; select count(*)...ERROR 42501 | FIXED | FUNC | N | N | N |
+| D8-photo-privacy-gate | qa-reports/2026-07-20_PhotoPrivacyFix.md | 2026-07-20 | D8 privacy gate + F29 strict verifier caused 100% failure of report-photo/avatar uploads on real iPhone (codec APP1 bytes never matched by mocked CI tests) | sanitizeImageMetadata() byte-level splice fix; fail-closed D8 preserved | FIXED-ON-BRANCH | FUNC | N | Y | N |
+| SR-021 | qa-reports/2026-08-01_AccessMap_PreShip_UI_Polish_Report.md | 2026-08-01 | No binary-launch evidence exists at all for this app; first proof is Sky's next EAS build | Listed among standing pre-submission items outside this pass | OPEN | RELEASE | N | Y | N |
+| SR-021 | qa-reports/cycle-2026-07-30-morgan-eas-readiness.md | 2026-07-30 | Same SR-021, still open; framed as resolved by Sky's next EAS build from shipready/3-polish-submission or main | Origin cited: design-reviews/ship-ready/HANDOFF.md:75-76 | OPEN | RELEASE | N | Y | N |
+| SR-021 | qa-reports/cycle-2026-08-03-morgan-appstore-distance.md | 2026-08-03 | Same SR-021, still open, framed as BLOCKER step-2 (first EAS build); local simulator builds also broken (fmt pod vs Xcode 26.6) | Origin cited: ship-ready/12_READY_OR_NOT.md §2, SR-021 | OPEN | RELEASE | N | Y | N |
+| BP-9 | qa-reports/2026-08-01_AccessMap_PreShip_UI_Polish_Report.md | 2026-08-01 | AdminScreen list-load failure changed from dismiss-and-gone Alert (silent no-op on web) to inline red banner + Retry | One commit revert available if preferred | FIXED | FUNC | Y | N | N |
 
 ## Admin flag deletion history (chronological)
 
@@ -248,7 +210,12 @@ CORRECTION NOTICE: an earlier same-day repair attempt (branch claude/migration-m
 - qa-reports/2026-08-27_Codex_FlagstoneM1CriticalMapAudit.md (2026-08-27): Live iOS Simulator map-interaction audit — NO MAP REPAIR REQUIRED, no confirmed P0/P1/P2. Recommends NOT opening an "M2" lane. Untested: two-finger pinch, enabled-location states, Dynamic Type, dark appearance, forced marker/control collision (tooling/permission limits, not defects). [SIM_REQUIRED]
 - qa-reports/2026-08-27_Codex_FlagstoneH2AIndependentReview.md (2026-08-27): Origin of H2A-F1..F4 (see rows above). Contains a granular A01-A26 (push sequencing) / L01-L11 (deferred location) / G-series (guest gating) / N-series (notifications) source-vs-test traceability matrix; most items VERIFIED, several marked "SOURCE VERIFIED / TEST GAP" feeding F1/F2/F3/F4. Classification: R3 branch kept OUT of R5 acceptance pending a scoped test-only repair pass. Not individually itemized here for space; read this file directly for the full 26+11+item matrix if reconciling H2A-F1..F4 sub-claims.
 - qa-reports/2026-08-18_AppStore_Readiness_Audit.md (2026-08-18): Dense 21-item (S1-S21) read-only App Store readiness audit at main@189bf5a, most still open at audit time; same-day status update at top claims B1/B3/S1/S2/S3/S19 fixed same day (main@2163265, gates green: tsc 0, jest 207/3061/0fail, eslint 0). S4 (feedback.contact_email survives account deletion), S6 (monthly leaderboard RPC unapplied), S8 (permanently-denied location = dead-end reporting), S13 (abuse reports land in table nothing reads), S14 (no password reset), S20 (no image moderation) all listed OPEN with no fix status given in the read portion. Full S-list not itemized here for space — read file directly for S4-S15,S20-S21.
+- qa-reports/cycle-2026-08-03-morgan-appstore-distance.md (2026-08-03, step-0b1): createAnonFlag (src/lib/flags.ts:1740) never calls containsBlockedTerm; Apple 1.2(a) submit-time filter entirely bypassed by anonymous reporting, the reviewer's default cohort. DECISION_FOR_SKY, one-line filter-call fix identified.
+- qa-reports/cycle-2026-08-03-morgan-appstore-distance.md (2026-08-03, admin-tab-renders-for-nobody): admin.ts:27 selects is_admin but live security audit records it not SELECT-able by authenticated — the 1.2(b) takedown lever renders for no account including Sky's. DECISION_FOR_SKY + one read-only grant check.
+- qa-reports/cycle-2026-08-03-morgan-appstore-distance.md (2026-08-03, sentry-over-disclosure): live privacy policy still claims Sentry crash-log capture (30 days) but sentry.ts is a 4-line no-op stub since removal. Over-disclosure mismatch a privacy reviewer could flag (5.1.1(i)).
+- qa-reports/cycle-2026-08-03-morgan-appstore-distance.md (2026-08-03, Terms deletion sentence): copy.ts:621 says delete via Settings but control is on Profile; contradicts the live privacy policy's correct "Profile > Delete Account" wording — two published docs disagree under Apple 1.2.
 
 ## Coverage notes
 
-(in progress — not yet finalized)
+- qa-reports/ top-level date filter: the naive "first 10 chars of filename" date check is wrong for non-date-prefixed filenames (e.g. "cycle-*", "qa-*", "morgan-*") because letters sort after digits in ASCII, so it would silently include EVERY such file regardless of true date. Corrected by extracting the first embedded YYYY-MM-DD token anywhere in the filename. The true >=2026-07-01 top-level set is 35 files (not ~200) — all 35 accounted for above.
+- [scan]-marked qa-reports/ files: grep-scanned for admin-delete/schema-contract priority terms (all near-zero hits, confirming those two sagas are concentrated in the Build-33 files and 2026-08-18_AppStore_Readiness_Audit.md already extracted above) but NOT individually read for their own P1/Tier/BP-style findings due to the 70KB output ceiling. In particular: 2026-07-01_Tier1_Fix.md, 2026-07-02_Tier2_Fix.md, 2026-07-02_Tier3-4_Fix.md have dense internal Tier1-4 severity-tier item lists (dozens of entries each, confirmed via ID-density grep) that were NOT itemized here. Same for the Glass_Rollout (W1/W2/Map/Build/Merge) and DeviceTune (Phase1-3) series, and the 7 cycle-*-iron-lantern-weekly.md routine status cycles. Recommend a follow-up pass over these specific files if a complete Tier1-4/Glass/DeviceTune ID inventory is needed.

@@ -14,7 +14,7 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-006 | App Store demo account unverifiable (exists; credentials/rotation unknown) | EVIDENCE_GAP | MEDIUM | app-store | SUBMITTED_BUILD_33 |
 | FDA-007 | Reviewer password literal live at HEAD (design-reviews, unscanned by guard) + public history; rotation unverified | CONFIRMED/EVIDENCE_GAP | MEDIUM | security | BACKEND, DOCS_ONLY |
 | FDA-008 | Auth leaked-password protection disabled | CONFIRMED | LOW | security hygiene | BACKEND |
-| FDA-009 | Legacy flags_user_scoped FOR ALL policy still live | CONFIRMED | LOW | backend hygiene/perf | BACKEND |
+| FDA-009 | Legacy flags_user_scoped FOR ALL policy still live; owner can edit verified flags' lat/lng | CONFIRMED | MEDIUM | data-integrity/backend hygiene | BACKEND |
 | FDA-010 | Trigger functions EXECUTE-granted to anon/authenticated | CONFIRMED | LOW | security hygiene | BACKEND |
 | FDA-011 | TS 6 vs SDK 54, app.json privacyPolicyUrl; expo-doctor fails 2/18 | CONFIRMED | LOW | tooling | CURRENT_MAIN, SUBMITTED_BUILD_33 |
 | FDA-012 | Default anon/authenticated table grants incl. TRUNCATE on all public tables | CONFIRMED | LOW | security hygiene | BACKEND |
@@ -24,6 +24,20 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-016 | Submit workflow privacy gate d8_closed is self-attested | CONFIRMED | LOW | release-guard | CURRENT_MAIN, SUBMITTED_BUILD_33 |
 | FDA-017 | 32 it.todo stubs blocked on non-existent E2E harness | CONFIRMED | LOW | test-confidence | CURRENT_MAIN |
 | FDA-018 | format:check ungated (guards whitespace-sensitive); no safe-area Jest mock | CONFIRMED | NOTE | test-confidence/tooling | CURRENT_MAIN, SUBMITTED_BUILD_33 |
+| FDA-019 | Build 33 photo upload calls prepare/commit_flag_photo_upload RPCs absent in production | CONFIRMED | HIGH | functional/backend-contract/app-store | SUBMITTED_BUILD_33, WEB_BUILD |
+| FDA-020 | Any signed-in user can reject any report (live guard + main Reject button) | CONFIRMED | HIGH | safety/moderation/data-integrity | BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33 |
+| FDA-021 | users.points/streaks/email client-writable on own row | CONFIRMED | HIGH | data-integrity/security | BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33 |
+| FDA-022 | Points farming: vote cycling, uncapped comments, owner self-verify | LIKELY | MEDIUM | data-integrity | BACKEND |
+| FDA-023 | Authenticated INSERT can create flags as verified/resolved/rejected | CONFIRMED | MEDIUM | data-integrity | BACKEND |
+| FDA-024 | Account deletion leaves photos/avatars/contact_email; uid stays in photo_url | CONFIRMED | MEDIUM | privacy | BACKEND, CURRENT_MAIN |
+| FDA-025 | Webhook secret literal in Build 33 migration (public repo); rotation unverified | CONFIRMED/EVIDENCE_GAP | MEDIUM | security | SUBMITTED_BUILD_33, BACKEND |
+| FDA-026 | Any user can enumerate users and identify admins | CONFIRMED | MEDIUM | privacy | BACKEND |
+| FDA-027 | main's migration set does not reproduce live posture (two lineages) | CONFIRMED | LOW | architecture/backend/release-governance | CURRENT_MAIN |
+| FDA-028 | Global anon caps are single-attacker DoS switches | CONFIRMED | LOW | safety/availability | BACKEND |
+| FDA-029 | Web SW caches /auth/v1/user; purge only on signOut | LIKELY | LOW | privacy/web | WEB_BUILD |
+| FDA-030 | Privacy policy promises deletion/retention behaviour code lacks | CONFIRMED | MEDIUM | app-store/privacy | DOCS_ONLY, BACKEND |
+| FDA-031 | Security hygiene notes (grouped) | CONFIRMED | NOTE | security hygiene | BOTH |
+| FDA-032 | zz_backup snapshots exposed (suspected) | FALSE_POSITIVE | NOTE | privacy | BACKEND |
 
 ## Findings
 
@@ -236,9 +250,9 @@ NOTES: Also check the Auth password minimum length in the same screen (not reada
 
 ### FDA-009
 ID: FDA-009
-TITLE: Legacy `flags_user_scoped` FOR ALL policy (roles = public, bare `auth.uid()`) is still live and overlaps every other flags policy
+TITLE: Legacy `flags_user_scoped` FOR ALL policy (roles = public, bare `auth.uid()`) is still live, overlaps every other flags policy, and lets an owner edit ANY column of their own flag after verification (bypassing the open-only / immutable lat-lng owner-edit contract)
 STATUS: CONFIRMED
-SEVERITY: LOW
+SEVERITY: MEDIUM
 CATEGORY: backend hygiene / performance
 AFFECTED_STATE: BACKEND
 CONFIDENCE: HIGH
@@ -378,4 +392,191 @@ CONFIDENCE: HIGH
 REPRODUCTION: .github/workflows/ci.yml lint job comment (format:check red 25/25; `prettier --write src` touches 178 files and breaks 5 guard tests); jest.config.js/jest.setup.js contain no safe-area-context mock (Lane H CAND-H-07/08).
 EXPECTED: guard tests normalise whitespace (or assert on AST/strings after formatting) so `format:check` can be gated; safe-area mock wired so inset-dependent layouts are testable.
 LIKELY_REPAIR_SIZE: SMALL. DEPENDENCIES: none.
+
+### FDA-019
+ID: FDA-019
+TITLE: Submitted Build 33 photo upload calls the `prepare_flag_photo_upload` / `commit_flag_photo_upload` RPCs, which do not exist in production — any report or avatar with a photo fails in the shipped app
+STATUS: CONFIRMED (source + production catalog; runtime not exercised)
+SEVERITY: HIGH
+CATEGORY: functional / backend-contract / app-store
+AFFECTED_STATE: SUBMITTED_BUILD_33, WEB_BUILD. CURRENT_MAIN: NOT affected (main uploads directly to Storage at `<uid>/<ts>.<ext>` and the live policies permit it).
+CONFIDENCE: HIGH
+USER_IMPACT: In the shipped app, Report → add photo → Submit: `uploadFlagPhoto` throws "Photo upload could not be prepared." (PGRST202 function not found) BEFORE `createFlag`, so the whole report fails (ReportFlagModal uploads first, then creates the row). Avatar change fails the same way. App Review's "Report a barrier — photo is optional" step fails whenever a photo is attached; the EXIF-strip privacy gate now sits behind a dead call.
+REPRODUCTION: Build 33 src/lib/flags.ts:856-895 (`.rpc('prepare_flag_photo_upload', …)` with no fallback; `cancel_flag_photo_upload` in the catch), src/lib/photos.ts:100,133,144, src/lib/users.ts (avatar). Production `pg_proc` (evidence/db-proof-flags-delete-authorization.md functions table) has no prepare_/commit_/cancel_flag_photo_upload or commit_avatar_photo_upload; the definitions live only in Build 33's supabase/nonmanaged/proposed/2026-08-27_d1f4_async_account_deletion.sql.
+EXPECTED: photo attached → uploaded → report created. ACTUAL: report fails outright with a photo attached; succeeds only without one.
+ROOT_CAUSE_EVIDENCE: Prompt B "B2 minimum media-key read contract" applied only the READ side (20260830130000); the write side (upload intents) was explicitly deferred ("deliberately does not enable those deferred writers", ProductionSchemaContractP0 report) while the accepted client already used it.
+TEST_EVIDENCE: Build 33 flags tests mock `rpc` to succeed; nothing checks function existence.
+HISTORICAL_RELATION: Prompt B B2/B2-R (2026-08-30), D1F4 upload intents, D8 EXIF gate.
+REGRESSION_RISK: Restoring direct Storage upload in the client re-opens the "URL-injection into flag_photos" class D1S-A F3 closed (policies require the uid folder — still enforced live).
+LIKELY_REPAIR_SIZE: SMALL (client: fall back to the direct-upload path when the RPC is missing, mirroring `listMonthlyLeaderboard`'s `isFunctionMissing` pattern) or LARGE (deploy the intents pipeline + migrations).
+DEPENDENCIES: FDA-001 lineage; FDA-005 gate; Sky decision on D1F4.
+RECOMMENDED_ACCEPTANCE_TEST: disposable account on a disposable environment → report with one JPEG → row + Storage object + flag_photos junction exist; EXIF absent; failure copy legible when Storage denies.
+
+### FDA-020
+ID: FDA-020
+TITLE: Any signed-in user can permanently reject any accessibility report — production's transition guard allows open/verified→rejected for every authenticated user, and main's Tasks cards show a Reject button on every flag
+STATUS: CONFIRMED
+SEVERITY: HIGH
+CATEGORY: safety / moderation / data-integrity
+AFFECTED_STATE: BACKEND (live guard), CURRENT_MAIN (UI exposes Reject to everyone), SUBMITTED_BUILD_33 (UI hides Reject behind isAdmin but the REST path stays open)
+CONFIDENCE: HIGH
+USER_IMPACT: One hostile or careless account can bury every report on the map: `rejected` is terminal (only admins may move resolved→rejected; nothing moves rejected back), rejected rows are excluded from default views, reporters get no push for `rejected`, and there is no rate limit on status writes. For a safety product this is the most damaging community action available and it has no gate.
+REPRODUCTION: production `pg_get_functiondef(enforce_flag_status_transition)` (captured 2026-09-02): `(old.status='open' and new.status in ('verified','resolved','rejected')) or (old.status='verified' and new.status in ('resolved','rejected'))` → allowed for anyone; admin check exists only for resolved→rejected. Policy `flags status update by any authenticated` qual = EXISTS(users row). main src/screens/TasksScreen.tsx:1842-1849 (`key:'reject' … onSetStatus(flag.id,'rejected', isOwn)`), src/components/FlagDetailModal.tsx:670 (`canReject = status==='open'||'verified'`). Fix exists only in Build 33's unapplied 20260828040000_mod1_moderation_release_safety.sql.
+EXPECTED: reject (and ideally resolve) restricted to admins or to a quorum; reporter notified; a restore path.
+ACTUAL: open to all signed-in users.
+HISTORICAL_RELATION: MOD1 CHECKPOINT A (2026-08-28, unapplied), Q16/D27 owner self-triage decision, F53 CAS.
+REGRESSION_RISK: Making reject admin-only changes community triage semantics — product decision.
+LIKELY_REPAIR_SIZE: SMALL (apply MOD1 guard + hide Reject for non-admins in main) — Sky decision on triage model first.
+DEPENDENCIES: FDA-004 (MOD1 set), FDA-005 lineage.
+RECOMMENDED_ACCEPTANCE_TEST: non-admin PATCH status=rejected → P0001; admin succeeds; UI shows Reject only to admins.
+
+### FDA-021
+ID: FDA-021
+TITLE: `public.users` is client-writable on every column of the caller's own row except `is_admin` — a signed-in user can set `points`, `streak_days`, `longest_streak_days`, `email`, `created_at` via one REST PATCH
+STATUS: CONFIRMED
+SEVERITY: HIGH
+CATEGORY: data-integrity / security
+AFFECTED_STATE: BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33 (no tree contains a fix)
+CONFIDENCE: HIGH
+USER_IMPACT: Leaderboard, tiers, achievements and streaks are forgeable (`PATCH /rest/v1/users?id=eq.<me> {"points":999999}`); the `public.users.email` mirror can be rewritten, breaking the maintainer-email-keyed policies' assumptions. Trust signal of the whole points economy is void.
+REPRODUCTION: production `information_schema.column_privileges` UPDATE for authenticated on users = avatar_object_key, avatar_url, created_at, display_name, email, id, is_admin, last_active_date, longest_streak_days, points, streak_days (captured 2026-09-02); policy `users update own row` WITH CHECK pins only `is_admin` (via private.current_user_is_admin()). No migration in main or Build 33 scopes UPDATE columns; docs/ROADMAP.md:68 names `2026-05-29_restrict_users_update_columns.sql`, which was never committed (`git log --all -- '*restrict_users_update_columns*'` → nothing).
+EXPECTED: `grant update (display_name, avatar_url, avatar_object_key) on public.users to authenticated` and revoke the rest; points/streaks written only by SECURITY DEFINER triggers.
+HISTORICAL_RELATION: SR-048 (HIGH, ship-ready 01_functionality_findings.md:144), R-10 (05_THE_SUBMISSION_GAP_LIST.md:35), ROADMAP "Points Self-Write RLS" — HISTORICAL_STILL_OPEN.
+LIKELY_REPAIR_SIZE: TINY (one grant/revoke migration + pgTAP). DEPENDENCIES: FDA-005 lineage. RECOMMENDED_ACCEPTANCE_TEST: PATCH points as a user → 42501; display_name update still works; triggers still award points.
+
+### FDA-022
+ID: FDA-022
+TITLE: Points economy is farmable — vote delete/re-insert cycles award the comment author +2 repeatedly, comments award +1 uncapped and are self-deletable, and owners can verify/resolve their own flags for the reporter bonus
+STATUS: LIKELY (source logic of applied migrations; live function bodies not re-read)
+SEVERITY: MEDIUM
+CATEGORY: data-integrity
+AFFECTED_STATE: BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33
+CONFIDENCE: MEDIUM
+REPRODUCTION: supabase/migrations/2026-05-30_trust_score_system.sql:100-104 (own vote delete), :291-297 (`COUNT(*)` of current votes ≤10 → +2), :247-270 (comment +1, no cap); FlagDetailModal.tsx:668-669 (`canVerify = status==='open'`, no isOwn check); the applied ledger contains trust_score_system (20260531202835).
+EXPECTED: dedupe awards against point_events per (voter, comment); cap comment awards per day; block owner self-verify or make it award nothing (the trigger already skips the actor when actor = reporter, but the reporter bonus still lands).
+HISTORICAL_RELATION: SW-53, SR-085/SR-098/A7-1 (comment_votes), Q16/D27, P2/P12 (qa-2026-08-18-deep-sweep).
+LIKELY_REPAIR_SIZE: SMALL–MEDIUM. DEPENDENCIES: FDA-021 (same trust-model wave). RECOMMENDED_ACCEPTANCE_TEST: pgTAP: vote cycle awards once; self-verify awards nothing.
+
+### FDA-023
+ID: FDA-023
+TITLE: Authenticated INSERT can create a flag directly as `verified`, `resolved` or `rejected` — only the anon INSERT policy pins `status='open'`
+STATUS: CONFIRMED
+SEVERITY: MEDIUM
+CATEGORY: data-integrity
+AFFECTED_STATE: BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33
+CONFIDENCE: HIGH
+REPRODUCTION: production pg_policies INSERT for authenticated: `flags insert own WITH CHECK ((select auth.uid()) = user_id)` only; the transition guard is BEFORE UPDATE OF status so inserts bypass it; restrictive `flags_insert_status_open_only` exists only in Build 33's unapplied 20260828060000_mod1r_fix1_report_and_insert_authz.sql.
+USER_IMPACT: fake "verified" barriers without a verifier; pre-rejected spam invisible to triage; `flag_status_history` records NULL→verified as genuine.
+LIKELY_REPAIR_SIZE: TINY (restrictive policy). DEPENDENCIES: FDA-004/005. RECOMMENDED_ACCEPTANCE_TEST: INSERT status='verified' as user → 42501.
+
+### FDA-024
+ID: FDA-024
+TITLE: Account deletion as deployed (v4) leaves the person's photos and avatars world-readable in the public bucket, keeps `feedback.contact_email`, and the anonymised flags still embed the deleted user's UUID in `photo_url`
+STATUS: CONFIRMED (code) — see runtime counts addendum
+SEVERITY: MEDIUM
+CATEGORY: privacy (erasure)
+AFFECTED_STATE: BACKEND (deployed v4), CURRENT_MAIN (same function source). SUBMITTED_BUILD_33's D1F4 worker would sweep Storage but is not deployed (FDA-003).
+CONFIDENCE: HIGH
+USER_IMPACT: PIPEDA erasure expectations and the published policy ("Delete your account") are not met: barrier photos and any selfie avatar remain fetchable at their old public URLs; all of a deleted person's "anonymous" reports stay groupable by the `<uid>/` folder in `photo_url`.
+REPRODUCTION: deployed delete-account v4 source (`flags.update({user_id:null})` then `auth.admin.deleteUser`; no Storage or feedback step); main src/lib/flags.ts photo path `<uid>/<ts>.<ext>`; bucket public=true (storage.buckets); flag-photos policies allow owner/admin delete only.
+HISTORICAL_RELATION: SR-010 (anonymise-not-erase), R-1 (server-side sweep), D1F4 storage plan (accountDeletionWorkerCore.ts) — HISTORICAL_STILL_OPEN.
+LIKELY_REPAIR_SIZE: SMALL (extend v4: list+remove `<uid>/*` objects, null contact_email, rewrite/strip photo_url folder) vs LARGE (D1F4 pipeline).
+DEPENDENCIES: FDA-003 decision; Jordan privacy review (Const. Art. 7.6).
+RECOMMENDED_ACCEPTANCE_TEST: disposable account with a photo report + avatar → delete → objects gone, contact_email null, photo_url no longer contains the uid.
+
+### FDA-025
+ID: FDA-025
+TITLE: A 64-hex webhook shared secret is committed verbatim in Build 33's migration chain (`20260529181141_notify_flag_status_webhook_trigger.sql`) in a public repository; rotation after the 2026-06-03 Vault move is unverified
+STATUS: CONFIRMED (literal present) / EVIDENCE_GAP (validity)
+SEVERITY: MEDIUM
+CATEGORY: security
+AFFECTED_STATE: SUBMITTED_BUILD_33 (tree), BACKEND (if still valid). Not present in CURRENT_MAIN.
+CONFIDENCE: HIGH
+USER_IMPACT: If the value is still the live `webhook_secret`, anyone can POST to `notify-flag-status` (verify_jwt=false) and push arbitrary "verified/resolved" notifications to any user with a token.
+REPRODUCTION: `git show f5594171:supabase/migrations/20260529181141_notify_flag_status_webhook_trigger.sql | grep -c -E '[0-9a-f]{64}'` → 1 (line 23, `'X-Webhook-Secret', '<64-hex>'`); the value is NOT recorded here. Rotation status: only Sky can compare against Vault.
+HISTORICAL_RELATION: SR-018 / S-6 / IO-4 / X-2; 2026-06-01 "FOLLOW-UPS DISCOVERED 1: rotate both + move to Vault".
+LIKELY_REPAIR_SIZE: TINY (rotate in Vault + redact file on the Build 33 lineage). DEPENDENCIES: Sky-only. RECOMMENDED_ACCEPTANCE_TEST: POST with the historical value → 401.
+
+### FDA-026
+ID: FDA-026
+TITLE: Any signed-in user can enumerate all users and identify admins (`users readable by authenticated` = true + `is_admin` column SELECT grant)
+STATUS: CONFIRMED
+SEVERITY: MEDIUM
+CATEGORY: privacy
+AFFECTED_STATE: BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33
+CONFIDENCE: HIGH
+REPRODUCTION: production pg_policies users: `users readable by authenticated` qual true; column_privileges: authenticated SELECT on is_admin (needed by the admin-delete RLS subselect). `GET /rest/v1/users?select=id,display_name,avatar_url,points,is_admin&is_admin=eq.true` works for any user.
+USER_IMPACT: moderators can be singled out for harassment/targeted reports; full directory enumeration exceeds what the leaderboard needs. (Only 5 users today.)
+EXPECTED: move the admin check into a SECURITY DEFINER helper (private.current_user_is_admin() already exists) and revoke the column grant; leaderboard via a view/RPC.
+HISTORICAL_RELATION: W6-1 (verifier identity), A1 (2026-08-18 is_admin grant).
+LIKELY_REPAIR_SIZE: SMALL. DEPENDENCIES: FDA-002 delete path (its policy subselect uses the grant). RECOMMENDED_ACCEPTANCE_TEST: non-admin select is_admin → 42501; admin delete still works.
+
+### FDA-027
+ID: FDA-027
+TITLE: CURRENT_MAIN's migration set no longer reproduces the live database posture (two lineages; main lacks ~14 live objects/policies; schema.sql warns it is stale) — a fresh bootstrap from main would be less secure than production
+STATUS: CONFIRMED
+SEVERITY: LOW (release-governance LOW today; becomes HIGH at the moment of any disaster recovery or staging build)
+CATEGORY: architecture / backend / release-governance
+AFFECTED_STATE: CURRENT_MAIN (source), BACKEND (docs-only for prod)
+CONFIDENCE: HIGH
+REPRODUCTION: applied ledger (71 timestamped versions) vs main's 47 date-named files (+PROPOSED/APPLIED suffixes, drift_capture files); Build 33 carries a reconstructed timestamped chain plus supabase/nonmanaged/{proposed,live-out-of-band,destructive-data}. Live-only objects absent from main: SR-090 owner-edit alias fix, A2-1 context_tags revert, SR-024 flag_photos anon explicit, SR-001 admin comment delete, SR-050 admin storage delete, is_admin column grant, dispute counter, flag_comments.user_id default, D1S-A account-row gates + bk_* containment, promptb media keys.
+HISTORICAL_RELATION: F3 (2026-06-01), migration-history truth repair (2026-08-28), FDA-005.
+LIKELY_REPAIR_SIZE: MEDIUM (adopt one lineage; regenerate schema.sql from live; delete the stale one). DEPENDENCIES: Sky decision. RECOMMENDED_ACCEPTANCE_TEST: `supabase db diff` against production from the chosen lineage → empty.
+
+### FDA-028
+ID: FDA-028
+TITLE: Global anonymous rate caps (100 flags/h, 30 feedback/h, keyed on nothing) are single-attacker denial-of-service switches for every guest
+STATUS: CONFIRMED (design)
+SEVERITY: LOW
+CATEGORY: safety / availability
+AFFECTED_STATE: BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33
+CONFIDENCE: HIGH
+REPRODUCTION: 2026-07-27_drift_capture_live_flag_insert_throttles.sql:103-111 (global anon 100/h); Build 33 20260727075623_a2_2_feedback_anon_throttle (30/h); client-only 5/24h in src/lib/anonRateLimit.ts.
+USER_IMPACT: a script exhausts both caps hourly → guest reporting and guest abuse reports (which App Review exercises first) fail for everyone; recorded trade-off (no IP/device keys per Jordan).
+LIKELY_REPAIR_SIZE: SMALL (Supabase per-IP API rate limits at the gateway; keep the DB cap as backstop). DEPENDENCIES: Jordan review. RECOMMENDED_ACCEPTANCE_TEST: 101st anon insert in an hour from one client is refused while a second client still succeeds.
+
+### FDA-029
+ID: FDA-029
+TITLE: Web service worker caches every `*.supabase.co` GET (including `/auth/v1/user`) by URL and only `signOut()` purges it; CSP is report-only
+STATUS: LIKELY (source; runtime not exercised)
+SEVERITY: LOW
+CATEGORY: privacy / web
+AFFECTED_STATE: WEB_BUILD, CURRENT_MAIN (public/sw.js)
+CONFIDENCE: MEDIUM
+REPRODUCTION: public/sw.js:106-120; src/lib/supabase.ts:101-130 (purge inside signOut only); vercel.json (report-only CSP, FDA-013).
+USER_IMPACT: shared/public computer — previous user's identity/rows available to the offline fallback if the tab was closed without sign-out.
+LIKELY_REPAIR_SIZE: TINY (exclude /auth/ and per-user endpoints from runtime caching; purge on session change). RECOMMENDED_ACCEPTANCE_TEST: DevTools Cache Storage has no /auth/v1/user after session expiry.
+
+### FDA-030
+ID: FDA-030
+TITLE: Published privacy policy and reviewer notes promise behaviour the deployed code does not implement (deletion removes photos; retention jobs; "we keep the original photo" — code is fail-closed)
+STATUS: CONFIRMED (repo copy) / see addendum for the live page
+SEVERITY: MEDIUM
+CATEGORY: app-store / privacy (accuracy)
+AFFECTED_STATE: DOCS_ONLY (published page + docs/PRIVACY_POLICY.md), BACKEND (behaviour)
+CONFIDENCE: HIGH
+REPRODUCTION: docs/PRIVACY_POLICY.md:129-132 ("Delete a flag — remove any flag you submitted via the flag's detail screen" — dead in Build 33 per FDA-002; "Delete your account" — see FDA-003/024); retention rows naming jobs that do not exist in source (Lane E CAND-E-17); ":228 if processing fails, we keep the original photo" vs src/lib/flags.ts fail-closed gate.
+USER_IMPACT: App Review and regulators compare policy to behaviour; over-promising erasure is the riskiest mismatch.
+LIKELY_REPAIR_SIZE: SMALL (copy) — but must follow the FDA-003/024 decision. DEPENDENCIES: Jordan. RECOMMENDED_ACCEPTANCE_TEST: each policy claim maps to a code path or scheduled job.
+
+### FDA-031
+ID: FDA-031
+TITLE: Security hygiene notes (grouped): raw upstream error text returned by delete-account v4 and by src/lib/errors.ts; non-constant-time secret compare in send-push-notification; Supabase session persisted in AsyncStorage (not SecureStore) on native; maintainer e-mail hard-coded as an authorization key in three policies; pre-commit secret scan matches only `service_role`/`eyJ`
+STATUS: CONFIRMED
+SEVERITY: NOTE
+CATEGORY: security hygiene
+AFFECTED_STATE: CURRENT_MAIN, SUBMITTED_BUILD_33, BACKEND
+CONFIDENCE: HIGH
+REPRODUCTION: Lane E CAND-E-18 (file:line list in evidence/laneE-privacy-security-static.md).
+LIKELY_REPAIR_SIZE: SMALL each; none individually exploitable.
+
+### FDA-032
+ID: FDA-032
+TITLE: Suspected un-RLS'd `zz_backup_*_20260818` purge snapshots in `public`
+STATUS: FALSE_POSITIVE
+SEVERITY: NOTE
+CATEGORY: privacy
+AFFECTED_STATE: BACKEND
+CONFIDENCE: HIGH
+NOTES: Lane E CAND-E-13 raised it from the 2026-08-18 purge migration; read-only `information_schema.tables` on production (2026-09-02) finds no `zz_%`/`%backup%` tables in any user schema — the snapshots were dropped. Only the seven `bk_2026_08_22_*` tables remain and they are RLS-locked with zero grants (D1S-A F1).
 

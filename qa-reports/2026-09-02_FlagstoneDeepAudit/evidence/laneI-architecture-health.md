@@ -412,3 +412,148 @@ Checked every `dependencies` entry in `package.json` for any `from '<pkg>'`/`fro
 The 4 zero-reference files are all `.svg` variants sitting alongside their referenced `.png`/`.svg` counterparts in `assets/brand/`. Most likely read as **design-source originals kept for re-export** (an SVG isn't directly renderable by React Native without an SVG-loading component, and `app.json`'s icon/favicon fields point at the `.png` builds) rather than orphaned runtime assets — normal to keep in a repo, not flagged as a defect. Low-stakes either way given the total asset count is 8.
 
 ---
+
+## Environment + platform assumptions
+
+### `process.env` / `EXPO_PUBLIC_*`
+
+Exactly 2 environment variables are read anywhere in the app (command: `grep -rn "process\.env\." src App.tsx --include="*.ts" --include="*.tsx" | grep -v "__tests__\|\.test\."` — 3 hits, 2 distinct variables): `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`, both read in `src/lib/supabase.ts:16-17` (with a third read of the URL in `src/lib/remoteImageUrl.ts:83` for image-domain validation). **`APP_ENV` is not used anywhere in this codebase** — the task brief asked about it, but a repo-wide search found zero hits; noted as a negative result rather than a finding.
+
+**Missing-.env behavior is a hard, loud failure, by design — a positive finding.** `src/lib/supabase.ts:19-23`:
+```ts
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Supabase env vars are missing. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY — locally in .env, and in EAS via `eas env:create`.',
+  );
+}
+```
+This throws at module-load time (the app cannot boot at all without both variables) rather than silently constructing a client with an empty URL and producing confusing downstream network errors. `.env` and `.env.local` are correctly gitignored (`.gitignore:12-13`); `.env.example` documents exactly the 2 required keys with empty values. This worktree has a real (git-ignored) `.env` populated with both keys — contents not reproduced here.
+
+Tangential, one level outside this lane's primary scope but touching "environment assumptions": `src/lib/supabase.ts` carries a detailed, dated comment block ("IO-2 (security audit 2026-07-31) — WEB SESSION INJECTION") documenting a specific `detectSessionInUrl`/implicit-flow vulnerability class and the client-config choice made to address it. Not independently re-verified here (security lane's territory) — flagged only so it isn't missed.
+
+### Hard-coded URLs / domains
+
+`grep -roE "https?://[a-zA-Z0-9.-]+" src App.tsx | grep -v __tests__` surfaces a small, legitimate set — no surprises:
+
+| Domain | File(s) | Purpose |
+|---|---|---|
+| `flagstone.skypistudio.com` | `src/lib/shareFlag.ts` (×3) | Share-link base URL. Comment notes it was repointed from a `localhost:3000` placeholder on 2026-08-18 — historical, not current. |
+| `skypistudio.com` | `src/lib/links.ts` (×3) | Privacy Policy / Accessibility Statement / Support URLs — matches `app.json`'s `privacyPolicyUrl`. Legitimately static (legal/compliance pages). |
+| `nominatim.openstreetmap.org`, `operations.osmfoundation.org` | `src/lib/geocode.ts` | Geocoding API + usage-policy reference (comment). |
+| `www.google.com` | `src/lib/directionsLink.ts` | Google Maps directions deep link. |
+| `www.openstreetmap.org`, `carto.com` | `src/components/PlatformMap.web.tsx` | Map tile provider + attribution links (Leaflet/web map). |
+| `github.com` | `src/moderation/blockedTerms.ts` | Comment reference, not a live call. |
+| `evil-supabase.co.attacker.test` | `src/lib/remoteImageUrl.ts` | **Not a real domain** — an illustrative example inside a comment explaining a URL-prefix-matching bypass the code's domain-allowlist check is written to avoid (e.g. why a naive `.startsWith()` check would be exploitable). Evidence of security-conscious documentation, not a live reference. |
+
+No indication of environment-specific domain switching (e.g. a staging vs. production API host) beyond the two Supabase env vars — all of the above are permanently-fixed, non-secret public URLs, which is appropriate for their purpose (share links, legal pages, third-party APIs).
+
+### `Platform.OS` branches
+
+116 occurrences across non-test `src`/`App.tsx` (`grep -rn "Platform\.OS" src App.tsx | grep -v "__tests__\|\.test\." | wc -l`). Top files:
+
+| File | Count |
+|---|---:|
+| `src/screens/MapScreen.tsx` | 11 |
+| `src/components/OnboardingCards.tsx` | 11 |
+| `src/lib/pushNotifications.ts` | 7 |
+| `src/screens/ReportFlagModal.tsx` | 6 |
+| `src/lib/accessibility.ts` | 6 |
+| `src/screens/SignInScreen.tsx` | 4 |
+| `src/components/StatusHistoryModal.tsx` | 4 |
+| `src/navigation/RootNavigator.tsx` | 3 |
+| `src/lib/supabase.ts` | 3 |
+| `src/components/MyFeedbackModal.tsx` | 3 |
+
+### CAND-I-02 detail: `Alert.alert` is a confirmed hard no-op on web, and ~12 of 29 direct call sites are unguarded
+
+This surfaced while investigating the `confirm()`/`notify()` helpers referenced in the TS-escapes and State-ownership sections above, and belongs here because it is fundamentally a `Platform.OS`-branching-completeness question.
+
+**The mechanism is not an inference — it was verified by reading the actual installed dependency source.** `node_modules/react-native-web/src/exports/Alert/index.js`, in full:
+```js
+class Alert {
+  static alert() {}
+}
+export default Alert;
+```
+`Alert.alert()` on web is a completely empty function — no dialog, no console warning, nothing observable happens.
+
+**The team knows this and has fixed it before, repeatedly, at individual call sites — but not systemically.** Evidence, all from in-repo comments: `src/lib/confirm.ts` exports a `notify()` helper specifically for this ("Alert.alert is a silent no-op on react-native-web... NOT for telling the user that something they submitted failed — a failed report/avatar/photo upload on web previously dead-ended with a spinner stop and zero feedback," tagged `F46 re-sweep`); `src/screens/SignInScreen.tsx:128-129` documents a second historical incident by name ("F48: the button-Alert below never renders on web — sign-up looked like a silent no-op and the modal never closed"); `src/lib/confirm.ts`'s own module comment references two more ("same trap that bit R8 + R11"). That is **4 named historical incidents of this exact bug class**, each patched individually with a local `Platform.OS === 'web'` branch, with no lint rule or wrapper-only convention enforced to stop a 5th.
+
+**Full manual audit of all 29 non-test `Alert.alert(` call sites** (`grep -rn "Alert.alert(" src App.tsx | grep -v "__tests__\|\.test\."`, each site's enclosing function read for a `Platform.OS === 'web'` guard):
+
+- **13 sites, 6 files, confirmed correctly guarded (not bugs):** `SignInScreen.tsx:134` (else-branch of an if/web), `ReportFlagModal.tsx:539,592` (592 has an explicit `F46` comment), `MapScreen.tsx:882,1299,1721` (all 3 — MapScreen is fully clean on this pattern), `FlagDetailModal.tsx:576,582,605,932,1005` (5 of its 6 — add-photo/share/copy-coords flows all branch on web first), `pushNotifications.ts:49` (`showPushExplanation`, web branch uses `window.confirm`), `blockedContent.ts:66` (`showBlockedContentAlert`, web branch uses `notify()`).
+- **12 sites, 6 files, confirmed UNGUARDED — no `Platform.OS` check anywhere in the enclosing file or function:**
+
+  | Site | What silently does nothing on web |
+  |---|---|
+  | `src/screens/AdminScreen.tsx:156` | Error alert after a failed flag delete/reject action (file has **zero** `Platform` references at all) |
+  | `src/screens/AdminScreen.tsx:177` | Same pattern, second admin action |
+  | `src/screens/SettingsScreen.tsx:460` | "Sign in required" guard on data-export |
+  | `src/screens/SettingsScreen.tsx:548` | "Data exported" success confirmation |
+  | `src/screens/SettingsScreen.tsx:555` | "Could not export data" failure alert |
+  | `src/components/FeedbackModal.tsx:176` | "No email app found" fallback (shows the support email address — the ONE piece of info the user needs when email fails) |
+  | `src/components/FeedbackModal.tsx:182` | "Couldn't open email" generic failure |
+  | `src/components/FilterPresetsModal.tsx:181` | "Could not save preset" failure (file has **zero** `Platform` references at all) |
+  | `src/components/FilterPresetsModal.tsx:202` | "Could not rename preset" failure |
+  | `src/components/FilterPresetsModal.tsx:228` | "Could not delete preset" failure |
+  | `src/components/FlagDetailModal.tsx:1080` | "Description required" validation for a reopen request — **in the same function**, 5 lines after a correctly-guarded `notify('Sign in required', ...)` call (`FlagDetailModal.tsx:1075`), i.e. one validation branch was fixed and the very next one wasn't |
+  | `src/lib/feedback.ts:125` | `openFeedbackComposer()`'s fallback alert when no mail client responds — explicitly documented as reachable from `About` and other non-modal entry points, which are web-reachable |
+
+- **1 site not fully resolved (lower confidence):** `pushNotifications.ts:233` ("Notifications unavailable" after a failed token fetch) — the file does branch on `Platform.OS === 'web'` elsewhere for the *explanation* prompt, so this specific alert may be behind a code path that never runs on web; not verified either way.
+
+Every one of the 6 unguarded files is a surface reachable on web in normal use — `AdminScreen`/`SettingsScreen`/`FlagDetailModal` are core tab-navigator/hidden-route screens with no platform gate in `RootNavigator.tsx`, `FeedbackModal` is opened from the header button on every tab, `FilterPresetsModal` is opened from `MapScreen`, and `feedback.ts`'s composer is called from `AboutScreen` (drawer-reachable). See **CAND-I-02** (ranked #2, just under the points/FAQ finding).
+
+### Feature flags / kill switches / `__DEV__` gates
+
+**Feature flag system:** `src/lib/featureFlags.ts` (76 lines) is a small, self-contained, honestly-labeled implementation — a `useSyncExternalStore`-based store with exactly one flag defined today. Its own header comment states the scope plainly: "Local implementation only — flags live in this file and are toggled at build/deploy time... TODO: Replace with a real feature flag service (LaunchDarkly or Firebase Remote Config are mentioned in the Phase 2 strategy)." This is a documented, intentional stopgap, not an oversight.
+
+The one flag, `PUSH_NOTIF_TYPES_ENABLED` (default `false`), is a genuine kill switch with an unusually good justification in-line: it hides the "Push notification types" row in `NotificationPreferencesScreen` because "NOTHING in the push pipeline reads that key yet, so the choices have no effect. Showing the UI would be a lie to the user (Sky Decision 2, Option B: hide, don't wire)." This reads as a deliberate honesty-over-completeness product decision (tracked as "Sky Decision 2"), not dead scaffolding — flagged here for visibility, not as a defect. Only one consumer: `src/screens/SettingsScreen.tsx`. `setFlag()` is explicitly runtime-override-only and itself gated `if (!__DEV__) return;` so it cannot affect production behavior.
+
+**`__DEV__` gates:** 19 occurrences across 6 files (`grep -rn "__DEV__" src App.tsx | grep -v "__tests__\|\.test\."`: `src/lib/analytics.ts`, `src/lib/flags.ts`, `src/lib/flagsStore.tsx`, `src/lib/featureFlags.ts`, `src/components/ui/GlassSurface.tsx`, `App.tsx`). Read every one — **all 19 gate diagnostic output only** (`console.debug`/`console.log` for EXIF-stripping verification, offline-cache hydration timing, analytics-event echo, a `GlassSurface` blur-pane budget warning) or the feature-flag dev-override guard above. **None gate a functional/business-logic difference between dev and production builds** — there is no `if (__DEV__) { skip-the-real-check() }` shortcut anywhere in this set, which is the risky pattern this check exists to catch. Positive finding.
+
+---
+
+## Migration lineage observations (main vs Build 33)
+
+**This section describes a real, substantial, factual divergence between `origin/main`'s `supabase/` directory and the submitted iOS Build 33 source's `supabase/` directory — not a hypothesis.** Commands: `ls supabase/migrations/` (main, checked out directly) vs `git ls-tree -r --name-only f5594171 -- supabase` (Build 33, read via `git show`/`git ls-tree` without checkout, per the read-only constraint).
+
+### The two naming conventions
+
+- **`origin/main`**: 47 files in `supabase/migrations/`, all named `YYYY-MM-DD_description.sql` — **date-only** granularity (day, no time component). Suffix markers carry status inline in the filename: `_PROPOSED` (3 files: `2026-06-09_status_transition_guard_PROPOSED.sql`, `2026-06-18_monthly_leaderboard_rpc_PROPOSED.sql`, `2026-07-16_fork5_dispute_counter_PROPOSED.sql`), `_APPLIED` (3 files: `2026-08-19_flag_status_transition_guard_APPLIED.sql`, `2026-08-19_photo_alt_text_APPLIED.sql`, `2026-08-22_takedown_junk_flags_APPLIED.sql`), and 6 `drift_capture_*` files all dated `2026-07-27` (a single reconciliation batch — see below). One `.sql.deprecated-option1-do-not-apply` sentinel-named file. Everything lives flat in one directory; there is no `supabase/nonmanaged/`.
+- **Build 33 (`f5594171`)**: 86 files in `supabase/migrations/`, all named `YYYYMMDDhhmmss_description.sql` — full **timestamp** granularity (to the second). This is the standard format Supabase CLI's `supabase migration new` generates natively, whereas main's day-only convention is a simplified, hand-maintained scheme that does not match what the actual CLI tooling produces. Build 33 additionally has a `supabase/nonmanaged/` directory with 5 subdirectories — `destructive-data/`, `live-out-of-band/`, `manual/`, `proposed/`, `rollback-recovery/` — holding files whose names are recognizably the SAME content main keeps inline via suffix (e.g. Build 33's `nonmanaged/rollback-recovery/2026-07-27_drift_capture_handle_flag_status_change.sql` and `nonmanaged/proposed/2026-06-09_status_transition_guard_PROPOSED.sql` are identically-named to files that live directly in main's flat `migrations/` folder).
+
+**Content check, not just filenames:** diffed one migration both lineages share by content, `supabase/migrations/2026-05-30_trust_score_system.sql` (main) against Build 33's `supabase/migrations/20260531202835_trust_score_system.sql` — **byte-for-byte identical, zero diff lines**, despite the filename's date component differing by one day (05-30 vs 05-31) between the two naming schemes. This is useful evidence that, at least for shared content, the divergence is **organizational/procedural (naming convention, filing scheme) rather than a silent SQL-logic fork** — the two lineages agree on what this particular migration says, they just catalog it differently.
+
+### Substantive content Build 33 has that main does not
+
+Beyond the naming-convention difference, Build 33's migration count (86) versus main's (47) reflects **~39 migrations' worth of real, additional backend work absent from `origin/main` entirely**, not just renamed duplicates. Concretely:
+
+- **Edge functions**: main's `supabase/functions/` has 3 functions (`delete-account`, `notify-flag-status`, `send-push-notification`). Build 33's has 7 (adds `account-deletion-review`, `account-deletion-status`, `account-deletion-worker` — an async review/worker queue pattern for account deletion that main's single `delete-account` function doesn't have — plus `delete-flag`, a dedicated edge function for flag deletion that main has no equivalent of at all). Cross-checked against the client: `src/lib/flags.ts:1413`'s `deleteFlag()` on main does a **direct** `supabase.from('flags').delete()...` RLS-gated table call, not an edge-function call — consistent with main genuinely lacking the server-side `delete-flag` function, not just failing to wire up an existing one.
+- **Migrations from a `mod1*`-prefixed moderation-safety batch** (`20260828040000_mod1_moderation_release_safety.sql`, `20260828050000_mod1_admin_report_queue.sql`, `20260828060000_mod1r_fix1_report_and_insert_authz.sql`, `20260828070000_mod1r_fix1_pending_close_state.sql`, `20260828080000_mod1r_fix2_action_intent.sql`) and a `promptb_media_key_read_contract` migration (`20260830130000_...sql`) — none present on main. These read as a content-moderation/admin-report-queue feature that shipped in Build 33 but is entirely absent from `origin/main`'s backend.
+- **`supabase/tests/`**: Build 33 has a pgTAP-style SQL test directory (`d1f4r3_fix2_flags_delete_rls.test.sql`, `d1f4r3_fix3_review_audit.test.sql`, `mod1r_fix1/00_baseline.sql` + `10_proof.sql`, `promptb_media_key_guards.test.sql`) — main has no `supabase/tests/` directory at all.
+- Scale check for src (not deeply analyzed here — likely another lane's territory, noted for context only): `git diff --stat origin/main f5594171 -- src` reports **150 files changed, 14,080 insertions(+), 3,553 deletions(-)** — the backend divergence documented above sits inside a much larger overall divergence between the two trees, consistent with the task brief's "113 commits ahead" framing.
+
+### `schema.sql` staleness — self-admitted, in the file itself, on both lineages
+
+Both `supabase/schema.sql` files (main: 484 lines; Build 33: 489 lines — nearly identical size, consistent with schema.sql being a periodically-refreshed *snapshot* rather than a living document either lineage keeps current) carry the same class of explicit staleness warning. Main's header (`supabase/schema.sql:1-19`):
+
+```
+-- ⚠️  DO NOT RE-RUN THIS FILE WHOLESALE AGAINST THE LIVE PROJECT (QA 2026-08-19).
+--   Live has been hardened past this file by later migrations: re-running it
+--   would RESURRECT the broad `flags update own` policy...
+--
+-- RECONCILIATION STATUS (2026-06-07):
+--   This file covers the original tables (users, flags, push_tokens) + the
+--   2026-06-03 security gate functions + the F8 reopen RPC.  Ten additional
+--   tables and several supporting functions are NOT yet represented here —
+--   they were applied via the migration files in supabase/migrations/.
+--   For the full live schema, run pg_dump or consult: [migration file list]
+```
+
+This is the project **admitting, in-repo, in the file itself**, that `schema.sql` is a point-in-time snapshot (dated 2026-06-07) that is already known to be missing "ten additional tables and several supporting functions" relative to its own migrations directory, and that a wholesale re-run would actively regress live security posture. main's migrations directory extends to 2026-08-22 (`2026-08-22_takedown_junk_flags_APPLIED.sql`) — roughly **10 weeks past** the schema.sql reconciliation date. Anyone treating `schema.sql` as "the schema" rather than "a bootstrap starting point, superseded by the migrations directory" would be working from a picture that is confirmed-stale by the codebase's own account, not an inference of this audit.
+
+### The two-lineage problem, stated factually
+
+`origin/main`'s `supabase/` directory is not a reliable stand-in for the backend the submitted Build 33 binary actually runs against. Concretely: **anyone auditing `origin/main` for backend completeness, RLS coverage, or schema correctness is auditing a tree that is missing at minimum the account-deletion review/worker queue, the `delete-flag` edge function, the entire `mod1` moderation/admin-report-queue feature set, the media-key read-contract migration, and the `supabase/tests/` pgTAP suite** — none of these exist on main at all, not merely under a different name. The migration-naming-convention difference (date-only + inline suffix markers vs full-timestamp + a `nonmanaged/` classification directory) is a real process divergence worth reconciling on its own, but it is the smaller of the two problems; the larger one is that main's backend is measurably behind what shipped. Both `schema.sql` files independently self-disclose that neither lineage treats that file as authoritative — the actual source of truth for either lineage's live schema is stated, in both files, to be `pg_dump` against the live project, which this read-only, no-network, no-MCP audit cannot run. See CAND-I-06 (cross-referenced from the deprecated-APIs section) and Coverage gaps.
+
+---
