@@ -38,10 +38,10 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-030 | Privacy policy promises deletion/retention behaviour code lacks | CONFIRMED | MEDIUM | app-store/privacy | DOCS_ONLY, BACKEND |
 | FDA-031 | Security hygiene notes (grouped) | CONFIRMED | NOTE | security hygiene | BOTH |
 | FDA-032 | zz_backup snapshots exposed (suspected) | FALSE_POSITIVE | NOTE | privacy | BACKEND |
-| FDA-033 | Onboarding permission CTAs fail closed (dead dimmed button, no timeout) | LIKELY | MEDIUM | functional/UI/a11y | CURRENT_MAIN |
-| FDA-034 | Map location alert shows raw SDK/kCLErrorDomain text | CONFIRMED | MEDIUM | UI/UX copy/error handling | CURRENT_MAIN |
+| FDA-033 | Onboarding permission CTAs fail closed (dead dimmed button, no timeout) | CONFIRMED | LOW | functional/UI/a11y | BOTH |
+| FDA-034 | Map location alert shows raw SDK/kCLErrorDomain text (fixed on Build 33, not ported) | CONFIRMED(main)/FIXED(B33) | LOW | UI/UX copy/error handling | CURRENT_MAIN |
 | FDA-035 | Help FAQ denies the −20 admin-rejection penalty the live trigger applies | CONFIRMED | MEDIUM | functional/copy/trust | BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33 |
-| FDA-036 | Web: Alert.alert is a no-op; 12 unguarded call sites lose errors/confirmations | CONFIRMED | MEDIUM | functional/UX web | WEB_BUILD |
+| FDA-036 | Web: Alert.alert is a no-op; 10 unguarded web-reachable sites lose errors/validation | CONFIRMED | LOW | functional/UX web | WEB_BUILD |
 | FDA-037 | Architecture debt notes (grouped) | CONFIRMED | LOW | architecture/debt | CURRENT_MAIN |
 | FDA-038 | Guest mode not remembered across launches (sign-in wall every cold start) | CONFIRMED | LOW | functional/UX guest | CURRENT_MAIN, SUBMITTED_BUILD_33 |
 | FDA-039 | Main: address search sheet renders under the tab bar (input/results clipped) | CONFIRMED | MEDIUM | UI/functional search | CURRENT_MAIN |
@@ -408,7 +408,8 @@ SEVERITY: HIGH
 CATEGORY: functional / backend-contract / app-store
 AFFECTED_STATE: SUBMITTED_BUILD_33, WEB_BUILD. CURRENT_MAIN: NOT affected (main uploads directly to Storage at `<uid>/<ts>.<ext>` and the live policies permit it).
 CONFIDENCE: HIGH
-USER_IMPACT: In the shipped app, Report → add photo → Submit: `uploadFlagPhoto` throws "Photo upload could not be prepared." (PGRST202 function not found) BEFORE `createFlag`, so the whole report fails (ReportFlagModal uploads first, then creates the row). Avatar change fails the same way. App Review's "Report a barrier — photo is optional" step fails whenever a photo is attached; the EXIF-strip privacy gate now sits behind a dead call.
+USER_IMPACT: In the shipped app, a SIGNED-IN reporter who attaches a photo and taps Submit hits `uploadFlagPhoto` → "Photo upload could not be prepared." (PGRST202, function not found) BEFORE `createFlag`, so the whole report fails (ReportFlagModal uploads first, then creates the row). Avatar change fails the same way. App Review's "Report a barrier — photo is optional" step fails whenever a photo is attached; the EXIF-strip privacy gate sits behind a dead call.
+SCOPE REFINEMENT (runtime-verified 2026-09-03): this does NOT affect the anonymous/guest report path. The Build 33 anonymous form has no photo control at all and says so explicitly — "Your anonymous report still counts. Sign in to add a photo and help verifiers act faster." (screenshots/b33-report-13-form-located.png). A guest reporting a barrier — the flow the store copy and reviewer notes promise, and the one an App Reviewer can complete without credentials — is unaffected. The blast radius is signed-in reporters attaching photos, and avatar changes.
 REPRODUCTION: Build 33 src/lib/flags.ts:856-895 (`.rpc('prepare_flag_photo_upload', …)` with no fallback; `cancel_flag_photo_upload` in the catch), src/lib/photos.ts:100,133,144, src/lib/users.ts (avatar). Build 33 src/screens/ReportFlagModal.tsx:712-720 (authenticated path: `preparedPhotos.push(await uploadFlagPhoto(...))` runs BEFORE `createFlag`, inside the try whose catch at :789 shows "Couldn't submit your report") — no `isFunctionMissing` degrade exists on this path (that helper is used only by the leaderboard RPC and disputes). Historical confirmation: qa-reports/2026-08-31_Codex_FinalBuild32Stabilization.md (Build 33 tree) already recorded via read-only inspection that prepare_flag_photo_upload / commit_avatar_photo_upload / cancel_flag_photo_upload are not deployed and repaired only the AVATAR path's error copy. Production `pg_proc` (evidence/db-proof-flags-delete-authorization.md functions table) has no prepare_/commit_/cancel_flag_photo_upload or commit_avatar_photo_upload; the definitions live only in Build 33's supabase/nonmanaged/proposed/2026-08-27_d1f4_async_account_deletion.sql.
 EXPECTED: photo attached → uploaded → report created. ACTUAL: report fails outright with a photo attached; succeeds only without one.
 ROOT_CAUSE_EVIDENCE: Prompt B "B2 minimum media-key read contract" applied only the READ side (20260830130000); the write side (upload intents) was explicitly deferred ("deliberately does not enable those deferred writers", ProductionSchemaContractP0 report) while the accepted client already used it.
@@ -590,11 +591,11 @@ NOTES: Lane E CAND-E-13 raised it from the 2026-08-18 purge migration; read-only
 ### FDA-033
 ID: FDA-033
 TITLE: Onboarding permission cards fail closed — when the silent permission lookup never resolves to a boolean, "Allow location" and "Turn on notifications" stay disabled at 50% opacity with no timeout, and the only way forward is "Not now"
-STATUS: LIKELY (reproduced on the audit simulator on CURRENT_MAIN; device behaviour not observed; root cause read from source)
-SEVERITY: MEDIUM
+STATUS: CONFIRMED (reproduced on the audit simulator on CURRENT_MAIN; source identical on Build 33 — blob 81e42298; device behaviour not observed)
+SEVERITY: LOW
 CATEGORY: functional / UX / accessibility (permission acquisition)
-AFFECTED_STATE: CURRENT_MAIN (src/components/OnboardingCards.tsx); SUBMITTED_BUILD_33 to be re-checked on its build
-CONFIDENCE: MEDIUM
+AFFECTED_STATE: BOTH — src/components/OnboardingCards.tsx is BYTE-IDENTICAL in CURRENT_MAIN and SUBMITTED_BUILD_33 (same blob 81e42298), so the shipped build carries it too
+CONFIDENCE: HIGH
 USER_IMPACT: A first-run user is shown the app's own value-proposition for location and notifications and then cannot act on it: the primary CTA is dimmed and dead (it announces `disabled` to VoiceOver too). They must tap "Not now"; location can only be granted later from Home's "Use my location". If the lookup rejects on a real device (the code comment COR-6 documents "rare OS/entitlement states"), the same dead button ships.
 REPRODUCTION: simulator (iOS 26.5, Release build of 70b52a30): screenshots/main-onboarding-03-light.png, main-onboarding-03b-state.png (button dimmed after tap, no system dialog), main-onboarding-04-light.png, main-onboarding-04b-notif-tap.png (dimmed; tap ignored). Source: OnboardingCards.tsx:369-370 `permissionChecking = permission != null && Platform.OS !== 'web' && currentGranted === null`; :381-397 the check's `.catch(() => {})` leaves `currentGranted` null; :706-711 `disabled={permissionChecking}` + `opacity: 0.5`.
 EXPECTED: the silent lookup fails OPEN (treat unknown as not-granted after a short timeout so the CTA is live and fires the OS prompt), matching the request path's COR-6 contract "the primary button must never read as dead".
@@ -607,14 +608,15 @@ REGRESSION_RISK: none (fail-open only widens the enabled window).
 LIKELY_REPAIR_SIZE: TINY (catch → set false; optional 1.5 s timeout race).
 DEPENDENCIES: none. RECOMMENDED_ACCEPTANCE_TEST: RTL test that rejects/hangs the lookup and asserts the CTA is enabled and fires the request; simulator: fresh install → card 3 CTA is live and the iOS dialog appears.
 NOTES: On this simulator no iOS location/notification dialog appeared at all after the tap; `locationd.synchronous` XPC activation is logged at the tap time. Whether the lookup hangs only in the simulator is an evidence gap; the code path is the finding.
+SEVERITY CALIBRATION (2026-09-02, adjudicated): downgraded MEDIUM→LOW. "Not now", "Back" and "Skip" all stay enabled, so the user is never trapped — onboarding completes and both permissions remain grantable later (Home "Use my location"; Settings → Notifications). The consequence is a lost priming opportunity and a control that reads dead, not a blocked journey. Verified on Build 33 by blob equality (evidence/fda036-alert-and-onboarding-trace.md).
 
 ### FDA-034
 ID: FDA-034
 TITLE: The map's "Couldn't find your location" alert shows raw internal error text to the user ("Calling the 'getCurrentPositionAsync' function has failed → Caused by: … (kCLErrorDomain error 0.)")
-STATUS: CONFIRMED (CURRENT_MAIN, simulator); Build 33 status pending its build (Lane E notes Build 33 added `locationErrorMessage` hardening in src/lib/location.ts)
-SEVERITY: MEDIUM
+STATUS: CONFIRMED on CURRENT_MAIN (simulator) / HISTORICAL_FIXED on SUBMITTED_BUILD_33
+SEVERITY: LOW
 CATEGORY: UI / UX copy / error handling (trust)
-AFFECTED_STATE: CURRENT_MAIN; SUBMITTED_BUILD_33 = to verify (likely HISTORICAL_FIXED there)
+AFFECTED_STATE: CURRENT_MAIN only. Build 33 imports and calls `locationErrorMessage(e)` (MapScreen.tsx:22 + :1321 → location.ts:75-78, pinned by tests); main's MapScreen.tsx:1299 calls `errorMessage(e)` and main's location.ts has no such mapper — the Build 33 fix was never forward-ported.
 CONFIDENCE: HIGH
 USER_IMPACT: The first thing a new user sees on the map after granting location can be a developer stack-style message naming an SDK function and an Apple error domain. It reads as broken and untrustworthy on a safety product; it also happens on transient `kCLErrorLocationUnknown` (error 0), which simply means "try again".
 REPRODUCTION: simulator, main Release build, location granted, simulated location set → Explore → screenshots/main-map-02-light-settled.png. Source: src/screens/MapScreen.tsx:1299 `Alert.alert("Couldn't find your location", errorMessage(e))` — the friendly constant `LOCATE_FAILED_MSG` defined at MapScreen.tsx:277 ("Couldn't find your location — check your connection and try again.") is not used on this path; `errorMessage()` (src/lib/errors.ts) passes unrecognised messages verbatim. Build 33: src/lib/location.ts:63-75 `locationErrorMessage()` explicitly maps `kCLErrorDomain error N` → HISTORICAL_FIXED on Build 33, STILL_OPEN on main.
@@ -622,19 +624,21 @@ EXPECTED: friendly copy ("We couldn't get your location right now. Check Locatio
 ACTUAL: raw chained error text; OK only.
 VISUAL_EVIDENCE: screenshots/main-map-02-light-settled.png (glass alert over the map; body text over a blurred green/blue backdrop is also lower-contrast than the token floor).
 HISTORICAL_RELATION: Build 33 `locationErrorMessage` (Codex Wave R3 prompt/permission work, 2026-08-27) — likely HISTORICAL_FIXED on Build 33 / STILL_OPEN on main.
+SEVERITY CALIBRATION: the shipped binary does NOT have this defect, so it carries no App Store or current-user risk; it matters only for the next build cut from main (FDA-001). LOW, not MEDIUM.
 LIKELY_REPAIR_SIZE: TINY (port Build 33's mapper to main, or converge). DEPENDENCIES: FDA-001. RECOMMENDED_ACCEPTANCE_TEST: unit test mapping kCLErrorDomain 0/1/2 to friendly copy; simulator shows friendly alert with Retry.
 
 ### FDA-036
 ID: FDA-036
-TITLE: On the web build `Alert.alert()` is a no-op, and at least 12 of 29 call sites (AdminScreen, SettingsScreen, FeedbackModal, FilterPresetsModal, FlagDetailModal, feedback.ts) are unguarded — errors, confirmations and successes vanish silently on web
-STATUS: CONFIRMED (source; react-native-web's Alert export read from node_modules)
-SEVERITY: MEDIUM
+TITLE: On the web build `Alert.alert()` is a no-op, and 10 web-reachable call sites (main; 12 live on Build 33) are unguarded — those failure and validation messages vanish silently
+STATUS: CONFIRMED (source; react-native-web 0.21.2 `static alert() {}` read from node_modules, dist + src)
+SEVERITY: LOW
 CATEGORY: functional / UX (web)
-AFFECTED_STATE: WEB_BUILD (CURRENT_MAIN source; Build 33 web not independently re-checked)
+AFFECTED_STATE: WEB_BUILD (both lineages; native iOS renders every one of these, so the shipped iOS binary is unaffected)
 CONFIDENCE: HIGH
 USER_IMPACT: On flagstone.skypistudio.com a failed action shows nothing: e.g. Settings data export/preset delete failures and successes, Flag Detail errors, feedback send errors. The team has patched this class four times individually (F46 `notify()`, F48 in SignInScreen, R8, R11) but not systemically.
-REPRODUCTION: Lane I CAND-I-02 (evidence/laneI-architecture-health.md — per-call-site table); `node_modules/react-native-web/src/exports/Alert/index.js` is an empty function.
-EXPECTED: every user-facing alert goes through `notify()`/`confirm()` from src/lib/confirm.ts (web-safe); a lint rule bans bare `Alert.alert(` outside that module.
+REPRODUCTION: evidence/fda036-alert-and-onboarding-trace.md (full per-site table, both lineages). main has 28 real call sites: 16 Platform/helper-guarded, 1 native-only by data flow, 1 unreachable behind a disabled button, and 10 unguarded + web-reachable — AdminScreen.tsx:156,177 (admin-only); SettingsScreen.tsx:460 (guest "Export my data" is a dead tap on web), :555 (PIPEDA export failure silent); FeedbackModal.tsx:182; FilterPresetsModal.tsx:181,202,228; feedback.ts:125; pushNotifications.ts:233 (push toggle confirms then does nothing on web). Build 33 has 32 sites — the same 10 plus AdminScreen:436 (Restore) and the MOD1 trio :191/:204/:207 (admin-only and inert, since the mod1 migrations are unapplied) = 12 live.
+EXPECTED: every user-facing alert goes through `notify()`/`confirm()` from src/lib/confirm.ts (web-safe, byte-identical in both trees); a lint rule bans bare `Alert.alert(` outside that module.
+SEVERITY CALIBRATION: LOW, not MEDIUM — no destructive action, consent dialog or data-loss confirmation is among the unguarded sites (those are already fenced through confirm() in both trees); the affected messages are failure and validation notices on a demo web surface, and the two highest-impact ones (SettingsScreen export) affect a guest-visible control on web only.
 HISTORICAL_RELATION: F46, F48, R8, R11 — HISTORICAL_REGRESSED (class re-introduced after each spot fix).
 LIKELY_REPAIR_SIZE: SMALL (12 call sites + lint rule). DEPENDENCIES: none. RECOMMENDED_ACCEPTANCE_TEST: ESLint no-restricted-syntax on `Alert.alert`; web click-through of Settings export failure shows a visible banner.
 
