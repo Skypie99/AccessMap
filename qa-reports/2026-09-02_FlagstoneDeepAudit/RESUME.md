@@ -5,10 +5,10 @@
 3. WORKTREE: /Users/skypie/AccessMap-deep-audit-20260902 (ALWAYS use absolute paths / `git -C`; the shell cwd resets to a scratch dir).
 4. BRANCH: claude/flagstone-deep-audit-20260902 (tracks origin).
 5. RULE: no product-code changes. Writes ONLY under qa-reports/2026-09-02_FlagstoneDeepAudit/. Canonical /Users/skypie/AccessMap is READ-ONLY (it is dirty on another session's branch — expected). Production Supabase (ref kldlwszpfkdmsjrjhjym) is READ-ONLY: SELECT-only SQL, catalog reads, unauthenticated endpoint probes; never mutate.
-6. COMPLETED LANES: none closed. Baselines done (typecheck 0, lint 0, jest 3657 pass/32 todo, expo-doctor 2 fails, release guards PASS).
-7. CURRENT PARTIAL LANES: A, §29, E, H (see AUDIT_STATE.md).
+6. AUDIT STATUS: **COMPLETE** (2026-09-03). 45 findings, 140 historical items reconciled. Read FINAL_AUDIT_REPORT.md then PLANNING_HANDOFF.md.
+7. Partial by environment only: Dynamic Type + VoiceOver (no device), signed-in journeys (no credentials by rule), ~150 historical items (rate limits).
 8. LAST COMPLETED SUBTASK: §29 root cause — Build 33 client calls undeployed `delete-flag` Edge Function (FDA-002); production DB authorizes direct admin DELETE (so main's path is DB-authorized).
-9. NEXT ACTION: AUDIT_STATE.md → NEXT_EXACT_ACTION.
+9. NEXT ACTION: hand to Sky + ChatGPT for repair-wave planning. Gating decision = FDA-001 (lineage).
 10. EVIDENCE FILES: EVIDENCE_INDEX.md; evidence/*.md; logs/*.log.
 11. SIMULATOR STATE: audit sim F6B9246F-2B95-4C5C-BC7F-CDD4D3D1E4DC booted; app install in progress via expo run:ios (Release). If the app is missing after a restart, re-run: `cd <worktree> && CI=1 npx expo run:ios --configuration Release --device F6B9246F-2B95-4C5C-BC7F-CDD4D3D1E4DC --no-bundler` (needs .env copied from /Users/skypie/AccessMap/.env — do not print it).
 12. BACKGROUND PROCESS/LOG STATE: see AUDIT_STATE.md LONG_RUNNING_COMMANDS. Read logs/ before rerunning anything expensive.

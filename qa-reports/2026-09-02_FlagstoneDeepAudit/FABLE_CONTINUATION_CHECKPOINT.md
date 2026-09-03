@@ -48,15 +48,27 @@ Build 33 vs main applicability is recorded per finding in AFFECTED_STATE. Key sp
 ## Hard constraints (unchanged)
 No product edits; no merges/pushes to anything but the audit branch; no production mutation; never create accounts or enter passwords; never print credentials (one historical literal surfaced accidentally in a shell transcript — not recorded anywhere).
 
-## Remaining queue (priority order)
-P0-1 Bank + push this checkpoint (this commit).
-P0-2 Build 33 guest families on FAA0564B: Explore, Legend, List, Filter, More, Search+keyboard, Report flow to Submit (cancel), Flag detail, Tasks, Profile(guest), Drawer, Settings, About/Resources/HowToHelp, Help/Feedback sheets; then dark mode + XXXL on Home/Explore/Details/Tasks/Report. Same on MAIN for the not-yet-captured families (Search, Report, Detail, Tasks, Profile, Drawer, Settings, sheets), then dark + XXXL.
-P0-3 Resume J3 reconciliation from the draft; assemble HISTORICAL_RECONCILIATION.md (P2 still-open list is the deliverable Sky asked for).
-P0-4 Adjudicate remaining candidates (FDA-035 disposition, FDA-036 Build-33 applicability, FDA-033 on Build 33), normalize ledger, run tools/update_state_counts.py.
-P0-5 TEST_AND_RUNTIME_MATRIX.md (baselines + runtime sessions), EVIDENCE_INDEX.md completion, PLANNING_HANDOFF.md, FINAL_AUDIT_REPORT.md (with the §29 subsection and ADMIN_FLAG_DELETE_ACCEPTANCE_PLAN), Lane K kill shot, final consistency pass, AUDIT_STATUS: COMPLETE, final push.
-P1 Lane F runtime timings (cold launch, map settle) on both sims; web demo dark/full-map/detail recheck (pane was unresponsive).
-P2 Reduce Motion pass; iPad/other iPhone sizes (only 17-family sims installed).
-P3 Cosmetic enumeration beyond the matrix.
+## STATUS: AUDIT COMPLETE (2026-09-03 00:45 PDT)
 
-## Exact next action
-Boot both simulators, then run P0-2 Build 33 families (Explore first) while a narrow workflow resumes J3 from the draft and traces FDA-036/033 applicability on Build 33.
+All required surfaces evaluated; 45 findings adjudicated; Build 33 and current main kept separate throughout; 140 historical items reconciled; release-risk stated separately per lineage. Final artifacts: `FINAL_AUDIT_REPORT.md`, `FINDINGS_LEDGER.md`, `HISTORICAL_RECONCILIATION.md`, `PLANNING_HANDOFF.md`, `UI_VISUAL_ACCEPTANCE.md`, `SCREEN_INVENTORY.md`, `TEST_AND_RUNTIME_MATRIX.md`, `EVIDENCE_INDEX.md` + 16 evidence files + 101 screenshots + 10 logs.
+
+Consistency check passed: 46 index rows == 46 detail entries, no duplicates, no ID gaps (FDA-001…046), every row carries a severity and an affected state.
+
+## What a future session must NOT redo
+
+Everything in the DO-NOT-REDO register above, plus:
+- The whole finding set FDA-001…046 (one FALSE_POSITIVE: FDA-032).
+- The guest simulator walk on BOTH lineages (101 screenshots): onboarding, sign-in, Home, Explore, Legend, List/Nearby, Filter, More, search, callout, Details, Tasks, Report (anonymous, to the Submit button), light + dark.
+- The Dynamic Type attempt — it is an ENVIRONMENT failure, proven by Apple's own Settings app failing to scale (`evidence/dynamic-type-environment-gap.md`). Do not retry on this host; use a real device.
+- The "Report pill does nothing" hypothesis — DISPROVEN. It was a mis-aimed tap; the pill spans device y≈715–755 on a 402×874 point screen. The guest report flow works.
+- The 42501 admin-delete story — DEAD. Fixed 2026-08-18 by the `users.is_admin` column grant. The live defect is the undeployed `delete-flag` Edge Function (FDA-002).
+
+## Open work that remains (for a repair session, not this audit)
+
+P0 — none: the audit is complete.
+P1 — close the evidence gaps that need capabilities this audit lacks: Dynamic Type + VoiceOver on a real device; any signed-in journey (admin delete, account deletion, comments, verify/resolve, photo upload); App Store Connect status; the web demo's dark/full-map/detail checks.
+P2 — reconcile the ~150 historical items J3 could not reach (highest-value unread files named in `HISTORICAL_RECONCILIATION.md` §Coverage gaps); finish `evidence/laneG-appstore-truth-table.md`.
+P3 — performance at scale, once production holds more than 21 flags.
+
+## Next action
+Sky + ChatGPT: read `PLANNING_HANDOFF.md`. The gating decision is FDA-001 — which lineage the next build is cut from. Cluster B (Sky-only: FDA-006, 007, 008, 025, 046) blocks nothing and can start immediately.
