@@ -45,6 +45,13 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-037 | Architecture debt notes (grouped) | CONFIRMED | LOW | architecture/debt | CURRENT_MAIN |
 | FDA-038 | Guest mode not remembered across launches (sign-in wall every cold start) | CONFIRMED | LOW | functional/UX guest | CURRENT_MAIN, SUBMITTED_BUILD_33 |
 | FDA-039 | Main: address search sheet renders under the tab bar (input/results clipped) | CONFIRMED | MEDIUM | UI/functional search | CURRENT_MAIN |
+| FDA-040 | No password reset anywhere — forgotten password locks the account permanently | CONFIRMED | MEDIUM | functional/account recovery | BOTH |
+| FDA-041 | Push notifications ignore user preferences; notification_preferences table orphaned | CONFIRMED | MEDIUM | functional/consent/trust | BOTH, BACKEND |
+| FDA-042 | Anon readers get reporter user_id + precise coordinates; "no PII" comment false | CONFIRMED | MEDIUM | privacy | BACKEND |
+| FDA-043 | Sign-up always claims a confirmation link was sent | CONFIRMED | LOW | UX copy | CURRENT_MAIN |
+| FDA-044 | supabase.ts throws at module scope on missing env — blank screen, no ErrorBoundary | CONFIRMED | LOW | reliability/release | BOTH |
+| FDA-045 | Privacy policy omits public leaderboard disclosure | CONFIRMED | LOW | privacy/app-store | DOCS_ONLY |
+| FDA-046 | Release-config hygiene (Android TODO, Sentry env, expo.owner) | CONFIRMED | NOTE | release/config | BOTH |
 
 ## Findings
 
@@ -695,4 +702,110 @@ EXPECTED: the sheet presents above the tab bar (or the tab bar hides) and the re
 ACTUAL: sheet is mounted inside the tab navigator content and the tab bar paints over it.
 HISTORICAL_RELATION: Build 33 a1b40c2 (2026-08-30) "keep address search visible above keyboard"; Codex R2 forms/accessibility (2026-08-27).
 LIKELY_REPAIR_SIZE: SMALL. DEPENDENCIES: FDA-001 (port vs converge). RECOMMENDED_ACCEPTANCE_TEST: simulator with software keyboard: results list fully visible above keyboard and tab bar; XXXL text still shows ≥1 full result row.
+
+### FDA-040
+ID: FDA-040
+TITLE: There is no password reset anywhere in the app — a user who forgets their password is permanently locked out of their account and its history
+STATUS: CONFIRMED
+SEVERITY: MEDIUM
+CATEGORY: functional / account recovery / app-store
+AFFECTED_STATE: BOTH (CURRENT_MAIN and SUBMITTED_BUILD_33)
+CONFIDENCE: HIGH
+USER_IMPACT: Email+password is the only sign-in method. With no "Forgot password?" affordance and no `resetPasswordForEmail` call, a locked-out user cannot recover the account that holds their reports, points, tier, watched flags and streak. Their only route is to create a second account, orphaning the first — and they cannot delete the orphan either, because deletion requires signing in. For an app whose value accrues to the account over time, this is a genuine dead end.
+REPRODUCTION: `git grep "resetPasswordForEmail" -- src` → 0 hits on origin/main AND on f5594171. `git grep -i "Forgot password" -- src` → 0 hits. SignInScreen.tsx offers only Sign in / Create account / Browse without an account (screenshots/main-resume-01.png).
+EXPECTED: a "Forgot password?" link calling `supabase.auth.resetPasswordForEmail()` with a deep-link redirect (`accessmap://`) into a set-new-password screen.
+ACTUAL: no path exists in client or docs.
+HISTORICAL_RELATION: S14 and P6 (qa-reports/2026-08-18_AppStore_Readiness_Audit.md and qa-2026-08-18-deep-sweep.md) — HISTORICAL_STILL_OPEN, unchanged since 2026-08-18.
+REGRESSION_RISK: none (additive). Requires Supabase redirect-URL allowlisting and a deep-link handler.
+LIKELY_REPAIR_SIZE: SMALL. DEPENDENCIES: deep-link routing already exists (`accessmap://flag/{id}`).
+RECOMMENDED_ACCEPTANCE_TEST: disposable account → Forgot password → email arrives → link opens the app → new password set → sign in succeeds; rate-limited; no account-existence oracle in the copy.
+
+### FDA-041
+ID: FDA-041
+TITLE: Server-sent push notifications ignore the user's notification preferences entirely — the four in-app toggles are local-only, and production's `notification_preferences` table is read by no code in either lineage
+STATUS: CONFIRMED
+SEVERITY: MEDIUM
+CATEGORY: functional / consent / trust
+AFFECTED_STATE: BOTH + BACKEND
+CONFIDENCE: HIGH
+USER_IMPACT: A user who turns "Flag status updates" (or nearby / watched / bulk alerts) OFF still receives those pushes: the sender never consults any preference. The only way to actually stop them is the iOS system toggle. Settings that visibly do nothing are a trust problem and the kind of thing App Review notices.
+REPRODUCTION: `supabase/functions/send-push-notification/index.ts:149-151` selects recipients as `.from('push_tokens').select('token').eq('user_id', userId)` — no preference join or filter; `notify-flag-status/index.ts:196` delegates to it. Preferences live only in AsyncStorage: `src/lib/notificationPrefs.ts:17` `STORAGE_KEY_PREFIX = '@accessmap/notification_prefs_v1:'`, consumed client-side by `src/lib/flagUpdates.ts:18` (`isNotifiable`) for the in-app "since your last visit" banners. `grep -rn "notification_preferences" src` → 0 hits in either lineage; the production table (user_id, flag_status_updates, nearby_flags, watched_flag_updates, bulk_watch_alerts, updated_at, with owner RLS) is orphaned.
+EXPECTED: either the sender filters recipients on `notification_preferences`, or the UI states plainly that the toggles affect in-app banners only.
+ACTUAL: the toggles read as push controls and are not.
+HISTORICAL_RELATION: ReSweep DFS#2 (summaries/2026-06-09_AccessMap_ReSweep_Report.md) — HISTORICAL_STILL_OPEN. The migration `2026-05-25_notification_preferences_proposal.sql` shipped the table; the consumer was never built.
+LIKELY_REPAIR_SIZE: SMALL (server-side join + write-through from the client) or TINY (honest copy). DEPENDENCIES: Jordan review — consent-adjacent (Const. Art. 7.6).
+RECOMMENDED_ACCEPTANCE_TEST: disposable account with "Flag status updates" OFF → trigger a status change on its flag → no push delivered; ON → push delivered.
+
+### FDA-042
+ID: FDA-042
+TITLE: Unauthenticated readers receive every flag's reporter `user_id` alongside its precise coordinates, and `schema.sql`'s comment asserting flags contain no PII is false
+STATUS: CONFIRMED
+SEVERITY: MEDIUM
+CATEGORY: privacy
+AFFECTED_STATE: BACKEND (both lineages read the same production policy)
+CONFIDENCE: HIGH
+USER_IMPACT: With only the public anon key, anyone can pull the full `flags` table — `user_id`, `lat`, `lng`, `created_at`, description, photo URL — and group every report by reporter. Because reports are filed where the person physically was, that is a movement history keyed to a stable pseudonymous id, readable by the world. For a disability-accessibility product the affected population is precisely the sensitive one.
+REPRODUCTION: production `pg_policies`: `flags readable by anon` USING **true** (no column restriction; PostgREST honours `select=*`); production `information_schema.columns` for `flags` includes `user_id, lat, lng` (evidence/db-proof-flags-delete-authorization.md). Contrast `users`, where the email column grant was deliberately withheld from `authenticated` — the same care was not applied to `flags.user_id`.
+EXPECTED: anonymous reads served through a view that omits `user_id` (or a coarsened coordinate), matching the privacy posture already applied to `users.email`.
+ACTUAL: full row exposure to `anon`.
+HISTORICAL_RELATION: S17 (2026-08-18_AppStore_Readiness_Audit.md) — HISTORICAL_STILL_OPEN.
+REGRESSION_RISK: the app's own map needs lat/lng and needs to know "your flag" — a view must keep those for the owner while nulling `user_id` for others; changing this is a behavioural change to the read contract, so it must be sequenced with the client.
+LIKELY_REPAIR_SIZE: MEDIUM. DEPENDENCIES: Jordan review (Const. Art. 7.6 — location + disability data); FDA-005 lineage.
+RECOMMENDED_ACCEPTANCE_TEST: anon `GET /rest/v1/flags?select=*` returns no `user_id`; the app still renders "your flag" affordances for the owner; map and clustering unchanged.
+NOTES: Also correct the false comment in supabase/schema.sql.
+
+### FDA-043
+ID: FDA-043
+TITLE: Sign-up always tells the user "we sent a confirmation link", even when Supabase returns a live session and no email was sent
+STATUS: CONFIRMED (source)
+SEVERITY: LOW
+CATEGORY: UX copy / correctness
+AFFECTED_STATE: CURRENT_MAIN (SignInScreen.tsx:127); Build 33 not separately re-read
+CONFIDENCE: HIGH
+USER_IMPACT: With email confirmation disabled, `signUp` returns a session and the user is signed in immediately — while the screen tells them to go check their inbox. Some will wait for an email that never arrives.
+REPRODUCTION: src/screens/SignInScreen.tsx:127 sets the confirmation message unconditionally on sign-up success without branching on `data.session`.
+EXPECTED: branch on `data.session` — signed in → proceed; null session → show the confirmation copy.
+HISTORICAL_RELATION: S7 (2026-08-18_AppStore_Readiness_Audit.md) — HISTORICAL_STILL_OPEN.
+LIKELY_REPAIR_SIZE: TINY. RECOMMENDED_ACCEPTANCE_TEST: with confirmation off, sign-up lands in the app with no email copy; with it on, the copy shows.
+
+### FDA-044
+ID: FDA-044
+TITLE: `src/lib/supabase.ts` throws at module scope when either Supabase env var is missing — the failure happens before any ErrorBoundary mounts, so a misconfigured build shows a blank screen with no diagnostic
+STATUS: CONFIRMED (source); EVIDENCE_GAP on whether EAS production actually defines the vars
+SEVERITY: LOW (release risk; HIGH consequence if it ever fires)
+CATEGORY: reliability / release
+AFFECTED_STATE: BOTH
+CONFIDENCE: HIGH (code) / UNKNOWN (EAS env)
+USER_IMPACT: If a build is cut without `EXPO_PUBLIC_SUPABASE_URL` / `_ANON_KEY`, every launch is a white screen — no message, no recovery, and nothing distinguishes it from a crash.
+REPRODUCTION: src/lib/supabase.ts:16-23 throws synchronously at import time; App.tsx's ErrorBoundary cannot catch a module-evaluation throw.
+EXPECTED: fail soft into a themed "configuration problem" screen, and/or a release guard that asserts the vars are present in the EAS profile before a store build.
+HISTORICAL_RELATION: U1 (2026-08-18_AppStore_Readiness_Audit.md) — HISTORICAL_STILL_OPEN; also the long-standing "verify EAS Supabase env before build" carry-over in PROJECT_STATE.md.
+LIKELY_REPAIR_SIZE: TINY (guard) + TINY (release check). DEPENDENCIES: FDA-005 (the same missing pre-build contract gate).
+RECOMMENDED_ACCEPTANCE_TEST: build with the vars unset → app shows the configuration screen, not a blank one; `eas secret:list` / profile check is part of release preflight.
+
+### FDA-045
+ID: FDA-045
+TITLE: The privacy policy does not disclose that display name, points, tier and rank are published to a public leaderboard
+STATUS: CONFIRMED
+SEVERITY: LOW
+CATEGORY: privacy / app-store (policy accuracy)
+AFFECTED_STATE: DOCS_ONLY (published page + docs/PRIVACY_POLICY.md), behaviour in BOTH
+CONFIDENCE: HIGH
+USER_IMPACT: The policy's "what others can see" table lists flags and photos but never the leaderboard, so a user is not told their display name and score are ranked publicly.
+REPRODUCTION: `git grep -i "leaderboard" -- docs/PRIVACY_POLICY.md` → 0 hits; LeaderboardScreen renders display_name + avatar + points for all users.
+HISTORICAL_RELATION: MR-3 (docs/TESTFLIGHT_ACTION_ITEMS.md) — HISTORICAL_STILL_OPEN.
+LIKELY_REPAIR_SIZE: TINY (one row in the sharing table). DEPENDENCIES: bundle with FDA-030's policy corrections. RECOMMENDED_ACCEPTANCE_TEST: policy names the leaderboard and what it exposes.
+
+### FDA-046
+ID: FDA-046
+TITLE: Release-config hygiene (grouped): Android submit path is still a TODO placeholder, the EAS `production` profile omits `SENTRY_DISABLE_AUTO_UPLOAD` that `testflight` sets, and `app.json` has no `expo.owner`
+STATUS: CONFIRMED
+SEVERITY: NOTE
+CATEGORY: release / config
+AFFECTED_STATE: BOTH
+CONFIDENCE: HIGH
+REPRODUCTION: eas.json `submit.production.android.serviceAccountKeyPath` = `"TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json"`; `build.testflight.env` sets `SENTRY_DISABLE_AUTO_UPLOAD:"true"` while `build.production.env` sets only `APP_ENV`; `git grep '"owner"' -- app.json` → 0 hits.
+USER_IMPACT: none today (iOS-only release; Sentry inactive). Each is a latent failure the first time Android submit or a Sentry-enabled production build is attempted.
+HISTORICAL_RELATION: NH-4 / NH-5 / NH-6 (docs/TESTFLIGHT_ACTION_ITEMS.md) — HISTORICAL_STILL_OPEN.
+LIKELY_REPAIR_SIZE: TINY.
 
