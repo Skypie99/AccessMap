@@ -1,0 +1,253 @@
+start Wed Sep  2 17:04:25 PDT 2026
+HEAD 019a0a8649df3db845341b24a81bf63ef76eeb76
+PASS src/__tests__/reportControl.guard.test.ts
+PASS src/lib/__tests__/tasksSearchFilter.test.ts (5.737 s)
+PASS src/__tests__/dismissalStandard.guard.test.ts (5.734 s)
+PASS src/lib/__tests__/flags.test.ts (6.241 s)
+PASS src/__tests__/flexBasisUnderLargeType.guard.test.ts
+PASS src/__tests__/dynamicTypeGuard.test.ts (6.692 s)
+PASS src/lib/__tests__/copy.test.ts
+PASS src/__tests__/hitTargetFrame.guard.test.ts
+PASS src/hooks/__tests__/useComments.test.ts
+PASS src/lib/__tests__/flagsStore.d4.test.tsx
+PASS src/lib/__tests__/reports.test.ts
+PASS src/lib/__tests__/watchedFlags.test.ts
+PASS src/lib/__tests__/flags.supabase.test.ts
+PASS src/lib/__tests__/contextTags.test.ts
+PASS src/lib/__tests__/dataExport.test.ts
+PASS src/lib/__tests__/accessibility.test.ts
+PASS src/lib/__tests__/comments.test.ts
+PASS src/components/__tests__/PlatformMapWeb.calloutClear.test.tsx
+PASS src/components/__tests__/CommentBubble.test.tsx (14.769 s)
+PASS src/components/__tests__/disputeControl.guard.test.ts
+PASS src/lib/__tests__/users.test.ts
+PASS src/components/ui/__tests__/FlagCard.dynamicType.test.tsx (8.026 s)
+PASS src/__tests__/keyboardClass.guard.test.ts
+PASS src/lib/__tests__/flags.updateFlagContent.test.ts
+PASS src/__tests__/noCredentialsInTree.guard.test.ts (5.45 s)
+PASS src/components/__tests__/OnboardingCards.dynamicType.test.tsx (27.624 s)
+PASS src/screens/__tests__/NotificationPreferencesScreen.test.tsx (16.24 s)
+PASS src/screens/__tests__/TasksScreenFlagCard.test.tsx (44.116 s)
+PASS src/__tests__/announceCoverage.guard.test.ts
+PASS src/components/__tests__/bp10SeverityGrammarGuards.test.tsx
+PASS src/lib/__tests__/sharedModalsContext.test.tsx (38.331 s)
+PASS src/lib/__tests__/heatmap.wave4.test.ts
+PASS src/__tests__/sheetPull.guard.test.ts
+PASS src/lib/__tests__/sr050DeleteFlagPhotos.test.ts
+PASS src/components/__tests__/PlatformMapNative.calloutClear.test.tsx
+PASS src/lib/__tests__/reputationTier.test.ts
+PASS src/components/__tests__/ReportContentModal.test.tsx (47.566 s)
+PASS src/components/ui/__tests__/GlassSurface.test.tsx
+PASS src/components/__tests__/CachedTileLayer.test.ts
+PASS src/components/__tests__/commentHide.guard.test.ts
+PASS src/lib/__tests__/theme.test.ts
+PASS src/lib/__tests__/feedbackStore.test.ts
+PASS src/components/__tests__/PlatformMapWeb.reduceMotion.test.tsx
+PASS src/lib/__tests__/photos.test.ts
+PASS src/lib/__tests__/distance.test.ts
+PASS src/lib/__tests__/tasksCategoryFilter.test.ts
+PASS src/lib/__tests__/surfaceTrigger.test.tsx
+PASS src/__tests__/typeBlock.guard.test.tsx
+PASS src/__tests__/privacy.guard.test.ts
+PASS src/__tests__/appConfig.guard.test.ts
+PASS src/lib/__tests__/savedPlaces.test.ts
+PASS src/moderation/__tests__/blockedTerms.test.ts
+PASS src/lib/__tests__/tileCache.test.ts
+PASS src/lib/__tests__/statusHistory.test.ts
+PASS src/lib/__tests__/createAnonFlag.test.ts
+PASS src/__tests__/terms.guard.test.ts
+PASS src/lib/__tests__/filterPresets.test.ts
+PASS src/screens/__tests__/MapScreen.detail.test.ts
+PASS src/__tests__/sheetBodyScrolls.guard.test.ts
+PASS src/screens/__tests__/tasksHeaderReclaim.guard.test.ts
+PASS src/components/__tests__/hiddenComments.guard.test.ts
+PASS src/lib/__tests__/filterSets.test.ts
+PASS src/__tests__/inertControlVisual.guard.test.ts
+PASS src/__tests__/accessibleParentTrap.guard.test.ts
+PASS src/lib/__tests__/recentlyViewed.test.ts
+PASS src/lib/__tests__/directionsLink.test.ts
+PASS src/screens/__tests__/MapScreen.heatmap.test.tsx
+PASS src/screens/__tests__/bp11PressVocabGuards.test.ts
+PASS src/lib/__tests__/blockedContent.test.ts
+PASS src/lib/__tests__/feedback.test.ts
+PASS src/lib/__tests__/heatmap.test.ts
+PASS src/screens/__tests__/bp3TrustEngineGuards.test.ts
+PASS src/lib/__tests__/tasksDisplayFilter.test.ts
+PASS src/lib/__tests__/addressRecents.test.ts
+PASS src/components/__tests__/PhotoGallery.test.tsx (5.893 s)
+PASS src/hooks/__tests__/useNotificationPreferences.test.ts
+PASS src/components/__tests__/HamburgerDrawer.destinations.test.tsx (5.196 s)
+PASS src/lib/__tests__/userReportStats.test.ts
+PASS src/lib/__tests__/offlineCache.test.ts
+PASS src/lib/__tests__/shareFlag.test.ts
+PASS src/components/__tests__/PlatformMapWeb.tileFlip.test.tsx
+PASS src/components/__tests__/HamburgerDrawer.focus.test.tsx (7.236 s)
+PASS src/__tests__/classA.guard.test.ts
+PASS src/__tests__/focusOnOpen.guard.test.ts
+PASS src/lib/__tests__/flagUpdates.test.ts
+PASS src/screens/__tests__/HomeScreen.emptyLocal.test.ts
+PASS src/screens/__tests__/tasksFilterSheet.test.ts
+PASS src/components/__tests__/StatusHistoryModal.test.tsx (10.234 s)
+PASS src/__tests__/webResilience.test.ts
+PASS src/screens/__tests__/ReportFlagModal.test.tsx (76.121 s)
+PASS src/components/ui/__tests__/ScreenHeader.test.tsx
+PASS src/lib/__tests__/createFlag.test.ts
+PASS src/__tests__/onboardingCoherence.guard.test.ts
+PASS src/components/ui/__tests__/SheetPull.test.tsx
+PASS src/screens/__tests__/MapScreen.arrival.test.ts
+PASS src/__tests__/decorativeHiding.guard.test.ts
+PASS src/lib/__tests__/feedbackFilter.test.ts
+PASS src/lib/__tests__/blockAuthor.test.ts
+PASS src/lib/__tests__/myReportsFilter.test.ts
+PASS src/components/__tests__/MyReportsModal.test.tsx (6.933 s)
+PASS src/lib/__tests__/flagsPagination.test.ts
+PASS src/components/ui/__tests__/PressableScale.ref.test.tsx
+PASS src/lib/__tests__/anonRateLimit.test.ts
+PASS src/screens/__tests__/MapScreen.calloutRhythm.test.ts (20.193 s)
+PASS src/lib/__tests__/mapFilters.test.ts
+PASS src/screens/__tests__/settingsGrammar.guard.test.ts
+PASS src/__tests__/privacyLink.guard.test.ts
+PASS src/screens/__tests__/MapScreen.oneSurface.test.ts
+PASS src/__tests__/oneNameOneThing.guard.test.ts
+PASS src/screens/__tests__/profileHeroGrammar.guard.test.ts
+PASS src/__tests__/bottomInsetSafety.guard.test.ts
+PASS src/screens/__tests__/MapScreen.headerActions.test.ts
+PASS src/__tests__/labelInName.guard.test.ts
+PASS src/components/__tests__/HamburgerDrawer.material.guard.test.ts
+PASS src/screens/__tests__/HomeScreen.peekLocale.test.ts
+PASS src/lib/__tests__/commentAuthor.test.ts
+PASS src/screens/__tests__/MapScreen.legendButton.test.tsx
+PASS src/lib/__tests__/flagsStoreSwr.test.tsx
+PASS src/lib/__tests__/streak.test.ts
+PASS src/components/__tests__/FlagDetailModal.sheetPresentation.test.tsx (13.168 s)
+PASS src/components/__tests__/MyWatchedModal.containment.test.tsx (6.382 s)
+PASS src/lib/__tests__/watchedFlagsFilter.test.ts
+PASS src/screens/__tests__/MapScreen.detailFocus.test.tsx (11.632 s)
+PASS src/components/__tests__/LiveStatusRegion.test.tsx
+PASS src/lib/__tests__/points.test.ts
+PASS src/__tests__/brandInkAA.guard.test.ts
+PASS src/lib/__tests__/achievements.test.ts
+PASS src/lib/__tests__/geocode.test.ts
+PASS src/lib/__tests__/tasksSort.test.ts
+PASS src/components/__tests__/ReportsBreakdownCard.barRow.test.tsx
+PASS src/lib/__tests__/myFlagsFilter.test.ts
+PASS src/lib/__tests__/webShare.test.ts
+PASS src/screens/__tests__/SignInScreen.test.tsx (6.669 s)
+PASS src/lib/__tests__/confirm.test.ts
+PASS src/__tests__/securityHeaders.guard.test.ts
+PASS src/lib/__tests__/taskSelection.test.ts
+PASS src/components/__tests__/HamburgerDrawer.exitLatch.test.tsx
+PASS src/__tests__/stripComments.guard.test.ts
+PASS src/lib/__tests__/pushNotifications.test.ts (9.54 s)
+PASS src/lib/__tests__/account.test.ts
+PASS src/lib/__tests__/errors.test.ts
+PASS src/lib/__tests__/pointEvents.lifetime.test.ts (5.055 s)
+PASS src/components/__tests__/HamburgerDrawer.scheme.test.tsx (10.678 s)
+PASS src/components/ui/__tests__/SheetGrabber.guard.test.ts
+PASS src/lib/__tests__/pointsSqlParity.test.ts
+PASS src/__tests__/qaMergeConsolidation.test.ts
+PASS src/components/ui/__tests__/EmptyState.test.tsx (6.002 s)
+PASS src/screens/__tests__/LeaderboardScreen.monogram.test.tsx (18.795 s)
+PASS src/components/__tests__/blockControl.guard.test.ts
+PASS src/screens/__tests__/profileProgressBars.guard.test.ts
+PASS __tests__/OfflineIndicator.test.tsx (5.389 s)
+PASS src/lib/__tests__/regionForNearestFlags.test.ts
+PASS src/lib/__tests__/helpSearch.test.ts
+PASS src/lib/__tests__/flagSearch.test.ts
+PASS src/lib/__tests__/regionFittingPoints.test.ts
+PASS src/screens/__tests__/MapScreen.setMenu.test.ts (18.733 s)
+PASS src/components/__tests__/HeatmapLayer.test.tsx
+PASS src/navigation/__tests__/linking.test.ts
+PASS __tests__/WatchedFlagsSearch.test.tsx
+PASS src/lib/__tests__/reportTemplates.test.ts
+PASS src/components/__tests__/reduceMotion.drawer.test.tsx
+PASS src/lib/__tests__/realtimeLog.test.ts
+PASS src/navigation/__tests__/perceptionGuards.test.ts
+PASS src/lib/__tests__/flagsStoreTimeout.test.tsx
+PASS src/lib/__tests__/pushPermission.test.ts
+PASS src/__tests__/geoPrivacyFence.test.ts
+PASS src/screens/__tests__/MapScreen.openSettings.test.ts
+PASS src/screens/__tests__/profileStatsSemantics.guard.test.ts
+PASS src/screens/__tests__/bp13FailureVoice.test.ts
+PASS src/screens/__tests__/mapChromeBudget.guard.test.ts
+PASS src/navigation/__tests__/tabBarCount.guard.test.ts
+PASS src/components/__tests__/PlatformMapNative.reduceMotion.test.tsx
+PASS src/screens/__tests__/GuestProfile.test.tsx (8.499 s)
+PASS src/screens/__tests__/HomeScreen.locatingState.test.ts
+PASS src/components/__tests__/UpdateBanner.test.tsx
+PASS src/lib/__tests__/heatmapPrefs.test.ts
+PASS src/components/__tests__/HeatmapLegend.test.tsx (5.7 s)
+PASS src/lib/__tests__/statusLedge.test.ts
+PASS src/lib/__tests__/drawerTrigger.test.tsx
+PASS src/components/__tests__/hiddenComments.test.ts
+PASS src/__tests__/legalSheetPresentation.guard.test.ts
+PASS src/lib/__tests__/notificationPrefs.test.ts
+PASS src/__tests__/pageSheetSwipe.guard.test.ts
+PASS src/__tests__/emptyCardGlass.guard.test.ts
+PASS src/components/ui/__tests__/AppText.dynamicType.test.tsx
+PASS src/lib/__tests__/remoteImageUrl.test.ts
+PASS src/screens/__tests__/MapScreen.pinPlacement.test.ts
+PASS src/__tests__/toggleStateWeb.guard.test.ts
+PASS src/lib/__tests__/pointEvents.test.ts
+PASS src/components/__tests__/reduceMotion.primitives.test.tsx
+PASS scripts/__tests__/releaseTools.test.ts (126.508 s)
+PASS src/lib/__tests__/realtimePrefs.test.ts
+PASS src/screens/__tests__/MapScreen.deeplink.test.ts (7.371 s)
+PASS src/lib/__tests__/removeUploadedFlagPhotos.test.ts
+PASS src/lib/__tests__/postgrestErrors.test.ts
+PASS src/lib/__tests__/admin.test.tsx
+PASS src/lib/__tests__/a11yText.test.ts
+PASS src/__tests__/mission.guard.test.ts
+PASS src/lib/__tests__/dayGroup.test.ts
+PASS src/screens/__tests__/NearbyFlagsModal.description.test.tsx
+PASS src/lib/__tests__/tileCache.concurrency.test.ts
+PASS src/lib/__tests__/location.test.ts
+PASS src/lib/__tests__/preferences.test.ts
+PASS src/lib/__tests__/hiddenContent.test.ts
+PASS src/lib/__tests__/focusOnOpen.test.tsx
+PASS src/lib/__tests__/disputes.test.ts
+PASS src/lib/__tests__/postgrestEmbed.guard.test.ts
+PASS src/screens/__tests__/NearbyFlagsModal.focus.test.tsx
+PASS __tests__/MapClustering.test.tsx
+PASS src/lib/__tests__/nearestFlag.test.ts
+PASS src/lib/__tests__/filterPanelPrefs.test.ts
+PASS src/navigation/__tests__/tabBarButton.a11y.test.tsx
+PASS src/screens/__tests__/MapScreenLocateFailure.test.ts
+PASS src/components/ui/__tests__/Sheet.dismissal.test.tsx
+PASS src/components/__tests__/MyWatchedModal.sort.test.ts
+PASS src/components/__tests__/PlatformMapCluster.reduceMotion.test.tsx
+PASS src/navigation/__tests__/drawerRoutes.guard.test.ts
+PASS src/__tests__/deadDeps.guard.test.ts
+PASS src/screens/__tests__/OnboardingModal.test.tsx (6.992 s)
+PASS src/lib/__tests__/signOutCacheClear.test.ts
+PASS src/components/__tests__/StatusBadge.test.tsx
+PASS src/__tests__/releaseScripts.guard.test.ts
+PASS src/screens/__tests__/dialogTier.test.ts
+PASS src/components/__tests__/reduceMotion.modalGate.test.ts
+PASS src/__tests__/reportFabFreshLocation.test.ts
+PASS src/lib/__tests__/analytics.test.ts
+PASS src/components/__tests__/ErrorBoundary.fallbackCopy.test.tsx
+PASS src/navigation/__tests__/ScreenFallback.test.tsx
+PASS src/lib/__tests__/disputeRequests.test.ts
+PASS src/lib/__tests__/tasksScope.test.ts
+PASS src/lib/__tests__/severityColor.test.ts
+PASS src/components/__tests__/pinKey.test.ts
+PASS src/lib/__tests__/liveStatus.test.ts
+PASS src/__tests__/feedbackKeyboard.guard.test.ts
+PASS src/lib/__tests__/onboardingState.test.ts
+PASS src/lib/__tests__/reopenRequests.test.ts
+PASS src/lib/__tests__/featureFlags.test.ts
+PASS src/screens/__tests__/MapScreenHeatEmpty.test.ts
+PASS src/lib/__tests__/changelogExpanded.test.ts
+PASS src/hooks/__tests__/useOverflowFade.test.ts
+PASS src/lib/__tests__/pkceFlowType.test.ts
+PASS src/lib/__tests__/relativeTime.test.ts
+PASS src/screens/__tests__/HomeScreenRefreshFailure.test.ts (6.501 s)
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+
+Test Suites: 243 passed, 243 total
+Tests:       32 todo, 3657 passed, 3689 total
+Snapshots:   0 total
+Time:        143.8 s
+jest exit=0
+end Wed Sep  2 17:06:52 PDT 2026

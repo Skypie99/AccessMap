@@ -1,0 +1,125 @@
+start Wed Sep  2 17:07:01 PDT 2026
+=== release:preflight ===
+FLAGSTONE RELEASE PREFLIGHT
+
+Repository:                      https://github.com/Skypie99/AccessMap.git
+Actual worktree path:            /Users/skypie/AccessMap-deep-audit-20260902
+Common Git dir:                  /Users/skypie/AccessMap/.git
+Linked worktree:                 YES (git dir: /Users/skypie/AccessMap/.git/worktrees/AccessMap-deep-audit-20260902)
+Branch:                          claude/flagstone-deep-audit-20260902
+HEAD:                            019a0a8649df3db845341b24a81bf63ef76eeb76
+Tree:                            c604079945a4e6e483d7081309cff83fff1f4185
+Actual origin/main:              70b52a30e9fff0f7d538509b110212bb8d872391 (remote-tracking ref; run `git fetch origin` or pass --ls-remote for live)
+HEAD vs origin/main:             differs — HEAD is 1 ahead / 0 behind (informational, not a failure)
+Tracked tree clean:              NO (1 tracked change(s): supabase/.temp/cli-latest)
+Untracked files:                 4
+App version:                     4.1.1
+Local configured iOS build:      15
+EAS version-source mode:         REMOTE
+Local iOS build authoritative:   NO
+Timestamp source:                system clock (Date.now) — 2026-09-03T00:07:01Z
+
+EAS VERSION SOURCE: REMOTE
+LOCAL IOS BUILD NUMBER: 15
+LOCAL BUILD NUMBER AUTHORITATIVE: NO
+The submitted build number comes from EAS build details / verified release evidence, never from app.json.
+
+RELEASE SOURCE RULE: never infer release source from this checkout's recency. The control plane is release/current.json (docs/RELEASE_IDENTITY.md).
+
+PREFLIGHT: PASS
+exit=0
+=== release:verify ===
+FLAGSTONE RELEASE VERIFY
+
+Repository: /Users/skypie/AccessMap-deep-audit-20260902
+Manifest:   /Users/skypie/AccessMap-deep-audit-20260902/release/current.json
+Network:    none (local control-plane check)
+
+  [PASS] Manifest readable — /Users/skypie/AccessMap-deep-audit-20260902/release/current.json
+  [PASS] Manifest schema v2 — shape + full-SHA formatting valid
+  [PASS] Git repository — /Users/skypie/AccessMap-deep-audit-20260902 (linked worktree)
+  [PASS] Full history available — not a shallow clone
+  [PASS] Governance base commit exists — c4626479f6344011530396602422c746f4bb4cc9
+  [PASS] App source commit ↔ tree — f5594171e75bc5ec92a87d0392c361601ddedfba → tree a4a5e70c1a413d39e457f5254af1bba91f08d7ed
+  [PASS] EAS source == intended app source — f5594171e75bc5ec92a87d0392c361601ddedfba
+  [PASS] EAS version source — REMOTE (eas.json agrees with manifest)
+  [INFO] Local app.json buildNumber — 15 — authoritative: NO; manifest iosBuild 33 comes from release evidence, never from app.json
+  [PASS] Web base == app source — f5594171e75bc5ec92a87d0392c361601ddedfba
+  [PASS] Web sync mode — web-only-descendant
+  [PASS] Web source commit ↔ tree — ebf091c21066d39898160b1357bde0aa35bdb8bf → tree 6cb842e3be0f4c3bfec569307829ad240d3f270a
+  [PASS] Descendant ancestry: app is ancestor of web — f559417 → ebf091c
+  [PASS] Overlay — Accepted OpenFreeMap web basemap repair for the Build 33 demo (approved)
+  [PASS] Overlay receipt exists — qa-reports/2026-09-01_Build33_WebDeploymentDecision.md
+  [PASS] Deployed SHA == expected web source — ebf091c21066d39898160b1357bde0aa35bdb8bf
+  [PASS] Deployment ID — HMszH26wADRRDd1CqH4UkJ8kAugQ
+  [PASS] Production branch format — release/web-4.1.1-build33-openfreemap
+  [PASS] Production branch head == web source (local refs) — refs/remotes/origin/release/web-4.1.1-build33-openfreemap → ebf091c21066d39898160b1357bde0aa35bdb8bf
+  [SKIP] Production branch head == web source (origin, live) — network check off by default (pass --remote)
+  [INFO] Live identity mode — legacy-triangulated — verified by immutable deployment receipt; no release-meta endpoint for this release
+  [PASS] Deployment receipt exists — qa-reports/2026-09-01_Build33_WebDeploymentDecision.md
+  [INFO] Main release-code integration — DEFERRED (origin/main 70b52a3 does not contain app source)
+  [PASS] CURRENT_RELEASE.md matches manifest — /Users/skypie/AccessMap-deep-audit-20260902/qa-reports/CURRENT_RELEASE.md
+  [INFO] Recruiter / product experience — SEPARATE GATE — not assessed by this tool
+
+APP IDENTITY: PASS
+WEB IDENTITY: PASS
+APP ↔ WEB: APPROVED WEB-ONLY DESCENDANT (ancestry: PASS)
+LIVE IDENTITY: RECORDED (legacy-triangulated receipt)
+MAIN RELEASE-CODE CONVERGENCE: DEFERRED
+RECRUITER / PRODUCT EXPERIENCE: SEPARATE GATE — NOT ASSESSED BY THIS TOOL (source identity PASS never implies experience PASS)
+
+RELEASE VERIFY: PASS
+exit=0
+=== release:status ===
+FLAGSTONE RELEASE STATUS
+
+Manifest: /Users/skypie/AccessMap-deep-audit-20260902/release/current.json
+Mode: LOCAL / CONTROL-PLANE ONLY (no network)
+
+APP
+4.1.1 (33)
+Source: f559417 (f5594171e75bc5ec92a87d0392c361601ddedfba)
+Tree: a4a5e70 (a4a5e70c1a413d39e457f5254af1bba91f08d7ed)
+EAS source: f559417 (f5594171e75bc5ec92a87d0392c361601ddedfba)
+EAS version source: REMOTE (local app.json buildNumber is NOT authoritative)
+App Store: submitted_for_review
+Identity: PASS
+
+WEB
+Mode: web-only-descendant
+Base: f559417 (f5594171e75bc5ec92a87d0392c361601ddedfba)
+Source: ebf091c (ebf091c21066d39898160b1357bde0aa35bdb8bf)
+Tree: 6cb842e (6cb842e3be0f4c3bfec569307829ad240d3f270a)
+Deployed: ebf091c (ebf091c21066d39898160b1357bde0aa35bdb8bf)
+Production branch: release/web-4.1.1-build33-openfreemap
+Deployment ID: HMszH26wADRRDd1CqH4UkJ8kAugQ
+Provider: vercel project access-map (skypie99s-projects)
+Domains: flagstone.skypistudio.com, accessmap.skypistudio.com
+Identity: PASS
+
+APP ↔ WEB
+APPROVED WEB-ONLY DESCENDANT
+Ancestry: PASS
+Overlay: Accepted OpenFreeMap web basemap repair for the Build 33 demo
+Receipt: qa-reports/2026-09-01_Build33_WebDeploymentDecision.md
+
+LIVE
+Mode: legacy-triangulated
+Automated release-meta endpoint: NOT AVAILABLE FOR BUILD 33
+Receipt verification: RECORDED (qa-reports/2026-09-01_Build33_WebDeploymentDecision.md)
+Serving deployment: HMszH26wADRRDd1CqH4UkJ8kAugQ @ ebf091c
+Control-plane live identity: RECORDED (legacy-triangulated receipt)
+
+MAIN RELEASE-CODE CONVERGENCE
+DEFERRED
+Governance base: c462647 (c4626479f6344011530396602422c746f4bb4cc9)
+
+RECRUITER / PRODUCT EXPERIENCE: SEPARATE GATE — NOT ASSESSED BY THIS TOOL (source identity PASS never implies experience PASS)
+
+Last verified (manifest stamp): 2026-09-02T06:15:01Z
+
+RELEASE STATUS: PASS
+exit=0
+=== release:render --check ===
+RENDER CHECK: PASS — /Users/skypie/AccessMap-deep-audit-20260902/qa-reports/CURRENT_RELEASE.md matches /Users/skypie/AccessMap-deep-audit-20260902/release/current.json
+exit=0

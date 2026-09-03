@@ -1,0 +1,182 @@
+start Wed Sep  2 17:04:23 PDT 2026
+HEAD 019a0a8649df3db845341b24a81bf63ef76eeb76
+=== typecheck ===
+
+> accessmap@4.1.1 typecheck
+> tsc --noEmit
+
+typecheck exit=0
+=== lint ===
+
+> accessmap@4.1.1 lint
+> eslint src --ext .ts,.tsx
+
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/__tests__/noCredentialsInTree.guard.test.ts
+  277:16  warning  Array type using 'ReadonlyArray<T>' is forbidden. Use 'readonly T[]' instead  @typescript-eslint/array-type
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/__tests__/stripComments.guard.test.ts
+  53:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  54:18  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/components/ActivityFeedModal.tsx
+  210:5  warning  React Hook useCallback has a missing dependency: 'color.brand'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/components/FilterPresetsModal.tsx
+  367:5  warning  React Hook useCallback has missing dependencies: 'color.borderPressed', 'color.ctaFillPressed', 'color.placeholderText', 'styles.actionBtn', 'styles.applyBtn', 'styles.applyBtnPressed', 'styles.applyBtnText', 'styles.cancelBtn', 'styles.cancelBtnText', 'styles.deleteBtn', 'styles.deleteBtnPressed', 'styles.deleteBtnText', 'styles.input', 'styles.renameActions', 'styles.renameBtn', 'styles.renameBtnPressed', 'styles.renameBtnText', 'styles.renameRow', 'styles.row', 'styles.rowActions', 'styles.rowName', 'styles.rowSummary', 'styles.rowText', 'styles.saveBtn', 'styles.saveBtnDisabled', 'styles.saveBtnText', and 'styles.smallBtn'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/components/FlagDetailModal.tsx
+  389:6  warning  React Hook useEffect has a missing dependency: 'shownFlag'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/components/MyWatchedModal.tsx
+  320:6  warning  React Hook useCallback has missing dependencies: 'color.accentOrange' and 'color.brand'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/components/PhotoGallery.tsx
+  170:6  warning  React Hook useCallback has missing dependencies: 'color.textOnBrand' and 'onRemovePhoto'. Either include them or remove the dependency array. If 'onRemovePhoto' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/components/PlatformMap.tsx
+  348:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  398:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/components/__tests__/CachedTileLayer.test.ts
+  111:13  warning  'blob' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/comments.test.ts
+  31:10  warning  'makeChain' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/confirm.test.ts
+   28:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   38:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   46:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   56:27  warning  A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+   64:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   66:27  warning  A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+   77:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   80:29  warning  A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+   91:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:27  warning  A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+  120:27  warning  A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+  138:27  warning  A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+  155:27  warning  A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/copy.test.ts
+  413:27  warning  Array type using 'ReadonlyArray<T>' is forbidden. Use 'readonly T[]' instead  @typescript-eslint/array-type
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/flags.supabase.test.ts
+  59:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  73:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/flags.test.ts
+  667:30  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/flagsStore.d4.test.tsx
+   19:18  warning  'screen' is defined but never used                   @typescript-eslint/no-unused-vars
+   50:27  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   54:21  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   66:7   warning  'DEFAULT_REGION' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   87:28  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   89:38  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   98:52  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   98:66  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  137:13  warning  'rerender' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  399:29  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  452:29  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  472:13  warning  'rerender' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/flagsStoreSwr.test.tsx
+  67:3  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/focusOnOpen.test.tsx
+  21:32  warning  '/Users/skypie/AccessMap-deep-audit-20260902/node_modules/react-native/index.js' imported multiple times  import/no-duplicates
+  23:35  warning  '/Users/skypie/AccessMap-deep-audit-20260902/node_modules/react-native/index.js' imported multiple times  import/no-duplicates
+  31:1   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-var-requires')
+  32:23  warning  A `require()` style import is forbidden                                                                   @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/helpSearch.test.ts
+   47:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   53:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   58:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   64:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   80:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/pushNotifications.test.ts
+  35:10  warning  'mockUpsert' is defined but never used  @typescript-eslint/no-unused-vars
+  41:10  warning  'mockDelete' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/realtimeLog.test.ts
+   70:56  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   88:56  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  100:9   warning  'rpcResolved' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  112:11  warning  'promise' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/regionFittingPoints.test.ts
+  78:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  79:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/savedPlaces.test.ts
+  156:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  238:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/sharedModalsContext.test.tsx
+  43:25  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/theme.test.ts
+  280:24  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/tileCache.test.ts
+  11:8  warning  'AsyncStorage' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/__tests__/watchedFlagsFilter.test.ts
+  167:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/featureFlags.ts
+  1:10  warning  'useCallback' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/lib/flags.ts
+  200:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  302:17  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  307:19  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  312:19  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  318:13  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  325:13  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  373:28  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  386:28  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  814:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  819:5   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+/Users/skypie/AccessMap-deep-audit-20260902/src/screens/NearbyFlagsModal.tsx
+  207:5  warning  React Hook useCallback has missing dependencies: 'styles.card', 'styles.cardPressed', 'styles.distance', and 'styles.thumb'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 83 problems (0 errors, 83 warnings)
+  0 errors and 4 warnings potentially fixable with the `--fix` option.
+
+lint exit=0
+=== format:check ===
+[warn] src/screens/GuestProfile.tsx
+[warn] src/screens/HomeScreen.tsx
+[warn] src/screens/HowToHelpScreen.tsx
+[warn] src/screens/LeaderboardScreen.tsx
+[warn] src/screens/LegendModal.tsx
+[warn] src/screens/MapScreen.tsx
+[warn] src/screens/NearbyFlagsModal.tsx
+[warn] src/screens/NotificationPreferencesScreen.tsx
+[warn] src/screens/OnboardingModal.tsx
+[warn] src/screens/PrivacyScreen.tsx
+[warn] src/screens/ProfileScreen.tsx
+[warn] src/screens/ReportFlagModal.tsx
+[warn] src/screens/ResourcesScreen.tsx
+[warn] src/screens/SettingsScreen.tsx
+[warn] src/screens/SignInScreen.tsx
+[warn] src/screens/TasksScreen.tsx
+[warn] src/screens/TermsScreen.tsx
+[warn] src/theme.ts
+[warn] src/theme/ThemeContext.tsx
+[warn] Code style issues found in 219 files. Run Prettier with --write to fix.
+format exit=
+end Wed Sep  2 17:06:34 PDT 2026
