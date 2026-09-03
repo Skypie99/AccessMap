@@ -40,6 +40,9 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-032 | zz_backup snapshots exposed (suspected) | FALSE_POSITIVE | NOTE | privacy | BACKEND |
 | FDA-033 | Onboarding permission CTAs fail closed (dead dimmed button, no timeout) | LIKELY | MEDIUM | functional/UI/a11y | CURRENT_MAIN |
 | FDA-034 | Map location alert shows raw SDK/kCLErrorDomain text | CONFIRMED | MEDIUM | UI/UX copy/error handling | CURRENT_MAIN |
+| FDA-035 | Help FAQ denies the −20 admin-rejection penalty the live trigger applies | CONFIRMED | MEDIUM | functional/copy/trust | BACKEND, CURRENT_MAIN, SUBMITTED_BUILD_33 |
+| FDA-036 | Web: Alert.alert is a no-op; 12 unguarded call sites lose errors/confirmations | CONFIRMED | MEDIUM | functional/UX web | WEB_BUILD |
+| FDA-037 | Architecture debt notes (grouped) | CONFIRMED | LOW | architecture/debt | CURRENT_MAIN |
 
 ## Findings
 
@@ -618,4 +621,43 @@ ACTUAL: raw chained error text; OK only.
 VISUAL_EVIDENCE: screenshots/main-map-02-light-settled.png (glass alert over the map; body text over a blurred green/blue backdrop is also lower-contrast than the token floor).
 HISTORICAL_RELATION: Build 33 `locationErrorMessage` (Codex Wave R3 prompt/permission work, 2026-08-27) — likely HISTORICAL_FIXED on Build 33 / STILL_OPEN on main.
 LIKELY_REPAIR_SIZE: TINY (port Build 33's mapper to main, or converge). DEPENDENCIES: FDA-001. RECOMMENDED_ACCEPTANCE_TEST: unit test mapping kCLErrorDomain 0/1/2 to friendly copy; simulator shows friendly alert with Retry.
+
+### FDA-036
+ID: FDA-036
+TITLE: On the web build `Alert.alert()` is a no-op, and at least 12 of 29 call sites (AdminScreen, SettingsScreen, FeedbackModal, FilterPresetsModal, FlagDetailModal, feedback.ts) are unguarded — errors, confirmations and successes vanish silently on web
+STATUS: CONFIRMED (source; react-native-web's Alert export read from node_modules)
+SEVERITY: MEDIUM
+CATEGORY: functional / UX (web)
+AFFECTED_STATE: WEB_BUILD (CURRENT_MAIN source; Build 33 web not independently re-checked)
+CONFIDENCE: HIGH
+USER_IMPACT: On flagstone.skypistudio.com a failed action shows nothing: e.g. Settings data export/preset delete failures and successes, Flag Detail errors, feedback send errors. The team has patched this class four times individually (F46 `notify()`, F48 in SignInScreen, R8, R11) but not systemically.
+REPRODUCTION: Lane I CAND-I-02 (evidence/laneI-architecture-health.md — per-call-site table); `node_modules/react-native-web/src/exports/Alert/index.js` is an empty function.
+EXPECTED: every user-facing alert goes through `notify()`/`confirm()` from src/lib/confirm.ts (web-safe); a lint rule bans bare `Alert.alert(` outside that module.
+HISTORICAL_RELATION: F46, F48, R8, R11 — HISTORICAL_REGRESSED (class re-introduced after each spot fix).
+LIKELY_REPAIR_SIZE: SMALL (12 call sites + lint rule). DEPENDENCIES: none. RECOMMENDED_ACCEPTANCE_TEST: ESLint no-restricted-syntax on `Alert.alert`; web click-through of Settings export failure shows a visible banner.
+
+### FDA-037
+ID: FDA-037
+TITLE: Architecture debt notes (grouped, non-blocking): FlagDetailModal's `shownFlag` sync is discipline-dependent across three owner screens; `comments.ts` casts the whole Supabase client to `any`; near-identical names NotificationPreferencesScreen vs NotificationPrefsModal; five `as unknown as` interop casts; `legacy-peer-deps` possibly vestigial; `reverseGeocode()` has zero callers; `@expo/vector-icons` likely unused; severity-color invariant comment-enforced only
+STATUS: CONFIRMED
+SEVERITY: LOW
+CATEGORY: architecture / debt
+AFFECTED_STATE: CURRENT_MAIN
+CONFIDENCE: HIGH
+REPRODUCTION: Lane I CAND-I-04..I-12 with file:line in evidence/laneI-architecture-health.md.
+NOTES: Lane I also recorded what is unusually good: realtime subscription cleanup, optimistic-update rollback discipline, near-zero TS escapes in production code, and ticket-referenced comments for historical races. Technical debt here is not a release blocker.
+
+### FDA-035
+ID: FDA-035
+TITLE: The Help FAQ tells users "Rejecting a report awards no points", but the live `handle_flag_status_change` trigger deducts 20 points from the reporter when an admin rejects their flag (silent `flag_spam_penalty`)
+STATUS: CONFIRMED (live function body read via `pg_get_functiondef`, 2026-09-02; copy present in both trees)
+SEVERITY: MEDIUM
+CATEGORY: functional / copy accuracy / trust
+AFFECTED_STATE: BACKEND (behaviour), CURRENT_MAIN and SUBMITTED_BUILD_33 (copy)
+CONFIDENCE: HIGH
+USER_IMPACT: A reporter whose flag is rejected by an admin silently loses 20 points with no notification (`notify-flag-status` skips `rejected`) and no in-app explanation, while the FAQ promises the opposite. For a community-trust product this is a provable false statement about its own economy.
+REPRODUCTION: production `handle_flag_status_change()`: `elsif new.status = 'rejected' and auth.uid() in (select id from public.users where is_admin = true) then … set points = greatest(0, points - 20) … 'flag_spam_penalty'`. src/components/HelpModal.tsx:53 (main) and Build 33 HelpModal (same line) "Rejecting a report awards no points." src/lib/points.ts calls itself the single source of truth but has no penalty entry; CLAUDE.md's points table DOES document the −20.
+EXPECTED: FAQ discloses the admin-rejection penalty (or the penalty is removed), and the reporter is told when it happens.
+HISTORICAL_RELATION: SW-53 (points reconciliation 2026-08-20) — reconciled CLAUDE.md, not the FAQ; Lane I CAND-I-01.
+LIKELY_REPAIR_SIZE: TINY (copy + POINTS constant) / SMALL (notification). DEPENDENCIES: FDA-020 (who may reject). RECOMMENDED_ACCEPTANCE_TEST: FAQ text test pins the penalty; point_events `flag_spam_penalty` surfaces in the user's activity feed.
 
