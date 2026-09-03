@@ -15,3 +15,6 @@
 | 2026-09-02 18:30 | Fable 5.1 | Checkpoint 2 pushed (b365d01): baselines, DB proof, FDA-001/002. |
 | 2026-09-02 18:35 | Fable 5.1 | iOS Release build #1 FAILED at `pod install` (CocoaPods 1.16.2 / Ruby 4.0.5 Unicode-normalize crash under non-UTF-8 locale) → ENVIRONMENT class; relaunched with LANG/LC_ALL=en_US.UTF-8 (logs/ios-build-main-release-2.log). |
 | 2026-09-02 18:38 | Fable 5.1 | EAS build list captured (evidence/eas-build-identity.md): Build 33 = f5594171 confirmed by EAS; Build 30 = a0bf4d04. Deployed delete-account v4 source read; FDA-003 written. |
+| 2026-09-02 18:45 | Fable 5.1 | FDA-004/005 written; checkpoint 16214bc pushed. Web demo opened in in-app browser (desktop + mobile viewport); Build #3 (Xcode 26.6 via DEVELOPER_DIR) compiling. |
+| 2026-09-02 18:50 | Fable 5.1 | NOTE: a `git log -p` grep on the reviewer-account migration surfaced a historical password literal in the shell transcript (masking regex assumed quotes). NOT copied into any audit file; FDA-007 records the exposure class only. |
+| 2026-09-02 18:52 | Fable 5.1 | FDA-006..012 written (App Store demo account gap, credential history, auth/grant hygiene, tooling drift). |

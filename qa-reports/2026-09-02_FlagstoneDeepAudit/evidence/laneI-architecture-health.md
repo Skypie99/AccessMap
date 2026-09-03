@@ -234,3 +234,123 @@ Confirmed mount points (all reachable, all local `useState`-driven visibility un
 **None found in `src/screens/` or the modal-shaped components inventoried above.** Every surface checked resolves to at least one real import site outside its own file and outside tests.
 
 ---
+
+## Duplicated constants / copies
+
+### Points values — `src/lib/points.ts` vs SQL vs `HelpModal.tsx`: one confirmed live discrepancy
+
+`src/lib/points.ts:30-57` defines a `POINTS` constant with an explicit header comment naming itself "the single source of truth for any UI copy that states point values (the Help FAQ, the Tasks '+points' flash)" and documenting, per field, exactly which SQL trigger it mirrors (verified 2026-08-20 per the file's own changelog note). Cross-checking against the live SQL:
+
+- `POINTS.reporter = { verify: 10, resolve: 15 }` and `POINTS.actor = { verify: 3, resolve: 7 }` — **match** `supabase/schema.sql:154-163` (`handle_flag_status_change()`) exactly.
+- `POINTS.submitReport = 5`, `addPhoto = 3`, `addComment = 1`, `commentUpvoted = 2`, `streakBonus = 5` — **match** the corresponding triggers in `supabase/migrations/2026-05-30_trust_score_system.sql` (lines 119, 231, 256, 296, 354: `SET points = points + 5/3/1/2/5` respectively).
+- `POINTS.reject = 0` with the in-code comment "Rejecting a report awards nothing" — **does NOT match live SQL.** `supabase/schema.sql:164-172` has a third, unmirrored branch in the same trigger: when an admin explicitly rejects a flag (`new.status = 'rejected' and auth.uid() in (select id from public.users where is_admin = true)`), it applies a **-20 point "spam penalty"**: `update public.users set points = greatest(0, points - 20) ... insert into public.point_events (..., 'flag_spam_penalty', -20, ...)`.
+
+This is not just an internal-constant gap — it is user-facing. `src/components/HelpModal.tsx:53` renders the FAQ answer to "How do points work?" by interpolating `POINTS` fields, and its final sentence is a **hardcoded, not-derived-from-`POINTS`** claim: `"Rejecting a report awards no points."` A report that a signed-in user filed, then had an admin explicitly reject, silently costs that user 20 points — while the app's own Help screen tells them rejection is free. Command trail: `grep -n "reject" src/lib/points.ts`; `sed -n '138,175p' supabase/schema.sql`; `grep -n "POINTS\." src/components/HelpModal.tsx src/screens/TasksScreen.tsx`. See **CAND-I-01** (top-ranked finding).
+
+Note for context, not exculpatory: this SQL file is `supabase/schema.sql`, which the codebase's own migration-hygiene commentary (see Migration lineage section below) already flags as a periodically-stale consolidated snapshot rather than a live-verified source in every line — but the specific `handle_flag_status_change()` function block carries its own "Live body verified" provenance note elsewhere in the file for sibling functions, and the reject-penalty branch is architecturally consistent (same function, same style) with the verified verify/resolve branches directly above it, so there is no positive reason to doubt it reflects live behavior. Confidence is HIGH but DB-side confirmation (reading the actual live function via `pg_get_functiondef`, not done in this read-only source audit) would remove all doubt — see Coverage gaps.
+
+### Category / severity / status labels — correctly centralized (no duplication found)
+
+Contrary to the initial hypothesis that these would be duplicated, all three label/color maps trace to exactly one definition site each, with every other file importing rather than re-declaring:
+
+- `CATEGORY_LABELS`, `SEVERITY_LABELS`, `STATUS_LABELS`: all three defined once, at `src/lib/flags.ts:1558`, `:1620`, `:1644` respectively (`export const X: Record<...> = {...}`). Command: `grep -rnE "^\s*(const|export const)\s+(CATEGORY_LABELS|STATUS_LABELS|SEVERITY_LABELS)\s*[:=]" src` returns exactly these 3 lines, all in the same file — no shadow re-implementation anywhere else in `src/`.
+- Severity **colors**: `src/theme.ts:745` (`export const severity = {...}`) is explicitly commented as "single source of truth for the 1→5 color ramp," and `src/lib/flags.ts:1609`'s `severityColor()` function **derives** from it (`return severityRamp[s]?.color ?? ...`, confirmed by reading the function body) rather than hardcoding its own hex values. Both `src/components/PlatformMap.tsx` and `src/components/PlatformMap.web.tsx` (the native/web map dual-implementation) import `severityColor`/`SEVERITY_LABELS`/`CATEGORY_LABELS`/`STATUS_LABELS` from `@/lib/flags` and `heatmapSeverity` from `@/theme` rather than re-declaring — confirmed by reading each file's import block (`PlatformMap.tsx:10-12`, `PlatformMap.web.tsx:15,18`).
+- The one manual (non-compiler-enforced) invariant: `theme.ts:740`'s comment "Keep this aligned with `severityColor()` in `src/lib/flags.ts`" is aspirational cross-file discipline, not an automated check — low residual risk given `severityColor()` already derives from `theme.ts` rather than duplicating it, but worth a lightweight regression test tying the two together (same category of risk that the points.ts `SW-53` history shows can silently rot). See CAND-I-08 (LOW severity).
+
+**Assessment: this is a well-managed pattern, not a defect.** Reported here to document that the hypothesis in the task brief was checked and did not hold for labels/colors — only the points-vs-SQL axis showed real drift.
+
+### `src/lib/copy.ts` adoption
+
+`copy.ts` is 987 lines / 70 exported string constants (`grep -c "^export const" src/lib/copy.ts`), imported by 19 files (`grep -rl "from '@/lib/copy'" src App.tsx | grep -v __tests__ | wc -l`). Its own contents show it is deliberately scoped to cross-cutting, compliance/moderation-adjacent copy (report/block/hide flows, privacy hints, offline banner, hidden-comments) rather than an attempt to centralize all UI text — the large majority of screen/modal copy is inline JSX text local to its own component, which is a normal and defensible pattern at this app's size, not itself a finding.
+
+### Raw hex color literals — top files (non-test, `grep -roE "#[0-9A-Fa-f]{3,8}\b"`)
+
+433 total raw hex literal occurrences in non-test `src`+`App.tsx`. Top 10 files:
+
+| File | Raw hex count | Assessment |
+|---|---:|---|
+| `src/theme.ts` | 150 | Expected — this IS the token definition file. |
+| `src/theme/ThemeContext.tsx` | 95 | Expected — light/dark palette resolution. |
+| `src/components/PlatformMap.web.tsx` | 35 | Worth spot-checking — map styling often has legitimate one-off values (tile/attribution chrome), but 35 raw hexes outside the token file is the largest non-theme concentration. |
+| `src/components/PlatformMap.tsx` | 21 | Same map-styling caveat as above (native counterpart). |
+| `src/screens/MapScreen.tsx` | 20 | Proportionate to file size (4184 lines, largest hotspot) but still a top offender in absolute terms. |
+| `src/screens/TasksScreen.tsx` | 15 | |
+| `src/screens/SignInScreen.tsx` | 11 | |
+| `src/screens/ReportFlagModal.tsx` | 10 | |
+| `src/components/HeatmapLegend.tsx` | 10 | Plausibly legitimate — heatmap gradient stops are inherently literal color ramps (`heatmapSeverity` in `theme.ts` itself also hardcodes hex per-stop, e.g. `#fde047`, by design, per its own comment "Distinct from the pin-marker severity ramp above"). |
+| `src/screens/ProfileScreen.tsx` | 8 | |
+
+Not independently triaged hex-by-hex (433 occurrences); the theme/map files account for over two-thirds of the total and are largely expected. See Coverage gaps for what a full triage would need to separate "legitimate one-off" from "should be a token."
+
+### Raw `fontSize: <number>` literals — top files (non-test, `grep -roE "fontSize:\s*[0-9]+"`)
+
+Only **27** raw numeric `fontSize` literals in the entire non-test codebase, in just 6 files — strong adherence to the `font.size.*` token scale (`src/theme.ts:468`) overall:
+
+| File | Raw `fontSize:` count |
+|---|---:|
+| `src/screens/MapScreen.tsx` | 13 |
+| `src/components/PlatformMap.web.tsx` | 6 |
+| `src/screens/ReportFlagModal.tsx` | 5 |
+| `src/components/PlatformMap.tsx` | 1 |
+| `src/components/PhotoGallery.tsx` | 1 |
+| `src/components/FeedbackModal.tsx` | 1 |
+
+Sampled a few of MapScreen's 13 (lines 3662, 4051, 4057, 4059, 4069, 4078, 4110, 4119, 4150, 4155) — all are small UI chrome (chip text, FAB labels, filter-preset buttons) with values (12/13/14/15/18) adjacent to but not matching `font.size.*` steps; read as ad hoc micro-tuning rather than a systemic token bypass. **Positive finding, not a defect** — flagged here only because the task scope asked for the top-10 list, not because it indicates a problem.
+
+---
+
+## State ownership observations
+
+**Overall assessment, stated up front: this is the most rigorously-engineered area of the codebase audited in this lane.** The state-management code shows a consistent, repeated pattern — ship something, find the exact race/staleness/leak bug it enables in production or review, fix it, and leave a comment naming the failure mode so it isn't reintroduced — evidenced by in-code ticket references (`F22`, `F32`, `F37`, `F43`, `F53`, `F58`, `F64`, `SW-53`) each describing a specific historical bug in exactly the categories this section was asked to hunt for. Several initial hypotheses below were falsified on inspection; reported honestly either way.
+
+### `flagsStore.tsx` — single shared store, correctly cleaned up
+
+`src/lib/flagsStore.tsx` (692 lines) is a React Context provider (`FlagsProvider`/`useFlags()`) holding one `flags: FlagRow[]` array plus a derived `flagsMap` (`useMemo`, O(1) id lookup, `flagsStore.tsx:478-482`) as the single shared source of truth for flag data across `MapScreen`, `TasksScreen`, and `ProfileScreen`. Mutations are exposed as `patchFlag(id, patch)` / `removeFlag(id)` (`flagsStore.tsx:614-619`) for consumers to write back into the shared store after a server round-trip.
+
+**Realtime subscription (`flagsStore.tsx:537-613`)** — a Supabase `postgres_changes` channel gated behind a user opt-in (`realtimeEnabled`), with:
+- A verified cleanup path: `useEffect` returns a teardown function that calls `supabase.removeChannel(channel)` (line ~613), guarded by a `mounted` flag so an in-flight async re-fetch after unmount is a silent no-op rather than a `setState`-after-unmount warning.
+- A documented race fix (`F32`, lines 531-536): a `realtimeTeardownRef` promise chain so a fast toggle-off/toggle-on doesn't `.subscribe()` onto a channel that is still leaving (supabase-js dedupes channels by topic name) — the comment explicitly names the prior failure mode ("switch shows ON, zero live subscription").
+- Three explicit "safeguards" by design comment: #1 viewport geofencing delegated to `MapScreen` via a ref-based callback (`viewportGateRef`) so geographic filtering stays co-located with the map's own region state; #2 the opt-in gate itself; #3 fire-and-forget observability (`logRealtimeEvent`) on subscribe/unsubscribe.
+- DELETE events and merge/insert events are both handled with correct positional re-sorting and status-filter re-application (`flagsStore.tsx:571-585`).
+
+Command trail: `grep -n "useEffect(\|\.subscribe(\|removeChannel\|return () =>" src/lib/flagsStore.tsx`.
+
+### `FlagDetailModal` — three independent local-state mount points, verified NOT a split-brain risk in the paths checked
+
+Per the Navigation reachability section, `FlagDetailModal` is mounted independently by `MapScreen.tsx`, `TasksScreen.tsx`, and `ProfileScreen.tsx`, each owning its own `selectedFlag: FlagRow | null` local `useState` (e.g. `MapScreen.tsx:498`, explicitly commented "S3: ... Per-screen state, NOT in the shared-modals pool"), and each passing it down as a controlled `flag` prop. Inside the modal, `shownFlag` (`FlagDetailModal.tsx:279`) is a second, modal-local `useState` seeded from that prop and re-synced via `useEffect(() => { if (flag) setShownFlag(flag); ... }, [flag])` (`FlagDetailModal.tsx:302-309`) — i.e. **two more state copies of the same row on top of the shared store's array**, which is exactly the shape that produces stale-UI bugs if not handled carefully.
+
+Traced every in-modal mutation path to check whether the displayed `shownFlag` can go stale relative to what the parent's `selectedFlag` / the shared store now holds:
+
+| Action | What happens to `shownFlag` | What happens to the parent / shared store | Stale-display risk? |
+|---|---|---|---|
+| Verify / Resolve / Reject (`runStatusChange`, `FlagDetailModal.tsx:807-855`) | Not updated locally | `onChanged(updated, action, isOwn)` called, then **`onClose()` immediately** | None — sheet closes before staleness could be seen. MapScreen's `onChanged` handler (`handleDetailChanged`, `MapScreen.tsx:1748-1755`) calls `patchFlag(updated.id, ...)`, so the underlying list/map pin is correct on the *next* open. |
+| Edit description/category/severity (`handleSaveEdit`, `FlagDetailModal.tsx:780-792`) | **`setShownFlag(updated)` called directly** (line ~789) | `onEdited?.(updated)` — comment: `"F58: propagate to the shared store/list"` | None — local state and shared store both updated in the same handler; modal stays open showing fresh data. |
+| Reopen request, threshold met (`FlagDetailModal.tsx:1136-1143`) | Not updated locally | `onChanged(updated, 'reopen', isOwn)`, then **`onClose()`** | None — same close-on-success pattern as status change. |
+| Reopen request, threshold not yet met | Not updated (correctly — the flag's own row hasn't changed) | Not called | None — no real state change to reflect. |
+| Server rejects a stale status write (`FlagStatusConflictError`, `FlagDetailModal.tsx:843-850`) | Not updated | `onClose()` called with an explanatory `notify()` — comment: `"F64: don't strand the user on a stale snapshot with live buttons."` | None — explicitly hardened against exactly this. |
+
+**Conclusion: not a live defect in the paths checked.** The correctness of this pattern currently rests on *discipline* — every handler that changes the displayed flag must either call `setShownFlag` directly or close the modal — rather than a structural guarantee (e.g., deriving `shownFlag` from `flagsMap.get(id)` with local-only overlay for in-flight edits, which would make the invariant impossible to violate by construction). In a 3121-line file with many action handlers, a future addition that forgets one of the two safe exits would silently reintroduce the exact bug class `F58`/`F64` already fixed once. This is a maintainability/DEBT observation, not a confirmed defect — see CAND-I-09 (LOW severity).
+
+### Optimistic updates — rollback checked at 2 representative call sites, both correct
+
+`grep -rn "optimistic" src -i` (excluding tests) surfaces ~18 call sites with explicit "Optimistic" comments. Spot-checked two:
+- `src/hooks/useComments.ts:215-226` (`deleteComment`): removes the comment from local state immediately, and on failure calls `await fetch(); throw e;` — re-syncs from the server (true rollback) and re-throws so the caller can surface an error.
+- `src/components/FilterPresetsModal.tsx:220-229` (delete preset): snapshots `presets` before the optimistic `setPresets(next)`, and on a `savePresets` failure calls `setPresets(presets)` (restores the pre-optimistic snapshot) plus an `Alert.alert` — see the Environment section for why raw `Alert.alert` specifically in **this** file is itself a separate, confirmed cross-platform gap (CAND-I-02), independent of the rollback logic itself being correct.
+
+One deliberately-non-rolled-back case, and it reads as a reasonable risk call rather than an oversight: `src/hooks/useNotificationPreferences.ts:135-149` persists a preference toggle to `AsyncStorage` fire-and-forget, with an explicit comment justifying no rollback ("Fail-soft: the optimistic UI already shows `next` and the next mount re-reads disk... still warn so a persistent write failure is visible"). Low-stakes local preference vs. the higher-stakes flows (comment deletion, paid-for filter presets) that do implement full rollback — the differentiation looks intentional.
+
+### Listeners — all 5 non-test registration sites have matching cleanup
+
+`grep -rn "\.addEventListener(\|\.addChangeListener(\|AccessibilityInfo\.addEventListener" src App.tsx` (excluding tests) finds exactly 5 sites, all verified to have a matching removal:
+
+| Site | Cleanup |
+|---|---|
+| `src/lib/accessibility.ts:261` (`screenReaderChanged`) | `sub.remove()` in effect cleanup |
+| `src/lib/accessibility.ts:304` (`reduceMotionChanged`) | `sub.remove()` in effect cleanup |
+| `src/lib/accessibility.ts:538` (`reduceTransparencyChanged`) | `sub.remove()` in effect cleanup |
+| `src/lib/geocode.ts:44` (fetch-abort passthrough) | `callerSignal?.removeEventListener('abort', onAbort)` in a `.finally()` |
+| `App.tsx:125` (`Linking` 'url' event, L8 warm-deep-link capture) | `sub.remove()` in effect cleanup (verified in the full `App.tsx` read above) |
+
+No listener-leak candidates found in production code.
+
+---

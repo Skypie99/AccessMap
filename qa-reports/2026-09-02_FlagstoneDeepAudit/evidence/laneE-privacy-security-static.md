@@ -51,3 +51,58 @@ Functions / RPCs and their EXECUTE posture (main source):
 | `verify_webhook_secret(text)` | DEFINER | `public, vault` | REVOKED from public/anon/authenticated (`schema.sql:265`, `…sr018…sql:32`) | no (Edge Function w/ service role) |
 | `handle_new_user`, `handle_flag_status_change`, `handle_flag_reopen_reset`, `notify_flag_status_webhook`, `handle_flag_submitted`, `handle_flag_photo_added`, `handle_comment_added`, `handle_comment_vote_added`, `handle_point_event_streak`, `handle_flag_insert_history`, `check_flag_rate_limit`, `check_flag_creation_rate_limit`, `check_global_anon_rate_limit`, `enforce_flag_status_only_for_non_owner`, `enforce_flag_status_transition` | mostly DEFINER | `public` (webhook: `public, vault, net`) | trigger-only; EXECUTE revoked in source (various) — `enforce_flag_status_transition` has **no REVOKE in its APPLIED file** (`…2026-08-19_flag_status_transition_guard_APPLIED.sql`), `set_flag_updated_at`/`handle_push_token_updated_at` are not DEFINER and have no revoke (harmless) | no |
 
+Additional files read for the Build 33 half (all via `git show f5594171:…`): `supabase/config.toml`; `supabase/functions/_shared/{cors,supabase,accountDeletionReviewCore,accountDeletionWorkerCore}.ts`; `supabase/functions/{delete-account,delete-flag,account-deletion-review,account-deletion-status,account-deletion-worker}/index.ts`; `supabase/schema.sql` (diff); managed migrations absent from main: `20260528180513_d1_flags_rls`, `20260530192824_flag_creation_rate_limit_hardened`, `20260529181141_notify_flag_status_webhook_trigger`, `20260531015433_fix_flag_comments_default_user_id`, `20260602053139/053522/060359` (flags policy trio), `20260603002420_reconcile_oob_verify_webhook_secret…`, `20260727075327…075821` (sr009, fork2_oa, a4_3, sr024, a2_1, a2_2, sr001, a4_1, rls_initplan_consolidated, fork5_w1), `20260729053159_sr050…`, `20260818211920_reconcile_oob_grant_select_is_admin…`, `20260828040000…080000` (MOD1 ×5), `20260830130000_promptb_media_key_read_contract`; `nonmanaged/live-out-of-band/2026-08-27_d1sa_deployed_security_containment.sql` (full); `nonmanaged/proposed/20260828020000_d1f4r3_fix2…` (full) and `2026-08-27_d1f4_async_account_deletion.sql` (policy/grant/RPC statements + lines 268-345); client: `src/lib/{account,accountDeletionAvailability,accountDeletionReceipt,adminReports}.ts` (full), diffs of `src/lib/{auth.tsx,flags.ts,photos.ts,users.ts,location.ts}`, targeted reads of `src/screens/{ReportFlagModal,ProfileScreen,SignInScreen,AdminScreen,TasksScreen}.tsx`, `src/components/FlagDetailModal.tsx`, `app.json` diff.
+- Historical cross-refs read: `design-reviews/ship-ready/{01_functionality_findings,04_appstore_readiness,04b_sql_sweep_lens4b_RECOVERED,05_THE_SUBMISSION_GAP_LIST,10_CONSERVATION_TABLE,DECISIONS}.md` (grep-level), `docs/{PRIVACY_POLICY.md,privacy/index.html,ROADMAP.md,DATABASE.md,APP_STORE_REVIEWER_NOTES.md (locations only),SECURITY_INCIDENT_RESPONSE.md,RELEASE_IDENTITY.md}`, `QA_PLAN_SECURITY.md`.
+
+## Client call matrix — CURRENT_MAIN (70b52a30)
+
+"Deployed?" uses the lead's production facts. ✓ = policy/grant found in source AND applied live; ⚠ = applied live but only recorded outside main's migration set (B33 chain or drift-capture); ✗ = not deployed/applied.
+
+| Call site (file:line) | Table / RPC / function | Role needed | Policy / grant found in source | Deployed in prod? | Gap? |
+|---|---|---|---|---|---|
+| `src/lib/account.ts:25` | Edge `delete-account` (POST, no body) | authenticated JWT | handler `getUser()` (`functions/delete-account/index.ts:60-71`) | ✓ v4 (2026-05-31) | leaves Storage/feedback PII behind — CAND-E-08 |
+| `src/lib/admin.ts:30-34` | `users.select('is_admin')` own row | authenticated | column grant recorded only in b33 `20260818211920…` | ⚠ | none (grant live) |
+| `src/lib/comments.ts:80,132` | `flag_comments` select + `users!flag_comments_user_id_fkey(display_name)` embed | authenticated | read `using(true)` (`…flag_comments.sql:37-41`); users column grant | ✓ | none |
+| `src/lib/comments.ts:169` | `flag_comments` insert (no user_id sent) | authenticated | own-insert policy; column default `auth.uid()` only in b33 `20260531015433…` | ⚠ | none |
+| `src/lib/comments.ts:193` | `flag_comments` delete | authenticated | own delete; admin delete only in b33 `sr001` | ⚠ | none |
+| `src/lib/disputes.ts:55` | RPC `increment_dispute_request` | authenticated | main file is `*_PROPOSED`; applied per b33 `20260727075821…`; D1SA body requires `public.users` row | ⚠ | none |
+| `src/lib/feedbackStore.ts:83,90` | `feedback` insert (anon or own) | anon / authenticated | `…feedback_table.sql:88-94`; anon throttle 30/h (b33 `a2_2`) | ✓ | global-cap DoS — CAND-E-14 |
+| `src/lib/feedbackStore.ts:148` | `feedback` select own | authenticated | `…feedback_table.sql:99-105` | ✓ | none |
+| `src/lib/flags.ts:844-849` | Storage upload `flag-photos/<uid>/<ts>.<ext>` | authenticated | `schema.sql:468-475`; D1SA adds users-row requirement | ✓ | uid in public URL — CAND-E-08/16 |
+| `src/lib/flags.ts:957` | Storage remove own paths | authenticated | `schema.sql:477-484` | ✓ | none |
+| `src/lib/flags.ts:999,1049,1077,1485,1511,1550`; `userReportStats.ts:62`; `ProfileScreen.tsx:355` | `flags` select (explicit columns) | anon or authenticated | `schema.sql:353-362` | ✓ | none |
+| `src/lib/flags.ts:1227,1241` | `flags` insert own (status not sent → default open) | authenticated | `…rls_initplan…sql:57-61` | ✓ | status not pinned server-side — CAND-E-07 |
+| `src/lib/flags.ts:1282` | `flags` update content (owner edit) | authenticated owner | `flags owner edit open` (alias fix only in b33 `a4_3`); PLUS live `flags_user_scoped` FOR ALL | ⚠ | owner can bypass open-only — CAND-E-06b |
+| `src/lib/flags.ts:1317` | `flags` update status (CAS) | any authenticated | `…flags_policy_consolidation.sql:41-46` + trigger + transition guard | ✓ | anyone can reject — CAND-E-04 |
+| `src/lib/flags.ts:1342` | RPC `increment_reopen_request` | authenticated | `…flag_reopen_requests.sql:99-100` | ✓ | no dedupe (known) |
+| `src/lib/flags.ts:1413` | `flags` delete `.select('id')` | owner or admin | `schema.sql:397-400`, `…admin_role.sql:20-26`, `flags_user_scoped` | ✓ | none |
+| `src/lib/flags.ts:1446-1447` | `flags.photo_url` / `flag_photos.url` select | authenticated | read policies | ✓ | none |
+| `src/lib/flags.ts:1695,1715,1730`; `points.ts:95`; `SettingsScreen.tsx:478` | `users` select granted columns | authenticated | column grant `…users_email_privacy.sql:177-180` | ✓ | all-rows enumeration incl. `is_admin` — CAND-E-11 |
+| `src/lib/flags.ts:1803` | `flags` insert (anon) | anon | `flags anon insert` (user_id/photo_url null, status open) | ✓ | global cap 100/h — CAND-E-14 |
+| `src/lib/photos.ts:34` | `flag_photos` select | authenticated | `…flag_photos_junction.sql:39-42` | ✓ | none |
+| `src/lib/photos.ts:73,104` | `flag_photos` insert | authenticated (owner per D1SA) | main source `with check(true)`; live = D1SA owner+own-folder | ⚠ | source/live drift — CAND-E-12 |
+| `src/lib/pointEvents.ts:52,100` | `point_events` select own | authenticated | `…trust_score_system.sql:41-45` | ✓ | none |
+| `src/lib/pushNotifications.ts:172,196` | `push_tokens` upsert/delete own | authenticated | `schema.sql:418-436` | ✓ | none |
+| `src/lib/realtimeLog.ts:26` | RPC `log_realtime_event` | authenticated | `…d4…sql:115-116` | ✓ | none |
+| `src/lib/statusHistory.ts:73` | view `flag_status_history_public` | authenticated | `…status_history_table.sql:225-232` + b33 `a4_1` | ✓ | none |
+| `src/lib/users.ts:56-61` | `users` update own (display_name, avatar_url) | authenticated | `…admin_role.sql:34-43` (pins is_admin only) | ✓ | points/email writable — CAND-E-05 |
+| `src/lib/users.ts:129` | RPC `list_monthly_leaderboard` | authenticated | `*_PROPOSED` (b33: nonmanaged/proposed) | ✗ | client degrades to `[]` (by design) |
+| `src/hooks/useComments.ts:160`; `src/lib/flagsStore.tsx:553` | Realtime `flag_comments` (full row) / `flags (id,status)` | authenticated | publication rows | ✓ | none |
+| `src/lib/geocode.ts:22-23,47` | external Nominatim search/reverse (User-Agent w/ support email) | — | n/a | n/a | see note in CAND-E-16 |
+| `src/lib/feedback.ts:78` | `mailto:` composer | — | n/a | n/a | none |
+
+## Client call matrix — SUBMITTED_BUILD_33 (f5594171) — additions/changes only
+
+| Call site (b33 file:line) | Table / RPC / function | Role needed | Policy / grant found in source | Deployed in prod? | Gap? |
+|---|---|---|---|---|---|
+| `src/lib/account.ts:19-23` | Edge `delete-account` with `{operationId, receiptSecret}`; expects `status==='requested'` | authenticated | b33 handler → RPC `request_account_deletion` (service_role only; `nonmanaged/proposed/…d1f4…sql:1055,1071`) | ✗ (prod runs v4 which deletes immediately and returns `deleted`) | **CAND-E-01** |
+| `src/lib/accountDeletionReceipt.ts:87-91`; `SignInScreen.tsx:99`; `ProfileScreen.tsx:736` | Edge `account-deletion-status` | none (receipt secret) | b33 handler → RPC `account_deletion_receipt_status` (service_role) | ✗ not deployed | status always "unavailable" — CAND-E-01 |
+| `src/lib/flags.ts` `deleteFlag` (invoke `delete-flag`); `adminReports.ts:383` | Edge `delete-flag` → RPCs `account_deletion_prepare_flag_delete` / `…finalize…` / `…storage_exact_object` | authenticated owner/admin | `nonmanaged/proposed/20260828010000…:779-780` (service_role) | ✗ not deployed / not applied | **CAND-E-02** |
+| `src/lib/flags.ts` `uploadFlagPhoto` / `commitFlagPhotoUpload` / `cancelFlagPhotoUpload`; `photos.ts` `addFlagPhoto`,`batchInsertFlagPhotos` | RPCs `prepare_flag_photo_upload`, `commit_flag_photo_upload`, `cancel_flag_photo_upload` | authenticated | `nonmanaged/proposed/…d1f4…sql:650-750` | ✗ not applied | **CAND-E-03** |
+| `src/lib/users.ts` `uploadAvatar` | RPC `prepare_flag_photo_upload(p_kind='avatar')` → fallback legacy path + `users.update({avatar_url, avatar_object_key:null})`; RPC `commit_avatar_photo_upload` | authenticated | fallback keyed on `isFunctionMissing` | ✗ RPC absent → legacy path used | works (fallback); avatar_object_key guard trigger tolerates null→null |
+| `src/lib/flags.ts` `FLAG_READ_SELECT` (adds `photo_object_key`); `photos.ts` (adds `object_key`); `users.ts` (adds `avatar_object_key`) | column reads | anon/authenticated | `20260830130000_promptb…sql:66-82` | ✓ applied | none |
+| `src/lib/adminReports.ts:102-111` | `feedback.select(...moderation_reviewed_at, moderation_resolution, moderation_action_intent)` | admin | MOD1 `20260828050000…`, `…080000…` | ✗ not applied (42703) | AdminScreen queue errors — CAND-E-03 |
+| `src/lib/adminReports.ts:237-247,273-277,305-311` | `feedback.update(moderation_*)` | admin | MOD1 column grants + policies | ✗ | same |
+| `src/lib/flags.ts` `updateFlagStatus('rejected')` via `adminReports.rejectFlagReport` | `flags` status update | admin (UI-gated `isAdmin`) | MOD1 admin-only trigger `20260828040000…` | ✗ (prod guard allows anyone) | CAND-E-04 |
+| `src/lib/accountDeletionReceipt.ts:58,102` | `expo-secure-store` (receipt secret, subject id) | device | `app.json` plugin `expo-secure-store` (b33 diff) | n/a | fine (native only; web refuses) |
+
