@@ -1,6 +1,6 @@
 # Lane E — Privacy / security static review (source-level)
 
-Status: IN PROGRESS (written incrementally; each section is appended as it is completed).
+Status: COMPLETE (18 candidates; written incrementally — sections appended in order).
 Reviewer: Lane E read-only subagent. Worktree `/Users/skypie/AccessMap-deep-audit-20260902`.
 CURRENT_MAIN = origin/main `70b52a30`. SUBMITTED_BUILD_33 = `f5594171` (113 commits ahead of main, not in main).
 Production facts relied on (captured read-only by the lead, 2026-09-02): deployed Edge Functions = `send-push-notification`, `notify-flag-status`, `delete-account` (v4, 2026-05-31) ONLY. `delete-flag` and `account-deletion-*` NOT deployed. Applied migrations end at `20260830130000_promptb_media_key_read_contract`; `mod1*` (20260828040000–080000) and `d1f4r3_fix2` (20260828020000) NOT applied. `public.flags` still has `admin delete any flag` + `flags delete own` + `flags_user_scoped` FOR ALL; authenticated and anon hold the full default grant set on `flags`. authenticated has SELECT on `users.is_admin`, NO SELECT on `users.email`.
@@ -106,3 +106,308 @@ Additional files read for the Build 33 half (all via `git show f5594171:…`): `
 | `src/lib/flags.ts` `updateFlagStatus('rejected')` via `adminReports.rejectFlagReport` | `flags` status update | admin (UI-gated `isAdmin`) | MOD1 admin-only trigger `20260828040000…` | ✗ (prod guard allows anyone) | CAND-E-04 |
 | `src/lib/accountDeletionReceipt.ts:58,102` | `expo-secure-store` (receipt secret, subject id) | device | `app.json` plugin `expo-secure-store` (b33 diff) | n/a | fine (native only; web refuses) |
 
+## Candidate findings (most severe first)
+
+### CAND-E-01: Build 33 account deletion contradicts the deployed delete-account v4 — account is deleted, user is told the request failed
+SEVERITY_GUESS: HIGH
+CATEGORY: safety
+AFFECTED_STATE: SUBMITTED_BUILD_33 (client) + BACKEND (deployed v4 semantics)
+CONFIDENCE: HIGH
+CLAIM: The Build 33 client posts a D1F4 receipt to `delete-account` and only accepts `status==='requested'`, but production still runs v4, which anonymises flags, hard-deletes the auth user and returns `{status:'deleted'}` — so the client throws, never signs out, shows "Could not confirm deletion request", keeps a SecureStore receipt, and then polls `account-deletion-status`, which is not deployed.
+EVIDENCE: `b33:src/lib/account.ts:19-23`
+```
+const { data, error } = await supabase.functions.invoke('delete-account', {
+  method: 'POST', body: { operationId: receipt.operationId, receiptSecret: receipt.receiptSecret },
+});
+if (error) throw error;
+if (!data || data.status !== 'requested') throw new Error('Deletion request was not accepted.');
+```
+`main:supabase/functions/delete-account/index.ts:88-91` — `adminClient.auth.admin.deleteUser(userId)` … `return jsonResponse(200, { status: 'deleted' });` (v4 ignores the body). `b33:src/screens/ProfileScreen.tsx:770-774` — generic failure notify "Could not confirm deletion request". `b33:src/lib/accountDeletionReceipt.ts:88-91` → `functions.invoke('account-deletion-status')` (not deployed per lead) → `SignInScreen.tsx:103-105` "status temporarily unavailable" forever.
+WHY_IT_MATTERS: A user who deletes their account in Build 33 sees a failure message while their account, push token and profile are already gone; the still-cached session dies on next refresh with no explanation; the "Check status" surface can never confirm. Apple 5.1.1(v) expects a working, truthful deletion flow. Conversely, if the B33 Edge function set were deployed as-is, `delete-account` would 409 on every call (`request_account_deletion` is in `nonmanaged/proposed`, not applied) and nothing would ever be deleted (worker needs an external scheduler + secret: `b33:supabase/functions/account-deletion-worker/index.ts:1-3`).
+VERIFICATION_NEEDED: Lead confirms deployed `delete-account` v4 body equals `main:supabase/functions/delete-account/index.ts` (returns `deleted`). Runtime (Sky, throwaway account on Build 33): tap Delete Account → observe alert text, then read-only `select count(*) from auth.users where id = '<uid>'` → expect 0.
+HISTORICAL_RELATION: D1 / D1F4 / D1F4R2 / D1F4R3 (Codex 2026-08-27/28 reports), SR-010 (anonymise-not-erase), Prompt B B2-R.
+
+### CAND-E-02: Build 33 flag deletion (owner and admin) depends on the undeployed `delete-flag` Edge route — no report can be deleted from the app
+SEVERITY_GUESS: HIGH
+CATEGORY: app-store
+AFFECTED_STATE: SUBMITTED_BUILD_33 + BACKEND
+CONFIDENCE: HIGH
+CLAIM: Build 33 replaced the RLS-gated `flags.delete()` with `functions.invoke('delete-flag')`; that function is not deployed and its RPCs (`account_deletion_prepare_flag_delete`, `…finalize…`, `…storage_exact_object`) exist only in `nonmanaged/proposed`, so every owner delete and every admin "Remove" fails.
+EVIDENCE: `b33:src/lib/flags.ts` (hunk `@@ -1362,107 +1430,26 @@`, `deleteFlag`):
+```
+const { data, error } = await supabase.functions.invoke('delete-flag', { body: { flagId } });
+if (error) throw error;
+if (!data || typeof data !== 'object' || (data as { status?: unknown }).status !== 'deleted') {
+  throw new Error('Flag deletion did not reach a confirmed terminal result.');
+```
+`b33:supabase/functions/delete-flag/index.ts:43-47,64-68` (RPC calls); `b33:supabase/nonmanaged/proposed/20260828010000_d1f4r3_source_closure.sql:779-780` (grants, service_role only); `b33:src/lib/adminReports.ts:377-385` (`removeFlagReport` → `deleteFlag`).
+WHY_IT_MATTERS: "Delete a flag — remove any flag you submitted" (`docs/PRIVACY_POLICY.md:129`) and the Apple 1.2(b) takedown lever both become dead controls in the submitted build; users cannot retract a report that exposes their location, admins cannot remove abusive content (only "reject", which is itself broken by the MOD1 gap — see CAND-E-03/04).
+VERIFICATION_NEEDED: Runtime on Build 33: FlagDetailModal → Delete on own flag → expect error; lead's function list already shows `delete-flag` absent.
+HISTORICAL_RELATION: SR-050 (takedown gap), D1F4R3-FIX2 (`nonmanaged/proposed/20260828020000…:189-200`).
+
+### CAND-E-03: Build 33 client calls RPCs/columns that production does not have (photo upload intents, moderation queue) — photo reports and the admin queue fail
+SEVERITY_GUESS: HIGH
+CATEGORY: app-store
+AFFECTED_STATE: SUBMITTED_BUILD_33 + BACKEND
+CONFIDENCE: HIGH
+CLAIM: Only `20260830130000_promptb_media_key_read_contract` (columns) is applied; the D1F4 upload-intent RPCs and the MOD1 `feedback.moderation_*` columns are not, so `uploadFlagPhoto` throws before `createFlag` (any report with a photo fails outright), `addFlagPhoto`/`batchInsertFlagPhotos` cannot commit, and `listOpenReports` selects non-existent columns (42703) so the AdminScreen queue never loads.
+EVIDENCE: `b33:src/lib/flags.ts` (`uploadFlagPhoto`, hunk `@@ -858,19 +858,61 @@`):
+```
+const { data, error } = await supabase
+  .rpc('prepare_flag_photo_upload', { p_extension: finalExt, p_kind: 'flag_photo' })
+  .single();
+if (error || !data) throw error ?? new Error('Photo upload could not be prepared.');
+```
+`b33:src/screens/ReportFlagModal.tsx:716-719` (uploads run BEFORE `createFlag`; the outer `catch` at `:789` fails the whole submit). `b33:src/lib/adminReports.ts:82,103-110` (`REPORT_SELECT` includes `moderation_reviewed_at, moderation_resolution, moderation_action_intent`). `b33:supabase/nonmanaged/proposed/2026-08-27_d1f4_async_account_deletion.sql:650-750` (RPC definitions, proposed only); `b33:supabase/migrations/20260828050000_mod1_admin_report_queue.sql:17-20` (columns, not applied per lead). Avatar upload is the one path with a fallback (`b33:src/lib/users.ts` `isFunctionMissing` → legacy `<uid>/avatar/<ts>` + direct `users.update`).
+WHY_IT_MATTERS: Photo evidence is a core report feature; the EXIF-stripping privacy gate now sits behind a call that always fails. The moderation queue (Apple 1.2(b) triage) is inoperable in the build that was submitted. Not a privacy leak, but the lead asked what a Build 33 client does against undeployed routes — this is the complete list with CAND-E-01/02.
+VERIFICATION_NEEDED: Runtime on Build 33: Report with one photo → expect failure toast; Admin tab → Reports → expect load error. Lead's applied-migration list already implies both.
+HISTORICAL_RELATION: Prompt B B2 (Groups 4/6/7 deferred), MOD1 / MOD1R FIX1/FIX2, D1F4.
+
+### CAND-E-04: Any signed-in user can permanently "reject" any accessibility report — offered on every Tasks card in main; MOD1 admin-only guard not applied
+SEVERITY_GUESS: HIGH
+CATEGORY: safety
+AFFECTED_STATE: BOTH (BACKEND allows it in both; main UI exposes it to everyone, Build 33 UI hides it behind `isAdmin` but REST remains open)
+CONFIDENCE: HIGH
+CLAIM: The live transition guard permits `open→rejected` and `verified→rejected` for every authenticated user, the status-update policy is `using(true)`, `rejected` is terminal in production (only `resolved→open` reopens), and rejected rows are excluded from every default view — so one account can bury every report on the map with no restore path; main's Tasks screen puts a "Reject" button on every card.
+EVIDENCE: `main:supabase/migrations/2026-08-19_flag_status_transition_guard_APPLIED.sql:53-58`
+```
+if (old.status = 'open'     and new.status in ('verified', 'resolved', 'rejected'))
+or (old.status = 'verified' and new.status in ('resolved', 'rejected'))
+or (old.status = 'resolved' and new.status = 'open')
+```
+`main:supabase/migrations/2026-06-01_flags_policy_consolidation.sql:41-46` (`using (true) with check (true)`); `main:src/screens/TasksScreen.tsx:1842-1849` (`key: 'reject' … onSetStatus(flag.id, 'rejected', isOwn)` unconditional) and `src/components/FlagDetailModal.tsx:670` (`canReject = status === 'open' || status === 'verified'`); `main:src/lib/flags.ts:1670` (`DEFAULT_STATUSES = ['open','verified']`). Fix exists only in `b33:supabase/migrations/20260828040000_mod1_moderation_release_safety.sql:7-12,53-61` (NOT applied per lead); Build 33 UI gate: `b33:src/screens/TasksScreen.tsx:1965-1971`, `FlagDetailModal.tsx:1347`.
+WHY_IT_MATTERS: Disabled users depend on reports staying visible; a single hostile or careless account can hide all of them (no rate limit on status writes, no audit surfaced to the reporter, no restore transition). Reporter push notification does not fire for `rejected` (`notify-flag-status/index.ts:40,185`), so victims are not even told.
+VERIFICATION_NEEDED: Lead: `pg_get_functiondef('public.enforce_flag_status_transition')` on prod — confirm the 2026-08-19 body (no admin check on open/verified→rejected). Runtime: non-admin account, Tasks → Reject on another user's flag → succeeds.
+HISTORICAL_RELATION: MOD1 CHECKPOINT A (2026-08-28), Q16/D27 (owner self-triage decision, art-direction build 02 HANDOFF), F53.
+
+### CAND-E-05: `users.points` / `streak_days` / `email` remain client-writable on the user's own row (SR-048 / R-10 still open; fix migration named in ROADMAP was never committed)
+SEVERITY_GUESS: HIGH
+CATEGORY: data-integrity
+AFFECTED_STATE: BOTH + BACKEND (unfixed in either tree; B33's proposed D1F4 rewrite still does not pin points)
+CONFIDENCE: HIGH
+CLAIM: The `users update own row` policy pins only `is_admin`; the 2026-05-27 grant work scoped SELECT only, and no migration in either tree revokes/limits UPDATE columns, so `PATCH /rest/v1/users?id=eq.<me> {"points":999999}` forges leaderboard rank, tier, achievements and streaks (and lets a user rewrite the `public.users.email` mirror).
+EVIDENCE: `main:supabase/migrations/2026-05-30_admin_role.sql:34-43`
+```
+CREATE POLICY "users update own row" ON public.users FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = id)
+  WITH CHECK ((SELECT auth.uid()) = id
+    AND is_admin IS NOT DISTINCT FROM (SELECT is_admin FROM public.users WHERE id = (SELECT auth.uid())))
+```
+`main:supabase/migrations/2026-05-27_users_email_privacy.sql:175-180` (SELECT-only column scoping); grep of both trees for `grant update|revoke update` on `public.users` → none; `docs/ROADMAP.md:68` references `2026-05-29_restrict_users_update_columns.sql` — `git log --all --diff-filter=A -- '*restrict_users_update_columns*'` returns nothing; `b33:supabase/nonmanaged/proposed/2026-08-27_d1f4_async_account_deletion.sql:280-289` pins `is_admin`, `avatar_url`, `avatar_object_key` only.
+WHY_IT_MATTERS: The public leaderboard, monthly board (when applied) and "spam penalty" mechanics become meaningless; `point_events` will contradict totals. Not a privacy leak, but a trivially exploitable integrity hole in a community-trust system.
+VERIFICATION_NEEDED: Lead (read-only): `select column_name from information_schema.column_privileges where table_name='users' and grantee='authenticated' and privilege_type='UPDATE'` (expect all columns) and `pg_policies` `with_check` for "users update own row". No live write test.
+HISTORICAL_RELATION: SR-048 (HIGH, `design-reviews/ship-ready/01_functionality_findings.md:144`), R-10 (`05_THE_SUBMISSION_GAP_LIST.md:35`), ROADMAP "Points Self-Write RLS".
+
+### CAND-E-06: Un-versioned live `flags_user_scoped` FOR ALL policy lets owners edit ANY column of their own flags after verification, defeating the "owner edit open-only / immutable lat-lng" contract
+SEVERITY_GUESS: MEDIUM
+CATEGORY: data-integrity
+AFFECTED_STATE: BACKEND (live) — absent from CURRENT_MAIN source; recorded in Build 33's reconstructed chain; only Build 33's un-applied migrations drop it
+CONFIDENCE: HIGH (logic) / MEDIUM (exact live body — lead saw the policy exists; body per B33 reconstruction and DECISIONS.md)
+CLAIM: `flags_user_scoped` (`FOR ALL USING/WITH CHECK user_id = auth.uid()`) is OR-ed with `flags owner edit open`, so the owner-edit restrictions (status must be `open`; lat/lng/user_id/created_at/status pinned) are bypassable for any own row; the non-owner revert trigger exempts owners and the transition guard checks only status.
+EVIDENCE: `b33:supabase/migrations/20260528180513_d1_flags_rls.sql:13-16`
+```
+CREATE POLICY "flags_user_scoped" ON public.flags
+  FOR ALL
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+```
+Contract it defeats: `main:supabase/migrations/2026-05-25_flag_edit_rls_replacement.sql:114-136`; owner exemption: `main:supabase/migrations/2026-05-23_status_update_trigger_proposal.sql:90-92`; main never drops it (only `flags_auth_user_only` at `2026-06-01_flags_policy_consolidation.sql:48`); `design-reviews/ship-ready/DECISIONS.md:30` graded it PASS as "owner-scoped" without considering the OR with the open-only policy. Build 33 drops it only in `schema.sql:359` and `nonmanaged/proposed/…fix2…:198` (not applied).
+WHY_IT_MATTERS: A verified/resolved report can be silently relocated or re-described by its owner via REST (`flag_edit_history` is never written by any client — grep shows no writer), undermining community verification; a fresh bootstrap from main cannot reproduce live behaviour either way (see CAND-E-14).
+VERIFICATION_NEEDED: Lead: `pg_get_expr(polqual/polwithcheck)` for `flags_user_scoped` on prod (confirm `user_id = auth.uid()`, cmd `*`). Runtime (throwaway data): owner PATCHes `lat` on own `verified` flag → expect success.
+HISTORICAL_RELATION: SR-039 / §C-0a / R-4 (`04_appstore_readiness.md:175-176,252`), J3-3, SR-090 (A4-3).
+
+### CAND-E-07: Points economy is farmable through dead-but-writable tables, uncapped triggers and owner self-triage
+SEVERITY_GUESS: MEDIUM
+CATEGORY: data-integrity
+AFFECTED_STATE: BOTH + BACKEND
+CONFIDENCE: HIGH (source logic; no client writer exists, but REST with a user JWT suffices)
+CLAIM: (a) `comment_votes` allows own delete + re-insert and `handle_comment_vote_added` counts only current rows, so one sock-puppet vote can be cycled to award the author +2 indefinitely; (b) `handle_comment_added` awards +1 per comment with no cap/dedupe and comments are self-deletable; (c) an owner may Verify/Resolve their own flag (UI offers it; policy is `using(true)`), earning the reporter +10/+15 with no second party; (d) `increment_reopen_request` has no per-user dedupe, so resolved→open→resolved cycles re-award (documented as open).
+EVIDENCE: `main:supabase/migrations/2026-05-30_trust_score_system.sql:100-104` (delete own vote) and `:291-297`
+```
+SELECT COUNT(*) INTO total_votes FROM public.comment_votes WHERE comment_id = NEW.comment_id;
+IF total_votes <= 10 THEN
+  UPDATE public.users SET points = points + 2 WHERE id = comment_author;
+```
+`:247-270` (comment +1, no cap); `main:supabase/schema.sql:154-158,178-184` (reporter bonus keyed on `new.user_id` only) with `src/components/FlagDetailModal.tsx:668-669` (`canVerify = status === 'open'` — no `isOwn` check) and `src/screens/TasksScreen.tsx:1823-1841`; `main:supabase/migrations/2026-08-19_flag_status_transition_guard_APPLIED.sql:31-36` (reopen farming acknowledged).
+WHY_IT_MATTERS: Leaderboard/tier/achievement integrity; cheap to exploit, hard to detect (point_events dedupe absent). Compounds CAND-E-05.
+VERIFICATION_NEEDED: Lead: confirm live bodies of `handle_comment_vote_added` / `handle_comment_added` match source (`pg_get_functiondef`). Owner self-verify reachability is a shipped decision (Q16) — no test needed.
+HISTORICAL_RELATION: SW-53 (schema.sql:124-136), SR-085 / SR-098 / A7-1 (comment_votes dead table), Q16/D27, P2/P12 (`qa-reports/qa-2026-08-18-deep-sweep.md`).
+
+### CAND-E-08: Authenticated INSERT can create a flag directly in `verified`/`resolved`/`rejected` — status is pinned only for anon; MOD1R FIX1 restrictive policy not applied
+SEVERITY_GUESS: MEDIUM
+CATEGORY: data-integrity
+AFFECTED_STATE: BOTH + BACKEND
+CONFIDENCE: HIGH
+CLAIM: `flags insert own` checks only `uid = user_id`; the transition guard is `BEFORE UPDATE OF status`, so a REST INSERT with `status:'verified'` lands as community-verified without any verifier; only the anon policy pins `status='open'`.
+EVIDENCE: `main:supabase/migrations/2026-05-23_rls_initplan_and_non_owner_status_update.sql:57-61` (`with check ((select auth.uid()) = user_id)`); `b33:supabase/migrations/20260602053139_flags_policy_consolidation_20260601.sql:15-22` (anon pins `status='open'`); fix only in `b33:supabase/migrations/20260828060000_mod1r_fix1_report_and_insert_authz.sql:63-66` (`flags_insert_status_open_only … as restrictive for insert with check (status = 'open')`) — not applied per lead.
+WHY_IT_MATTERS: Fake "verified" barriers (or pre-rejected spam that never appears in Tasks) corrupt the trust signal the Tasks triage flow exists to produce; `flag_status_history` records `from_status NULL → verified` as if genuine.
+VERIFICATION_NEEDED: Lead: `pg_policies` on `public.flags` for cmd INSERT (confirm no restrictive status policy). No live write test.
+HISTORICAL_RELATION: MOD1R FIX1 Blocker 3.
+
+### CAND-E-09: Account deletion (deployed v4 / main) leaves Storage photos, avatar selfies and `feedback.contact_email` behind, and the anonymised flags keep the deleted user's UUID in `photo_url`
+SEVERITY_GUESS: MEDIUM
+CATEGORY: privacy
+AFFECTED_STATE: CURRENT_MAIN + BACKEND (this is what runs today; Build 33's D1F4 worker would fix it but is not deployed)
+CONFIDENCE: HIGH
+CLAIM: v4 only nulls `flags.user_id` and deletes the auth user; nothing removes `flag-photos/<uid>/…` objects (public bucket), the avatar object(s), or `feedback.contact_email`; every anonymised flag's `photo_url` still embeds `<uid>/`, re-linking all of a deleted person's "anonymous" reports to one stable identifier, and the published policy promises more than the code does.
+EVIDENCE: `main:supabase/functions/delete-account/index.ts:79-89` (only `flags.update({user_id:null})` then `deleteUser`); `main:src/lib/flags.ts:869` (`${uid}/${Date.now()}.${finalExt}`) and `src/lib/users.ts:96` (`${uid}/avatar/${Date.now()}`); `main:supabase/schema.sql:459-461` (bucket `public: true`); `main:supabase/migrations/2026-05-23_feedback_table.sql:62,65-68` (`user_id … on delete set null`, `contact_email` retained); `docs/PRIVACY_POLICY.md:132` — "This deletes your email, display name, avatar, all your flags, and all associated photos" (flags are anonymised, photos/avatars persist); the published page is more honest (`docs/privacy/index.html:134` "Photos attached to your reports may remain").
+WHY_IT_MATTERS: PIPEDA right-to-erasure: a selfie avatar and barrier photos stay world-readable at their old URLs indefinitely; the uid folder makes "anonymous" reports groupable (pattern-of-life over a person's neighbourhood). Old avatars are also never deleted on change (each upload is a new timestamped object).
+VERIFICATION_NEEDED: Lead (read-only): count `storage.objects` whose `(storage.foldername(name))[1]` has no matching `public.users.id`; sample `flags.photo_url` where `user_id is null`.
+HISTORICAL_RELATION: SR-010, D1 Option A / D1F4 (`b33:supabase/functions/_shared/accountDeletionWorkerCore.ts:103-116` storage plan), R-1 (server-side sweep).
+
+### CAND-E-10: A 64-hex webhook shared secret is committed verbatim in Build 33's managed migration chain
+SEVERITY_GUESS: MEDIUM (HIGH if the Vault `webhook_secret` was never rotated after the 2026-06-03 Vault move)
+CATEGORY: security
+AFFECTED_STATE: SUBMITTED_BUILD_33 (tree); not present in CURRENT_MAIN
+CONFIDENCE: HIGH (literal present) / LOW (whether still valid)
+CLAIM: `20260529181141_notify_flag_status_webhook_trigger.sql` — "exact hosted-recorded SQL, verbatim" — carries the original `X-Webhook-Secret` value inline; whoever holds the current value can call `notify-flag-status` (verify_jwt=false) and push arbitrary "verified/resolved" notifications to any `user_id` with a token.
+EVIDENCE: `b33:supabase/migrations/20260529181141_notify_flag_status_webhook_trigger.sql:19-24` (value not reproduced here; 64 hex chars; present in exactly one file in the B33 tree, zero in main)
+```
+PERFORM net.http_post(
+  url     := 'https://kldlwszpfkdmsjrjhjym.supabase.co/functions/v1/notify-flag-status',
+  headers := jsonb_build_object('Content-Type','application/json','X-Webhook-Secret', '<64-hex literal>'),
+```
+`main:supabase/migrations/2026-06-01_flags_policy_consolidation.sql:65-68` (follow-up #1: "Hardcoded webhook secrets … Rotate both + move to Vault"); current design reads Vault (`main:supabase/schema.sql:275-276`, `functions/notify-flag-status/index.ts:61-81`).
+WHY_IT_MATTERS: Push-notification spam/social-engineering vector against every opted-in user; repo history is durable even if the file is later removed.
+VERIFICATION_NEEDED: Lead (read-only, no value printed): confirm `vault.decrypted_secrets` `webhook_secret` was rotated after 2026-06-03 (compare length/prefix hash offline, or confirm rotation in `security-audit/2026-07-31/phase-b/FORK_S1_credential_rotation.md` outcome). If not rotated: rotate.
+HISTORICAL_RELATION: SR-018 / S-6 / IO-4 / X-2 (verify_webhook_secret oracle), FORK_S1 credential rotation, "FOLLOW-UPS DISCOVERED 1" (2026-06-01).
+
+### CAND-E-11: App Store reviewer test-account credentials committed in both trees (locations only)
+SEVERITY_GUESS: MEDIUM
+CATEGORY: security
+AFFECTED_STATE: BOTH (DOCS + SQL)
+CONFIDENCE: HIGH (present) / UNKNOWN (whether the account exists with that password)
+CLAIM: The reviewer account e-mail and password appear in tracked files; if the account was created as instructed, anyone with repo access can sign in as it (and it has `authenticated` privileges, i.e. every write path above).
+EVIDENCE: `main:supabase/migrations/2026-05-31_reviewer_test_account.sql:9-10` (email + `Password …` line; value suppressed); `b33:supabase/nonmanaged/destructive-data/2026-05-31_reviewer_test_account.sql` (same); `docs/APP_STORE_REVIEWER_NOTES.md:8,25`; ~40 further qa-report/design-review lines (grep `reviewer.{0,40}password`, list in method).
+WHY_IT_MATTERS: A live shared credential in source; also the seeded reviewer flags include a fixed display name that appears on the public leaderboard.
+VERIFICATION_NEEDED: Lead (read-only): `select 1 from auth.users where email = 'reviewer@accessmap.com'`; confirm rotation per `qa-reports/PROMPT_0.1_credential_rotation.md`.
+HISTORICAL_RELATION: PROMPT_0.1 credential rotation, S-1/S-2 (LENS1 secrets exposure).
+
+### CAND-E-12: Any signed-in user can enumerate all users and identify admins (`is_admin` column grant + `using(true)` row policy)
+SEVERITY_GUESS: MEDIUM
+CATEGORY: privacy
+AFFECTED_STATE: BOTH + BACKEND
+CONFIDENCE: HIGH
+CLAIM: `GET /rest/v1/users?select=id,display_name,avatar_url,created_at,points,is_admin&is_admin=eq.true` works for every authenticated user, exposing who the moderators are — the exact targeting risk W6-1 was written to prevent for verifiers.
+EVIDENCE: `main:supabase/schema.sql:333-336` (`users readable by authenticated … using (true)`); `main:src/lib/admin.ts:40-41` and `b33:supabase/migrations/20260818211920_reconcile_oob_grant_select_is_admin_for_replay_20260829.sql:57` (`grant select (is_admin) on public.users to authenticated;` — table-wide, not own-row); `main:src/lib/flags.ts:1683-1688` (W6-1 rationale).
+WHY_IT_MATTERS: Admins can be singled out for harassment or targeted with abusive reports; full user-directory enumeration (ids, names, avatars, join dates) is also more than the leaderboard needs.
+VERIFICATION_NEEDED: Lead: `information_schema.column_privileges` for `users.is_admin` (already known granted) — the row policy is the other half; runtime REST query as a non-admin.
+HISTORICAL_RELATION: W6-1 (leaderboard verifier identity), A1 (device-fixes 2026-08-18 is_admin grant).
+
+### CAND-E-13: `zz_backup_*_20260818` purge snapshots may still exist in `public` without RLS (PostgREST-exposed to anon/authenticated)
+SEVERITY_GUESS: LOW (MEDIUM if present)
+CATEGORY: privacy
+AFFECTED_STATE: BACKEND / UNKNOWN
+CONFIDENCE: LOW (existence unverified; the sibling `bk_2026_08_22_*` set was contained out-of-band)
+CLAIM: The 2026-08-18 purge created seven `create table … as select *` snapshots in `public` (flags with user_ids, status history with user_ids, point_events, comments); Supabase's default grants expose `public` tables to PostgREST unless RLS is enabled, and the only recorded containment (D1SA) covers the `bk_2026_08_22_*` set, not these.
+EVIDENCE: `main:supabase/migrations/2026-08-18_purge_test_flags.sql:19-25` (`create table if not exists public.zz_backup_flags_20260818 as select * from public.flags; …`) and `:82-87` (drop step optional/deferred); `main:supabase/migrations/2026-08-22_takedown_junk_flags_APPLIED.sql:335-337` ("These bk_* tables live in the public schema, so PostgREST will expose them unless RLS denies"); `b33:supabase/nonmanaged/live-out-of-band/2026-08-27_d1sa_deployed_security_containment.sql:34-53` (RLS+revokes for `bk_2026_08_22_*` only).
+WHY_IT_MATTERS: Historical per-user rows (including deleted/rejected flags with `user_id`) would be readable by any anon-key client.
+VERIFICATION_NEEDED: Lead: `select relname, relrowsecurity from pg_class where relname like 'zz_backup%' or relname like 'bk_2026%'` plus `information_schema.role_table_grants` for anon/authenticated on them.
+HISTORICAL_RELATION: D1S-A F1.
+
+### CAND-E-14: CURRENT_MAIN's migration set no longer reproduces the live posture (fresh bootstrap from main is less secure/buggier than prod)
+SEVERITY_GUESS: LOW
+CATEGORY: security
+AFFECTED_STATE: CURRENT_MAIN (source) / DOCS_ONLY for prod
+CONFIDENCE: HIGH
+CLAIM: main lacks files for objects that are live: the `flags owner edit open` alias fix (SR-090), `context_tags` revert in the non-owner trigger, `flag_photos` anon-explicit and owner-scoped INSERT (D1SA), admin comment delete, admin Storage delete, `is_admin` column grant, dispute counter, `flag_comments.user_id` default, D1SA account-row gates, `bk_*` containment; and `main:supabase/migrations/2026-06-01_flag_photos_insert_guard.sql` is still labelled PROPOSE-ONLY while `schema.sql`'s own header warns it is unsafe to re-run.
+EVIDENCE: `main:supabase/migrations/2026-07-27_drift_capture_flags_owner_edit_open_policy.sql:57-73` (broken body captured, fix absent — fix is `b33:…20260727075512_a4_3…`); `main:supabase/migrations/2026-05-30_flag_photos_junction.sql:47-50` (`with check (true)`) vs live `b33:…d1sa…sql:98-115`; `main:supabase/schema.sql:4-11` (do-not-re-run warning); Build 33 carries the reconciled managed chain (`git diff --stat` shows 40+ reconstructed files).
+WHY_IT_MATTERS: Disaster recovery / staging from main would resurrect SQLSTATE-21000 owner edits, the flag_photos URL-injection hole and the verify_webhook_secret oracle-free state only by luck; audits reasoning from main's tree (as this one must) cannot see live protections.
+VERIFICATION_NEEDED: none beyond the lead's applied-migration list; optionally confirm live `flag_photos` INSERT `with_check` matches D1SA.
+HISTORICAL_RELATION: F3 (2026-06-01), SR-090/A4-3, A2-1, SR-024, SR-001, SR-050, D1S-A, migration-history truth repair (2026-08-28).
+
+### CAND-E-15: Global anonymous caps (100 flags/h, 30 feedback/h) are single-attacker denial-of-service switches for all guests
+SEVERITY_GUESS: LOW
+CATEGORY: safety
+AFFECTED_STATE: BOTH + BACKEND
+CONFIDENCE: HIGH
+CLAIM: Server-side anon limits are global counters keyed on nothing (no IP/device by Jordan constraint), and the per-device 5/24h limit is AsyncStorage-only; one script can exhaust both caps every hour, blocking every guest report and every guest abuse-report (the report modal then degrades to mailto).
+EVIDENCE: `main:supabase/migrations/2026-07-27_drift_capture_live_flag_insert_throttles.sql:103-111` (`WHERE user_id IS NULL AND created_at > NOW() - INTERVAL '1 hour' … >= 100 → raise`); `b33:supabase/migrations/20260727075623_a2_2_feedback_anon_throttle_20260727.sql:20-27` (30/h global); `main:src/lib/anonRateLimit.ts:3-5` (client-only 5/24h); `main:src/lib/reports.ts:226-232` (report insert IS the channel; `skipped → failed`).
+WHY_IT_MATTERS: Availability of the guest reporting path App Review exercises first; abuse reports from guests can be suppressed by flooding.
+VERIFICATION_NEEDED: none (design trade-off recorded); optionally Supabase dashboard per-IP rate limits on `/rest/v1/flags` POST.
+HISTORICAL_RELATION: SR-007 / C-5 / C-7, Jordan hard constraints (no IP/device ID).
+
+### CAND-E-16: Web build caches every `*.supabase.co` GET (including `/auth/v1/user` with e-mail) in Cache Storage; purge depends on `signOut()` running; CSP is report-only
+SEVERITY_GUESS: LOW
+CATEGORY: privacy
+AFFECTED_STATE: WEB_BUILD
+CONFIDENCE: MEDIUM
+CLAIM: The service worker NetworkFirst rule stores successful Supabase GETs keyed by URL only; `signOut()` sweeps `accessmap-*` caches, but a session that expires or a tab that is simply closed leaves the previous user's `/auth/v1/user` (id, email) and per-user rows available to the offline fallback on a shared browser; `Content-Security-Policy-Report-Only` enforces nothing.
+EVIDENCE: `main:public/sw.js:106-120` (`url.hostname.endsWith('.supabase.co') … cache.put(request, response.clone())`); `main:src/lib/supabase.ts:101-130` (purge only inside `signOut`); `main:vercel.json:20-21` (`Content-Security-Policy-Report-Only`).
+WHY_IT_MATTERS: Shared/public computers; low likelihood, contained blast radius (own identity/rows only).
+VERIFICATION_NEEDED: Runtime (web): sign in, go offline without signing out, sign in as another user → check DevTools Cache Storage for `/auth/v1/user`.
+HISTORICAL_RELATION: PL-2 / IO-5 (partially fixed), PL-5, IO-2 (PKCE).
+
+### CAND-E-17: Published/repo privacy and security docs make claims the code does not implement (or implements more safely)
+SEVERITY_GUESS: LOW
+CATEGORY: app-store
+AFFECTED_STATE: DOCS_ONLY
+CONFIDENCE: HIGH
+CLAIM: `docs/PRIVACY_POLICY.md` (repo copy) says deletion removes flags and photos (`:132`; code anonymises and keeps photos — CAND-E-09), says "if processing fails, we keep the original photo" (`:228`; code is fail-closed — `src/lib/flags.ts:797-800`), promises retention jobs that do not exist in source ("Notifications 30 days", "Audit logs 30 days", "flags resolved + 90 days archived", `:178-181`; also `docs/privacy/index.html:188-190`); `docs/SUPABASE_SECURITY.md:57` asks to "verify uploaded photos don't expose user identity in their URL" while object keys are `<uid>/…` (`src/lib/flags.ts:869`), and `:87` names a `NOTIFY_WEBHOOK_SECRET` env var the code no longer uses (Vault RPC, `functions/notify-flag-status/index.ts:58-60`); `app.json:5` privacy URL points at the new host while `docs/privacy/index.html` (old GitHub Pages copy) still ships in the repo with divergent text.
+EVIDENCE: lines cited inline above.
+WHY_IT_MATTERS: App Review and regulators compare the policy to behaviour; "Data Retention" rows that name jobs which do not exist are the riskiest. The published page correctly states no analytics/crash reporting (`docs/privacy/index.html:84`) — true: `src/lib/analytics.ts` is a `__DEV__`-only stub and `package.json` has no Sentry/analytics SDK.
+VERIFICATION_NEEDED: Lead: fetch the live `https://skypistudio.com/flagstone/privacy/` text and diff against `docs/PRIVACY_POLICY.md` claims above (network step, not done here).
+HISTORICAL_RELATION: C-2 (lens-9 claims, 2026-07-31), Jordan privacy conditions, §SKY-6.
+
+### CAND-E-18: Hygiene notes (no single fix; grouped)
+SEVERITY_GUESS: NOTE
+CATEGORY: security
+AFFECTED_STATE: BOTH unless stated
+CONFIDENCE: HIGH
+CLAIM/EVIDENCE:
+- `main:supabase/functions/delete-account/index.ts:93-96` returns the raw upstream error message to the client (`error: message`) — leaks Postgres/GoTrue wording; B33 handlers return opaque bodies.
+- `main:supabase/functions/send-push-notification/index.ts:62-64` compares `SEND_PUSH_SECRET` with `===` (non-constant-time); B33 review/worker use a digest compare (`account-deletion-worker/index.ts:317-323`).
+- `main:src/lib/supabase.ts:11-14,25-29` persists the Supabase session (refresh token) in AsyncStorage (plaintext file in the app sandbox) on native; B33 adds `expo-secure-store` for deletion receipts only.
+- `main:src/lib/errors.ts:86-97` passes unrecognised server messages verbatim to alerts (constraint/trigger names surface; B33 hardens only the location path — `b33:src/lib/location.ts` `locationErrorMessage`).
+- Maintainer personal e-mail is hard-coded as an authorization key in SQL policies (`main:supabase/migrations/2026-05-23_feedback_table.sql:116`, `2026-05-24_status_history_table.sql:180`, `2026-05-25_flag_edit_history_table.sql:155`) and appears in `eas.json:68`; Nominatim `User-Agent` carries the support address (`src/lib/geocode.ts:28`).
+- `supabase/.temp/linked-project.json` and `.temp/cli-latest` are tracked (project ref only — public in URLs anyway).
+- `main:supabase/schema.sql:246-256,265` + `2026-06-03_verify_webhook_secret.sql:32` — main's own tree still contains the superseded `GRANT … TO anon, authenticated` (commented as superseded) — bootstrap order risk only.
+- `notify_flag_status_webhook` posts the full old/new flag row (lat/lng/description) to the Edge Function over pg_net — same project, HTTPS; acceptable but worth knowing (`main:supabase/schema.sql:281-287`).
+- B33 `supabase/config.toml:9-10` sets `verify_jwt = false` for `delete-account`; the handler self-validates (`b33:supabase/functions/delete-account/index.ts:22-26`), so no gap, but the gateway layer is deliberately removed.
+- `.husky/pre-commit:50-52` scans for `service_role`+`eyJ` only; a hex webhook secret (CAND-E-10) or a reviewer password would pass it.
+WHY_IT_MATTERS: Defence-in-depth and incident-response friction; none individually exploitable.
+VERIFICATION_NEEDED: none.
+HISTORICAL_RELATION: F63/F50 (sign-out), S-2, IO-2.
+
+## Main vs Build 33 security delta (summary + file list)
+
+`git diff --stat origin/main f5594171 -- supabase src/lib src/moderation` → 152 files, +11 558 / −1 071 (functions + src/lib subset: 35 files, +4 105 / −1 064).
+
+Posture Build 33 has that main lacks (source-level; deployment status per lead in brackets):
+- Reconciled managed migration chain (`supabase/migrations/2026MMDDhhmmss_*`) that matches the hosted ledger through `20260830130000` [applied], incl. the 2026-07-27 hardening set (sr009 null-safe verifications, fork2 OA actor guard + history insert, a4_3 owner-edit alias fix, sr024 flag_photos anon explicit, a2_1 context_tags revert, a2_2 feedback anon throttle, sr001 admin delete comment, a4_1 view grant fix, initplan consolidation, fork5 W1 dispute), sr050 admin Storage delete, is_admin grant reconciliation, verify_webhook_secret reconciliation, promptb media-key read contract [all applied].
+- `nonmanaged/live-out-of-band/2026-08-27_d1sa_deployed_security_containment.sql` [live per its own header; not in ledger]: RLS+revokes on `bk_2026_08_22_*`, users-row requirement on Storage upload/delete, owner-scoped `flag_photos` INSERT, account-row gate on status triage and counter RPCs, EXECUTE revoke on the transition guard.
+- MOD1/MOD1R (`20260828040000…080000`) [NOT applied]: admin-only reject/restore, restrictive `[REPORT]` read policy, `flags_insert_status_open_only`, moderation queue columns/grants, pending-close + pre-action intent.
+- D1F4 async account deletion (`nonmanaged/proposed/*d1f4*`, Edge `delete-account` v-next, `account-deletion-{status,worker,review}`, `delete-flag`) [NOT applied / NOT deployed]: server-owned photo provenance, upload intents, canonical Storage-first deletion, receipt capability, review pipeline, account write fence (`current_account_can_write()`), Auth deletion last.
+- Client: `SecureStore`-held deletion receipts (`accountDeletionReceipt.ts`), web deletion refusal (`accountDeletionAvailability.ts`), push-education gating (`auth.tsx`), `FLAG_READ_SELECT` omitting `photo_uploader_id`, display-URL derivation from server keys (no URL parsing), admin `Reject` gated by `isAdmin`, `locationErrorMessage` hardening, `adminReports.ts` queue, Edge CORS/opaque-error discipline, constant-time secret compares in new functions.
+
+Posture main has that Build 33 lacks:
+- A working (if privacy-incomplete) deletion path against the deployed backend (`src/lib/account.ts` ↔ v4) and working owner/admin flag delete via RLS (`src/lib/flags.ts:1401-1424`) and working photo upload/junction insert (`src/lib/photos.ts:72-76,104`) — Build 33 trades all three for undeployed server routes (CAND-E-01/02/03).
+- The drift-capture provenance files under `supabase/migrations/2026-07-27_drift_capture_*` remain in both trees (B33 moves them to `nonmanaged/rollback-recovery/`).
+- Main's tree contains no literal webhook secret (CAND-E-10) and no `supabase/config.toml` disabling gateway JWT verification.
+
+Key files (B33 additions): `supabase/config.toml`; `supabase/functions/_shared/{cors,supabase,accountDeletionReviewCore,accountDeletionWorkerCore}.ts`; `supabase/functions/{account-deletion-review,account-deletion-status,account-deletion-worker,delete-flag}/index.ts`; rewritten `supabase/functions/delete-account/index.ts`; `supabase/migrations/2026052…20260830…` (reconstructed chain); `supabase/nonmanaged/{proposed,live-out-of-band,manual,destructive-data,rollback-recovery}/…`; `supabase/tests/*.sql`; `src/lib/{accountDeletionAvailability,accountDeletionReceipt,adminReports}.ts`; modified `src/lib/{account,auth.tsx,flags,photos,users,location,copy}.ts`; `src/types/database.ts` (+95).
+
+## Things that look fine (brief)
+- Secrets: no JWTs/service-role keys/PEM blobs in either tracked tree (grep with redaction); `.env` untracked and git-ignored; `.husky/pre-commit` secret scan present; Edge Functions read keys from `Deno.env` only; anon key is public-by-design.
+- `users.email` column privacy: revoked for anon/authenticated, own-row view `users_self_email`; client never selects `email` (`src/lib/users.ts:50-55`).
+- Webhook chain: `verify_webhook_secret` EXECUTE revoked from anon/authenticated (`schema.sql:265`, sr018) and reconciled in B33; `notify-flag-status` validates via service-role RPC, returns a uniform `ok` (no oracle), forwards only to `send-push-notification` which requires `SEND_PUSH_SECRET`, never logs tokens, caps title/body/data sizes.
+- Photo pipeline (both trees): scheme allow-list, extension allow-list, 10 MB cap, magic-byte sniff, fail-closed EXIF strip (native re-encode / web canvas), byte-level APP1/APP9/APP13/eXIf splice, structural post-strip verifier, MIME/extension derived from bytes, `upsert:false` (`src/lib/flags.ts:740-854`); avatar uses the same helper (`src/lib/users.ts:87-102`); only `ph://`/`file://`-class URIs accepted, `http(s)` refused.
+- Location: foreground-only permission, `Accuracy.Balanced`, passive surfaces never prompt (`src/lib/location.ts:133-149,207-232`), no background location plugin (`app.json:131-132`), share/export round to 5–6 decimals of the *flag* coordinate; `reverseGeocode` (`src/lib/geocode.ts:108`) has zero callers in either tree, so the published "never your GPS location" Nominatim claim holds for shipped paths.
+- Analytics/telemetry: `src/lib/analytics.ts` is a `__DEV__` console stub with a PII denylist; no Sentry/PostHog/Firebase in `package.json`; `eas.json` `SENTRY_DISABLE_AUTO_UPLOAD` is vestigial.
+- AsyncStorage at rest holds preferences, per-user ids, the 24 h offline flags cache (public rows, user-scoped key, cleared on sign-out) and the push-enabled flag — no e-mail/password/tokens beyond the Supabase session itself.
+- Deep links: `accessmap://flag/{id}` and the https twin carry only a flag id; invalid ids are swallowed (`src/screens/MapScreen.tsx:1415-1446`); web PKCE closes the hash-injection sign-in (`src/lib/supabase.ts:32-60`).
+- Abuse reporting: single sheet for flags/comments, guest-capable, envelope parsed by tests, no contact e-mail collected, raw PostgREST text never rendered (`src/lib/reports.ts:234-240`, `ReportContentModal.tsx:215-217`); content filter applied on flag description, comment, display name (client-side, documented as bypassable).
+- Duplicate-submission guards: 20/24 h per-user triggers (two redundant), global anon cap, CAS on status updates (F53), `deleteFlag` proves effect via `.select('id')` (main), reopen/dispute client dedupe.
+- Realtime: `flags` publication column-filtered to `(id, status)`; comments realtime is RLS-gated to authenticated.
+- Vercel headers: `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` restricting camera/geolocation to self.
+- `app.json` privacy manifest: tracking false, collected types (precise location, email, name, photos, user content, user id, device id/push token) match actual collection; usage strings present for location/camera/photo library; Android permissions limited to location.
+- B33 deletion design itself (if deployed with its migrations): receipt secret hashed server-side, subject derived from verified JWT, service-role-only RPCs, constant-time secret compare, Storage-first with exact-owner checks, Auth deletion last, web refused.
+
+## Coverage gaps
+- No production catalog read (by rule): live policy bodies for `flags_user_scoped`, `flag_photos` INSERT, `bk_*`/`zz_backup_*` RLS, Vault secret rotation, `auth.users` reviewer account, and `verify_jwt` settings of deployed functions are inferred from source + the lead's facts (verification steps listed per candidate).
+- `src/screens/*` and `src/components/*` were read only at targeted lines (deletion, triage, report, deep-link, export); a full UI-text sweep for PII in `console.*` calls outside `src/lib` was grep-level only (37 files with `console.*`, none matched PII keys except `analytics.ts:142` in `__DEV__`).
+- Build 33 `nonmanaged/proposed/2026-08-27_d1f4_async_account_deletion.sql` (1 093 lines), `20260828000000_d1f4r2_source_repair.sql` (522) and `20260828010000_d1f4r3_source_closure.sql` (794) were read at grep/statement level for grants, policies and client-facing RPCs, not line-by-line; `2026-08-27_d1_option_a_account_deletion.sql` (rejected predecessor) not read. None are applied, so no live exposure is claimed from them.
+- `supabase/tests/*.sql` and `src/__tests__/*` guard tests not reviewed.
+- `docs/PRIVACY_POLICY.md` vs the *live* skypistudio.com page not compared (no network).
+- Historical ID mapping relies on greps of `design-reviews/ship-ready/*` and code comments; `security-audit/2026-07-31/00_MASTER_TABLE.md` referenced by other docs is not present in main (only `phase-b/*`), so S-/IO-/PL-/TB-/X- ids are cited only where code comments name them.
+- Web-only surfaces (`PlatformMap.web.tsx`, `public/index.html`, `manifest.json`) were not reviewed beyond `sw.js`/`vercel.json`.

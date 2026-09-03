@@ -354,3 +354,61 @@ One deliberately-non-rolled-back case, and it reads as a reasonable risk call ra
 No listener-leak candidates found in production code.
 
 ---
+
+## Dead code / unused deps
+
+**Method (heuristic, explicitly labeled as such):** a Python script scanned every non-test `.ts`/`.tsx` file under `src/` for top-level `export function|const|class|interface|type|enum <Name>` declarations (683 found), then for each name ran `grep -rl -w <Name> src App.tsx` and treated a result set of only the declaring file as a candidate for "unused." This is a heuristic, not a type-aware reference count — it will not catch re-exports through a barrel file that re-binds the name, and it will flag prop-type interfaces that TypeScript infers structurally without ever needing an explicit import as false positives. Both effects are visible and called out below.
+
+### Exports never imported elsewhere — 9 real candidates (after filtering false positives)
+
+The raw scan flagged 156 names with zero usage outside their declaring file when tests were excluded, and 46 more type/interface names with zero *explicit-name* usage even including tests (the task asked for "top 30"; the true list is short enough to give in full with the filtering shown). Re-running with test files **included** in the usage search (correcting for intentionally test-only exports, e.g. the `__`-prefixed `__writeFlagsCache`/`__readFlagsCache` in `flagsStore.tsx`, whose own doc-comment says "Exported... for unit tests only") collapses the 156 to **9 VALUE exports** (function/const — i.e. exports that matter for dead-code purposes) with zero references anywhere, including their own declaring file beyond the declaration line itself:
+
+| Export | Location | Occurrences in own file | Verdict |
+|---|---|---:|---|
+| `TypeBlockContext` | `src/components/ui/TypeBlock.tsx:68` | 3 | **False positive** — used twice more within its own file; just needlessly `export`ed. Not dead. |
+| `READ_STILL_TRYING_MS` | `src/lib/flagsStore.tsx:31` | 2 | **False positive** — used once more within the file. Not dead. |
+| `READ_CEILING_MS` | `src/lib/flagsStore.tsx:37` | 2 | **False positive** — same. Not dead. |
+| `TILE_CACHE_VERSION` | `src/lib/tileCache.ts:23` | 3 | **False positive** — used within the file. Not dead. |
+| `MAX_CACHE_SIZE_BYTES` | `src/lib/tileCache.ts:24` | 4 | **False positive** — used within the file. Not dead. |
+| `TILE_CLEAR_GRACE_MS` | `src/lib/tileCache.ts:110` | 3 | **False positive** — used within the file. Not dead. |
+| `identifyUser` | `src/lib/analytics.ts:139` | 1 (declaration only) | **Genuinely unused everywhere**, but deliberately so — sits under a section header comment "User identity — intentionally not sent anywhere" (`analytics.ts:135-136`) and its body only `console.log`s in `__DEV__`. Reads as a documented, privacy-motivated no-op stub, not an oversight. |
+| `resetUser` | `src/lib/analytics.ts:146` | 1 (declaration only) | Same file/comment, same verdict — deliberate no-op stub. |
+| `reverseGeocode` | `src/lib/geocode.ts:108` | 1 (declaration only) | **Genuinely unused everywhere, and NOT self-explanatory like the two above.** A fully-implemented, documented function (Nominatim `/reverse` lookup, same timeout/User-Agent conventions as the actively-used `searchAddress`) with no caller anywhere in `src/`. Reads like scaffolding for a "show a street address instead of raw lat/lng" feature that was never wired up (or was wired up and later had its call site removed). Worth a one-line ask to the team rather than a confident "delete this" — see CAND-I-10. |
+
+Net: **only 1 export (`reverseGeocode`) is an unexplained dead-code candidate**; the other 8 raw hits are either false positives from the heuristic (over-exported-but-used) or self-documented intentional stubs.
+
+The 46 zero-usage TYPE/INTERFACE names (full list generated, e.g. `HeatmapLayerProps`, `SearchInputRowProps`, `CreateFlagInput`, `ListFlagsPageOptions`) are, on inspection, overwhelmingly component-Props and function-parameter/return shapes — TypeScript consumes these structurally wherever the component or function is used, with no requirement to import the type by name. **Treated as false positives, not reported as dead code individually** — flagging them would misrepresent normal TypeScript usage as a hygiene problem.
+
+### Unused npm dependencies
+
+Checked every `dependencies` entry in `package.json` for any `from '<pkg>'`/`from "<pkg>"`/`require('<pkg>')` import anywhere in `src`/`App.tsx`, then corrected for bare side-effect imports (`import '<pkg>'` with no `from`, which the first pass missed) and for packages that are legitimately never imported by application code:
+
+| Package | Import hits | Verdict |
+|---|---|---|
+| `@expo/vector-icons` | 0 (confirmed — no import, no side-effect import, only appears in `package.json`) | **Real candidate for removal.** The app's actual icon library throughout is `lucide-react-native` (50 files). `@expo/vector-icons` is bundled by default in every `create-expo-app` template scaffold; this looks like an un-pruned template leftover. Low risk to investigate (not proven unused at the native-config level — see caveat below). |
+| `expo-dev-client` | 0 | Expected zero — a native dev-tooling package activated by presence/linking, not JS import. "Possibly used by native config" per task guidance — correct here. |
+| `expo` (the SDK itself) | 0 | Expected zero — `package.json`'s `"main": "node_modules/expo/AppEntry.js"` is how it's actually wired in; framework-level, not import-level. |
+| `react-native-screens` | 0 direct import (1 mention, in a comment describing its DOM behavior in `RootNavigator.tsx:257`) | Expected zero at the app level — it's a peer dependency `@react-navigation/bottom-tabs`/`native` import internally for native-stack scene management; the app never needs to import it directly. "Possibly used by native config / transitively required by react-navigation" — correct here. |
+| `react-native-url-polyfill` | 1 (corrected after including bare side-effect imports) | **False alarm from the first pass.** `src/lib/supabase.ts:1`: `import 'react-native-url-polyfill/auto';` — genuinely used, just via a side-effect import the first grep pass (which required a `from` clause) missed. |
+| `react-dom`, `react-native-web` | 0 each | Expected zero — consumed by the web bundler/renderer entry point and Metro's platform resolution respectively, not by app-level imports. Normal for a project with a web target. |
+
+**Actionable candidate: `@expo/vector-icons`.** Caveat before treating this as a confirmed removal: some Expo/React Navigation internals or config plugins can reference icon font families by package presence rather than JS import, so "zero grep hits in `src/`" is good evidence but not absolute proof of zero runtime dependency — flagged as DEBT/candidate, not a confirmed dead dependency. See CAND-I-11 (LOW severity, cheap to verify: remove and run a full build).
+
+### Unused assets
+
+`assets/` holds only 8 files total (`find assets -type f | wc -l`) — a small, easily-audited set. Cross-referenced each filename against `src/`, `App.tsx`, and `app.json`:
+
+| Asset | Reference count | Note |
+|---|---:|---|
+| `assets/brand/app-icon.png` | 2 | Used (`app.json` icon fields). |
+| `assets/favicon.png` | 1 | Used (`app.json` web favicon). |
+| `assets/brand/logo-mark.svg` | 1 | Used. |
+| `assets/textures/noise-128.png` | 1 | Used. |
+| `assets/brand/app-icon.svg` | 0 | No reference found. |
+| `assets/brand/favicon.svg` | 0 | No reference found. |
+| `assets/brand/logo-mark-mono.svg` | 0 | No reference found. |
+| `assets/brand/logo-mark-white.svg` | 0 | No reference found. |
+
+The 4 zero-reference files are all `.svg` variants sitting alongside their referenced `.png`/`.svg` counterparts in `assets/brand/`. Most likely read as **design-source originals kept for re-export** (an SVG isn't directly renderable by React Native without an SVG-loading component, and `app.json`'s icon/favicon fields point at the `.png` builds) rather than orphaned runtime assets — normal to keep in a repo, not flagged as a defect. Low-stakes either way given the total asset count is 8.
+
+---

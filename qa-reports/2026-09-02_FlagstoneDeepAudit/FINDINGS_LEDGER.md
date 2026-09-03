@@ -12,13 +12,18 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-004 | Build 33 Admin Reports queue selects feedback.moderation_* columns absent in production | CONFIRMED | HIGH | functional/backend-contract | SUBMITTED_BUILD_33, WEB_BUILD |
 | FDA-005 | No backend-contract release gate; three client→backend mismatches shipped in Build 33 | CONFIRMED | HIGH | release-governance/test-confidence | SUBMITTED_BUILD_33, BACKEND, CURRENT_MAIN |
 | FDA-006 | App Store demo account unverifiable (exists; credentials/rotation unknown) | EVIDENCE_GAP | MEDIUM | app-store | SUBMITTED_BUILD_33 |
-| FDA-007 | Reviewer password literal in PUBLIC git history; rotation unverified | CONFIRMED/EVIDENCE_GAP | MEDIUM | security | BACKEND, DOCS_ONLY |
+| FDA-007 | Reviewer password literal live at HEAD (design-reviews, unscanned by guard) + public history; rotation unverified | CONFIRMED/EVIDENCE_GAP | MEDIUM | security | BACKEND, DOCS_ONLY |
 | FDA-008 | Auth leaked-password protection disabled | CONFIRMED | LOW | security hygiene | BACKEND |
 | FDA-009 | Legacy flags_user_scoped FOR ALL policy still live | CONFIRMED | LOW | backend hygiene/perf | BACKEND |
 | FDA-010 | Trigger functions EXECUTE-granted to anon/authenticated | CONFIRMED | LOW | security hygiene | BACKEND |
 | FDA-011 | TS 6 vs SDK 54, app.json privacyPolicyUrl; expo-doctor fails 2/18 | CONFIRMED | LOW | tooling | CURRENT_MAIN, SUBMITTED_BUILD_33 |
 | FDA-012 | Default anon/authenticated table grants incl. TRUNCATE on all public tables | CONFIRMED | LOW | security hygiene | BACKEND |
 | FDA-013 | Web CSP report-only with stale CARTO allowlist; OpenFreeMap + blob worker violate | CONFIRMED | LOW | security hygiene/web | WEB_BUILD |
+| FDA-014 | Destructive UI paths (admin remove, owner delete, delete account) have zero screen-level tests | CONFIRMED | MEDIUM | test-confidence | CURRENT_MAIN, SUBMITTED_BUILD_33 |
+| FDA-015 | pgTAP RLS proofs never run in CI; main has no supabase/tests | CONFIRMED | MEDIUM | ci/test-confidence/backend | SUBMITTED_BUILD_33, CURRENT_MAIN |
+| FDA-016 | Submit workflow privacy gate d8_closed is self-attested | CONFIRMED | LOW | release-guard | CURRENT_MAIN, SUBMITTED_BUILD_33 |
+| FDA-017 | 32 it.todo stubs blocked on non-existent E2E harness | CONFIRMED | LOW | test-confidence | CURRENT_MAIN |
+| FDA-018 | format:check ungated (guards whitespace-sensitive); no safe-area Jest mock | CONFIRMED | NOTE | test-confidence/tooling | CURRENT_MAIN, SUBMITTED_BUILD_33 |
 
 ## Findings
 
@@ -186,15 +191,15 @@ NOTES: Also note FDA-003: if a reviewer exercises Delete Account with this accou
 
 ### FDA-007
 ID: FDA-007
-TITLE: A reviewer-account password literal remains in the PUBLIC repository's git history (removed from HEAD by a later redaction commit); rotation cannot be verified by the audit
-STATUS: CONFIRMED (history) / EVIDENCE_GAP (rotation)
+TITLE: A reviewer-account password literal is still present at HEAD in a tracked design-review prompt file (outside the credential guard's census) and throughout the PUBLIC repository's git history; rotation cannot be verified by the audit
+STATUS: CONFIRMED (present at HEAD + history) / EVIDENCE_GAP (rotation)
 SEVERITY: MEDIUM
 CATEGORY: security (credential exposure)
 AFFECTED_STATE: BACKEND (auth), DOCS_ONLY (repo)
 CONFIDENCE: HIGH
 
 USER_IMPACT: Anyone can read the historical literal from `git log -p` on github.com/Skypie99/AccessMap (visibility PUBLIC, verified via `gh repo view`). If the live reviewer account still uses it, a stranger can act as that account (post, comment, report). The repo audit of 2026-07-31 reached the same conclusion and forked rotation to Sky.
-REPRODUCTION: `git log -p --follow -- supabase/migrations/2026-05-31_reviewer_test_account.sql` shows the removed comment line; `git grep` at HEAD for the literal pattern → 0 tracked files (redaction held). The literal itself is deliberately NOT recorded in this audit.
+REPRODUCTION: `git log -p --follow -- supabase/migrations/2026-05-31_reviewer_test_account.sql` shows the removed comment line (commit 9fd1cd9 era); `git grep -l -E '[A-Za-z]+2026!'` at HEAD → exactly 1 tracked file: `design-reviews/sim-walk/2026-08-19/PROMPT_AUTHED_PASS.md:141` ("the old reviewer login `…`, which is sitting in git history"). `src/__tests__/noCredentialsInTree.guard.test.ts` scans docs/ + src/ + supabase/ (+ an allowlist) and does not walk design-reviews/ or qa-reports/, so the guard passes while the literal ships. The literal itself is deliberately NOT recorded in this audit.
 EXPECTED: Rotated password; history either rewritten or accepted as burned with rotation as the control.
 ACTUAL: Rotation status unknown to the audit (only Sky can check); the ★ START HERE checkbox in APP_STORE_TODO.md is unchecked as of the locked SHA.
 
@@ -206,7 +211,7 @@ VISUAL_EVIDENCE: n/a
 
 HISTORICAL_RELATION: S-1 (2026-07-31 FORK), APP_STORE_TODO §0.1 — HISTORICAL_STILL_OPEN unless Sky rotated out-of-band.
 REGRESSION_RISK: none
-LIKELY_REPAIR_SIZE: TINY (rotate) — history rewrite optional and Sky-only.
+LIKELY_REPAIR_SIZE: TINY (rotate + redact the one design-review line + extend the guard's census to design-reviews/ and qa-reports/) — history rewrite optional and Sky-only.
 DEPENDENCIES: Sky-only
 RECOMMENDED_ACCEPTANCE_TEST: Sky confirms the account password was changed after 2026-07-31; optional: GitHub secret-scanning alert closed.
 NOTES: The audit surfaced the literal in a shell transcript by accident (a masking regex assumed quotes); it was not copied into any audit artifact.
@@ -309,4 +314,68 @@ HISTORICAL_RELATION: Build 33 OpenFreeMap web transplant (qa-reports/2026-09-01_
 LIKELY_REPAIR_SIZE: TINY (vercel.json) — but vercel.json changes on the frozen branch are a production-web change (Sky-only deploy).
 DEPENDENCIES: FDA-001 (which lineage carries the web basemap change into main).
 RECOMMENDED_ACCEPTANCE_TEST: with CSP enforcing on a Preview deployment: map renders, no CSP console violations, hard reload OK.
+
+### FDA-014
+ID: FDA-014
+TITLE: The three destructive user-facing paths — Admin Remove/Dismiss, owner "Delete this flag", and Profile "Delete Account" — have zero screen-level test coverage on both lineages; only the library functions beneath them are unit-tested against a mocked Supabase client
+STATUS: CONFIRMED
+SEVERITY: MEDIUM
+CATEGORY: test-confidence
+AFFECTED_STATE: CURRENT_MAIN, SUBMITTED_BUILD_33, TEST_INFRA_ONLY
+CONFIDENCE: HIGH
+USER_IMPACT: A broken confirm-dialog wiring, swapped id, swallowed error, or (as in FDA-002/003) a dead backend contract ships silently: the unit tests pass because `deleteFlag()`/`deleteAccount()` are exercised with a mock that always succeeds in the shapes the code expects.
+REPRODUCTION: `src/screens/__tests__/` has no AdminScreen or ProfileScreen test; grep for `handleRemove`, `handleDismiss`, `handleDelete`, "Delete this flag" across all test files → 0 matches (Lane H evidence, evidence/laneH-test-ci-inventory.md CAND-H-01/02/05). `src/lib/__tests__/sr050DeleteFlagPhotos.test.ts` and `account.test.ts` cover the lib layer only.
+EXPECTED: One RTL test per destructive screen path: render → press → confirm → mocked backend called with the right id → success/failure copy shown; plus one contract test that fails when the backend call target does not exist in the target project (FDA-005).
+HISTORICAL_RELATION: F18 (double-tap guard) and F53 (CAS) comments in AdminScreen.tsx describe fixes that were never pinned by a screen test.
+LIKELY_REPAIR_SIZE: SMALL–MEDIUM (3 RTL suites). DEPENDENCIES: none. RECOMMENDED_ACCEPTANCE_TEST: the suites exist, run in ci.yml, and fail when `deleteFlag` is pointed at a non-existent function slug in the mock.
+
+### FDA-015
+ID: FDA-015
+TITLE: The only real-Postgres proofs of RLS/grants (pgTAP files under supabase/tests/, Build 33 tree) are never executed by CI; main has no supabase/tests/ at all
+STATUS: CONFIRMED
+SEVERITY: MEDIUM
+CATEGORY: ci / test-confidence / backend
+AFFECTED_STATE: SUBMITTED_BUILD_33 (files exist), CURRENT_MAIN (files absent), TEST_INFRA_ONLY
+CONFIDENCE: HIGH
+USER_IMPACT: Policy/grant regressions (who can really delete/read what) have no automated backstop; the drift between source migrations and the live catalog documented in FDA-002/004/009/012 is invisible to CI.
+REPRODUCTION: repo-wide search for `d1f4r3_fix2_flags_delete_rls.test.sql` / `promptb_media_key_guards.test.sql` in package.json scripts and .github/workflows → none (only qa-report prose calls them "staging-only"); `.github/workflows/mod1r-fix1-rls-proof.yml` (Build 33) boots Postgres but is scoped to two non-main branches (Lane H CAND-H-03).
+EXPECTED: a PR-triggered workflow on `supabase/**` that applies the managed migration set to a throwaway Postgres and runs every pgTAP file; optionally a read-only production catalog snapshot diff.
+LIKELY_REPAIR_SIZE: MEDIUM. DEPENDENCIES: single migration lineage (FDA-005). RECOMMENDED_ACCEPTANCE_TEST: CI run shows pgTAP plan counts passing; deliberately dropping `admin delete any flag` in a branch makes CI red.
+
+### FDA-016
+ID: FDA-016
+TITLE: The TestFlight/App Store submit workflow's privacy gate (`d8_closed`) is a self-attested string input, not a code- or state-verified check
+STATUS: CONFIRMED
+SEVERITY: LOW
+CATEGORY: release-guard
+AFFECTED_STATE: CURRENT_MAIN, SUBMITTED_BUILD_33 (identical workflow)
+CONFIDENCE: HIGH
+USER_IMPACT: A human can dispatch `eas-testflight-submit.yml` with profile=production and `d8_closed=yes` without D8 (EXIF/GPS strip) being verified; the workflow then runs `eas submit --profile production`. Still human-dispatched (not unattended); the `release-approval` GitHub Environment may add a required reviewer, but that lives outside the repo and could not be verified read-only.
+REPRODUCTION: .github/workflows/eas-testflight-submit.yml:39-44 (Lane H CAND-H-04).
+EXPECTED: the gate reads a machine-checkable artifact (e.g. a passing EXIF-strip test id + release/current.json field) or is removed in favour of the required-reviewer environment.
+LIKELY_REPAIR_SIZE: TINY. DEPENDENCIES: Sky confirms the GitHub Environment reviewer. RECOMMENDED_ACCEPTANCE_TEST: dispatch with `d8_closed=yes` but a failing EXIF test → workflow refuses.
+
+### FDA-017
+ID: FDA-017
+TITLE: 32 undated `it.todo()` stubs (heatmap, clustering, watched-flags search, offline indicator) wait for an E2E/device harness that does not exist; screen-level behaviour for those features is unverifiable in-repo
+STATUS: CONFIRMED
+SEVERITY: LOW
+CATEGORY: test-confidence
+AFFECTED_STATE: CURRENT_MAIN, TEST_INFRA_ONLY
+CONFIDENCE: HIGH
+REPRODUCTION: MapScreen.heatmap.test.tsx (14), MapClustering.test.tsx (7), WatchedFlagsSearch.test.tsx (6), OfflineIndicator.test.tsx (5); no playwright/detox/maestro anywhere (Lane H CAND-H-06). Jest baseline reports "32 todo".
+EXPECTED: either a Maestro/Detox smoke lane on the simulator or an explicit decision that manual simulator QA (this audit's Lane B/C/D) is the accepted substitute, with the todos dated.
+LIKELY_REPAIR_SIZE: MEDIUM (harness) / TINY (decision + dating). DEPENDENCIES: product decision.
+
+### FDA-018
+ID: FDA-018
+TITLE: Formatting is unenforced in CI because Prettier output breaks five whitespace-sensitive guard tests; `react-native-safe-area-context` has no Jest mock wired
+STATUS: CONFIRMED
+SEVERITY: NOTE
+CATEGORY: test-confidence / tooling
+AFFECTED_STATE: CURRENT_MAIN, SUBMITTED_BUILD_33
+CONFIDENCE: HIGH
+REPRODUCTION: .github/workflows/ci.yml lint job comment (format:check red 25/25; `prettier --write src` touches 178 files and breaks 5 guard tests); jest.config.js/jest.setup.js contain no safe-area-context mock (Lane H CAND-H-07/08).
+EXPECTED: guard tests normalise whitespace (or assert on AST/strings after formatting) so `format:check` can be gated; safe-area mock wired so inset-dependent layouts are testable.
+LIKELY_REPAIR_SIZE: SMALL. DEPENDENCIES: none.
 
