@@ -1,5 +1,17 @@
 # UI VISUAL ACCEPTANCE — premium bar (§13–17)
 
-Scores 1–5 per surface. <4 requires a note. 1–2 normally produces a finding. Comparative evidence, not a release grade.
+Scores 1–5 per surface per lineage. <4 requires a note. 1–2 normally produces a finding. Comparative evidence, not a release grade. Do not average.
 
-(Not started.)
+Legend: M = CURRENT_MAIN (locked 70b52a30, Release build on "Flagstone Audit iPhone 17 Pro" iOS 26.5); B33 = SUBMITTED_BUILD_33 (f5594171, Release build on "Flagstone Audit B33 iPhone 17 Pro"). Guest mode only (no credentials handled). Screenshots under screenshots/ (main-*, b33-*).
+
+## Scoring matrix
+
+| Surface | Lineage | VISUAL_HIERARCHY | SPACING | TYPOGRAPHY | ALIGNMENT | MATERIAL | COLOR | INTERACTION_FEEDBACK | MOTION | A11Y_INTEGRATION | CONTENT_DENSITY | EMPTY_ERROR_LOADING | LIGHT | DARK | OVERALL | Notes / FDA |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+
+## Surface notes (evidence-backed)
+
+| Onboarding (5 cards) | M | 4 | 4 | 4 | 4 | 4 | 4 | 2 | 3 | 3 | 4 | n/a | 4 | — | 3 | Stage gradient + hero + dots is calm and intentional; page-dot "pill" progress is tiny (≈6 pt dots) and Skip is a bare text link with no touch affordance. INTERACTION 2: permission CTAs render dead at 50 % opacity (FDA-033). Card 3/4 hero sits low (60 % down) leaving a large empty upper field — acceptable on onboarding. |
+| Sign-in | M | 4 | 4 | 4 | 4 | 4 | 4 | 4 | — | 4 | 3 | n/a | n/a (fixed-dark by decision) | 4 | 4 | Fixed dark-navy hero + dark card in both OS modes — INTENTIONAL_DECISION `[SIGNIN-DARK-KEPT]` (DECISIONS_LOG 2026-06-01; DESIGN.md §7 "fixed-background exceptions: the dark sign-in splash"). Card padding generous; "or" hairline; Privacy/Terms links legible at 5.5:1 per code comment. Density 3: three CTAs + guest link + two legal links stack tightly on a 6.3" device. |
+| Home (guest) | M | 4 | 4 | 5 | 4 | 4 | 4 | 4 | — | 4 | 4 | — | 4 | — | 4 | Editorial "13 barriers" headline, two circular header buttons, search field, location chip, Apple Maps preview with cluster bubbles + "Open full map" pill, RECENT rows with severity discs; bottom tab bar hugs the physical bottom with a top hairline, selected tab has a soft blue pill — matches the intended language. Map preview attribution "Legal" overlaps the tile edge; cluster bubbles (10, 2) are large relative to the preview. FAB overlaps the last visible row; list is scrollable so acceptable. |
+| Explore / full map | M | 3 | 3 | 4 | 3 | 3 | 4 | 4 | 3 | 3 | 3 | 2 | 4 | — | 3 | Six floating pieces compete on one screen: glass header pill (menu · Explore · count chip · search · filter · more), a "Finding your location…" pill, locate + / − circles, Legend pill, List pill, tab bar. Header pill and bottom pills use the same glass, but the +/−/locate circles are opaque white with hairline — material mismatch. Locate circle sits ABOVE the +/− stack and collides visually with the "2" cluster bubble when the map is at this zoom. Cluster bubbles are heavy 44 pt navy discs with white ring; the single pin is a soft orange teardrop — two visual languages for "flags here". Error state 2: raw error alert (FDA-034). Empty-state / loading not observed beyond the location pill. Map is visually dominant (good). |

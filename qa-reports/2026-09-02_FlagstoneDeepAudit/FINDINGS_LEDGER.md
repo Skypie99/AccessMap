@@ -38,6 +38,8 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-030 | Privacy policy promises deletion/retention behaviour code lacks | CONFIRMED | MEDIUM | app-store/privacy | DOCS_ONLY, BACKEND |
 | FDA-031 | Security hygiene notes (grouped) | CONFIRMED | NOTE | security hygiene | BOTH |
 | FDA-032 | zz_backup snapshots exposed (suspected) | FALSE_POSITIVE | NOTE | privacy | BACKEND |
+| FDA-033 | Onboarding permission CTAs fail closed (dead dimmed button, no timeout) | LIKELY | MEDIUM | functional/UI/a11y | CURRENT_MAIN |
+| FDA-034 | Map location alert shows raw SDK/kCLErrorDomain text | CONFIRMED | MEDIUM | UI/UX copy/error handling | CURRENT_MAIN |
 
 ## Findings
 
@@ -402,7 +404,7 @@ CATEGORY: functional / backend-contract / app-store
 AFFECTED_STATE: SUBMITTED_BUILD_33, WEB_BUILD. CURRENT_MAIN: NOT affected (main uploads directly to Storage at `<uid>/<ts>.<ext>` and the live policies permit it).
 CONFIDENCE: HIGH
 USER_IMPACT: In the shipped app, Report → add photo → Submit: `uploadFlagPhoto` throws "Photo upload could not be prepared." (PGRST202 function not found) BEFORE `createFlag`, so the whole report fails (ReportFlagModal uploads first, then creates the row). Avatar change fails the same way. App Review's "Report a barrier — photo is optional" step fails whenever a photo is attached; the EXIF-strip privacy gate now sits behind a dead call.
-REPRODUCTION: Build 33 src/lib/flags.ts:856-895 (`.rpc('prepare_flag_photo_upload', …)` with no fallback; `cancel_flag_photo_upload` in the catch), src/lib/photos.ts:100,133,144, src/lib/users.ts (avatar). Production `pg_proc` (evidence/db-proof-flags-delete-authorization.md functions table) has no prepare_/commit_/cancel_flag_photo_upload or commit_avatar_photo_upload; the definitions live only in Build 33's supabase/nonmanaged/proposed/2026-08-27_d1f4_async_account_deletion.sql.
+REPRODUCTION: Build 33 src/lib/flags.ts:856-895 (`.rpc('prepare_flag_photo_upload', …)` with no fallback; `cancel_flag_photo_upload` in the catch), src/lib/photos.ts:100,133,144, src/lib/users.ts (avatar). Build 33 src/screens/ReportFlagModal.tsx:712-720 (authenticated path: `preparedPhotos.push(await uploadFlagPhoto(...))` runs BEFORE `createFlag`, inside the try whose catch at :789 shows "Couldn't submit your report") — no `isFunctionMissing` degrade exists on this path (that helper is used only by the leaderboard RPC and disputes). Historical confirmation: qa-reports/2026-08-31_Codex_FinalBuild32Stabilization.md (Build 33 tree) already recorded via read-only inspection that prepare_flag_photo_upload / commit_avatar_photo_upload / cancel_flag_photo_upload are not deployed and repaired only the AVATAR path's error copy. Production `pg_proc` (evidence/db-proof-flags-delete-authorization.md functions table) has no prepare_/commit_/cancel_flag_photo_upload or commit_avatar_photo_upload; the definitions live only in Build 33's supabase/nonmanaged/proposed/2026-08-27_d1f4_async_account_deletion.sql.
 EXPECTED: photo attached → uploaded → report created. ACTUAL: report fails outright with a photo attached; succeeds only without one.
 ROOT_CAUSE_EVIDENCE: Prompt B "B2 minimum media-key read contract" applied only the READ side (20260830130000); the write side (upload intents) was explicitly deferred ("deliberately does not enable those deferred writers", ProductionSchemaContractP0 report) while the accepted client already used it.
 TEST_EVIDENCE: Build 33 flags tests mock `rpc` to succeed; nothing checks function existence.
@@ -579,4 +581,41 @@ CATEGORY: privacy
 AFFECTED_STATE: BACKEND
 CONFIDENCE: HIGH
 NOTES: Lane E CAND-E-13 raised it from the 2026-08-18 purge migration; read-only `information_schema.tables` on production (2026-09-02) finds no `zz_%`/`%backup%` tables in any user schema — the snapshots were dropped. Only the seven `bk_2026_08_22_*` tables remain and they are RLS-locked with zero grants (D1S-A F1).
+
+### FDA-033
+ID: FDA-033
+TITLE: Onboarding permission cards fail closed — when the silent permission lookup never resolves to a boolean, "Allow location" and "Turn on notifications" stay disabled at 50% opacity with no timeout, and the only way forward is "Not now"
+STATUS: LIKELY (reproduced on the audit simulator on CURRENT_MAIN; device behaviour not observed; root cause read from source)
+SEVERITY: MEDIUM
+CATEGORY: functional / UX / accessibility (permission acquisition)
+AFFECTED_STATE: CURRENT_MAIN (src/components/OnboardingCards.tsx); SUBMITTED_BUILD_33 to be re-checked on its build
+CONFIDENCE: MEDIUM
+USER_IMPACT: A first-run user is shown the app's own value-proposition for location and notifications and then cannot act on it: the primary CTA is dimmed and dead (it announces `disabled` to VoiceOver too). They must tap "Not now"; location can only be granted later from Home's "Use my location". If the lookup rejects on a real device (the code comment COR-6 documents "rare OS/entitlement states"), the same dead button ships.
+REPRODUCTION: simulator (iOS 26.5, Release build of 70b52a30): screenshots/main-onboarding-03-light.png, main-onboarding-03b-state.png (button dimmed after tap, no system dialog), main-onboarding-04-light.png, main-onboarding-04b-notif-tap.png (dimmed; tap ignored). Source: OnboardingCards.tsx:369-370 `permissionChecking = permission != null && Platform.OS !== 'web' && currentGranted === null`; :381-397 the check's `.catch(() => {})` leaves `currentGranted` null; :706-711 `disabled={permissionChecking}` + `opacity: 0.5`.
+EXPECTED: the silent lookup fails OPEN (treat unknown as not-granted after a short timeout so the CTA is live and fires the OS prompt), matching the request path's COR-6 contract "the primary button must never read as dead".
+ACTUAL: fail-closed; button dead while the lookup is pending/rejected.
+ROOT_CAUSE_EVIDENCE: rejection/hang in `Location.getForegroundPermissionsAsync()` or `Notifications.getPermissionsAsync()` is swallowed without setting a boolean; no timeout.
+TEST_EVIDENCE: Lane H journey matrix — onboarding tests exist for copy/a11y; none simulate a rejected/hanging lookup.
+VISUAL_EVIDENCE: the four screenshots above.
+HISTORICAL_RELATION: COR-6, S19 (L1-3), Q12 (2026-08-21) — related but distinct (they hardened the REQUEST path, not the LOOKUP path).
+REGRESSION_RISK: none (fail-open only widens the enabled window).
+LIKELY_REPAIR_SIZE: TINY (catch → set false; optional 1.5 s timeout race).
+DEPENDENCIES: none. RECOMMENDED_ACCEPTANCE_TEST: RTL test that rejects/hangs the lookup and asserts the CTA is enabled and fires the request; simulator: fresh install → card 3 CTA is live and the iOS dialog appears.
+NOTES: On this simulator no iOS location/notification dialog appeared at all after the tap; `locationd.synchronous` XPC activation is logged at the tap time. Whether the lookup hangs only in the simulator is an evidence gap; the code path is the finding.
+
+### FDA-034
+ID: FDA-034
+TITLE: The map's "Couldn't find your location" alert shows raw internal error text to the user ("Calling the 'getCurrentPositionAsync' function has failed → Caused by: … (kCLErrorDomain error 0.)")
+STATUS: CONFIRMED (CURRENT_MAIN, simulator); Build 33 status pending its build (Lane E notes Build 33 added `locationErrorMessage` hardening in src/lib/location.ts)
+SEVERITY: MEDIUM
+CATEGORY: UI / UX copy / error handling (trust)
+AFFECTED_STATE: CURRENT_MAIN; SUBMITTED_BUILD_33 = to verify (likely HISTORICAL_FIXED there)
+CONFIDENCE: HIGH
+USER_IMPACT: The first thing a new user sees on the map after granting location can be a developer stack-style message naming an SDK function and an Apple error domain. It reads as broken and untrustworthy on a safety product; it also happens on transient `kCLErrorLocationUnknown` (error 0), which simply means "try again".
+REPRODUCTION: simulator, main Release build, location granted, simulated location set → Explore → screenshots/main-map-02-light-settled.png. Source: src/screens/MapScreen.tsx:1299 `Alert.alert("Couldn't find your location", errorMessage(e))` — the friendly constant `LOCATE_FAILED_MSG` defined at MapScreen.tsx:277 ("Couldn't find your location — check your connection and try again.") is not used on this path; `errorMessage()` (src/lib/errors.ts) passes unrecognised messages verbatim. Build 33: src/lib/location.ts:63-75 `locationErrorMessage()` explicitly maps `kCLErrorDomain error N` → HISTORICAL_FIXED on Build 33, STILL_OPEN on main.
+EXPECTED: friendly copy ("We couldn't get your location right now. Check Location Services or try again.") with a Retry action; transient error 0 retried silently once.
+ACTUAL: raw chained error text; OK only.
+VISUAL_EVIDENCE: screenshots/main-map-02-light-settled.png (glass alert over the map; body text over a blurred green/blue backdrop is also lower-contrast than the token floor).
+HISTORICAL_RELATION: Build 33 `locationErrorMessage` (Codex Wave R3 prompt/permission work, 2026-08-27) — likely HISTORICAL_FIXED on Build 33 / STILL_OPEN on main.
+LIKELY_REPAIR_SIZE: TINY (port Build 33's mapper to main, or converge). DEPENDENCIES: FDA-001. RECOMMENDED_ACCEPTANCE_TEST: unit test mapping kCLErrorDomain 0/1/2 to friendly copy; simulator shows friendly alert with Retry.
 

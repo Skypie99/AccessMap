@@ -18,3 +18,5 @@
 | 2026-09-02 18:45 | Fable 5.1 | FDA-004/005 written; checkpoint 16214bc pushed. Web demo opened in in-app browser (desktop + mobile viewport); Build #3 (Xcode 26.6 via DEVELOPER_DIR) compiling. |
 | 2026-09-02 18:50 | Fable 5.1 | NOTE: a `git log -p` grep on the reviewer-account migration surfaced a historical password literal in the shell transcript (masking regex assumed quotes). NOT copied into any audit file; FDA-007 records the exposure class only. |
 | 2026-09-02 18:52 | Fable 5.1 | FDA-006..012 written (App Store demo account gap, credential history, auth/grant hygiene, tooling drift). |
+| 2026-09-02 18:40 | Fable 5.1 | Main Release build #3 succeeded (Xcode 26.6); installed manually (expo's devicectl install step failed because the sim was shut down). Bundle hash verified. |
+| 2026-09-02 18:45–19:05 | Fable 5.1 | Lane B/C/D on MAIN (guest): onboarding ×5, sign-in, Home, location prompt, Explore, Legend, List captured (screenshots/main-*). FDA-033 (onboarding CTA fail-closed) and FDA-034 (raw location error alert) written. Lane E (FDA-019..032) and Lane H (FDA-014..018) folded in. J1/J2 done; J3 reconciliation agent launched. |

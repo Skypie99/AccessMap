@@ -1,3 +1,11 @@
 # SCREEN INVENTORY
 
-(Not started.)
+Source of truth for mount points: src/navigation/RootNavigator.tsx (tabs Home · Tasks · Profile · hidden FullMap · Settings · Admin[isAdmin]), src/components/HamburgerDrawer.tsx (Resources · How to help · About · Settings · Admin · Sign in/out), src/lib/sharedModalsContext.tsx (help · changelog · feedback · myFeedback · terms · privacy), plus screen-owned modals. AUTH STATE: G = reachable as guest (audited in simulator), S = signed-in only (static review only — the audit never enters credentials), A = admin only.
+Captures: screenshots/main-* (CURRENT_MAIN), screenshots/b33-* (SUBMITTED_BUILD_33). Verdicts: PASS / NOTE / FAIL / N/A / GAP (not observed).
+
+| SCREEN | ENTRY POINT | AUTH | PRIMARY PURPOSE | MAJOR CONTROLS | LIGHT | DARK | LARGE TEXT | KEYBOARD | SCREENSHOT | VISUAL | FUNCTIONAL | A11Y | FINDING IDS |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Onboarding (5 cards) | first launch | G | intro + location/notification permission priming | Skip, Back, Next/Continue, Not now, Allow location, Turn on notifications | M ✓ | — | — | — | main-onboarding-0[1-5]-light.png | NOTE | FAIL (permission CTAs dead) | NOTE (CTA announces disabled) | FDA-033 |
+| Sign-in | after onboarding / drawer "Sign in" | G | email+password sign-in, create account, guest entry | Email, Password (+eye), Sign in, Create account, Browse without an account, Privacy, Terms | M ✓ (fixed dark) | n/a | — | GAP | main-post-onboarding-01-light.png | PASS (INTENTIONAL_DECISION dark) | GAP (no credentials entered) | GAP | — |
+| Home (editorial landing) | tab Home | G | headline count, search, location, map preview, recent list, Report | Menu, Feedback, Search, Use my location, map preview, Open full map, recent rows, +Report, tab bar | M ✓ | — | — | — | main-home-guest-0[1-3]*.png | PASS | PASS (location prompt appears; list loads 13) | — | — |
+| Explore (full map) | Home → Open full map / tab hidden route | G | interactive map, filters, legend, list, locate, zoom | Menu, Explore title+count, Search, Filter, More, Finding your location pill, Locate, +, −, Legend, List, tab bar | M ✓ | — | — | — | main-map-0[1-4]*.png | NOTE (floaty chrome; material mismatch) | FAIL (raw location error alert; opened on SF default before recentring) | — | FDA-034 |
