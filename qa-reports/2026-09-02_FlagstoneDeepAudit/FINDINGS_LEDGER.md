@@ -9,6 +9,8 @@ Stable IDs FDA-001… Never renumber. Status/severity vocab per audit prompt §1
 | FDA-001 | main lacks Build 33 product code (113 commits) | CONFIRMED | HIGH | release-truth | CURRENT_MAIN, NEXT_BUILD_ONLY |
 | FDA-002 | Build 33 admin Remove flag calls undeployed delete-flag Edge Function | CONFIRMED | HIGH | functional/backend-contract | SUBMITTED_BUILD_33, WEB_BUILD |
 | FDA-003 | Build 33 account deletion: deployed v4 returns 'deleted', client demands 'requested'; user told it failed | CONFIRMED | HIGH | functional/backend-contract/app-store | SUBMITTED_BUILD_33 |
+| FDA-004 | Build 33 Admin Reports queue selects feedback.moderation_* columns absent in production | CONFIRMED | HIGH | functional/backend-contract | SUBMITTED_BUILD_33, WEB_BUILD |
+| FDA-005 | No backend-contract release gate; three client→backend mismatches shipped in Build 33 | CONFIRMED | HIGH | release-governance/test-confidence | SUBMITTED_BUILD_33, BACKEND, CURRENT_MAIN |
 
 ## Findings
 
@@ -92,4 +94,58 @@ LIKELY_REPAIR_SIZE: SMALL (client: accept `'deleted'` from the legacy function, 
 DEPENDENCIES: FDA-001 (target lineage); Sky's decision D1F4-vs-legacy; privacy review (account deletion touches auth — Const. Art. 7.6).
 RECOMMENDED_ACCEPTANCE_TEST: disposable account on a disposable environment → Delete Account → success copy → signed out → relaunch shows signed-out → `auth.users` row absent, flags anonymised → no error alert; web shows the intended unavailability copy.
 NOTES: Web demo cannot delete accounts at all (design decision in Build 33) — recorded under App Store/product notes, not as a separate defect.
+
+### FDA-004
+ID: FDA-004
+TITLE: Submitted Build 33 Admin "Reports" queue selects moderation columns that production's `feedback` table does not have; the queue never loads and report resolutions cannot be recorded
+STATUS: CONFIRMED (source + production catalog)
+SEVERITY: HIGH
+CATEGORY: functional / backend-contract (UGC moderation)
+AFFECTED_STATE: SUBMITTED_BUILD_33, WEB_BUILD. CURRENT_MAIN: NOT affected (main has no `adminReports.ts` / Reports tab; its Admin screen is the flags list only).
+CONFIDENCE: HIGH
+
+USER_IMPACT: In the shipped app the Admin screen has two queues (Flags / Reports). Opening Reports runs `listOpenReports()` → PostgREST 42703 "column feedback.moderation_reviewed_at does not exist" → `reportsLoadError` banner; every close/resolve/action-intent update (`.update({ moderation_reviewed_by, moderation_resolution, … })`) fails the same way. The admin cannot triage content reports in-app. Users CAN still file reports (the user-facing path inserts an ordinary `feedback` row).
+REPRODUCTION: source trace. Build 33 `src/lib/adminReports.ts:82` `REPORT_SELECT = 'id, created_at, body, moderation_reviewed_at, moderation_resolution, moderation_action_intent'`; `:104-110` `.from('feedback').select(REPORT_SELECT).is('moderation_reviewed_at', null)…`; production `information_schema.columns` for `feedback` = id, user_id, category, body, contact_email, platform, created_at (no moderation_* columns); applied-migration ledger lacks 20260828050000/070000/080000 (mod1 admin report queue / pending-close / action-intent). Runtime: not exercised (needs admin sign-in) → EVIDENCE_GAP for the on-screen banner text.
+EXPECTED: Reports tab lists open reports; actions persist.
+ACTUAL: Reports tab errors; nothing persists.
+
+ROOT_CAUSE_EVIDENCE: MOD1 migrations (supabase/migrations/20260828040000–080000 in the Build 33 tree) add the columns, policies (`feedback_select_moderation`, `feedback_update_moderation`, `feedback_select_report_requires_admin`) and column-scoped UPDATE grants, but were never applied (see also the 2026-08-30 ProductionSchemaContractP0 report, which explicitly warned that an unfiltered push "could apply … five 20260828… moderation files" and chose to apply only the media-key migration).
+SOURCE_EVIDENCE: Build 33 src/lib/adminReports.ts (REPORT_SELECT, listOpenReports, closeAfterContentAction); Build 33 src/screens/AdminScreen.tsx:110-145 (reports state + loadReports + error banner).
+RUNTIME_EVIDENCE: evidence/db-proof-flags-delete-authorization.md (migration ledger); production column list captured 2026-09-02.
+TEST_EVIDENCE: Build 33 src/lib/__tests__/adminReports.test.ts mocks the Supabase chain; nothing checks column existence against a real schema.
+VISUAL_EVIDENCE: none
+
+HISTORICAL_RELATION: MOD1 / MOD1R (qa-reports/2026-08-28_MOD1R_moderation_release_safety.md, Build-33-only); Apple 1.2 UGC moderation items in design-reviews/ship-ready/05_THE_SUBMISSION_GAP_LIST.md.
+REGRESSION_RISK: Applying MOD1 also revokes broad UPDATE on `feedback` from authenticated and adds admin-only policies — a security improvement, but must be applied as a set with the client that expects it.
+LIKELY_REPAIR_SIZE: MEDIUM (apply the three MOD1 migrations in order + `mod1r_fix1_report_and_insert_authz` review + pgTAP proof) or SMALL client-side degrade (hide the Reports tab until the columns exist).
+DEPENDENCIES: FDA-001 lineage decision; FDA-005 (contract gate); migration-lineage reconciliation (two naming schemes).
+RECOMMENDED_ACCEPTANCE_TEST: admin opens Reports → list renders (or honest empty state) → close a disposable report → row shows moderation_reviewed_at set → non-admin cannot read others' reports.
+NOTES: Production `feedback` grants still give `authenticated` (and `anon`) full table UPDATE/DELETE with only RLS as the guard (default Supabase grants) — Lane E records that separately.
+
+### FDA-005
+ID: FDA-005
+TITLE: No release gate ties the accepted client to the production backend contract — Build 33 shipped with at least three client→backend mismatches (delete-flag route, D1F4 account deletion, MOD1 report queue) that no test, CI job, or release guard could see
+STATUS: CONFIRMED
+SEVERITY: HIGH
+CATEGORY: release-governance / test-confidence
+AFFECTED_STATE: SUBMITTED_BUILD_33, BACKEND, TEST_INFRA_ONLY (process), CURRENT_MAIN (same gap exists for future builds)
+CONFIDENCE: HIGH
+
+USER_IMPACT: Indirect but systemic: features that pass every local gate (typecheck, 3,657 Jest tests, source-grep guard tests, release identity guards) can still be dead on arrival because production lacks the function/column/RPC they call. FDA-002, FDA-003 and FDA-004 are three instances in one submitted binary; the 2026-08-30 media-key P0 (42703 on every flag read) was a fourth, caught only after acceptance.
+REPRODUCTION: Compare Build 33 `supabase.functions.invoke(...)` / `.rpc(...)` / column projections with the production Edge Function list, `pg_proc`, and `information_schema.columns` (evidence/build33-backend-contract-probe.md). CI workflows run Jest/typecheck/lint and `release:verify` (source identity only); the pgTAP proofs under supabase/tests/ are "staging-only" and the mod1r-fix1-rls-proof workflow (Build 33 tree) needs a Postgres it does not have in CI.
+EXPECTED: Before an EAS store build, an automated check enumerates the client's backend surface (functions invoked, RPCs, selected columns) and proves each exists in the target project (read-only catalog queries), failing the build otherwise.
+ACTUAL: `release:verify` proves Git identity only ("RECRUITER / PRODUCT EXPERIENCE: SEPARATE GATE"); Supabase migrations are hand-applied with two competing lineages (date-named files on main vs timestamped files + `nonmanaged/` on Build 33); guard tests grep source text.
+
+ROOT_CAUSE_EVIDENCE: supabase/nonmanaged/proposed/* headers ("LOCAL SOURCE ONLY … not applied"); ProductionSchemaContractP0 report; production ledger vs Build 33 migration set; Jest mocks (Lane H evidence) resolve every backend call successfully by default.
+SOURCE_EVIDENCE: .github/workflows/* (Lane H inventory), scripts/verify-release-state.mjs (identity-only checks), supabase/tests/*.sql (never run in CI).
+RUNTIME_EVIDENCE: three confirmed mismatches above.
+TEST_EVIDENCE: logs/baseline-jest.log (all green while the shipped binary's admin delete, account deletion and report queue are broken).
+VISUAL_EVIDENCE: n/a
+
+HISTORICAL_RELATION: ProductionSchemaContractP0 (2026-08-30); D1F4R3 LocalGateVerification (2026-08-28) explicitly deferred database proof; DECISIONS_LOG migration-history repairs (2026-08-28).
+REGRESSION_RISK: none from the gate itself; it is additive.
+LIKELY_REPAIR_SIZE: MEDIUM (a read-only "backend contract" script: parse invoke/rpc/select strings → query catalog via CLI/HTTP with the anon key → fail on missing; wire into release:preflight) + a decision on a single migration lineage.
+DEPENDENCIES: Sky's decision on the migration lineage (main-style vs Build-33-style); FDA-001.
+RECOMMENDED_ACCEPTANCE_TEST: Running the gate against production with the Build 33 tree FAILS listing delete-flag, account-deletion-status, request_account_deletion, feedback.moderation_reviewed_at; running it against the eventually converged tree PASSES.
+NOTES: This is the "WHY DID TESTS NOT CATCH IT" answer for FDA-002/003/004.
 
