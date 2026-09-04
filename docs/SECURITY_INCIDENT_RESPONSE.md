@@ -7,6 +7,13 @@
 
 > **DRAFT — NOT LEGAL ADVICE.** The PIPEDA/BC PIPA section and Flagstone-specific severity reclassifications in this revision were added by Jordan (AI privacy advisor, Claude Corp) per the 2026-05-29 Cluster 3 privacy review (gap conditions IR-1 through IR-5). This document has NOT been reviewed by a qualified privacy attorney. All breach-notification decisions involving real users must be reviewed by a qualified lawyer before action is taken.
 
+> **Before opening an incident for a credential you found in this repository, read
+> [`docs/CREDENTIAL_HISTORY.md`](./CREDENTIAL_HISTORY.md).** Two credential literals are known to
+> exist in this repo's published Git history. Both are verified **dead** and neither requires
+> rotation; one is deliberately retained in an immutable applied migration. Rediscovering them is
+> not a new incident. That file also states the one hard rule: no active configuration may ever
+> reuse a historical value.
+
 ---
 
 ## Severity Levels

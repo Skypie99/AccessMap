@@ -58,7 +58,8 @@
         "simulator": false
       },
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },
@@ -68,10 +69,6 @@
         "appleId": "skylerhalisky@gmail.com",
         "ascAppId": "6774709116",
         "appleTeamId": "S78F8ZA8QU"
-      },
-      "android": {
-        "serviceAccountKeyPath": "TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json",
-        "track": "internal"
       }
     }
   }

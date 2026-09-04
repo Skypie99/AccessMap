@@ -138,7 +138,7 @@ Stop when the SKY-QUEUE list is walked and banked. Then write `00_CLOSEOUT_AUTHE
 
 ## ⚑ WHAT SKY DOES (the only human steps)
 
-1. **Pick the test account** — ideally a fresh throwaway, *not* the old reviewer login `AccessMap2026!`, which is sitting in git history at `9fd1cd9` and needs rotating before App Store review anyway.
+1. **Pick the test account** — ideally a fresh throwaway, *not* the old reviewer login [REDACTED], which is sitting in git history at `9fd1cd9`. That historical value is a DEAD credential: verified 2026-09-03 as not the live reviewer password, so no rotation is required. Removing it here does not remove it from published history.
 2. **Type the login into the Simulator window** when the agent says it's parked on the sign-in screen.
 3. Optional: say whether that account is an admin (decides whether AdminScreen is in scope).
 4. Unrelated and still open: run the test-flag purge migration before submission.
