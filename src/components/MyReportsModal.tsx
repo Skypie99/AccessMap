@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+// RNGH FlatList AND ScrollView, not react-native's — their refs expose
+// .handlerTag, which SheetPull's simultaneousHandlers={scrollRef} needs to
+// coexist with pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -66,7 +68,9 @@ export default function MyReportsModal({
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
-  const scrollRef = useRef(null);
+  // Holds the native scroll node, not the FlatList instance — see the ref
+  // callback below for why.
+  const scrollRef = useRef<unknown>(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
   const { user } = useAuth();
@@ -262,7 +266,7 @@ export default function MyReportsModal({
             ) : null}
             <View style={styles.rowBodyText}>
               {item.description ? (
-                <AppText variant="body" style={styles.rowDesc} numberOfLines={2}>
+                <AppText variant="body" style={styles.rowDesc}>
                   {item.description}
                 </AppText>
               ) : (
@@ -305,9 +309,12 @@ export default function MyReportsModal({
       glass
       engineered
       padded
-      fill
+      // VP1 fix3 (Global Fix 3 names "My Reports / flag lists" directly):
+      // same fix as Watched Flags — `expanded` replaces the 55%/85%
+      // floor+cap, reaching the safe-area top instead of leaving dead space
+      // above a short list.
+      presentation="expanded"
       keyboardAvoiding
-      shrinkStyle={styles.kav}
       cardStyle={keyboardVisible ? styles.cardKeyboard : undefined}
       minBottomPad={spacing.xl}
       atTop={atTop}
@@ -438,6 +445,11 @@ export default function MyReportsModal({
             // way MyWatched's empty state did.
             <ScrollView
               style={styles.stateBody}
+              // scrollRef is typed unknown so it can hold either bridge's
+              // node (see the FlatList ref below). RNGH's ScrollView carries
+              // .handlerTag directly on its own ref — no getNativeScrollRef()
+              // indirection needed here, that's a FlatList-only quirk.
+              ref={(r) => { scrollRef.current = r; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.stateBodyContent}
@@ -452,7 +464,13 @@ export default function MyReportsModal({
             <FlatList
               keyboardShouldPersistTaps="handled"
               data={displayFlags}
-              ref={scrollRef}
+              // FlatList's OWN ref exposes FlatList's imperative API
+              // (scrollToIndex, etc.), not the native node RNGH tags with
+              // .handlerTag — that only lands on whatever `renderScrollComponent`
+              // renders internally, which is RNGH's ScrollView now that FlatList
+              // itself is imported from react-native-gesture-handler.
+              // getNativeScrollRef() reaches through to exactly that node.
+              ref={(r) => { scrollRef.current = r?.getNativeScrollRef() ?? null; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(f) => f.id}
@@ -508,33 +526,6 @@ const makeStyles = (color: ColorTheme) =>
     // Keyboard up: the pad drops to `md` and does NOT take the safe-area inset,
     // because the keyboard is covering it. Shipped behaviour, made explicit.
     cardKeyboard: { paddingBottom: spacing.md },
-    // G6/SR-099 — THE CAP LIVES HERE. The card's own '85%' resolves against a content-sized
-    // cardWrap and is inert; only the flex:1 backdrop is definite, so the cap
-    // sits on the KAV and cardWrap/card shrink into it.
-    // SW-42 (follow-up, Sky 2026-08-20): the FLOOR, and it has to live here for
-    // the same reason the cap does. A percentage only resolves against a parent
-    // with a DEFINITE height, and in backdrop(flex:1) → KAV → cardWrap → card
-    // the backdrop is the only definite one — so 'minHeight' on the card would be
-    // as inert as its '85%' already is (G6/SR-099).
-    //
-    // Why a floor at all: these two sheets rendered at 52.3%% and 36.8%% while
-    // their KAV-free siblings sat at 72.4%%, leaving visible dead space above the
-    // tab bar and a list viewport of 198pt showing ~1.5 of 6 report cards. The
-    // cause was never isolated (and could not be measured — both sheets are
-    // behind auth), so this is deliberately mechanism-INDEPENDENT: whatever
-    // collapses the card, it can no longer collapse past the floor. A list
-    // browser at 36%% of the screen is wrong regardless of why.
-    //
-    // Between the two bounds the sheet is still content-sized: Yoga sizes an
-    // auto-height container to its content, clamps that by min/max, and only
-    // then hands the leftover to flexGrow — so a short sheet grows to the floor
-    // and a long one stops at the cap.
-    kav: {
-      width: '100%',
-      minHeight: '55%',
-      maxHeight: '85%',
-      flexShrink: 1,
-    },
     // Refresh, in the same 44pt circle recipe as the primitive's Close.
     circleBtn: {
       width: 44,

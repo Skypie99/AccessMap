@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
@@ -8,7 +9,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   Share,
   StyleSheet,
   type Text,
@@ -16,16 +16,21 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+// RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={bodyScrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle, useSheetPullDismissLifecycle } from '@/components/ui/SheetPull';
 import { TYPE_BLOCK, TypeBlock } from '@/components/ui/TypeBlock';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import {
+  AlertTriangle,
   Copy,
   History,
   Map as MapIcon,
@@ -40,6 +45,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, BULK_FLOOR_CANDIDATE, font, radius, severity, shadow, spacing } from '@/theme';
+import { useIsAdmin } from '@/lib/admin';
 import { useAuth } from '@/lib/auth';
 import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
@@ -98,6 +104,7 @@ import {
   DISPUTE_FAILED_TITLE,
   DISPUTE_RECORDED_MESSAGE,
   DISPUTE_STALE_MESSAGE,
+  GALLERY_LOAD_FAILED_TEXT,
   HIDE_FAILED_TITLE,
   REPORT_CONTROL_LABEL,
 } from '@/lib/copy';
@@ -107,13 +114,17 @@ import {
   decorativeProps,
   isAxRecompose,
   useFocusOnOpen,
-  useReducedMotion,
 } from '@/lib/accessibility';
 
 // 'reopen' = community threshold met, resolved→open. It is its own action
 // because the points trigger awards NOTHING for it — callers must not show
 // the "+N points" flash they show for verify/resolve.
-export type DetailAction = 'verify' | 'resolve' | 'reject' | 'reopen';
+// 'restore' = MOD1 admin-only rejected→open, moderator-error recovery. Kept
+// distinct from 'reopen' even though both land on 'open': 'reopen' is a
+// community threshold vote off a RESOLVED flag; 'restore' is a direct
+// admin write off a REJECTED one. Conflating them would let a caller's
+// reopen-specific copy ("+N more requests needed") leak onto a restore.
+export type DetailAction = 'verify' | 'resolve' | 'reject' | 'reopen' | 'restore';
 
 interface Props {
   visible: boolean;
@@ -129,6 +140,8 @@ interface Props {
   // showing pre-edit values and the owner believed the save was lost.
   onEdited?: (updated: FlagRow) => void;
   onViewOnMap: (flag: FlagRow) => void;
+  /** Host-owned route to the canonical Profile sign-in entry for guest review. */
+  onSignInToReview?: () => void;
   // SW-28: the dismissal-COMPLETE event, not the close INTENT. RN core fires a
   // Modal's onDismiss on iOS ONLY — which is exactly the platform that needs it,
   // because only there does presenting this sheet detach the presenter's view.
@@ -164,6 +177,7 @@ export default function FlagDetailModal({
   onDeleted,
   onEdited,
   onViewOnMap,
+  onSignInToReview,
   onDismiss,
   primaryIntent = 'read',
   distanceKm,
@@ -175,7 +189,8 @@ export default function FlagDetailModal({
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   const { user } = useAuth();
-  const reducedMotion = useReducedMotion();
+  const isAdmin = useIsAdmin();
+  const { modalAnimationType, backdropOpacity, beginPullDismiss } = useSheetPullDismissLifecycle(visible);
   // F4: at 1.5x and up a fixed composition recomposes instead of squeezing —
   // here the segmented control's cells stop sharing a row and become
   // full-width rows. `useWindowDimensions` is the reactive read, so changing
@@ -198,7 +213,15 @@ export default function FlagDetailModal({
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const keyboardVisible = useKeyboardVisible();
   const bodyScrollRef = useRef(null);
+  const pullRef = useRef<SheetPullHandle>(null);
   const [flagPhotos, setFlagPhotos] = useState<GalleryPhoto[]>([]);
+  // Prompt B B2/Fable B-UX-002: the gallery's own loading/error state, owned
+  // here (not the write-path throw COR-3 already relies on). photosRetryToken
+  // is a pure re-run trigger for the Retry control — bumping it re-enters the
+  // SAME effect below, so Retry is never a second, divergent loader.
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const [photosError, setPhotosError] = useState<string | null>(null);
+  const [photosRetryToken, setPhotosRetryToken] = useState(0);
   // photo_alt (2026-08-19): a picked photo parks here so the owner can add an
   // optional screen-reader description BEFORE it uploads. All three pickers
   // (web input, camera, library) feed this one attach row. isBlobUrl marks
@@ -363,30 +386,43 @@ export default function FlagDetailModal({
     void recordView(user.id, shownFlag.id);
   }, [visible, shownFlag, user]);
 
-  // Load the gallery photos whenever the modal opens or the flag changes.
-  // listFlagPhotos returns [] only when the migration hasn't run yet; real
-  // failures throw (COR-3). The gallery has no error-state UI (banked for
-  // Sky), so the VIEW path degrades to warn + keep the current list — the
-  // throw matters on the write path, where addFlagPhoto's position math must
-  // not run against a failed read.
+  // Load the gallery photos whenever the modal opens, the flag changes, or
+  // Retry is pressed. listFlagPhotos now throws every backend error (Prompt B
+  // B2/Fable B-UX-002 — a false-empty gallery on an evidence surface is an
+  // active false statement). Rows and any prior error are reset SYNCHRONOUSLY
+  // before the fetch starts, so a flag-to-flag switch can never leave a stale
+  // photo (or a stale error) rendered under the new flag while the new load
+  // is in flight; `cancelled` still rejects a stale completion arriving after
+  // a further switch. Error clears only when a load for the CURRENT flag
+  // actually succeeds.
   useEffect(() => {
     if (!visible || !shownFlag) {
       setFlagPhotos([]);
+      setPhotosError(null);
+      setPhotosLoading(false);
       return;
     }
     let cancelled = false;
+    setFlagPhotos([]);
+    setPhotosError(null);
+    setPhotosLoading(true);
     (async () => {
       try {
         const photos = await listFlagPhotos(shownFlag.id);
-        if (!cancelled) setFlagPhotos(photos);
+        if (cancelled) return;
+        setFlagPhotos(photos);
       } catch (e) {
+        if (cancelled) return;
         console.warn('[FlagDetailModal] photo gallery load failed:', e);
+        setPhotosError(GALLERY_LOAD_FAILED_TEXT);
+      } finally {
+        if (!cancelled) setPhotosLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [visible, shownFlag?.id]);
+  }, [visible, shownFlag?.id, photosRetryToken]);
 
   // Read the user's watched list to know whether THIS flag is being
   // tracked. Re-runs whenever the modal opens or the shown flag changes,
@@ -667,7 +703,11 @@ export default function FlagDetailModal({
   const status = shownFlag.status;
   const canVerify = status === 'open';
   const canResolve = status === 'open' || status === 'verified';
+  // MOD1: legality only — WHO may act on it is the isAdmin check at the cell's
+  // `show`, same split as canDispute below (status legality here, account
+  // legality there). The DB trigger enforces the admin half independently.
   const canReject = status === 'open' || status === 'verified';
+  const canRestore = status === 'rejected';
   // W1 — every clause is load-bearing, and three of them are dead-control
   // prevention (SR-093), not preference:
   //   DISPUTE_ENABLED  the constant tracks live migration state; a UI that
@@ -699,11 +739,13 @@ export default function FlagDetailModal({
   // verified has no community verb to lead with, whichever door you came
   // through, so the sheet falls back to the reader's verb rather than showing a
   // filled button that is not offered.
-  const primaryIsVerify = primaryIntent === 'triage' && canVerify;
+  const primaryIsVerify = !!user && primaryIntent === 'triage' && canVerify;
+  const primaryIsGuestSignIn = !user && primaryIntent === 'triage';
+  const primaryLeadsReview = primaryIsVerify || primaryIsGuestSignIn;
   // Pinned whenever the sheet was opened TO TRIAGE — including on a flag that
   // is already verified, where the pair is Resolved / Reject. Coming from the
   // queue, the verbs stay in reach however long the body runs.
-  const pinnedVerbs = primaryIntent === 'triage';
+  const pinnedVerbs = !!user && primaryIntent === 'triage';
 
   // ── The header's census line (F2) ────────────────────────────────────────
   //
@@ -837,14 +879,16 @@ export default function FlagDetailModal({
           ? 'Flag marked verified'
           : next === 'resolved'
             ? 'Flag marked resolved'
-            : 'Flag rejected',
+            : next === 'open'
+              ? 'Flag restored'
+              : 'Flag rejected',
       );
       onClose();
     } catch (e) {
       if (e instanceof FlagStatusConflictError) {
         notify(
           'This flag changed',
-          'It was updated (or removed) while you had it open — closing so you can see the latest.',
+          'It was updated (or removed) while you had it open. Closing so you can see the latest.',
         );
         // F64: don't strand the user on a stale snapshot with live buttons.
         onClose();
@@ -869,6 +913,20 @@ export default function FlagDetailModal({
     );
     if (!ok) return;
     await runStatusChange('rejected', 'reject');
+  };
+
+  // MOD1 — moderator-error recovery. Not destructive (it puts the report BACK
+  // in front of the community, same tier as Verify/Resolve), so no `destructive`
+  // flag on the confirm.
+  const handleRestore = async () => {
+    if (busy) return;
+    const ok = await confirm(
+      'Restore this flag?',
+      'This reopens the report so the community can review it again.',
+      'Restore',
+    );
+    if (!ok) return;
+    await runStatusChange('open', 'restore');
   };
 
   // Share the flag. The message is built by the pure `formatFlagShareText`
@@ -1112,7 +1170,7 @@ export default function FlagDetailModal({
       if (newCount === null) {
         // RPC unavailable on this backend (migration not applied) — be honest
         // rather than show a fake running tally.
-        const msg = 'Thanks — your reopen request was sent for review.';
+        const msg = 'Thanks. Your reopen request was sent for review.';
         setReopenMessage(msg);
         AccessibilityInfo.announceForAccessibility(msg);
         setShowReopenForm(false);
@@ -1159,7 +1217,7 @@ export default function FlagDetailModal({
       // web). Treat the conflict as benign and close so the user re-opens
       // fresh state.
       if (e instanceof FlagStatusConflictError) {
-        notify('Flag updated', 'This flag was just reopened or changed — your request was counted.');
+        notify('Flag updated', 'This flag was just reopened or changed, and your request was counted.');
         onClose();
       } else {
         notify('Could not submit reopen request', errorMessage(e));
@@ -1268,7 +1326,7 @@ export default function FlagDetailModal({
       a11yLabel: 'Verify this flag',
       hint: 'Marks this report as confirmed',
       onPress: () => runStatusChange('verified', 'verify'),
-      show: canVerify && !primaryIsVerify,
+      show: !!user && canVerify && !primaryIsVerify,
     },
     {
       key: 'resolve',
@@ -1276,7 +1334,7 @@ export default function FlagDetailModal({
       a11yLabel: 'Mark this flag resolved',
       hint: 'Marks the accessibility issue as fixed',
       onPress: () => runStatusChange('resolved', 'resolve'),
-      show: canResolve,
+      show: !!user && canResolve,
     },
     {
       key: 'reject',
@@ -1284,7 +1342,17 @@ export default function FlagDetailModal({
       a11yLabel: 'Reject this flag',
       hint: 'Marks this report as invalid or spam',
       onPress: handleReject,
-      show: canReject,
+      // MOD1: rejecting is admin-only — the DB trigger enforces this
+      // independently, this just keeps the control off a non-admin's screen.
+      show: !!user && canReject && isAdmin === true,
+    },
+    {
+      key: 'restore',
+      label: 'Restore',
+      a11yLabel: 'Restore this flag',
+      hint: 'Reopens a rejected report',
+      onPress: handleRestore,
+      show: !!user && canRestore && isAdmin === true,
     },
   ].filter((cell) => cell.show);
 
@@ -1293,7 +1361,27 @@ export default function FlagDetailModal({
   // §SKY-3c is on the record correcting an agent for collapsing the two. It
   // keeps its own outlined treatment for the same reason.
   const showDispute = canDispute && disputeNotice === null;
-  const siblingVerbs =
+  const guestReviewBoundary = !user && primaryIntent === 'read' ? (
+    <View style={styles.communityCheck}>
+      <AppText variant="label" style={styles.sectionLabel}>Community check</AppText>
+      <Pressable
+        onPress={onSignInToReview}
+        disabled={busy || !onSignInToReview}
+        style={({ pressed }) => [
+          styles.signInReviewBtn,
+          pressed && styles.signInReviewBtnPressed,
+          (busy || !onSignInToReview) && styles.btnDisabled,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Sign in to review"
+        accessibilityHint="Opens the Profile tab, where you can sign in"
+        {...a11yToggle({ disabled: busy || !onSignInToReview })}
+      >
+        <AppText variant="label" style={styles.signInReviewBtnText}>Sign in to review</AppText>
+      </Pressable>
+    </View>
+  ) : null;
+  const siblingVerbs = !user ? guestReviewBoundary :
     segmentCells.length > 0 || showDispute ? (
       <View style={styles.communityCheck}>
         {/* The label belongs to the INLINE placement only. Pinned to the foot
@@ -1345,8 +1433,18 @@ export default function FlagDetailModal({
 
   return (
     <>
-      <Modal aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`} visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose} onDismiss={onDismiss}>
-        <View style={styles.backdrop}>
+      <Modal
+        aria-label={`Flag details: ${CATEGORY_LABELS[shownFlag.category]}`}
+        visible={visible}
+        animationType={modalAnimationType}
+        transparent
+        onRequestClose={onClose}
+        onDismiss={() => {
+          pullRef.current?.resetAfterDismiss();
+          onDismiss?.();
+        }}
+      >
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we
             render the lightbox as a sibling Modal (Android-stable pattern),
@@ -1360,10 +1458,14 @@ export default function FlagDetailModal({
               this card and swallow touches themselves, so the pan cannot fire
               underneath them. */}
           <SheetPull
+            ref={pullRef}
             onDismiss={onClose}
+            onDismissStart={beginPullDismiss}
             enabled={!busy && !keyboardVisible}
             atTop={atTop}
             simultaneousHandlers={bodyScrollRef}
+            style={styles.pullExpanded}
+            visible={visible}
           >
           <GlassSurface
             variant="bulk"
@@ -1375,7 +1477,13 @@ export default function FlagDetailModal({
             // judge a stronger blur against a denser gradient on the phone; the
             // other two arms keep the shipped engineered path exactly.
             forceEngineered={BULK_FLOOR_CANDIDATE !== 'blur40'}
-            style={[styles.card, { paddingBottom: Math.max(spacing.xl, insets.bottom) }]}
+            style={[
+              styles.card,
+              {
+                marginTop: insets.top + spacing.sm,
+                paddingBottom: Math.max(spacing.xl, insets.bottom),
+              },
+            ]}
             accessibilityViewIsModal
             onAccessibilityEscape={onClose}
           >
@@ -1573,7 +1681,7 @@ export default function FlagDetailModal({
                     <AppText variant="label" style={styles.beforeAfterArrowGlyph}>→</AppText>
                   </View>
                   <View style={styles.beforeAfterItem}>
-                    <AppText variant="label" style={styles.beforeAfterCaption}>After — the fix</AppText>
+                    <AppText variant="label" style={styles.beforeAfterCaption}>After: the fix</AppText>
                     <RemoteImage
                       uri={afterPhoto.url}
                       style={styles.beforeAfterImage}
@@ -1605,7 +1713,7 @@ export default function FlagDetailModal({
                       "Add after photo" unreachable. The text speaks for itself;
                       the button stays an independent element. */}
                   <AppText variant="body" style={styles.afterTipText}>
-                    Show the fix — add an &ldquo;after&rdquo; photo so others can see this barrier was resolved.
+                    Show the fix: add an &ldquo;after&rdquo; photo so others can see this barrier was resolved.
                   </AppText>
                   <Pressable
                     onPress={handleAddPhoto}
@@ -1679,21 +1787,60 @@ export default function FlagDetailModal({
                 </View>
               )}
 
-              {/* (4) PHOTOS, AND ONLY WHEN THERE ARE PHOTOS.
-                  The strip used to open the sheet with a 96pt grey tile saying
-                  "No photos" — on most flags the first thing under the title
-                  was an absence, in the sheet's prime area. The placeholder is
+              {/* (4) PHOTOS.
+                  Prompt B B2/Fable B-UX-002: LOADING / ERROR / real content are
+                  now mutually exclusive branches, so a failed load can never
+                  render as the real "No photos" empty state (nor, before this
+                  fix, as nothing at all). photosLoading and photosError are
+                  reset synchronously on every flag change, so switching flags
+                  can never show a stale prior flag's photos or a stale error
+                  under the new one.
+                  The real-content branch keeps its original shape: the strip
+                  used to open the sheet with a 96pt grey tile saying "No
+                  photos" — on most flags the first thing under the title was
+                  an absence, in the sheet's prime area. The placeholder is
                   right in the REPORT form, where it is an invitation; here it
                   is a report of nothing. Rendered when there is something to
                   show, or when the owner can add something (the gallery's own
                   add sentinel fills the list, so the placeholder still cannot
                   appear). PhotoGallery itself is untouched. */}
-              {(flagPhotos.length > 0 || (isOwn && !busy && !pendingPhoto)) && (
-                <PhotoGallery
-                  photos={flagPhotos}
-                  onAddPhoto={isOwn && !busy && !pendingPhoto ? handleAddPhoto : undefined}
-                  maxPhotos={5}
+              {photosLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={color.brand}
+                  style={styles.photosSpinner}
+                  accessible
+                  accessibilityLabel="Loading photos"
                 />
+              ) : photosError ? (
+                <Pressable
+                  onPress={() => setPhotosRetryToken((t) => t + 1)}
+                  style={({ pressed }) => [
+                    styles.photosErrorBanner,
+                    pressed && styles.photosErrorBannerPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={GALLERY_LOAD_FAILED_TEXT}
+                  accessibilityHint="Tries to load photos again"
+                  accessibilityLiveRegion="polite"
+                >
+                  <AlertTriangle
+                    size={18}
+                    color={color.errorFg}
+                    strokeWidth={2.2} {...decorativeProps}
+                  />
+                  <AppText variant="body" style={styles.photosErrorText}>
+                    {GALLERY_LOAD_FAILED_TEXT}
+                  </AppText>
+                </Pressable>
+              ) : (
+                (flagPhotos.length > 0 || (isOwn && !busy && !pendingPhoto)) && (
+                  <PhotoGallery
+                    photos={flagPhotos}
+                    onAddPhoto={isOwn && !busy && !pendingPhoto ? handleAddPhoto : undefined}
+                    maxPhotos={5}
+                  />
+                )
               )}
 
 
@@ -1703,21 +1850,44 @@ export default function FlagDetailModal({
                   the answer now, and which verb it is follows the door you came
                   through (Q2 = C). */}
               <Pressable
-                onPress={primaryIsVerify ? () => runStatusChange('verified', 'verify') : () => void handleDirections()}
-                disabled={busy}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: color.ctaFillPressed }, busy && styles.btnDisabled]}
-                accessibilityRole="button"
-                accessibilityLabel={primaryIsVerify ? 'Verify this flag' : 'Get directions to this flag'}
-                accessibilityHint={
-                  primaryIsVerify ? 'Marks this report as confirmed' : 'Opens your maps app with directions'
+                onPress={
+                  primaryIsGuestSignIn
+                    ? onSignInToReview
+                    : primaryIsVerify
+                      ? () => runStatusChange('verified', 'verify')
+                      : () => void handleDirections()
                 }
-                {...a11yToggle({ disabled: busy, busy: busy && primaryIsVerify })}
+                disabled={busy || (primaryIsGuestSignIn && !onSignInToReview)}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: color.ctaFillPressed }, (busy || (primaryIsGuestSignIn && !onSignInToReview)) && styles.btnDisabled]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  primaryIsGuestSignIn
+                    ? 'Sign in to review'
+                    : primaryIsVerify
+                      ? 'Verify this flag'
+                      : 'Get directions to this flag'
+                }
+                accessibilityHint={
+                  primaryIsGuestSignIn
+                    ? 'Opens the Profile tab, where you can sign in'
+                    : primaryIsVerify
+                      ? 'Marks this report as confirmed'
+                      : 'Opens your maps app with directions'
+                }
+                {...a11yToggle({
+                  disabled: busy || (primaryIsGuestSignIn && !onSignInToReview),
+                  busy: busy && primaryIsVerify,
+                })}
               >
                 {busy && primaryIsVerify ? (
                   <ActivityIndicator color={color.textOnBrand} />
                 ) : (
                   <AppText variant="label" size={font.size.lg} style={styles.primaryBtnText}>
-                    {primaryIsVerify ? 'Verify' : 'Directions'}
+                    {primaryIsGuestSignIn
+                      ? 'Sign in to review'
+                      : primaryIsVerify
+                        ? 'Verify'
+                        : 'Directions'}
                   </AppText>
                 )}
               </Pressable>
@@ -1749,7 +1919,7 @@ export default function FlagDetailModal({
                   </View>
                   <AppText variant="label" style={styles.moreLabel}>Map</AppText>
                 </Pressable>
-                {primaryIsVerify && (
+                {primaryLeadsReview && (
                   <Pressable
                     onPress={() => void handleDirections()}
                     disabled={busy}
@@ -2089,7 +2259,7 @@ export default function FlagDetailModal({
                         the real empty-state invite. */}
                     <AppText variant="body" style={styles.commentsEmptyLabel}>
                       {user
-                        ? 'No comments yet — share what you know.'
+                        ? 'No comments yet. Share what you know.'
                         : 'Sign in to see and add comments.'}
                     </AppText>
                   </View>
@@ -2353,7 +2523,7 @@ export default function FlagDetailModal({
             ) : null}
           </GlassSurface>
           </SheetPull>
-        </View>
+        </Animated.View>
         {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
       {legal.sheets}
       {/* ── EVERY sheet opened FROM this one is mounted INSIDE it ───────────
@@ -2428,8 +2598,11 @@ const makeStyles = (color: ColorTheme) =>
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
       gap: spacing.md,
-      maxHeight: '90%',
+      maxHeight: '100%',
+      flexGrow: 1,
+      flexShrink: 1,
     },
+    pullExpanded: { width: '100%', flexGrow: 1 },
     headerRow: {
       flexDirection: 'row',
       // flex-start, not center: the block is three lines tall now, and the
@@ -2659,6 +2832,21 @@ const makeStyles = (color: ColorTheme) =>
       marginTop: spacing.lg,
     },
     primaryBtnText: { color: color.textOnBrand, fontWeight: font.weight.bold },
+    signInReviewBtn: {
+      minHeight: 44,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: color.glassGhostEdge,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    signInReviewBtnPressed: { backgroundColor: color.borderPressed },
+    signInReviewBtnText: {
+      color: color.inkSelect,
+      fontWeight: font.weight.semibold,
+    },
 
     // ── (6) THE SIBLING VERBS ───────────────────────────────────────────────
     communityCheck: { gap: spacing.sm, marginTop: spacing.md },
@@ -2876,6 +3064,28 @@ const makeStyles = (color: ColorTheme) =>
     commentsSpinner: {
       marginTop: spacing.sm,
       alignSelf: 'center',
+    },
+    // Prompt B B-UX-002: same recipe as commentsErrorBanner above (error-red
+    // tappable area, visible text doubling as the accessible name) — kept as
+    // its own scoped style group rather than sharing the comments-prefixed
+    // one, matching this file's per-surface naming.
+    photosSpinner: {
+      alignSelf: 'flex-start',
+    },
+    photosErrorBanner: {
+      backgroundColor: color.errorBg,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      minHeight: 44,
+    },
+    photosErrorBannerPressed: { backgroundColor: color.errorPressed },
+    photosErrorText: {
+      flex: 1,
+      fontSize: font.size.sm,
+      color: color.errorFg,
     },
     commentsList: {
       gap: spacing.tight,

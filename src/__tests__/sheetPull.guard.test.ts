@@ -57,15 +57,15 @@ function walkTsx(dir: string): string[] {
 /**
  * `closeHandler` is the name the surface's OWN close path goes by. It is
  * `onClose` for every surface that has nothing to do before closing, and a named
- * wrapper for one that does — ReportFlagModal must discard the draft first
- * (SW-52: a cancelled report's photo was being published with the next one).
+ * wrapper for one that does — ReportFlagModal must guard the report draft
+ * before it is discarded.
  * A wrapper is only accepted if it is a real named function that CALLS onClose,
  * which the assertion below checks; the thing being blocked has always been a
  * bespoke inline arrow that forks a second dismissal path, and that is still
  * blocked.
  */
 const ADOPTERS: readonly { rel: string; closeLabel: string; closeHandler?: string }[] = [
-  { rel: path.join('screens', 'ReportFlagModal.tsx'), closeLabel: 'Cancel and close', closeHandler: 'handleCancel' },
+  { rel: path.join('screens', 'ReportFlagModal.tsx'), closeLabel: 'Cancel and close', closeHandler: 'requestClose' },
   { rel: path.join('components', 'FlagDetailModal.tsx'), closeLabel: 'Close flag details' },
   { rel: path.join('screens', 'LegendModal.tsx'), closeLabel: 'Close legend' },
   /*
@@ -181,11 +181,11 @@ describe('SheetPull · the rails', () => {
     for (const a of ADOPTERS) {
       const src = stripComments(fs.readFileSync(path.join(SRC, a.rel), 'utf8'));
       const handler = a.closeHandler ?? 'onClose';
-      if (!new RegExp(`onDismiss=\\{${handler}\\}`).test(src)) {
+      if (!new RegExp(`onDismiss=\\{(?:${handler}|\\(\\) => void ${handler}\\(\\))\\}`).test(src)) {
         offenders.push(`${a.rel} → SheetPull onDismiss is not the surface's ${handler}`);
       }
       if (a.closeHandler) {
-        const decl = new RegExp(`const ${a.closeHandler} = \\([^)]*\\) => \\{([\\s\\S]*?)\\n  \\};`).exec(src);
+        const decl = new RegExp(`const ${a.closeHandler} = (?:async )?\\([^)]*\\) => \\{([\\s\\S]*?)\\n  \\};`).exec(src);
         if (!decl) {
           offenders.push(`${a.rel} → ${a.closeHandler} is not a named function in this file`);
         } else if (!decl[1].includes('onClose()')) {

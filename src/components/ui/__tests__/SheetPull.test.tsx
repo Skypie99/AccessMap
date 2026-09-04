@@ -90,6 +90,37 @@ describe('SheetPull · commit vs cancel', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
+  it('latches one committed gesture, then resets for a later controlled open', () => {
+    const onDismiss = jest.fn();
+    const onDismissStart = jest.fn();
+    const tree = render(
+      <SheetPull visible onDismiss={onDismiss} onDismissStart={onDismissStart}>
+        <View><Text>sheet body</Text></View>
+      </SheetPull>,
+    );
+
+    // Native gesture delivery can report a duplicate terminal event around a
+    // controlled Modal update. It is still one swipe and therefore one close.
+    release(tree, COMMIT_FLOOR_PT + 1);
+    release(tree, COMMIT_FLOOR_PT + 1);
+    expect(onDismissStart).toHaveBeenCalledTimes(1);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+
+    tree.rerender(
+      <SheetPull visible={false} onDismiss={onDismiss} onDismissStart={onDismissStart}>
+        <View><Text>sheet body</Text></View>
+      </SheetPull>,
+    );
+    tree.rerender(
+      <SheetPull visible onDismiss={onDismiss} onDismissStart={onDismissStart}>
+        <View><Text>sheet body</Text></View>
+      </SheetPull>,
+    );
+    release(tree, COMMIT_FLOOR_PT + 1);
+    expect(onDismissStart).toHaveBeenCalledTimes(2);
+    expect(onDismiss).toHaveBeenCalledTimes(2);
+  });
+
   it('on a TALL card the fraction governs, so the floor alone is not enough', () => {
     // 30% of an 800pt card is 240 — a 150pt drag clears the 120 floor but is
     // nowhere near a deliberate dismissal of a sheet that size.
@@ -140,8 +171,10 @@ describe('SheetPull · commit vs cancel', () => {
     mockReducedMotion = false;
     jest.useFakeTimers();
     try {
-      const { tree, onDismiss } = renderSheet();
+      const onDismissStart = jest.fn();
+      const { tree, onDismiss } = renderSheet({ onDismissStart });
       release(tree, COMMIT_FLOOR_PT + 50);
+      expect(onDismissStart).toHaveBeenCalledTimes(1);
       expect(onDismiss).not.toHaveBeenCalled(); // still sliding
       act(() => {
         jest.advanceTimersByTime(motionBase * 4);

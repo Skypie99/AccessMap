@@ -41,15 +41,24 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 
 import FlagDetailModal from '../FlagDetailModal';
+import PhotoGallery from '../PhotoGallery';
 import { REPORT_CONTROL_LABEL } from '@/lib/copy';
 import type { FlagRow } from '@/types/database';
+
+const PhotoGalleryInner = (PhotoGallery as unknown as { type: React.ComponentType }).type;
 
 // ---------------------------------------------------------------------------
 // Mocks — every I/O edge the sheet touches on open. The point of this suite is
 // the mount ARRANGEMENT, so the data layers are stubbed to their quietest
 // successful shape and nothing here asserts on them.
 // ---------------------------------------------------------------------------
-jest.mock('@/lib/auth', () => ({ useAuth: () => ({ user: { id: 'user-1' } }) }));
+let mockAuthUser: { id: string } | null = { id: 'user-1' };
+jest.mock('@/lib/auth', () => ({ useAuth: () => ({ user: mockAuthUser }) }));
+
+// MOD1: Reject/Restore are admin-gated. Defaults to a plain signed-in,
+// non-admin viewer — the pre-MOD1 default this whole suite assumed.
+let mockIsAdmin: boolean | null = false;
+jest.mock('@/lib/admin', () => ({ useIsAdmin: () => mockIsAdmin }));
 
 jest.mock('@/theme/ThemeContext', () => {
   const { color } = jest.requireActual('@/theme');
@@ -103,6 +112,11 @@ jest.mock('@/hooks/useComments', () => ({
     refetch: jest.fn(),
   }),
 }));
+
+beforeEach(() => {
+  mockAuthUser = { id: 'user-1' };
+  mockIsAdmin = false;
+});
 
 const FLAG: FlagRow = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -204,5 +218,153 @@ describe('SW-46 — sheets opened from FlagDetailModal present from its VC', () 
     const screen = renderDetail();
     const modals = screen.UNSAFE_getAllByType(Modal);
     expect(detailModal(modals.flatMap((m) => modalAncestors(m)))).toBeTruthy();
+  });
+});
+
+describe('FlagDetailModal — guest review boundary', () => {
+  function renderGuest(primaryIntent: 'read' | 'triage') {
+    mockAuthUser = null;
+    const onSignInToReview = jest.fn();
+    const updateHandlers = {
+      onChanged: jest.fn(),
+      onDeleted: jest.fn(),
+    };
+    return {
+      ...render(
+        <FlagDetailModal
+          visible
+          flag={FLAG}
+          primaryIntent={primaryIntent}
+          onClose={jest.fn()}
+          onChanged={updateHandlers.onChanged}
+          onDeleted={updateHandlers.onDeleted}
+          onViewOnMap={jest.fn()}
+          onSignInToReview={onSignInToReview}
+        />,
+      ),
+      onSignInToReview,
+      updateHandlers,
+    };
+  }
+
+  it('keeps Directions primary for readers and replaces the verdict cluster once', () => {
+    const screen = renderGuest('read');
+
+    expect(screen.getByLabelText('Get directions to this flag')).toBeTruthy();
+    expect(screen.getAllByText('Sign in to review')).toHaveLength(1);
+    for (const verdict of ['Verify', 'Resolved', 'Reject']) {
+      expect(screen.queryByText(verdict)).toBeNull();
+    }
+  });
+
+  it('uses the single account boundary as the triage primary and keeps Directions', () => {
+    const screen = renderGuest('triage');
+
+    expect(screen.getAllByText('Sign in to review')).toHaveLength(1);
+    expect(screen.getByLabelText('Get directions to this flag')).toBeTruthy();
+    expect(screen.queryByText('Verify')).toBeNull();
+    expect(screen.queryByText('Resolved')).toBeNull();
+    expect(screen.queryByText('Reject')).toBeNull();
+  });
+
+  it('delegates sign-in to the host without invoking a status callback', () => {
+    const screen = renderGuest('triage');
+
+    fireEvent.press(screen.getByLabelText('Sign in to review'));
+
+    expect(screen.onSignInToReview).toHaveBeenCalledTimes(1);
+    expect(screen.updateHandlers.onChanged).not.toHaveBeenCalled();
+  });
+
+  it('preserves the signed-in verdict controls available to a non-admin', () => {
+    const screen = renderDetail();
+    expect(screen.getByLabelText('Verify this flag')).toBeTruthy();
+    expect(screen.getByLabelText('Mark this flag resolved')).toBeTruthy();
+    expect(screen.queryByText('Sign in to review')).toBeNull();
+  });
+});
+
+describe('FlagDetailModal — MOD1: Reject/Restore are admin-only', () => {
+  it('hides Reject from a signed-in non-admin', () => {
+    const screen = renderDetail();
+    expect(screen.queryByLabelText('Reject this flag')).toBeNull();
+  });
+
+  it('shows Reject to a signed-in admin', () => {
+    mockIsAdmin = true;
+    const screen = renderDetail();
+    expect(screen.getByLabelText('Reject this flag')).toBeTruthy();
+  });
+
+  it('never shows Restore on a flag that is not rejected, admin or not', () => {
+    mockIsAdmin = true;
+    const screen = renderDetail();
+    expect(screen.queryByLabelText('Restore this flag')).toBeNull();
+  });
+
+  it('shows Restore to an admin viewing a rejected flag', () => {
+    mockIsAdmin = true;
+    const rejectedFlag = { ...FLAG, status: 'rejected' } as FlagRow;
+    const screen = render(
+      <FlagDetailModal
+        visible
+        flag={rejectedFlag}
+        onClose={jest.fn()}
+        onChanged={jest.fn()}
+        onDeleted={jest.fn()}
+        onViewOnMap={jest.fn()}
+      />,
+    );
+    expect(screen.getByLabelText('Restore this flag')).toBeTruthy();
+    expect(screen.queryByLabelText('Reject this flag')).toBeNull();
+  });
+
+  it('hides Restore from a non-admin viewing a rejected flag', () => {
+    const rejectedFlag = { ...FLAG, status: 'rejected' } as FlagRow;
+    const screen = render(
+      <FlagDetailModal
+        visible
+        flag={rejectedFlag}
+        onClose={jest.fn()}
+        onChanged={jest.fn()}
+        onDeleted={jest.fn()}
+        onViewOnMap={jest.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText('Restore this flag')).toBeNull();
+  });
+});
+
+describe('FlagDetailModal — photo ownership boundary', () => {
+  it('does not expose photo-add controls to a signed-in non-owner', () => {
+    const screen = renderDetail();
+
+    expect(screen.queryByLabelText('Add photo')).toBeNull();
+    expect(screen.queryByLabelText('Add after photo')).toBeNull();
+    expect(screen.UNSAFE_queryByType(PhotoGalleryInner)).toBeNull();
+  });
+
+  it('exposes the photo-add control to the report owner when idle', async () => {
+    // Prompt B B2/Fable B-UX-002: the gallery now has a real, distinct
+    // LOADING state (cleared once listFlagPhotos settles), so the owner's
+    // add-sentinel — rendered by PhotoGallery once real content replaces the
+    // loading indicator — is no longer available on the very first
+    // synchronous render; await the resolved (empty) load like a real user
+    // would see it.
+    const ownFlag = { ...FLAG, user_id: 'user-1' };
+    const screen = render(
+      <FlagDetailModal
+        visible
+        flag={ownFlag}
+        onClose={jest.fn()}
+        onChanged={jest.fn()}
+        onDeleted={jest.fn()}
+        onViewOnMap={jest.fn()}
+      />,
+    );
+
+    const addPhoto = await screen.findByLabelText('Add photo');
+    expect(addPhoto).toBeTruthy();
+    expect(screen.UNSAFE_getByType(PhotoGalleryInner).props.onAddPhoto).toEqual(expect.any(Function));
   });
 });

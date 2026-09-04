@@ -44,6 +44,10 @@ export type FlagRow = {
   description: string | null;
   severity: FlagSeverity;
   photo_url: string | null;
+  // New photos retain their exact server-created Storage key and uploader.
+  // Legacy URLs are display data only and are never parsed for ownership.
+  photo_object_key?: string | null;
+  photo_uploader_id?: string | null;
   // Optional alt text for the primary photo, written by the reporter so
   // VoiceOver users hear a real description instead of "Flag photo".
   // Optional until supabase/migrations/2026-08-19_photo_alt_text_APPLIED.sql
@@ -73,6 +77,9 @@ export type UserRow = {
   email: string;
   display_name: string | null;
   avatar_url: string | null;
+  // New avatars use an exact server-created Storage key; read paths derive a
+  // display URL from this value without parsing any persisted URL.
+  avatar_object_key?: string | null;
   points: number;
   created_at: string;
   // Optional until supabase/migrations/2026-05-30_admin_role.sql is applied.
@@ -88,6 +95,23 @@ export type UserRow = {
 // Kept aligned with FEEDBACK_CATEGORIES in src/lib/feedback.ts.
 export type FeedbackCategoryRow = 'bug' | 'idea' | 'love' | 'other';
 
+// MOD1 — mirrors the CHECK constraint's vocabulary in
+// supabase/migrations/20260828050000_mod1_admin_report_queue.sql. Keep in
+// sync with src/lib/adminReports.ts, which is the only writer.
+export type ModerationResolution =
+  | 'no_action'
+  | 'flag_rejected'
+  | 'flag_removed'
+  | 'comment_removed'
+  | 'target_unavailable';
+
+// MOD1R FIX2 — mirrors the CHECK constraint's vocabulary in
+// supabase/migrations/20260828080000_mod1r_fix2_action_intent.sql. Written
+// BEFORE a destructive content mutation runs so the fact an action was about
+// to happen survives even a total loss of every post-action write — see the
+// PRE-ACTION INTENT note at the top of src/lib/adminReports.ts.
+export type ContentActionIntent = 'flag_rejected' | 'flag_removed' | 'comment_removed';
+
 export type FeedbackRow = {
   id: string;
   // Nullable so a sign-out-then-feedback flow can still record an
@@ -99,6 +123,16 @@ export type FeedbackRow = {
   contact_email: string | null;
   platform: string | null;
   created_at: string;
+  // MOD1: a report ([REPORT]-prefixed body) is OPEN while this is null, and
+  // closes only once BOTH this and moderation_resolution are set together —
+  // the DB CHECK constraint makes the two independently-null impossible.
+  moderation_reviewed_at: string | null;
+  moderation_reviewed_by: string | null;
+  moderation_resolution: ModerationResolution | null;
+  // MOD1R FIX2: set BEFORE the destructive content mutation it names runs,
+  // cleared meaning is derived (never trusted alone) once moderation_resolution
+  // is set — see reconcileActionIntent() in src/lib/adminReports.ts.
+  moderation_action_intent: ContentActionIntent | null;
 };
 
 // One comment on a flag. `display_name` is populated by a PostgREST join
@@ -166,9 +200,24 @@ export type Database = {
       // mailto-only so the user never sees the error.
       feedback: {
         Row: FeedbackRow;
-        Insert: Omit<FeedbackRow, 'id' | 'created_at'> & {
+        Insert: Omit<
+          FeedbackRow,
+          | 'id'
+          | 'created_at'
+          | 'moderation_reviewed_at'
+          | 'moderation_reviewed_by'
+          | 'moderation_resolution'
+          | 'moderation_action_intent'
+        > & {
           id?: string;
           created_at?: string;
+          // Never set by submitFeedback()/submitContentReport() — a fresh
+          // report is always open. Optional so those call sites don't need
+          // to know these columns exist.
+          moderation_reviewed_at?: string | null;
+          moderation_reviewed_by?: string | null;
+          moderation_resolution?: ModerationResolution | null;
+          moderation_action_intent?: ContentActionIntent | null;
         };
         Update: Partial<FeedbackRow>;
         Relationships: EmptyRelationships;
@@ -248,7 +297,9 @@ export type Database = {
         Row: {
           id: string;
           flag_id: string;
-          url: string;
+          url: string | null;
+          object_key?: string | null;
+          uploader_id?: string | null;
           position: number;
           created_at: string;
           // Optional VoiceOver description, written by the uploader.
@@ -257,14 +308,18 @@ export type Database = {
         };
         Insert: {
           flag_id: string;
-          url: string;
+          url?: string | null;
+          object_key?: string | null;
+          uploader_id?: string | null;
           position: number;
           id?: string;
           created_at?: string;
           alt_text?: string | null;
         };
         Update: Partial<{
-          url: string;
+          url: string | null;
+          object_key: string | null;
+          uploader_id: string | null;
           position: number;
           alt_text: string | null;
         }>;
@@ -397,6 +452,38 @@ export type Database = {
           p_flag_id: string;
         };
         Returns: number;
+      };
+      // D1F4: server-owned canonical-photo lifecycle. The RPC derives the
+      // uploader from auth.uid(); the client never supplies a subject/key.
+      prepare_flag_photo_upload: {
+        Args: { p_extension: string; p_kind?: 'flag_photo' | 'avatar' };
+        Returns: { intent_id: string; object_key: string }[];
+      };
+      commit_flag_photo_upload: {
+        Args: {
+          p_intent_id: string;
+          p_flag_id: string;
+          p_position: number;
+          p_alt_text: string | null;
+          p_set_primary: boolean;
+        };
+        Returns: string;
+      };
+      commit_avatar_photo_upload: {
+        Args: { p_intent_id: string };
+        Returns: {
+          outcome: 'COMMITTED' | 'AMBIGUOUS';
+          id: string | null;
+          display_name: string | null;
+          avatar_url: string | null;
+          avatar_object_key: string | null;
+          points: number | null;
+          created_at: string | null;
+        }[];
+      };
+      cancel_flag_photo_upload: {
+        Args: { p_intent_id: string };
+        Returns: undefined;
       };
       // UX #8: Monthly leaderboard RPC. Ranks contributors by THIS calendar
       // month's points from peer-validated work. Optional until the migration

@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Animated,
   Image,
+  InteractionManager,
   Platform,
   Pressable,
   RefreshControl,
@@ -16,9 +17,14 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+// The filter-sheet body needs an RNGH ref so SheetPull can yield to its
+// vertical scroll at Accessibility XXXL.
+import { ScrollView } from 'react-native-gesture-handler';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
+import { useIsAdmin } from '@/lib/admin';
 import { useAuth } from '@/lib/auth';
 import { formatDistance, formatWalkingEta, haversineKm, speakDistance, type LatLng } from '@/lib/distance';
 import { confirm, notify } from '@/lib/confirm';
@@ -75,6 +81,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ScreenStage } from '@/components/ui/ScreenStage';
 import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -157,6 +164,7 @@ export default function TasksScreen() {
   const menuTrigger = useDrawerTrigger<View>();
   const { setOpen: setSharedModal } = useSharedModals();
   const { user } = useAuth();
+  const isAdmin = useIsAdmin();
   // Measured height of the floating bulk-action bar (selection mode). Seeded
   // with the fallback, then set from the bar's real onLayout so the list
   // reserves the correct space even when the bar grows at large type.
@@ -255,6 +263,15 @@ export default function TasksScreen() {
   const [searchText, setSearchText] = useState('');
   // D3/C3: the consolidated filter sheet's open state.
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  // The expanded sheet keeps its Close control fixed while the filter body
+  // scrolls at large Dynamic Type. A native RNGH ref preserves body drags
+  // until the content returns to its top, where SheetPull may dismiss.
+  const {
+    atTop: filterSheetAtTop,
+    onScroll: onFilterSheetScroll,
+    scrollEventThrottle: filterSheetScrollEventThrottle,
+  } = useAtTop();
+  const filterSheetScrollRef = useRef<unknown>(null);
   // The ⋯ tool sheet. Holds the controls that are neither the search nor the
   // filters — today "Select multiple", and "Clear filters" while one is active.
   const [toolSheetOpen, setToolSheetOpen] = useState(false);
@@ -339,7 +356,9 @@ export default function TasksScreen() {
   // One-shot location fetch so each card can show "0.3 km · 4 min walk".
   // Graceful degrade: if the user denies permission (or we error) we just
   // render the card without distance — see FlagCard below.
-  const { location: userLocation } = useUserLocation();
+  const { location: userLocation } = useUserLocation({
+    requireExistingPermission: true,
+  });
 
   // UX #3 "Suggested next action": the single nearest OPEN barrier to the
   // user, computed from the already-loaded `displayFlags` + `userLocation`.
@@ -412,19 +431,28 @@ export default function TasksScreen() {
   // state via accessibilityState.
   const announcedBarRef = useRef(false);
   useEffect(() => {
-    if (selection.active && !announcedBarRef.current) {
+    if (user && selection.active && !announcedBarRef.current) {
       announcedBarRef.current = true;
       AccessibilityInfo.announceForAccessibility(
         `Selection mode. ${selectionCount(selection)} selected.`,
       );
-    } else if (!selection.active) {
+    } else if (!user || !selection.active) {
       announcedBarRef.current = false;
     }
-  }, [selection]);
+  }, [user, selection]);
 
   const exitSelection = useCallback(() => {
     setSelection((s) => clearSelection(s));
   }, []);
+
+  // Authentication can disappear while Tasks is mounted (sign-out from the
+  // drawer or session removal). Guest presentation must never inherit a stale
+  // bulk-review state or an already-open tool sheet that only held Select.
+  useEffect(() => {
+    if (user) return;
+    exitSelection();
+    setToolSheetOpen(false);
+  }, [user, exitSelection]);
 
   // Clear selection on tab blur — without this, leaving Tasks mid-selection
   // and coming back leaves the user staring at a stale selection bar with
@@ -443,19 +471,21 @@ export default function TasksScreen() {
   // already picked. If we're already in selection mode, long-press just
   // toggles (mirrors the tap behavior so muscle memory works either way).
   const handleCardLongPress = useCallback((flag: FlagRow) => {
+    if (!user) return;
     hapticSelection();
     setSelection((s) => (s.active ? toggleId(s, flag.id) : enterSelectionWith(flag.id)));
-  }, []);
+  }, [user]);
 
   // SR-accessible entry into selection mode — a button at the top of the
   // screen because long-press is hard to discover (and hard to perform)
   // with a screen reader. Starts the selection empty so SR users can pick
   // cards via the checkbox role we wire up below.
   const enterSelectionEmpty = useCallback(() => {
+    if (!user) return;
     hapticSelection();
     setSelection({ active: true, selectedIds: [] });
     AccessibilityInfo.announceForAccessibility('Selection mode. Tap cards to select.');
-  }, []);
+  }, [user]);
 
   // Track the flash-banner timer in a ref so we can cancel it on unmount or
   // when a new flash arrives — otherwise leaving the tab mid-flash triggers
@@ -579,7 +609,7 @@ export default function TasksScreen() {
         // one of the same flags). The optimistic updates already gave instant
         // feedback; if the reconcile fails, nudge the user to pull-to-refresh
         // instead of silently swallowing it.
-        refresh().catch(() => showFlash("Couldn't refresh — pull down to update.", 'muted'));
+        refresh().catch(() => showFlash("Couldn't refresh. Pull down to update.", 'muted'));
 
         const past = action === 'verify' ? 'Verified' : 'Resolved';
         if (succeeded > 0) {
@@ -692,7 +722,7 @@ export default function TasksScreen() {
       // re-enters the queue; the reconcile refresh below fills it in if the
       // store didn't hold the resolved row), remove it for resolve/reject
       // (it leaves the triage queue).
-      if (action === 'verify' || action === 'reopen') {
+      if (action === 'verify' || action === 'reopen' || action === 'restore') {
         patchFlag(updated.id, { ...updated });
       } else {
         removeFlag(updated.id);
@@ -700,6 +730,13 @@ export default function TasksScreen() {
       if (action === 'reopen') {
         // No points flash: the trigger awards nothing for resolved→open.
         showFlash('Flag reopened');
+      } else if (action === 'restore') {
+        // MOD1: admin-only rejected→open. Not reachable from this screen today
+        // (TRIAGE_STATUSES excludes 'rejected', so this card's own modal can
+        // never show Restore) — handled here anyway so this callback stays
+        // correct if that ever changes, rather than silently mis-filing a
+        // restored flag as a removal.
+        showFlash('Flag restored');
       } else if (action === 'verify') {
         const msg = isOwn
           ? `Verified! +${POINTS.reporter.verify} points`
@@ -718,7 +755,7 @@ export default function TasksScreen() {
       // feedback; if the reconcile fails, nudge the user to pull-to-refresh
       // instead of silently swallowing it. The refresh also updates the Map
       // tab's pin count through the shared context.
-      refresh().catch(() => showFlash("Couldn't refresh — pull down to update.", 'muted'));
+      refresh().catch(() => showFlash("Couldn't refresh. Pull down to update.", 'muted'));
     },
     [refresh, patchFlag, removeFlag, showFlash],
   );
@@ -761,7 +798,7 @@ export default function TasksScreen() {
         // covering both the conflict and generic branches.
         hapticNotify('error');
         if (e instanceof FlagStatusConflictError) {
-          notify('This flag changed', 'It was updated by someone else just now — refreshing the list.');
+          notify('This flag changed', 'It was updated by someone else just now. Refreshing the list.');
           refresh().catch(() => {});
         } else {
           notify("Couldn't update this flag", errorMessage(e));
@@ -796,6 +833,37 @@ export default function TasksScreen() {
     setSelectedFlag(flag);
   }, []);
 
+  const handleCardSignInToReview = useCallback(() => {
+    navigation.navigate('Profile');
+  }, [navigation]);
+
+  // iOS does not safely hand navigation to another tab until the presented
+  // detail modal has finished dismissing. Other platforms do not emit
+  // Modal.onDismiss, so they spend the same handoff after interactions settle.
+  const pendingDetailSignInRef = useRef(false);
+  const detailSignInTaskRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
+  const completeDetailSignIn = useCallback(() => {
+    if (!pendingDetailSignInRef.current) return;
+    pendingDetailSignInRef.current = false;
+    navigation.navigate('Profile');
+  }, [navigation]);
+  const handleDetailSignInToReview = useCallback(() => {
+    pendingDetailSignInRef.current = true;
+    setSelectedFlag(null);
+    if (Platform.OS !== 'ios') {
+      detailSignInTaskRef.current?.cancel();
+      detailSignInTaskRef.current = InteractionManager.runAfterInteractions(
+        completeDetailSignIn,
+      );
+    }
+  }, [completeDetailSignIn]);
+  useEffect(
+    () => () => {
+      detailSignInTaskRef.current?.cancel();
+    },
+    [],
+  );
+
   // Stable tap handler, hoisted out of renderFlagItem. Inline, its identity would
   // change on every selection toggle (renderFlagItem depends on `selection`),
   // handing a fresh onPress to every FlagCard and defeating its React.memo.
@@ -803,7 +871,7 @@ export default function TasksScreen() {
   // object keeps it stable while toggling cards within select mode.
   const handleCardPress = useCallback(
     (flag: FlagRow) => {
-      if (selection.active) {
+      if (user && selection.active) {
         hapticSelection();
         setSelection((s) => toggleId(s, flag.id));
       } else {
@@ -811,7 +879,7 @@ export default function TasksScreen() {
         handleViewOnMap(flag);
       }
     },
-    [selection.active, handleViewOnMap],
+    [user, selection.active, handleViewOnMap],
   );
 
   // Memoized renderItem — extracted from inline JSX so React.memo on FlagCard
@@ -831,25 +899,31 @@ export default function TasksScreen() {
         isBusy={busyId === item.id}
         isOwn={item.user_id === userId}
         userLocation={userLocation}
-        selectionActive={selection.active}
-        selected={isSelected(selection, item.id)}
+        canReview={!!user}
+        isAdmin={isAdmin === true}
+        selectionActive={!!user && selection.active}
+        selected={!!user && isSelected(selection, item.id)}
         compactActions={compactActions}
         onPress={handleCardPress}
-        onLongPress={handleCardLongPress}
+        onLongPress={user ? handleCardLongPress : undefined}
         onSetStatus={setStatus}
         onShowDetails={showDetails}
+        onSignInToReview={handleCardSignInToReview}
       />
     ),
     [
       busyId,
       userId,
       userLocation,
+      user,
+      isAdmin,
       selection,
       compactActions,
       handleCardPress,
       handleCardLongPress,
       setStatus,
       showDetails,
+      handleCardSignInToReview,
     ],
   );
 
@@ -890,7 +964,7 @@ export default function TasksScreen() {
       <GlassSurface
         variant="chrome"
         borderRadius={0}
-        style={[styles.chromePane, { paddingTop: insets.top + spacing.sm }]}
+        style={[styles.chromePane, { paddingTop: insets.top }]}
         onLayout={(e) => setChromeHeight(e.nativeEvent.layout.height)}
       >
       {/* Editorial header (Phase 13) — headerless like Home, menu + Feedback folded in. */}
@@ -1003,40 +1077,41 @@ export default function TasksScreen() {
           {/* The magnifier is what carries the field's meaning once the
               placeholder is gone at large type. Decorative: the TextInput
               beside it owns the accessible name in both states. */}
-          <Search
-            size={18}
-            color={color.glassPlaceholder}
-            strokeWidth={2.2}
-            style={styles.searchIcon} {...decorativeProps}
-          />
-          <TextInput
-            value={searchText}
-            onChangeText={setSearchText}
-            // Icon-only at the recomposition point: at large type the
-            // placeholder is the longest string in the chrome and it truncated
-            // mid-word. The field keeps its width and its function; only the
-            // hint text goes, and `accessibilityLabel` still names it, so
-            // nothing is lost to a screen reader or to voice control.
-            placeholder={axRecompose ? '' : 'Search by description or category…'}
-            placeholderTextColor={color.glassPlaceholder}
-            autoCorrect={false}
-            autoCapitalize="none"
-            returnKeyType="search"
-            style={styles.searchInput}
-            accessibilityLabel="Search flags"
-            accessibilityHint="Filter the list by matching description or category"
-          />
-          {searchText.length > 0 && (
-            <Pressable
-              onPress={() => setSearchText('')}
-              style={({ pressed }) => [styles.searchClearBtn, pressed && { opacity: 0.7 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-              hitSlop={8}
-            >
-              <X size={18} color={color.textMuted} strokeWidth={2.2} />
-            </Pressable>
-          )}
+          <View style={styles.searchField}>
+            <Search
+              size={18}
+              color={color.glassPlaceholder}
+              strokeWidth={2.2}
+              {...decorativeProps}
+            />
+            <TextInput
+              value={searchText}
+              onChangeText={setSearchText}
+              // Icon-only at the recomposition point: at large type the
+              // placeholder is the longest string in the chrome and it truncated
+              // mid-word. The field keeps its width and its function; only the
+              // hint text goes, and `accessibilityLabel` still names it, so
+              // nothing is lost to a screen reader or to voice control.
+              placeholder={axRecompose ? '' : 'Search by description or category…'}
+              placeholderTextColor={color.glassPlaceholder}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              style={styles.searchInput}
+              accessibilityLabel="Search flags"
+              accessibilityHint="Filter the list by matching description or category"
+            />
+            {searchText.length > 0 && (
+              <Pressable
+                onPress={() => setSearchText('')}
+                style={({ pressed }) => [styles.searchClearBtn, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <X size={18} color={color.textMuted} strokeWidth={2.2} />
+              </Pressable>
+            )}
+          </View>
           {/* The filter circle. Same sheet, same handler, same expanded state
               as the chip it replaces; the active fill moves from a chip's
               background to the circle's, which is the map's grammar. */}
@@ -1062,13 +1137,17 @@ export default function TasksScreen() {
               two rows inside it are gated — "Select multiple" on not already
               selecting, "Clear filters" on something actually filtering — and
               a ⋯ that opens an empty drawer is worse than no ⋯ at all. */}
-          {(!selection.active || tasksFiltersActive) && (
+          {((!!user && !selection.active) || tasksFiltersActive) && (
             <Pressable
               onPress={() => { setFilterSheetOpen(false); setToolSheetOpen(true); }}
               style={({ pressed }) => [styles.toolTriggerBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="More task tools"
-              accessibilityHint="Select multiple flags, or clear the active filters"
+              accessibilityHint={
+                user
+                  ? 'Select multiple flags, or clear the active filters'
+                  : 'Clear the active filters'
+              }
               {...a11yToggle({ expanded: toolSheetOpen })}
             >
               <MoreHorizontal size={22} color={color.glassChipInk} strokeWidth={2.2} />
@@ -1103,45 +1182,66 @@ export default function TasksScreen() {
           grammar (runtime-proven by ChangelogModal) and costs ZERO against the
           blur budget, so Tasks still owns exactly one live pane.
 
-          Every handler, every accessibility prop and every label inside is
-          byte-identical to the rows this replaced. Two things did change, both
-          forced by the new container: the category strip WRAPS instead of
-          scrolling horizontally (which is a gain — all seven categories are
-          visible at once; the strip only ever showed about three), and the chip
-          fills take the shipped SOLID pair, because a translucent glass-chip
-          fill over an opaque card would be a composite nobody has arbitrated. */}
+          Handlers and selected-state semantics remain unchanged. The body now
+          uses the existing expanded Sheet pattern so its background owns the
+          bottom safe area and its controls can scroll at XXXL; the two group
+          headers distinguish the separate All choices. The category strip
+          WRAPS instead of scrolling horizontally (which is a gain — all seven
+          categories are visible at once; the strip only ever showed about
+          three), and the chip fills take the shipped SOLID pair, because a
+          translucent glass-chip fill over an opaque card would be a composite
+          nobody has arbitrated. */}
       <Sheet
         visible={filterSheetOpen}
         onClose={() => setFilterSheetOpen(false)}
         title="Filter &amp; sort"
         glass={false}
+        presentation="expanded"
+        minBottomPad={spacing.xxl}
+        atTop={filterSheetAtTop}
+        scrollRef={filterSheetScrollRef}
+      >
+      <ScrollView
+        ref={(node) => { filterSheetScrollRef.current = node; }}
+        style={styles.filterSheetBody}
+        contentContainerStyle={styles.filterSheetContent}
+        onScroll={onFilterSheetScroll}
+        scrollEventThrottle={filterSheetScrollEventThrottle}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        accessibilityLabel="Filter and sort options"
       >
       {/* Mine-only toggle — shown only when signed in. A chip row that
           switches between "All flags" and "My flags" without opening the
           full filter panel. Resets to All when the tab loses focus? No —
           we keep it until the user taps again; it's a deliberate choice. */}
       {userId && (
-        <View style={styles.mineToggleRow}>
-          <Pressable
-            onPress={() => handleScopeChange(false)}
-            disabled={!mineOnlyHydrated}
-            style={({ pressed }) => [styles.sheetChip, !mineOnly && styles.sheetChipActive, mineOnly && pressed && styles.chipPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Show all flags"
-            {...a11yToggle({ pressed: !mineOnly, disabled: !mineOnlyHydrated })}
-          >
-            <AppText variant="label" style={[styles.sheetChipText, !mineOnly && styles.sheetChipTextActive]}>All</AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => handleScopeChange(true)}
-            disabled={!mineOnlyHydrated}
-            style={({ pressed }) => [styles.sheetChip, mineOnly && styles.sheetChipActive, !mineOnly && pressed && styles.chipPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Mine, show only my flags"
-            {...a11yToggle({ pressed: mineOnly, disabled: !mineOnlyHydrated })}
-          >
-            <AppText variant="label" style={[styles.sheetChipText, mineOnly && styles.sheetChipTextActive]}>Mine</AppText>
-          </Pressable>
+        <View>
+          <AppText variant="label" accessibilityRole="header" style={styles.filterGroupLabel}>
+            Reports
+          </AppText>
+          <View style={styles.mineToggleRow}>
+            <Pressable
+              onPress={() => handleScopeChange(false)}
+              disabled={!mineOnlyHydrated}
+              style={({ pressed }) => [styles.sheetChip, !mineOnly && styles.sheetChipActive, mineOnly && pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Reports, All"
+              {...a11yToggle({ pressed: !mineOnly, disabled: !mineOnlyHydrated })}
+            >
+              <AppText variant="label" style={[styles.sheetChipText, !mineOnly && styles.sheetChipTextActive]}>All</AppText>
+            </Pressable>
+            <Pressable
+              onPress={() => handleScopeChange(true)}
+              disabled={!mineOnlyHydrated}
+              style={({ pressed }) => [styles.sheetChip, mineOnly && styles.sheetChipActive, !mineOnly && pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Reports, Mine, show only my flags"
+              {...a11yToggle({ pressed: mineOnly, disabled: !mineOnlyHydrated })}
+            >
+              <AppText variant="label" style={[styles.sheetChipText, mineOnly && styles.sheetChipTextActive]}>Mine</AppText>
+            </Pressable>
+          </View>
         </View>
       )}
       {/* Category quick-filter — horizontally scrollable chip strip
@@ -1149,35 +1249,40 @@ export default function TasksScreen() {
           strip is stable as flags come and go. Tapping the active chip
           clears it (toggles to All). Session-only — resets with the tab. */}
       {flags.length > 0 && (
-        <View style={styles.categoryWrapRow} accessibilityLabel="Filter by category">
-          <Pressable
-            onPress={() => handleCategoryChange(null)}
-            style={({ pressed }) => [styles.sheetChip, categoryFilter === null && styles.sheetChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Show all categories"
-            {...a11yToggle({ pressed: categoryFilter === null })}
-          >
-            <AppText variant="label" style={[styles.sheetChipText, categoryFilter === null && styles.sheetChipTextActive]}>
-              All
-            </AppText>
-          </Pressable>
-          {CATEGORY_ORDER.map((cat) => {
-            const active = categoryFilter === cat;
-            return (
-              <Pressable
-                key={cat}
-                onPress={() => handleCategoryChange(active ? null : cat)}
-                style={({ pressed }) => [styles.sheetChip, active && styles.sheetChipActive, !active && pressed && styles.chipPressed]}
-                accessibilityRole="button"
-                accessibilityLabel={`${CATEGORY_LABELS[cat]}${active ? ', selected, tap to deselect' : ''}`}
-                {...a11yToggle({ pressed: active })}
-              >
-                <AppText variant="label" style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
-                  {CATEGORY_LABELS[cat]}
-                </AppText>
-              </Pressable>
-            );
-          })}
+        <View>
+          <AppText variant="label" accessibilityRole="header" style={styles.filterGroupLabel}>
+            Category
+          </AppText>
+          <View style={styles.categoryWrapRow} accessibilityLabel="Filter by category">
+            <Pressable
+              onPress={() => handleCategoryChange(null)}
+              style={({ pressed }) => [styles.sheetChip, categoryFilter === null && styles.sheetChipActive, categoryFilter !== null && pressed && styles.chipPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Category, All"
+              {...a11yToggle({ pressed: categoryFilter === null })}
+            >
+              <AppText variant="label" style={[styles.sheetChipText, categoryFilter === null && styles.sheetChipTextActive]}>
+                All
+              </AppText>
+            </Pressable>
+            {CATEGORY_ORDER.map((cat) => {
+              const active = categoryFilter === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => handleCategoryChange(active ? null : cat)}
+                  style={({ pressed }) => [styles.sheetChip, active && styles.sheetChipActive, !active && pressed && styles.chipPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Category, ${CATEGORY_LABELS[cat]}`}
+                  {...a11yToggle({ pressed: active })}
+                >
+                  <AppText variant="label" style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
+                    {CATEGORY_LABELS[cat]}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       )}
       {/* Sort segmented control — sits below the filter rows so the
@@ -1192,31 +1297,31 @@ export default function TasksScreen() {
           >
             Sort:
           </AppText>
-          {TASKS_SORT_ORDER.map((mode) => {
-            const active = sortMode === mode;
-            return (
-              <Pressable
-                key={mode}
-                onPress={() => handleSortChange(mode)}
-                style={({ pressed }) => [styles.sheetSortChip, active && styles.sheetSortChipActive, !active && pressed && styles.chipPressed]}
-                accessibilityRole="tab"
-                accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
-                {...a11yToggle({ selected: active })}
-              >
-                <AppText
-                  variant="label"
-                  style={[styles.sheetSortChipText, active && styles.sheetSortChipTextActive]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
+          <View style={styles.sortChipWrap}>
+            {TASKS_SORT_ORDER.map((mode) => {
+              const active = sortMode === mode;
+              return (
+                <Pressable
+                  key={mode}
+                  onPress={() => handleSortChange(mode)}
+                  style={({ pressed }) => [styles.sheetSortChip, active && styles.sheetSortChipActive, !active && pressed && styles.chipPressed]}
+                  accessibilityRole="tab"
+                  accessibilityLabel={`Sort by ${TASKS_SORT_LABELS[mode]}`}
+                  {...a11yToggle({ selected: active })}
                 >
-                  {TASKS_SORT_LABELS[mode]}
-                </AppText>
-              </Pressable>
-            );
-          })}
+                  <AppText
+                    variant="label"
+                    style={[styles.sheetSortChipText, active && styles.sheetSortChipTextActive]}
+                  >
+                    {TASKS_SORT_LABELS[mode]}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       )}
+      </ScrollView>
       </Sheet>
       {/* The ⋯ tool sheet. The map's tool-sheet RECIPE — a short column of
           icon + label rows, each its own 44pt control — inside this screen's
@@ -1230,7 +1335,7 @@ export default function TasksScreen() {
           user opens when they went looking for the control rather than
           noticing the chip above. */}
       <Sheet
-        visible={toolSheetOpen}
+        visible={toolSheetOpen && (!!user || tasksFiltersActive)}
         onClose={() => setToolSheetOpen(false)}
         title="Task tools"
         glass={false}
@@ -1251,7 +1356,7 @@ export default function TasksScreen() {
             is inside that wrapper) AND not already selecting. Re-entering
             selection mode from here would call enterSelectionEmpty and silently
             drop the selection the user had already built. */}
-        {!selection.active && (
+        {!!user && !selection.active && (
           <PressableScale
             onPress={() => { setToolSheetOpen(false); enterSelectionEmpty(); }}
             style={styles.toolRow}
@@ -1384,7 +1489,9 @@ export default function TasksScreen() {
           // cross-platform (contentInset is iOS-only).
           {
             paddingTop: chromeTopPad,
-            paddingBottom: tabBarHeight + 16 + (selection.active ? bulkBarHeight : 0),
+            paddingBottom:
+              getFloatingTabBarContentInset(tabBarHeight, insets.bottom) +
+              (user && selection.active ? bulkBarHeight : 0),
           },
         ]}
         stickySectionHeadersEnabled={false}
@@ -1467,7 +1574,7 @@ export default function TasksScreen() {
                       ? `Nothing matches "${searchText.trim()}". Try a different keyword or clear the search.`
                       : hasMore
                         ? 'None of the reports loaded so far need attention, but there are more to load. Use "Load more" below to keep looking.'
-                        : "You're all caught up — nice work! New reports show up here as the community adds them. Pull down to refresh anytime."
+                        : "You're all caught up. Nice work! New reports show up here as the community adds them. Pull down to refresh anytime."
               }
             />
           </GlassSurface>
@@ -1512,7 +1619,7 @@ export default function TasksScreen() {
                   accessibilityRole="text"
                   accessibilityLabel="You have seen all flags nearby"
                 >
-                  {"That's everything nearby — you're up to date"}
+                  {"That's everything nearby. You're up to date"}
                 </AppText>
               )}
             </View>
@@ -1525,7 +1632,7 @@ export default function TasksScreen() {
           than reflowing it. NOT wrapped in a live region — the count lives
           in its own live-region Text above the buttons so SR re-announces
           the count only (not every button label) when cards toggle. */}
-      {selection.active && (
+      {!!user && selection.active && (
         <GlassSurface
           variant="bulk"
           // Web tab bar is in-flow (the list already ends above it), so the bar
@@ -1672,10 +1779,12 @@ export default function TasksScreen() {
               : null
           }
           onClose={() => setSelectedFlag(null)}
+          onDismiss={completeDetailSignIn}
           onChanged={applyStatusChange}
           onEdited={(updated) => patchFlag(updated.id, updated)}
           onDeleted={handleDeleted}
           onViewOnMap={handleViewOnMap}
+          onSignInToReview={handleDetailSignInToReview}
         />
       </Suspense>
     </View>
@@ -1686,6 +1795,11 @@ interface TaskCardProps {
   flag: FlagRow;
   isBusy: boolean;
   isOwn: boolean;
+  /** Whether this viewer may use production review controls. */
+  canReview: boolean;
+  /** MOD1: whether this viewer may Reject (admin-only; DB trigger enforces
+   *  this independently — this only keeps the control off the screen). */
+  isAdmin: boolean;
   /** Current user position, or null when unknown / permission denied. */
   userLocation: LatLng | null;
   /** True when the screen is in bulk-select mode. Changes tap semantics. */
@@ -1696,9 +1810,10 @@ interface TaskCardProps {
   compactActions: boolean;
   onPress: (flag: FlagRow) => void;
   /** Long-press enters / extends selection. */
-  onLongPress: (flag: FlagRow) => void;
+  onLongPress?: (flag: FlagRow) => void;
   onSetStatus: (id: string, status: FlagStatus, isOwn: boolean) => void;
   onShowDetails: (flag: FlagRow) => void;
+  onSignInToReview: () => void;
 }
 
 // React.memo so a single triage action (which flips busyId on the parent)
@@ -1710,6 +1825,8 @@ const TaskCard = memo(function TaskCard({
   flag,
   isBusy,
   isOwn,
+  canReview,
+  isAdmin,
   userLocation,
   selectionActive,
   selected,
@@ -1718,6 +1835,7 @@ const TaskCard = memo(function TaskCard({
   onLongPress,
   onSetStatus,
   onShowDetails,
+  onSignInToReview,
 }: TaskCardProps) {
   const color = useColor();
   const reduceTransparency = useReduceTransparency();
@@ -1784,7 +1902,8 @@ const TaskCard = memo(function TaskCard({
   // Moderate, status Open" not "severity 3, open" (the latter reads the status
   // like a verb). Same helpers Home + the map already speak.
   const baseLabel = `${CATEGORY_LABELS[flag.category]}, ${severityA11y(flag.severity)}, ${statusA11y(flag.status)}. Tap to view on map.`;
-  const a11yLabel = selectionActive
+  const reviewSelectionActive = canReview && selectionActive;
+  const a11yLabel = reviewSelectionActive
     ? `${CATEGORY_LABELS[flag.category]}, ${severityA11y(flag.severity)}. ${selected ? 'Selected.' : 'Not selected.'}`
     : baseLabel;
 
@@ -1820,12 +1939,12 @@ const TaskCard = memo(function TaskCard({
     // since it only navigates to the detail sheet.
     haptic: 'selection' | 'none';
   };
-  const actions: CardAction[] = [
+  const actions: CardAction[] = canReview ? [
     ...(flag.status === 'open'
       ? [{
           key: 'verify',
           label: 'Verify',
-          a11yLabel: `Verify this flag — ${actionSubject}`,
+          a11yLabel: `Verify this flag: ${actionSubject}`,
           a11yHint: 'Confirms this barrier report is real',
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
           haptic: 'none',
@@ -1834,23 +1953,49 @@ const TaskCard = memo(function TaskCard({
     {
       key: 'resolved',
       label: 'Resolved',
-      a11yLabel: `Mark this flag resolved — ${actionSubject}`,
+      a11yLabel: `Mark this flag resolved: ${actionSubject}`,
       a11yHint: 'Marks this barrier as fixed',
       onPress: () => onSetStatus(flag.id, 'resolved', isOwn),
       haptic: 'none',
     },
+    // MOD1: community Reject is removed — only an admin viewer gets this cell.
+    // Rejected flags never reach TRIAGE_STATUSES, so there is no matching
+    // "Restore" cell to add here (see AdminScreen, where rejected flags do
+    // surface).
+    ...(isAdmin
+      ? [{
+          key: 'reject',
+          label: 'Reject',
+          a11yLabel: `Reject this flag: ${actionSubject}`,
+          a11yHint: 'Dismisses this report; asks you to confirm first',
+          onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
+          haptic: 'none',
+        } satisfies CardAction]
+      : []),
     {
-      key: 'reject',
-      label: 'Reject',
-      a11yLabel: `Reject this flag — ${actionSubject}`,
-      a11yHint: 'Dismisses this report; asks you to confirm first',
-      onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
-      haptic: 'none',
+      key: 'details',
+      label: 'Details',
+      a11yLabel: `View flag details: ${actionSubject}`,
+      a11yHint: 'Opens a screen with the full report, photo, and more actions',
+      onPress: () => onShowDetails(flag),
+      btnStyle: styles.detailsLink,
+      textStyle: styles.detailsText,
+      dimOnPress: false,
+      haptic: 'selection',
+    },
+  ] : [
+    {
+      key: 'sign-in',
+      label: 'Sign in to review',
+      a11yLabel: `Sign in to review: ${actionSubject}`,
+      a11yHint: 'Opens the Profile tab, where you can sign in',
+      onPress: onSignInToReview,
+      haptic: 'selection',
     },
     {
       key: 'details',
       label: 'Details',
-      a11yLabel: `View flag details — ${actionSubject}`,
+      a11yLabel: `View flag details: ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsLink,
@@ -1878,8 +2023,8 @@ const TaskCard = memo(function TaskCard({
   // split cannot silently follow a reordered list.
   const commitActions = actions.filter((a) => a.key !== 'details');
   const detailsAction = actions.find((a) => a.key === 'details')!;
-  // Always ≥2 (Resolved and Reject both always render), so [0] is never
-  // undefined and the segmented control is never empty.
+  // Signed-in review always has at least two commit verbs. Guest presentation
+  // has exactly one lead account boundary and therefore no sibling segment.
   //
   // The paint is assigned HERE, by position, and deliberately not on the
   // descriptors above. Declaring it per-verb is how the first cut of this got
@@ -1929,7 +2074,7 @@ const TaskCard = memo(function TaskCard({
   // is the Pressable that opens it.
   const photo = (
 safePhotoUrl && !photoError ? (
-    selectionActive ? (
+    reviewSelectionActive ? (
       // F17: in bulk-select mode the whole card is the selection toggle.
       // Render the thumbnail as a NON-interactive View so a tap on the
       // photo falls through to the outer card Pressable instead of opening
@@ -2004,7 +2149,7 @@ safePhotoUrl && !photoError ? (
   return (
     <Pressable
       onPress={() => onPress(flag)}
-      onLongPress={() => onLongPress(flag)}
+      onLongPress={canReview && onLongPress ? () => onLongPress(flag) : undefined}
       onPressIn={sheenActive ? sheenIn : undefined}
       onPressOut={sheenActive ? sheenOut : undefined}
       style={({ pressed }) => [styles.cardOuter, pressed && styles.cardPressed]}
@@ -2079,7 +2224,7 @@ safePhotoUrl && !photoError ? (
           /* Checkmark indicator in the top-right corner. Hidden from SR because
              the accessibilityState above already conveys the checked/unchecked
              state — duplicating it would just read "checked" twice. */
-          selectionActive ? (
+          reviewSelectionActive ? (
             <View
               style={[styles.selectCheck, selected && styles.selectCheckOn]} {...decorativeProps}
             >
@@ -2088,20 +2233,22 @@ safePhotoUrl && !photoError ? (
           ) : undefined
         }
         headerA11y={{
-          role: selectionActive ? 'checkbox' : 'button',
+          role: reviewSelectionActive ? 'checkbox' : 'button',
           label: a11yLabel,
-          hint: selectionActive
+          hint: reviewSelectionActive
             ? 'Toggles this flag in the selection'
-            : 'Opens the Map tab focused on this flag. Long-press to select multiple.',
+            : canReview
+              ? 'Opens the Map tab focused on this flag. Long-press to select multiple.'
+              : 'Opens the Map tab focused on this flag.',
           state: a11yToggle(
-            selectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
+            reviewSelectionActive ? { checked: selected, disabled: isBusy } : { disabled: isBusy }
           ),
         }}
         actions={
           /* Hidden during selection mode — the floating bar handles bulk
              actions, and showing both would be confusing (a tap on Verify here
              would still fire the single-item flow, not the bulk one). */
-          selectionActive ? undefined : (
+          reviewSelectionActive ? undefined : (
             <View
               style={compactActions ? styles.cardActionsStack : styles.cardActionsRow}
               testID={compactActions ? 'card-actions-stack' : 'card-actions-row'}
@@ -2112,17 +2259,19 @@ safePhotoUrl && !photoError ? (
                   peers. The container draws the single hairline and clips the
                   ends; each cell keeps its own 44pt box and its own label,
                   hint and handler, so nothing about reaching them changed. */}
-              <View
-                testID="card-actions-segmented"
-                style={[
-                  styles.segmented,
-                  compactActions ? styles.actionBtnFull : styles.actionBtnSiblings,
-                ]}
-              >
-                {siblingActions.map((a, i) =>
-                  renderAction(a, i > 0 ? styles.segCellDivided : null),
-                )}
-              </View>
+              {siblingActions.length > 0 ? (
+                <View
+                  testID="card-actions-segmented"
+                  style={[
+                    styles.segmented,
+                    compactActions ? styles.actionBtnFull : styles.actionBtnSiblings,
+                  ]}
+                >
+                  {siblingActions.map((a, i) =>
+                    renderAction(a, i > 0 ? styles.segCellDivided : null),
+                  )}
+                </View>
+              ) : null}
               {renderAction(detailsAction, compactActions ? styles.actionBtnFull : null)}
             </View>
           )
@@ -2608,9 +2757,23 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     sheetChipActive: { backgroundColor: color.ctaFill, borderColor: 'transparent' },
     sheetChipText: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.textStrong, flexShrink: 0 },
     sheetChipTextActive: { color: color.textOnBrand },
+    // The sheet owns the bottom-safe-area background; this viewport owns only
+    // overflowing controls at Accessibility XXXL.
+    filterSheetBody: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
+    filterSheetContent: { paddingBottom: spacing.lg },
+    // These headers distinguish the two otherwise identical visible "All"
+    // values before each button's pressed state is announced.
+    filterGroupLabel: {
+      color: color.textStrong,
+      fontSize: font.size.sm,
+      fontWeight: font.weight.bold,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+    },
     sheetSortChip: {
       flexGrow: 1,
       flexBasis: 0,
+      minWidth: 96,
       minHeight: 44,
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
@@ -2663,39 +2826,31 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
       paddingBottom: spacing.sm,
       gap: spacing.xs,
     },
-    searchInput: {
+    searchField: {
       flex: 1,
+      flexBasis: 0,
       // T5: the floor that makes searchRow's flexWrap fire (see that style).
       minWidth: 200,
-      // WCAG 2.5.5: was 40pt (4pt below 44pt project standard).
-      // Measured on device 2026-08-20 (Wave 3): a BORDERED TextInput reports an
-      // accessibility frame INSIDE its own border, because iOS insets the native
-      // field within the RN view. minHeight 44 measured 43 here and 42 on
-      // FeedbackModal's reply field — so no 44 written on a bordered input can
-      // ever satisfy a 44 census. The + 2 is 2 x borderWidth below, not a fudge:
-      // remove the border and it should come off with it. (Plain Views are
-      // unaffected — the row titles fixed in this same wave land on 44 exactly.)
+      // The wrapper owns the field geometry and visible material. Its 46pt
+      // height is a real field, not an input border whose accessibility frame
+      // shrinks inside the native control.
       minHeight: a11y.minTargetSize + 2,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
       borderRadius: radius.circle,
       backgroundColor: chipFill,
       borderWidth: 1,
       borderColor: chipEdge,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingLeft: spacing.md,
+      paddingRight: spacing.xs,
+    },
+    searchInput: {
+      flex: 1,
       color: color.glassChipInk,
       fontSize: font.size.base,
-    },
-    // The magnifier rides INSIDE the field's left padding rather than beside
-    // it, so the pill stays one object and the input keeps its own border —
-    // which is what hitTargetFrame's bordered-TextInput rule measures. It is
-    // laid out absolutely against the row and given the field's own height, so
-    // it stays centred on the input even when the row wraps and the row grows.
-    searchIcon: {
-      position: 'absolute',
-      left: spacing.lg + spacing.md,
-      top: spacing.sm,
-      height: a11y.minTargetSize + 2,
-      zIndex: 1,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: 0,
     },
     searchClearBtn: {
       minWidth: 44, // WCAG 2.5.8: was 32pt (below 44pt project standard)
@@ -2710,13 +2865,13 @@ const makeStyles = (color: ColorTheme, reduceTransparency: boolean) => {
     // the severity row above. The label is a11y-hidden because the chip
     // labels already say "Sort by …".
     sortRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'stretch',
       gap: spacing.xs,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
     },
+    sortChipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
     sortLabel: {
       fontSize: font.size.xs,
       fontWeight: font.weight.semibold,

@@ -1,105 +1,63 @@
-// delete-account — Supabase Edge Function
-// Anonymises the user's flags then permanently deletes their account and personal data.
-// Called from the app's Profile screen after in-app confirmation.
-//
-// Security:
-//   - verify_jwt: true (set in supabase/config.toml) — Supabase validates the
-//     JWT before this function runs. No unauthenticated caller can reach here.
-//   - The service-role key is used for the flags anonymisation AND auth.users
-//     delete (both require elevated privileges). All identity checks use the
-//     user-scoped JWT.
-//   - Never logs userId in a format correlatable to PII.
-//
-// Deletion sequence (order matters):
-//   1. UPDATE public.flags SET user_id = NULL WHERE user_id = <userId>
-//      Accessibility reports stay on the map; attribution is removed.
-//      Requires flags.user_id to be nullable — see migration
-//      2026-05-29_account_deletion_cascade.sql.
-//   2. adminClient.auth.admin.deleteUser(userId) triggers the cascade:
-//        auth.users (id)
-//          └─ public.users              ON DELETE CASCADE
-//               └─ public.push_tokens   ON DELETE CASCADE
-//          └─ public.notification_preferences  ON DELETE CASCADE
-//          └─ public.feedback           ON DELETE SET NULL  (audit trail preserved)
-//          └─ public.flag_edit_history  ON DELETE SET NULL  (audit trail preserved)
-//          └─ public.status_history     ON DELETE SET NULL  (audit trail preserved)
-//      public.flags rows are NOT touched by the cascade (user_id is already NULL).
-//
-// If step 1 fails, the function returns 500 and the user's account is NOT deleted.
-//
-// Deploy:
-//   supabase functions deploy delete-account
-//
-// supabase/config.toml must include:
-//   [functions.delete-account]
-//   verify_jwt = true
-//
-// Returns:
-//   200 { status: "deleted" }              — success; client should sign out locally
-//   401 Unauthorized                        — missing/invalid JWT (Supabase-level)
-//   500 { status: "error", error: string } — deletion failed; caller stays logged in
+// Transaction A of D1F4 asynchronous account deletion. The client creates and
+// secure-stores its operation id + 256-bit receipt secret before calling this
+// endpoint. This endpoint derives the subject only from verified Auth, hashes
+// the secret, and commits REQUESTED. It never cleans Storage or deletes Auth.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '../_shared/supabase.ts';
+import { corsHeaders, corsPreflight } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const RECEIPT_RE = /^[0-9a-f]{64}$/i;
+const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Admin client — service-role key, only for auth.users delete.
-// Never used for data queries; RLS on those remains enforced by the user client.
-const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+type RequestBody = { operationId?: unknown; receiptSecret?: unknown };
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method !== 'POST') {
-    return jsonResponse(405, { status: 'error', error: 'Method not allowed.' });
-  }
+  if (req.method === 'OPTIONS') return corsPreflight();
+  if (req.method !== 'POST') return json(405, { status: 'error' });
 
-  // Build a user-scoped client to resolve the caller's identity from their JWT.
-  // Supabase already validated the token (verify_jwt: true), so getUser() here
-  // is a cheap confirmation step, not a second verification round-trip.
-  const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const caller = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
+  const { data: { user }, error: authError } = await caller.auth.getUser();
+  if (authError || !user) return json(401, { status: 'error' });
 
-  const {
-    data: { user },
-    error: authError,
-  } = await userClient.auth.getUser();
-
-  if (authError || !user) {
-    return jsonResponse(401, { status: 'error', error: 'Not authenticated.' });
+  let body: RequestBody;
+  try {
+    body = await req.json() as RequestBody;
+  } catch {
+    return json(400, { status: 'error' });
+  }
+  if (typeof body.operationId !== 'string' || !UUID_RE.test(body.operationId)
+    || typeof body.receiptSecret !== 'string' || !RECEIPT_RE.test(body.receiptSecret)) {
+    return json(400, { status: 'error' });
   }
 
-  const userId = user.id;
-
   try {
-    // Step 1: Anonymise the user's flags. Must run BEFORE deleting auth.users
-    // so the cascade doesn't race with this UPDATE. After this, the rows
-    // belong to no one — they stay on the map for the community.
-    const { error: anonError } = await adminClient
-      .from('flags')
-      .update({ user_id: null })
-      .eq('user_id', userId);
-    if (anonError) throw anonError;
-
-    // Step 2: Delete the auth user. Triggers the cascade:
-    //   auth.users → public.users → push_tokens, notification_preferences.
-    // public.flags rows are untouched (user_id is already NULL).
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
-    if (deleteError) throw deleteError;
-
-    return jsonResponse(200, { status: 'deleted' });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'Deletion failed unexpectedly.';
-    // Log a stable opaque marker — not the userId itself (PII concern).
-    console.error('[delete-account] anonymise or deletion failed:', message);
-    return jsonResponse(500, { status: 'error', error: message });
+    const { data, error } = await admin.rpc('request_account_deletion', {
+      p_operation_id: body.operationId,
+      p_receipt_hash: await sha256Hex(body.receiptSecret),
+      // Server-derived identity. The client-controlled receipt never chooses it.
+      p_subject_id: user.id,
+    }).single();
+    if (error || !data) throw error ?? new Error('request not recorded');
+    return json(202, { status: 'requested', requestedAt: data.requested_at });
+  } catch {
+    // A lost response is deliberately indistinguishable from a failed request
+    // to the UI. The already stored receipt is the recovery capability.
+    console.error('[delete-account] request recording failed.');
+    return json(409, { status: 'error' });
   }
 });
 
-function jsonResponse(status: number, body: Record<string, unknown>): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function json(status: number, body: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }

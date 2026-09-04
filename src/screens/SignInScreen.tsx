@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -20,7 +20,7 @@ import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { AppText, Input, TypeBlock, TYPE_BLOCK } from '@/components/ui';
 import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
 import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
-import { notify } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import {
   PRIVACY_POLICY_LINK_HINT,
   PRIVACY_POLICY_LINK_LABEL,
@@ -31,6 +31,13 @@ import PrivacyScreen from '@/screens/PrivacyScreen';
 import TermsScreen from '@/screens/TermsScreen';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
+import {
+  clearAccountDeletionReceipt,
+  getAccountDeletionStatus,
+  loadAccountDeletionReceipt,
+  type AccountDeletionReceipt,
+  type AccountDeletionStatus,
+} from '@/lib/accountDeletionReceipt';
 
 export default function SignInScreen({
   onClose,
@@ -73,6 +80,89 @@ export default function SignInScreen({
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [deletionStatus, setDeletionStatus] = useState<AccountDeletionStatus | null>(null);
+  const [deletionReceipt, setDeletionReceipt] = useState<AccountDeletionReceipt | null>(null);
+  const [deletionStatusUnavailable, setDeletionStatusUnavailable] = useState(false);
+  const [checkingDeletionStatus, setCheckingDeletionStatus] = useState(false);
+
+  const refreshDeletionStatus = useCallback(async () => {
+    setCheckingDeletionStatus(true);
+    try {
+      const receipt = await loadAccountDeletionReceipt();
+      if (!receipt) {
+        setDeletionStatus(null);
+        setDeletionReceipt(null);
+        setDeletionStatusUnavailable(false);
+        return;
+      }
+      setDeletionReceipt(receipt);
+      const status = await getAccountDeletionStatus(receipt);
+      setDeletionStatus(status);
+      setDeletionStatusUnavailable(false);
+      if (status.status === 'COMPLETE') AccessibilityInfo.announceForAccessibility('Account deletion is complete.');
+    } catch {
+      // Keep the receipt after a lost first response or a status outage.
+      setDeletionStatusUnavailable(true);
+    } finally {
+      setCheckingDeletionStatus(false);
+    }
+  }, []);
+
+  useEffect(() => { void refreshDeletionStatus(); }, [refreshDeletionStatus]);
+
+  const dismissDeletionReceipt = useCallback(async () => {
+    if (deletionReceipt) await clearAccountDeletionReceipt(deletionReceipt);
+    setDeletionStatus(null);
+    setDeletionReceipt(null);
+    setDeletionStatusUnavailable(false);
+  }, [deletionReceipt]);
+
+  // Prompt B B2-R: the unavailable-state dismissal is the ONLY control B2-R
+  // authorizes to change — it now requires explicit confirmation before
+  // running the SAME dismissDeletionReceipt() the COMPLETE branch still calls
+  // directly and unconfirmed (COMPLETE dismissal is out of B2-R's scope and
+  // stays exactly as it was). Cancelling leaves every receipt/status/
+  // unavailable state untouched.
+  const dismissUnavailableReceipt = useCallback(async () => {
+    const confirmed = await confirm(
+      'Dismiss unavailable receipt?',
+      "Status is currently unknown. Dismissing removes this device's recovery receipt for this deletion request — it does not cancel the deletion, and without the receipt this device may no longer be able to check the request's status.",
+      'Dismiss',
+      true,
+    );
+    if (!confirmed) return;
+    await dismissDeletionReceipt();
+  }, [dismissDeletionReceipt]);
+
+  // Prompt B B2-R: unavailable presentation must win over any retained
+  // nonterminal deletionStatus (a failed refresh after a known status left
+  // stale "waiting to begin"-style prose showing while the action branch had
+  // already switched to unavailable), and must not claim a receipt exists
+  // when deletionReceipt is null (a SecureStore/index load rejection can set
+  // deletionStatusUnavailable before any receipt object was ever held).
+  const deletionStatusBodyText = (): string => {
+    if (deletionStatus?.status === 'COMPLETE') {
+      return 'Your account and associated content have been deleted.';
+    }
+    if (deletionStatusUnavailable) {
+      return deletionReceipt
+        ? 'This device has a deletion receipt, but status is temporarily unavailable.'
+        : 'Account deletion status is temporarily unavailable.';
+    }
+    if (deletionStatus?.status === 'REQUESTED') {
+      return 'Your deletion request was received and is waiting to begin.';
+    }
+    if (deletionStatus?.status === 'DELETING') {
+      return 'Your account remains unavailable while deletion is in progress.';
+    }
+    if (deletionStatus?.status === 'REVIEWING') {
+      return 'Your account remains unavailable while we complete a deletion review.';
+    }
+    // Unreachable given this card only renders when deletionStatus is set or
+    // deletionStatusUnavailable is true, and every status/unavailable
+    // combination is covered above — kept so this always returns a string.
+    return 'Account deletion status is temporarily unavailable.';
+  };
 
   // A11Y-203: every error shown in the inline row must ALSO be announced.
   // The row's accessibilityLiveRegion="assertive" is Android-only in RN, and
@@ -208,6 +298,61 @@ export default function SignInScreen({
         </View>
 
         <View style={styles.formCard}>
+          {deletionStatus || deletionStatusUnavailable ? (
+            // VP1 fix3: this was the one block on the screen with no font-scale
+            // cap at all (the fields cap at 1.4, the footer's TypeBlock below
+            // caps at TYPE_BLOCK.chrome) — at large Dynamic Type it grew
+            // unbounded and crowded Create Account/the footer toward the
+            // bottom. `chrome` matches this screen's own precedent for
+            // peripheral, non-primary-reading content.
+            <TypeBlock cap={TYPE_BLOCK.chrome}>
+            <View style={styles.deletionStatusCard} accessibilityLiveRegion="polite">
+              <AppText variant="label" style={styles.deletionStatusTitle}>
+                {deletionStatus?.status === 'COMPLETE' ? 'Account deletion complete' : 'Account deletion status'}
+              </AppText>
+              <AppText variant="body" style={styles.deletionStatusBody}>
+                {deletionStatusBodyText()}
+              </AppText>
+              {deletionStatus?.status === 'COMPLETE' ? (
+                <Pressable onPress={() => void dismissDeletionReceipt()} style={styles.deletionStatusAction}
+                  accessibilityRole="button" accessibilityLabel="Dismiss confirmation" accessibilityHint="Removes the completed account-deletion receipt from this device.">
+                  <AppText variant="label" style={styles.deletionStatusActionText}>Dismiss confirmation</AppText>
+                </Pressable>
+              ) : deletionStatusUnavailable ? (
+                // Prompt B B2-R: Check status is now offered FIRST and in
+                // place (reusing the exact same refreshDeletionStatus/
+                // checkingDeletionStatus/"Checking…" control as the normal
+                // branch below), so a transient outage is recoverable without
+                // discarding anything. Dismiss is now SECOND, only rendered
+                // when a receipt is actually held, and confirmed before it runs.
+                <View style={styles.deletionStatusActionRow}>
+                  <Pressable onPress={() => void refreshDeletionStatus()} disabled={checkingDeletionStatus}
+                    style={styles.deletionStatusAction} accessibilityRole="button" accessibilityLabel="Check account deletion status"
+                    {...a11yToggle({ busy: checkingDeletionStatus, disabled: checkingDeletionStatus })}>
+                    <AppText variant="label" style={styles.deletionStatusActionText}>
+                      {checkingDeletionStatus ? 'Checking…' : 'Check status'}
+                    </AppText>
+                  </Pressable>
+                  {deletionReceipt !== null && (
+                    <Pressable onPress={() => void dismissUnavailableReceipt()} style={styles.deletionStatusAction}
+                      accessibilityRole="button" accessibilityLabel="Dismiss unavailable receipt. Account deletion status is unavailable."
+                      accessibilityHint="Removes this unavailable or expired deletion receipt from this device.">
+                      <AppText variant="label" style={styles.deletionStatusActionText}>Dismiss unavailable receipt</AppText>
+                    </Pressable>
+                  )}
+                </View>
+              ) : (
+                <Pressable onPress={() => void refreshDeletionStatus()} disabled={checkingDeletionStatus}
+                  style={styles.deletionStatusAction} accessibilityRole="button" accessibilityLabel="Check account deletion status"
+                  {...a11yToggle({ busy: checkingDeletionStatus, disabled: checkingDeletionStatus })}>
+                  <AppText variant="label" style={styles.deletionStatusActionText}>
+                    {checkingDeletionStatus ? 'Checking…' : 'Check status'}
+                  </AppText>
+                </Pressable>
+              )}
+            </View>
+            </TypeBlock>
+          ) : null}
           {/* The design system's field, at last. This screen hand-rolled a twin
               of `Input` — its own label, focus ring, 44pt floor and error row —
               because the primitive is themed and would have drawn a white field
@@ -514,6 +659,22 @@ const makeStyles = (_color: ColorTheme) =>
         ? { backdropFilter: 'blur(24px) saturate(160%)' } as object
         : {}),
     },
+    deletionStatusCard: {
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: 'rgba(132,174,246,0.45)',
+      backgroundColor: 'rgba(20,102,224,0.14)',
+      padding: spacing.md,
+      gap: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    deletionStatusTitle: { color: '#dceaff', fontSize: font.size.sm, fontWeight: font.weight.semibold },
+    deletionStatusBody: { color: 'rgba(235,243,255,0.9)', fontSize: font.size.sm, lineHeight: font.lineHeight.sm },
+    deletionStatusAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm },
+    // Prompt B B2-R: holds Check status + the conditional Dismiss side by
+    // side in the unavailable branch.
+    deletionStatusActionRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+    deletionStatusActionText: { color: '#b4cffa', fontSize: font.size.sm, fontWeight: font.weight.semibold },
     // The label / fill / focus-ring / 44pt-floor styles that used to live here
     // are the `Input` primitive's now, drawn from `fixedDark` in theme.ts —
     // the same values, in one place, reachable by the next cover that needs a

@@ -51,6 +51,9 @@ export interface PrefsRowProps {
   leading?: React.ReactNode;
   /** Spoken label, when the visible title is not the sentence to say. */
   a11yLabel?: string;
+  /** At accessibility sizes, keep badge/title/switch in the control row and
+   *  give the explanatory sentence the full row width below it. */
+  reflow?: boolean;
   style?: ViewStyle;
   testID?: string;
 }
@@ -62,36 +65,62 @@ export function PrefsRow({
   onValueChange,
   leading,
   a11yLabel,
+  reflow = false,
   style,
   testID,
 }: PrefsRowProps) {
   const color = useColor();
   const styles = makeStyles(color);
+  const toggle = (
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      accessibilityRole="switch"
+      accessibilityLabel={a11yLabel ?? title}
+      accessibilityHint={subtitle}
+      // Explicit state — RN's Switch usually reports its own value, but
+      // pairing it with accessibilityState is the documented contract
+      // (QA Pass-2 #5), and a11yToggle adds the web aria-* alias.
+      {...a11yToggle({ checked: value })}
+      // BP-6: the estate Switch recipe — brand track, themed false-track.
+      trackColor={{ false: color.borderStrong, true: color.brand }}
+      thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
+    />
+  );
   return (
-    <View style={[styles.row, style]} testID={testID}>
-      {leading}
-      <View style={styles.text}>
-        <AppText variant="label" size={font.size.base} color={color.textStrong} style={styles.title}>
-          {title}
-        </AppText>
-        <AppText variant="body" size={font.size.sm} color={color.textMuted}>
-          {subtitle}
-        </AppText>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        accessibilityRole="switch"
-        accessibilityLabel={a11yLabel ?? title}
-        accessibilityHint={subtitle}
-        // Explicit state — RN's Switch usually reports its own value, but
-        // pairing it with accessibilityState is the documented contract
-        // (QA Pass-2 #5), and a11yToggle adds the web aria-* alias.
-        {...a11yToggle({ checked: value })}
-        // BP-6: the estate Switch recipe — brand track, themed false-track.
-        trackColor={{ false: color.borderStrong, true: color.brand }}
-        thumbColor={Platform.OS === 'android' ? (value ? color.brand : androidSwitchThumbOff) : undefined}
-      />
+    <View style={[styles.row, reflow && styles.rowReflow, style]} testID={testID}>
+      {reflow ? (
+        <>
+          <View style={styles.reflowHeader}>
+            {leading}
+            <AppText
+              variant="label"
+              size={font.size.base}
+              color={color.textStrong}
+              style={[styles.title, styles.reflowTitle]}
+            >
+              {title}
+            </AppText>
+            {toggle}
+          </View>
+          <AppText variant="body" size={font.size.sm} color={color.textMuted}>
+            {subtitle}
+          </AppText>
+        </>
+      ) : (
+        <>
+          {leading}
+          <View style={styles.text}>
+            <AppText variant="label" size={font.size.base} color={color.textStrong} style={styles.title}>
+              {title}
+            </AppText>
+            <AppText variant="body" size={font.size.sm} color={color.textMuted}>
+              {subtitle}
+            </AppText>
+          </View>
+          {toggle}
+        </>
+      )}
     </View>
   );
 }
@@ -110,6 +139,17 @@ const makeStyles = (color: ColorTheme) =>
       // them was tall enough to hold it above the 44pt floor comfortably.
       minHeight: size.row,
     },
+    rowReflow: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      gap: spacing.sm,
+    },
+    reflowHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+    },
+    reflowTitle: { flex: 1, minWidth: 0 },
     text: { flex: 1, gap: 2 },
     title: { fontWeight: font.weight.semibold },
   });

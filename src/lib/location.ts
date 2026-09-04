@@ -41,20 +41,40 @@ export interface UserLocationState {
  * 15s timer and reject if it wins, so the caller's existing catch can surface a
  * friendly error. Shared by this hook and MapScreen so both sites behave the same.
  */
+const LOCATION_TIMEOUT_MESSAGE = 'Location request timed out. Check your signal and try again.';
+
 export function getCurrentPositionWithTimeout(
   options: Location.LocationOptions,
   timeoutMs = 15_000,
 ): Promise<Location.LocationObject> {
   let timer: ReturnType<typeof setTimeout>;
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error('Location request timed out. Check your signal and try again.')),
-      timeoutMs,
-    );
+    timer = setTimeout(() => reject(new Error(LOCATION_TIMEOUT_MESSAGE)), timeoutMs);
   });
   return Promise.race([Location.getCurrentPositionAsync(options), timeout]).finally(() =>
     clearTimeout(timer),
   );
+}
+
+/**
+ * Prompt B B2 / Fable B-UX-003 — the location-specific presentation boundary.
+ *
+ * `errorMessage()`'s generic fallback passes an unrecognized message straight
+ * through, which let raw native diagnostics (e.g. `kCLErrorDomain error N`)
+ * reach an Alert body at a moment users already associate with privacy. The
+ * timeout message above is already specific and actionable, so it is the one
+ * message allowed through unchanged; every other thrown location failure
+ * (including any raw native text) becomes this calm, actionable sentence,
+ * which also tells the user the app still works without location. Permission
+ * denial is a separate non-throwing state (`permissionDenied`) and never
+ * reaches this function.
+ */
+export const LOCATION_FAILURE_MESSAGE =
+  "Couldn't get your location. Check that Location Services is on and try again. You can keep using the map without it.";
+
+export function locationErrorMessage(e: unknown): string {
+  const raw = errorMessage(e, LOCATION_FAILURE_MESSAGE);
+  return raw === LOCATION_TIMEOUT_MESSAGE ? raw : LOCATION_FAILURE_MESSAGE;
 }
 
 /**
@@ -135,15 +155,13 @@ export interface UseUserLocationOptions {
    * When true, only fetch the location if foreground permission has
    * already been granted — NEVER triggers the OS permission prompt.
    *
-   * Used by Profile's Nearest-Unresolved card (Constitution Art. 9.6 —
-   * Sky's directive: privacy-sensitive prompts must be user-initiated,
+   * Used by passive Profile and Tasks distance decoration (Constitution Art.
+   * 9.6 — Sky's directive: privacy-sensitive prompts must be user-initiated,
    * not surfaced on tab focus). When permission isn't already granted,
-   * `permissionDenied` stays true and `location` stays null — the
-   * caller renders nothing.
+   * `permissionDenied` stays true and `location` stays null — the caller
+   * renders nothing.
    *
-   * Default false → preserves the existing prompt-on-mount behavior
-   * used by Tasks (where the user's clear intent to triage nearby
-   * flags justifies the prompt).
+   * Default false is reserved for explicitly initiated location paths.
    */
   requireExistingPermission?: boolean;
 }
@@ -181,6 +199,28 @@ export function useUserLocation(options: UseUserLocationOptions = {}): UserLocat
             setLocation(null);
           }
           return;
+        }
+        // Browsers may prompt from getCurrentPosition(). Passive consumers use
+        // requireExistingPermission, so query the no-prompt Permissions API
+        // first and degrade to location-free UI unless access is already
+        // granted. If the browser cannot answer, privacy wins over decoration.
+        if (requireExistingPermission) {
+          try {
+            const permission = await navigator.permissions?.query({ name: 'geolocation' });
+            if (permission?.state !== 'granted') {
+              if (mountedRef.current) {
+                setPermissionDenied(true);
+                setLocation(null);
+              }
+              return;
+            }
+          } catch {
+            if (mountedRef.current) {
+              setPermissionDenied(true);
+              setLocation(null);
+            }
+            return;
+          }
         }
         await new Promise<void>((resolve) => {
           navigator.geolocation.getCurrentPosition(
@@ -234,7 +274,7 @@ export function useUserLocation(options: UseUserLocationOptions = {}): UserLocat
       setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
     } catch (e: unknown) {
       if (mountedRef.current) {
-        setError(errorMessage(e, 'Could not get location.'));
+        setError(locationErrorMessage(e));
         setLocation(null);
       }
     } finally {

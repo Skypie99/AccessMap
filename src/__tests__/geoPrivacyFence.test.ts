@@ -84,6 +84,23 @@ describe('geo-privacy fence — the OS prompt has exactly three sites', () => {
     // until the user explicitly asks.
     expect(home).toMatch(/const probeEnabled = Platform\.OS !== 'web' \|\| askedForLocation/);
   });
+
+  it('Tasks and Profile use the existing-permission-only location path', () => {
+    const tasks = read('screens/TasksScreen.tsx');
+    const profile = read('screens/ProfileScreen.tsx');
+    for (const [name, src] of [['TasksScreen.tsx', tasks], ['ProfileScreen.tsx', profile]] as const) {
+      expect(`${name}:${/requireExistingPermission:\s*true/.test(src)}`).toBe(`${name}:true`);
+      expect(`${name}:${/requestForegroundPermissionsAsync/.test(src)}`).toBe(`${name}:false`);
+    }
+  });
+
+  it('passive web consumers query permission before reading geolocation', () => {
+    const location = read('lib/location.ts');
+    const permissionQuery = location.indexOf("navigator.permissions?.query({ name: 'geolocation' })");
+    const positionRead = location.indexOf('navigator.geolocation.getCurrentPosition(');
+    expect(permissionQuery).toBeGreaterThan(-1);
+    expect(positionRead).toBeGreaterThan(permissionQuery);
+  });
 });
 
 describe('geo-privacy fence — read once, never watched, never kept', () => {

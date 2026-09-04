@@ -151,6 +151,17 @@ export default function HomeScreen() {
   const { flags, loading, error, isOfflineCache, offlineCachedAt, refresh } = useFlags();
   const styles = makeStyles(color);
 
+  // Prompt B B2/Fable B-UX-004: refresh() intentionally re-throws when there's
+  // no offline cache to fall back on (flagsStore.tsx), so all three entry
+  // points below used to call it bare and uncaught, each an unhandled
+  // rejection on a failed Retry. The provider already owns visible error/
+  // loading state before it throws, so this callback only needs to keep the
+  // rejection from escaping — same shape as flagsStore's own internal
+  // `refresh().catch(() => {})`.
+  const handleRefresh = useCallback(() => {
+    refresh().catch(() => {});
+  }, [refresh]);
+
   // The tab bar is absolute (frosted) on native, so float the Report pill +
   // scroll padding above it. On web the bar stays in normal flow (reserves its
   // own space), so the safe-area inset is the right offset there.
@@ -325,7 +336,7 @@ export default function HomeScreen() {
       <ScreenStage />
       <LinearGradient
         colors={[color.stage0, `${color.stage0}00`]}
-        style={styles.statusLedge}
+        style={[styles.statusLedge, { height: insets.top }]}
         pointerEvents="none"
         {...decorativeProps}
       />
@@ -338,15 +349,16 @@ export default function HomeScreen() {
           onState={setProbeState}
         />
       )}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: bottomInset + 108 }}
-        showsVerticalScrollIndicator={false}
-        // Pull-to-refresh parity with Tasks/Profile. `refreshing` stays false:
-        // the SWR store renders its own inline banners for stale/failed
-        // reloads, so a pinned spinner would double-report.
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => void refresh()} />}
-      >
+      <View style={[styles.scrollViewport, { paddingTop: insets.top }]}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={{ paddingBottom: bottomInset + 108 }}
+          showsVerticalScrollIndicator={false}
+          // Pull-to-refresh parity with Tasks/Profile. `refreshing` stays false:
+          // the SWR store renders its own inline banners for stale/failed
+          // reloads, so a pinned spinner would double-report.
+          refreshControl={<RefreshControl refreshing={false} onRefresh={handleRefresh} />}
+        >
         {/* Editorial header — menu + Feedback fold in (no dark nav bar here). */}
         <ScreenHeader
           eyebrow={eyebrow}
@@ -355,7 +367,7 @@ export default function HomeScreen() {
             // error card below carries the words; the headline stays a neutral
             // placeholder, never a false census. (F5-01) word the first-load wait.
             error && flags.length === 0
-              ? '—'
+              ? '…'
               : showFirstLoad
                 ? 'Loading…'
                 : `${flags.length} ${flags.length === 1 ? 'barrier' : 'barriers'}`
@@ -586,18 +598,18 @@ export default function HomeScreen() {
             the offline banner above when we actually fell back to the cache. */}
         {error && flags.length > 0 && !isOfflineCache && (
           <PressableScale
-            onPress={() => void refresh()}
+            onPress={handleRefresh}
             style={styles.offlineBanner}
             // Warning-tinted banner: a neutral grey dim would fight the warning
             // colour and there's no darker-warning token. Spring + haptic answer it.
             dimOnPress={false}
             accessibilityRole="button"
             accessibilityLiveRegion="polite"
-            accessibilityLabel="Couldn’t refresh — showing older data. Tap to try again."
+            accessibilityLabel="Couldn’t refresh. Showing older data. Tap to try again."
           >
             <RefreshCw size={15} color={color.warningFg} strokeWidth={2.2} />
             <AppText variant="body" style={styles.offlineText}>
-              Couldn’t refresh — showing older data. Tap to try again.
+              Couldn’t refresh. Showing older data. Tap to try again.
             </AppText>
           </PressableScale>
         )}
@@ -614,7 +626,7 @@ export default function HomeScreen() {
               title="Couldn’t load barriers."
               action={
                 <PressableScale
-                  onPress={() => void refresh()}
+                  onPress={handleRefresh}
                   style={styles.retryBtn}
                   pressedTint={color.ctaFillPressed}
                   accessibilityRole="button"
@@ -699,7 +711,8 @@ export default function HomeScreen() {
             </PressableScale>
           </GlassSurface>
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {/* Report pill — floats over the scroll. */}
       <PressableScale
@@ -730,6 +743,9 @@ export default function HomeScreen() {
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: color.stage1 },
+    // The status safe area belongs to this fixed viewport, never to content
+    // that can scroll away beneath the system clock.
+    scrollViewport: { flex: 1 },
     scroll: { flex: 1 },
     headerBtn: {
       width: 44,
@@ -857,10 +873,9 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.warningBg,
     },
     offlineText: { flex: 1, fontSize: font.size.sm, color: color.warningFg },
-    // F4: the status-bar ledge. Home and Settings scroll their content under a
-    // transparent status bar, so a scrolled row could sit directly behind the
-    // clock. A 47pt wash from stage0 down to the SAME COLOUR at zero alpha keeps
-    // the bar legible without painting an opaque header over the stage.
+    // F4: the status-bar ledge. Its height comes from the device inset at the
+    // call site, so the wash covers the real system-chrome band without a
+    // fixed-device guess or an opaque header over the stage.
     //
     // The second stop is `${color.stage0}00`, never the string 'transparent'.
     // 'transparent' is rgba(0,0,0,0), so the gradient interpolates through BLACK
@@ -874,7 +889,6 @@ const makeStyles = (color: ColorTheme) =>
       top: 0,
       left: 0,
       right: 0,
-      height: 47,
       zIndex: 2,
     },
     sectionLabel: {

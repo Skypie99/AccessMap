@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Switch,
   type Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/ui/RemoteImage';
@@ -21,14 +22,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { HeaderActions } from '@/components/ui/HeaderActions';
 import { GuestProfile } from './GuestProfile';
+import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
-import { AccountDeletedSignOutPendingError, deleteAccount } from '@/lib/account';
+import { AccountDeletionRequestSignOutPendingError, deleteAccount } from '@/lib/account';
+import { accountDeletionStartAvailability } from '@/lib/accountDeletionAvailability';
+import {
+  AccountDeletionReceiptUnavailableError,
+  getAccountDeletionStatus,
+  loadAccountDeletionReceipt,
+  type AccountDeletionStatus,
+} from '@/lib/accountDeletionReceipt';
 import { confirm, notify } from '@/lib/confirm';
 import { errorMessage } from '@/lib/errors';
 import { signOut, supabase } from '@/lib/supabase';
 import { useSharedModals } from '@/lib/sharedModalsContext';
-import { getInitials, updateUserProfile, uploadAvatar } from '@/lib/users';
+import { getInitials, updateUserProfile, uploadAvatar, withAvatarDisplayUrl } from '@/lib/users';
 import { hapticSelection } from '@/lib/haptics';
 import { DEFAULT_TABS, getDefaultTab, setDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { useRealtimeEnabled } from '@/lib/realtimePrefs';
@@ -83,6 +92,7 @@ import LeaderboardScreen from '@/screens/LeaderboardScreen';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, androidSwitchThumbOff, font, radius, shadow, size, spacing } from '@/theme';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { Input } from '@/components/ui/Input';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { ScreenStage } from '@/components/ui/ScreenStage';
@@ -90,7 +100,7 @@ import { ArrowDown, ArrowUp, ChevronRight, Flame, MapPin, Pencil, X } from 'luci
 import TierIcon from '@/components/TierIcon';
 import { getTier, pointsToNextTier, REPUTATION_TIERS } from '@/lib/reputationTier';
 import { setLastSeenPoints } from '@/lib/points';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import {
   getLifetimeReportOutcomes,
   getPointEventHistory,
@@ -175,6 +185,11 @@ function milestoneProgress(points: number): {
 export default function ProfileScreen() {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
+  const navChevronSize = Math.round(
+    18 * Math.max(1, Math.min(fontScale, TYPE_BLOCK.header)),
+  );
   const reduceMotion = useReducedMotion();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList, 'Profile'>>();
   const tabBarHeight = useBottomTabBarHeight();
@@ -306,6 +321,9 @@ export default function ProfileScreen() {
   const deleteTitleRef = useFocusOnOpen<Text>(deleteAccountOpen);
   const tierTitleRef = useFocusOnOpen<Text>(tierExplainerOpen);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [accountDeletionStatus, setAccountDeletionStatus] = useState<AccountDeletionStatus | null>(null);
+  const [accountDeletionStatusUnavailable, setAccountDeletionStatusUnavailable] = useState(false);
+  const [checkingAccountDeletionStatus, setCheckingAccountDeletionStatus] = useState(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -351,7 +369,7 @@ export default function ProfileScreen() {
       const [{ data: profileRow, error: profileErr }, statusRowsRes, eventsResult] = await Promise.all([
         // PRIVACY: Explicit columns — never select('*') on users; future schema
         // columns (e.g. internal flags, phone number) must not leak automatically.
-        supabase.from('users').select('id, display_name, avatar_url, points, created_at').eq('id', user.id).maybeSingle(),
+        supabase.from('users').select('id, display_name, avatar_url, avatar_object_key, points, created_at').eq('id', user.id).maybeSingle(),
         supabase.from('flags').select('status').eq('user_id', user.id),
         // 42P01 guard: migration not yet applied → returns [] silently.
         getPointEventHistory(user.id).catch(() => [] as PointEventRow[]),
@@ -367,7 +385,7 @@ export default function ProfileScreen() {
       if (profileErr) throw profileErr;
       if (statusRowsRes.error) throw statusRowsRes.error;
       if (!mountedRef.current) return;
-      const row = (profileRow as UserRow | null) ?? null;
+      const row = profileRow ? withAvatarDisplayUrl(profileRow as UserRow) : null;
       setProfile(row);
       // F55: the user has now SEEN their current total — advance the
       // "points while you were away" watermark so in-session earnings are
@@ -583,8 +601,7 @@ export default function ProfileScreen() {
       if (!user) return;
       setUploadingAvatar(true);
       try {
-        const avatarUrl = await uploadAvatar(user.id, localUri, srcWidth, srcHeight);
-        const updated = await updateUserProfile(user.id, { avatar_url: avatarUrl });
+        const { profile: updated } = await uploadAvatar(user.id, localUri, srcWidth, srcHeight);
         if (mountedRef.current) {
           setProfile(updated);
           AccessibilityInfo.announceForAccessibility('Profile photo updated.');
@@ -657,7 +674,7 @@ export default function ProfileScreen() {
       } catch {
         if (mountedRef.current) {
           setDefaultTabValue(defaultTab);
-          notify("Couldn't save that preference", 'Your change was not saved — please try again.');
+          notify("Couldn't save that preference", 'Your change was not saved. Please try again.');
         }
       } finally {
         if (mountedRef.current) setSavingTab(false);
@@ -677,7 +694,7 @@ export default function ProfileScreen() {
           value ? 'Real-time flag updates enabled.' : 'Real-time flag updates disabled.',
         );
       } catch {
-        notify("Couldn't save preference", 'Your change was not saved — please try again.');
+        notify("Couldn't save preference", 'Your change was not saved. Please try again.');
       } finally {
         if (mountedRef.current) setSavingRealtime(false);
       }
@@ -706,6 +723,38 @@ export default function ProfileScreen() {
     );
   }, [user]);
 
+  const refreshAccountDeletionStatus = useCallback(async () => {
+    if (!user || Platform.OS === 'web') return;
+    setCheckingAccountDeletionStatus(true);
+    try {
+      const receipt = await loadAccountDeletionReceipt(user.id);
+      if (!receipt) {
+        setAccountDeletionStatus(null);
+        setAccountDeletionStatusUnavailable(false);
+        return;
+      }
+      setAccountDeletionStatus(await getAccountDeletionStatus(receipt));
+      setAccountDeletionStatusUnavailable(false);
+    } catch {
+      // Keep the receipt after a lost first response or a temporary status
+      // outage. The signed-in user can retry this visible status action.
+      setAccountDeletionStatusUnavailable(true);
+    } finally {
+      if (mountedRef.current) setCheckingAccountDeletionStatus(false);
+    }
+  }, [user]);
+
+  useEffect(() => { void refreshAccountDeletionStatus(); }, [refreshAccountDeletionStatus]);
+
+  const handleOpenAccountDeletion = useCallback(() => {
+    const availability = accountDeletionStartAvailability(Platform.OS);
+    if (!availability.supported) {
+      notify(availability.title, availability.message);
+      return;
+    }
+    setDeleteAccountOpen(true);
+  }, []);
+
   const handleDeleteAccount = useCallback(async () => {
     if (!user) return;
     setDeletingAccount(true);
@@ -714,21 +763,24 @@ export default function ProfileScreen() {
       // Auth state change (SIGNED_OUT) fires automatically; screen unmounts.
     } catch (e) {
       if (mountedRef.current) {
-        // F63: distinguish "delete failed" from "deleted, but local sign-out
-        // didn't finish" — the old copy claimed the account was not deleted
-        // even when it was.
-        if (e instanceof AccountDeletedSignOutPendingError) {
-          notify('Account deleted', e.message);
+        if (e instanceof AccountDeletionReceiptUnavailableError) {
+          notify('Account deletion is unavailable in this browser', e.message);
+        } else if (e instanceof AccountDeletionRequestSignOutPendingError) {
+          notify('Deletion requested', e.message);
         } else {
           notify(
-            'Could not delete account',
-            errorMessage(e, 'Something went wrong. Your account was not deleted.'),
+            'Could not confirm deletion request',
+            errorMessage(e, 'Use Check deletion status below before trying again.'),
           );
         }
+        // The receipt was stored before the request, so a lost response is
+        // ambiguous. Keep still-signed-in recovery visible; do not require a
+        // sign-out or a second destructive press just to learn the outcome.
+        void refreshAccountDeletionStatus();
         setDeletingAccount(false);
       }
     }
-  }, [user]);
+  }, [refreshAccountDeletionStatus, user]);
 
   // Opens My Reports pre-filtered to a single status — wired to the
   // tappable status pills in the breakdown row. Presentation/navigation
@@ -948,6 +1000,7 @@ export default function ProfileScreen() {
           in-flow ScreenHeader scrolls (mirrors Wave-1 Settings). */}
       <View style={styles.stageRoot}>
         <ScreenStage />
+      <View style={[styles.scrollViewport, { paddingTop: insets.top }]}>
       <ScrollView
         // Recipe S (the FlagDetailModal A11Y-228 precedent): the display-name
         // field sits low on this scroll, so on small phones the keyboard used
@@ -957,9 +1010,12 @@ export default function ProfileScreen() {
         style={styles.screen}
         contentContainerStyle={[
           styles.container,
-          // S8: headerShown:false now, so clear the status bar / notch ourselves
-          // (mirrors the headerless Home/Tasks). Overrides the container's top pad.
-          { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + 16 },
+          // The fixed viewport owns the status bar / notch; content keeps only
+          // the original editorial rhythm below it and one shared tab reserve.
+          {
+            paddingTop: spacing.sm,
+            paddingBottom: getFloatingTabBarContentInset(tabBarHeight, insets.bottom),
+          },
         ]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={color.brand} colors={[color.brand]} />}
       >
@@ -1195,7 +1251,7 @@ export default function ProfileScreen() {
             </>
           ) : nextMilestone === null ? (
             <AppText variant="label" style={styles.heroSubtitle}>
-              You&apos;ve reached the top milestone — {TOP_MILESTONE_LABEL} earned.
+              You&apos;ve reached the top milestone: {TOP_MILESTONE_LABEL} earned.
             </AppText>
           ) : null}
         </GlassSurface>
@@ -1208,66 +1264,83 @@ export default function ProfileScreen() {
           style={styles.pointHistoryCard}
           borderRadius={radius.lg}
         >
-          <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
-            Recent point activity
-          </AppText>
-          {pointEvents.length === 0 ? (
-            <AppText variant="bodyMedium" style={styles.pointHistoryEmpty}>
-              Start reporting barriers to earn points!
+          <TypeBlock cap={TYPE_BLOCK.content}>
+            <AppText variant="heading" style={styles.pointHistoryTitle} accessibilityRole="header">
+              Recent point activity
             </AppText>
-          ) : (
-            <View accessibilityRole="list">
-              {pointEvents.slice(0, 5).map((ev, i, arr) => {
-                const isGain = ev.delta >= 0;
-                const absPoints = Math.abs(ev.delta);
-                const action = isGain ? 'Earned' : 'Lost';
-                const sign = isGain ? '+' : '';
-                const dateStr = formatRelativeTime(ev.created_at);
-                return (
-                  <View
-                    key={ev.id}
-                    style={[styles.pointHistoryRow, i < arr.length - 1 && styles.pointHistoryRowDivider]}
-                    accessible
-                    role="listitem"
-                    accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
-                  >
-                    <AppText
-                      variant="label"
-                      style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]} {...decorativeProps}
+            {pointEvents.length === 0 ? (
+              <AppText variant="bodyMedium" style={styles.pointHistoryEmpty}>
+                Start reporting barriers to earn points!
+              </AppText>
+            ) : (
+              <View accessibilityRole="list">
+                {pointEvents.slice(0, 5).map((ev, i, arr) => {
+                  const isGain = ev.delta >= 0;
+                  const absPoints = Math.abs(ev.delta);
+                  const action = isGain ? 'Earned' : 'Lost';
+                  const sign = isGain ? '+' : '';
+                  const dateStr = formatRelativeTime(ev.created_at);
+                  return (
+                    <View
+                      key={ev.id}
+                      style={[
+                        styles.pointHistoryRow,
+                        axRecompose && styles.pointHistoryRowAx,
+                        i < arr.length - 1 && styles.pointHistoryRowDivider,
+                      ]}
+                      accessible
+                      role="listitem"
+                      accessibilityLabel={`${action} ${absPoints} ${absPoints === 1 ? 'point' : 'points'}: ${pointEventLabel(ev.event_type)}, ${dateStr}`}
                     >
-                      {isGain ? (
-                        <ArrowUp
-                          size={14}
-                          // Dark row glass needs a brighter green/red than the
-                          // light-optimized successStrong/error (they go dim on
-                          // the dark floor). Direction is also carried by the
-                          // arrow shape + the +/- sign, never color alone.
-                          color={color.scheme === 'dark' ? color.success : color.successStrong}
-                          strokeWidth={2.4}
-                        />
-                      ) : (
-                        <ArrowDown
-                          size={14}
-                          color={color.scheme === 'dark' ? color.errorFg : color.error}
-                          strokeWidth={2.4}
-                        />
-                      )}
-                    </AppText>
-                    <AppText variant="bodyMedium" style={styles.pointHistoryLabel} numberOfLines={2}>
-                      {pointEventLabel(ev.event_type)}
-                    </AppText>
-                    <AppText variant="body" style={styles.pointHistoryDate}>{dateStr}</AppText>
-                    <AppText
-                      variant="monoBold"
-                      style={styles.pointHistoryDelta}
-                    >
-                      {sign}{ev.delta} pts
-                    </AppText>
-                  </View>
-                );
-              })}
-            </View>
-          )}
+                      <View style={[styles.pointHistorySummary, axRecompose && styles.pointHistorySummaryAx]}>
+                        <AppText
+                          variant="label"
+                          style={[styles.pointHistoryIcon, !isGain && styles.pointHistoryIconNeg]}
+                          {...decorativeProps}
+                        >
+                          {isGain ? (
+                            <ArrowUp
+                              size={14}
+                              // Dark row glass needs a brighter green/red than the
+                              // light-optimized successStrong/error (they go dim on
+                              // the dark floor). Direction is also carried by the
+                              // arrow shape + the +/- sign, never color alone.
+                              color={color.scheme === 'dark' ? color.success : color.successStrong}
+                              strokeWidth={2.4}
+                            />
+                          ) : (
+                            <ArrowDown
+                              size={14}
+                              color={color.scheme === 'dark' ? color.errorFg : color.error}
+                              strokeWidth={2.4}
+                            />
+                          )}
+                        </AppText>
+                        <AppText
+                          variant="bodyMedium"
+                          style={styles.pointHistoryLabel}
+                          numberOfLines={axRecompose ? undefined : 2}
+                        >
+                          {pointEventLabel(ev.event_type)}
+                        </AppText>
+                      </View>
+                      <View style={[styles.pointHistoryMeta, axRecompose && styles.pointHistoryMetaAx]}>
+                        <AppText
+                          variant="body"
+                          style={[styles.pointHistoryDate, axRecompose && styles.pointHistoryDateAx]}
+                        >
+                          {dateStr}
+                        </AppText>
+                        <AppText variant="monoBold" style={styles.pointHistoryDelta}>
+                          {sign}{ev.delta} pts
+                        </AppText>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </TypeBlock>
         </GlassSurface>
 
         <GlassSurface
@@ -1303,7 +1376,7 @@ export default function ProfileScreen() {
             accessibilityRole="summary"
             accessibilityLabel={
               streak.current === 1
-                ? `1 day streak — welcome${streak.longest > 1 ? `. Best ever: ${streak.longest} days.` : ''}`
+                ? `1 day streak. Welcome${streak.longest > 1 ? `. Best ever: ${streak.longest} days.` : ''}`
                 : `${streak.current} day streak${streak.longest > streak.current ? `. Best ever: ${streak.longest} days.` : '. New personal best!'}`
             }
           >
@@ -1358,7 +1431,7 @@ export default function ProfileScreen() {
                 </AppText>
               </View>
               <ChevronRight
-                size={18}
+                size={navChevronSize}
                 color={color.brandOnSoft}
                 strokeWidth={2.2} {...decorativeProps}
               />
@@ -1474,6 +1547,7 @@ export default function ProfileScreen() {
         <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
           Your reports
         </AppText>
+        <TypeBlock cap={TYPE_BLOCK.content}>
         <GlassSurface variant="row" forceEngineered style={styles.navGroup}>
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
@@ -1491,12 +1565,12 @@ export default function ProfileScreen() {
             <AppText variant="label" style={styles.myReportsTitle}>My Reports</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
               {stats.reported === 0
-                ? "You haven't reported any barriers yet — your first one will show up here."
+                ? "You haven't reported any barriers yet. Your first one will show up here."
                 : "Every barrier you've reported, in one place."}
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1521,7 +1595,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1542,11 +1616,11 @@ export default function ProfileScreen() {
           <View style={styles.myReportsTextWrap}>
             <AppText variant="label" style={styles.myReportsTitle}>Recent Activity</AppText>
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>
-              What the community has been up to — newest first.
+              What the community has been up to, newest first.
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1580,7 +1654,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1588,6 +1662,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         </GlassSurface>
+        </TypeBlock>
 
         {/* PLACEHOLDER SECTION NAME (SKY-WORDS-REQUIRED). The split is by what
             the row is ABOUT: the four above are your own record, these three
@@ -1595,6 +1670,7 @@ export default function ProfileScreen() {
         <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
           Community & account
         </AppText>
+        <TypeBlock cap={TYPE_BLOCK.content}>
         <GlassSurface variant="row" forceEngineered style={styles.navGroup}>
         <Pressable
           style={({ pressed }) => pressed && styles.myReportsBtnPressed}
@@ -1611,7 +1687,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1636,7 +1712,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1659,13 +1735,14 @@ export default function ProfileScreen() {
             <AppText variant="bodyMedium" style={styles.myReportsSubtitle}>See the messages you&apos;ve sent to the team.</AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
           </View>
         </Pressable>
         </GlassSurface>
+        </TypeBlock>
 
         <View style={styles.section}>
           <AppText variant="heading" style={styles.sectionLabel} accessibilityRole="header">
@@ -1764,7 +1841,7 @@ export default function ProfileScreen() {
           <View style={[styles.toggleRow, savingRealtime && styles.toggleRowBusy]}>
             <View style={styles.toggleTextWrap}>
               <AppText variant="label" style={styles.toggleLabel}>Show new flags in real-time</AppText>
-              <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged — no pulling to refresh.</AppText>
+              <AppText variant="body" style={styles.toggleHint}>The map refreshes on its own as flags are added or triaged. No pull needed.</AppText>
             </View>
             <Switch
               value={realtimeEnabled}
@@ -1772,7 +1849,7 @@ export default function ProfileScreen() {
               disabled={savingRealtime}
               accessibilityRole="switch"
               accessibilityLabel="Show new flags in real-time"
-              accessibilityHint="When on, the map updates automatically as new flags are reported or triaged — no need to refresh manually"
+              accessibilityHint="When on, the map updates automatically as new flags are reported or triaged, with no need to refresh manually"
               {...a11yToggle({ checked: realtimeEnabled, busy: savingRealtime, disabled: savingRealtime })}
               trackColor={{ false: color.borderStrong, true: color.brand }}
               thumbColor={
@@ -1812,7 +1889,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1832,7 +1909,7 @@ export default function ProfileScreen() {
             <AppText variant="bodyMedium" style={styles.aboutSubtitle}>See what we shipped recently.</AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1854,7 +1931,7 @@ export default function ProfileScreen() {
             </AppText>
           </View>
           <ChevronRight
-            size={18}
+            size={navChevronSize}
             color={color.textSubtle}
             strokeWidth={2.2} {...decorativeProps}
           />
@@ -1883,16 +1960,51 @@ export default function ProfileScreen() {
           <AppText variant="label" style={styles.signOutText}>Sign out</AppText>
         </Pressable>
 
+        {accountDeletionStatus || accountDeletionStatusUnavailable ? (
+          <GlassSurface style={styles.accountDeletionStatusCard} accessibilityLiveRegion="polite">
+            <AppText variant="label" style={styles.accountDeletionStatusTitle}>Account deletion status</AppText>
+            <AppText variant="bodyMedium" style={styles.accountDeletionStatusBody}>
+              {accountDeletionStatus?.status === 'REQUESTED'
+                ? 'Your deletion request was received and is waiting to begin.'
+                : accountDeletionStatus?.status === 'DELETING'
+                  ? 'Your account remains available only while deletion is being completed.'
+                  : accountDeletionStatus?.status === 'REVIEWING'
+                    ? 'Your account remains unavailable while a deletion review is completed.'
+                    : accountDeletionStatus?.status === 'COMPLETE'
+                      ? 'Your account and associated content have been deleted.'
+                      : 'This device has a deletion receipt, but status is temporarily unavailable.'}
+            </AppText>
+            <Pressable
+              style={({ pressed }) => [styles.accountDeletionStatusAction, pressed && { opacity: 0.7 }]}
+              onPress={() => void refreshAccountDeletionStatus()}
+              disabled={checkingAccountDeletionStatus}
+              accessibilityRole="button"
+              accessibilityLabel="Check account deletion status"
+              accessibilityHint="Checks the status of the account-deletion request stored on this device"
+              {...a11yToggle({ busy: checkingAccountDeletionStatus, disabled: checkingAccountDeletionStatus })}
+            >
+              <AppText variant="label" style={styles.accountDeletionStatusActionText}>
+                {checkingAccountDeletionStatus ? 'Checking…' : 'Check deletion status'}
+              </AppText>
+            </Pressable>
+          </GlassSurface>
+        ) : null}
+
         <Pressable
           style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => setDeleteAccountOpen(true)}
+          onPress={handleOpenAccountDeletion}
+          disabled={accountDeletionStatus !== null}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"
-          accessibilityHint="Opens a confirmation dialog before permanently deleting your account and data"
+          accessibilityHint={accountDeletionStatus
+            ? 'A deletion request is already recorded. Use Check deletion status above.'
+            : 'Opens a confirmation dialog before starting asynchronous account deletion'}
+          {...a11yToggle({ disabled: accountDeletionStatus !== null })}
         >
           <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
         </Pressable>
       </ScrollView>
+      </View>
       </View>
 
       {/* Account-deletion confirmation. Two-button destructive pattern:
@@ -1926,12 +2038,10 @@ export default function ProfileScreen() {
                 Delete your account?
               </AppText>
               <AppText variant="body" style={styles.deleteBody}>
-                This will permanently delete your account and personal information.
-                Your accessibility reports will remain on the map anonymously to
-                help the community. This cannot be undone.
+                This starts deletion of your account and associated content. Deletion happens asynchronously and cannot be undone.
               </AppText>
               <AppText variant="body" style={styles.deleteBodySecondary}>
-                If you also want your reports removed, get in touch with support and we&apos;ll take care of it.
+                This device will show confirmation when deletion is complete.
               </AppText>
             </ScrollView>
             <View style={styles.deleteActions}>
@@ -2135,7 +2245,7 @@ export default function ProfileScreen() {
             <AppText variant="body" style={styles.tierFooter}>
               {nextTier
                 ? `You're ${tierGap} ${tierGap === 1 ? 'point' : 'points'} away from ${nextTier.label}`
-                : `You've reached the top tier — keep contributing!`}
+                : `You've reached the top tier. Keep contributing!`}
             </AppText>
             </ScrollView>
           </View>
@@ -2172,6 +2282,8 @@ const makeStyles = (color: ColorTheme) =>
     // Deep Field stage root — bg stage1 so any pre-mount frame matches the
     // ScreenStage gradient behind the transparent scroll (GLASS.md rollout §1).
     stageRoot: { flex: 1, backgroundColor: color.stage1 },
+    // Keeps the status-bar exclusion zone fixed while profile content scrolls.
+    scrollViewport: { flex: 1 },
     // Transparent so the stage shows through; the cards float on it as glass.
     screen: { flex: 1, backgroundColor: 'transparent' },
     center: {
@@ -2487,7 +2599,7 @@ const makeStyles = (color: ColorTheme) =>
       ...shadow.e1,
     },
     pointHistoryTitle: {
-      fontSize: font.size.xs,
+      fontSize: font.size.md,
       fontWeight: font.weight.bold,
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textTransform: 'uppercase',
@@ -2498,6 +2610,29 @@ const makeStyles = (color: ColorTheme) =>
       alignItems: 'center',
       gap: spacing.sm,
       minHeight: a11y.minTargetSize, // WCAG 2.5.5 — these are VoiceOver-focusable rows; meet the 44pt target
+    },
+    pointHistoryRowAx: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      paddingVertical: spacing.sm,
+    },
+    pointHistorySummary: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    pointHistorySummaryAx: { flex: 0 },
+    pointHistoryMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      flexShrink: 0,
+    },
+    pointHistoryMetaAx: {
+      justifyContent: 'space-between',
+      paddingLeft: spacing.xl + spacing.sm,
     },
     // Hairline divider between point-history rows (all but the last) so the list
     // scans cleanly instead of running together. A neutral hairline (not text),
@@ -2528,6 +2663,7 @@ const makeStyles = (color: ColorTheme) =>
       color: color.inkGlassMuted, // arbitrated muted ink on the row glass
       textAlign: 'right',
     },
+    pointHistoryDateAx: { textAlign: 'left', flexShrink: 1 },
     // Neutral high-contrast delta number. On the light row-over-stage worst case
     // the semantic green (successStrong) measures 4.28:1 (<4.5), so the NUMBER
     // takes textStrong (arbiter-forced) and the gain/loss color lives on the
@@ -2796,6 +2932,20 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     signOutText: { color: color.text, fontWeight: font.weight.semibold },
+    accountDeletionStatusCard: {
+      marginTop: spacing.lg,
+      gap: spacing.sm,
+      padding: spacing.lg,
+    },
+    accountDeletionStatusTitle: { color: color.textStrong, fontWeight: font.weight.bold },
+    accountDeletionStatusBody: { color: color.text, lineHeight: font.lineHeight.sm },
+    accountDeletionStatusAction: {
+      alignSelf: 'flex-start',
+      minHeight: a11y.minTargetSize,
+      justifyContent: 'center',
+      paddingHorizontal: spacing.md,
+    },
+    accountDeletionStatusActionText: { color: color.brand, fontWeight: font.weight.semibold },
     // Destructive button — text-only red, not a filled button, so it reads as
     // a secondary action well below the sign-out affordance.
     deleteAccountBtn: {

@@ -23,6 +23,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+// RNGH ships no SectionList wrapper (unlike ScrollView/FlatList) — this is
+// SectionList's internal scroller, wired in via renderScrollComponent below.
+// See SectionListScrollRefBridge for why that needs its own bridge shape.
+import { ScrollView } from 'react-native-gesture-handler';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -56,6 +60,34 @@ interface Props {
   onViewOnMap?: (flag: FlagRow) => void;
 }
 
+/**
+ * Bridges SectionList's internal scroller to a ref SheetPull can use.
+ *
+ * A plain `ref` on <SectionList> only exposes SectionList's own instance, which
+ * — unlike FlatList's getNativeScrollRef() — never re-exposes the VirtualizedList
+ * underneath, so there's no public way to reach the real scroll node from outside.
+ * A ref set directly on the element renderScrollComponent returns doesn't survive
+ * either: VirtualizedList always re-parents that ref onto itself
+ * (`cloneElement(el, { ref: this._captureScrollRef })`), discarding whatever ref
+ * was there. So this component takes VirtualizedList's ref and forwards it to BOTH
+ * itself (VirtualizedList keeps working normally) and `bridgeRef` (SheetPull's
+ * simultaneousHandlers gets the same tagged RNGH node the ScrollView/FlatList
+ * fixes already rely on).
+ */
+const SectionListScrollRefBridge = React.forwardRef<
+  unknown,
+  React.ComponentPropsWithoutRef<typeof ScrollView> & { bridgeRef: React.MutableRefObject<unknown> }
+>(({ bridgeRef, ...scrollViewProps }, ref) => (
+  <ScrollView
+    {...scrollViewProps}
+    ref={(node: unknown) => {
+      if (typeof ref === 'function') ref(node);
+      else if (ref) (ref as React.MutableRefObject<unknown>).current = node;
+      bridgeRef.current = node;
+    }}
+  />
+));
+
 export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onViewOnMap }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
@@ -63,7 +95,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<unknown>(null);
   const { user } = useAuth();
   const [flags, setFlags] = useState<FlagRow[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
@@ -196,7 +228,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               ) : null}
               <View style={styles.rowBodyText}>
                 {item.description ? (
-                  <AppText variant="body" style={styles.rowDesc} numberOfLines={2}>
+                  <AppText variant="body" style={styles.rowDesc}>
                     {item.description}
                   </AppText>
                 ) : null}
@@ -243,7 +275,7 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
       glass
       engineered
       padded
-      shrinkStyle={styles.cap}
+      presentation="expanded"
       minBottomPad={spacing.xl}
       atTop={atTop}
       scrollRef={scrollRef}
@@ -273,20 +305,6 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
               })}
           </View>
 
-          {loadError ? (
-            <View style={styles.errorBanner}>
-              <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
-              <Pressable
-                onPress={load}
-                style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
-                accessibilityRole="button"
-                accessibilityLabel="Retry loading activity"
-              >
-                <AppText variant="label" style={styles.retryText}>Retry</AppText>
-              </Pressable>
-            </View>
-          ) : null}
-
           {loading && flags.length === 0 && !loadError ? (
             // Content-shaped loading (BP-3) — see MyReportsModal; same recipe.
             <View accessibilityLabel="Loading recent activity" accessibilityLiveRegion="polite">
@@ -297,14 +315,37 @@ export default function ActivityFeedModal({ visible, onClose, onSelectFlag, onVi
           ) : (
             <SectionList
               sections={sections}
-              ref={scrollRef}
+              renderScrollComponent={(scrollProps) => (
+                <SectionListScrollRefBridge {...scrollProps} bridgeRef={scrollRef} />
+              )}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(f) => f.id}
               renderItem={renderItem}
               accessibilityRole="list"
               stickySectionHeadersEnabled={false}
-              contentContainerStyle={sections.length === 0 ? styles.center : styles.list}
+              // A11Y-XXXL: the error banner (below, via ListHeaderComponent) needs a
+              // top-aligned, natural-height container — `styles.center`'s
+              // alignItems/justifyContent:'center' would shrink it to its intrinsic
+              // width and vertically center it, which is exactly what let it get
+              // clipped by the Sheet's own 85% cap instead of scrolling into view.
+              // The genuine empty state (no error, zero sections) keeps centering.
+              contentContainerStyle={!loadError && sections.length === 0 ? styles.center : styles.list}
+              ListHeaderComponent={
+                loadError ? (
+                  <View style={styles.errorBanner}>
+                    <AppText variant="body" style={styles.errorText}>{loadError}</AppText>
+                    <Pressable
+                      onPress={load}
+                      style={({ pressed }) => [styles.retryBtn, pressed && { backgroundColor: color.errorPressed }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Retry loading activity"
+                    >
+                      <AppText variant="label" style={styles.retryText}>Retry</AppText>
+                    </Pressable>
+                  </View>
+                ) : null
+              }
               renderSectionHeader={({ section: { title, data } }) => (
                 <View style={styles.sectionHeader}>
                   <AppText variant="heading" style={styles.sectionHeaderText}>{title}</AppText>
@@ -399,14 +440,18 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.md,
       padding: spacing.md,
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
+      flexWrap: 'wrap',
       gap: spacing.md,
+      // Rendered via ListHeaderComponent now — this replaces the gap the card's
+      // own `cardPadded` used to provide when the banner was a direct sibling.
+      marginBottom: spacing.md,
     },
     errorText: {
       color: color.errorFg,
       flex: 1,
+      minWidth: 0,
       fontSize: font.size.sm,
-      lineHeight: 18,
     },
     retryBtn: {
       paddingHorizontal: spacing.md + 2,
@@ -414,6 +459,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.md,
       backgroundColor: color.error,
       minHeight: 44,
+      alignSelf: 'flex-start',
       justifyContent: 'center',
     },
     retryText: {

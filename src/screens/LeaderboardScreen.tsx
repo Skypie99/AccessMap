@@ -1,19 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState , useRef} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
+// RNGH FlatList, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { FlatList } from 'react-native-gesture-handler';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { AppText } from '@/components/ui/AppText';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Sheet } from '@/components/ui/Sheet';
 import { useAtTop } from '@/components/ui/SheetPull';
-import { decorativeProps } from '@/lib/accessibility';
+import { decorativeProps, isAxRecompose } from '@/lib/accessibility';
 import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import {
@@ -156,6 +161,8 @@ interface LeaderboardRowProps {
   isCurrentUser: boolean;
   styles: ReturnType<typeof makeStyles>;
   color: ColorTheme;
+  axRecompose: boolean;
+  avatarSize: number;
 }
 
 // Extracted so React.memo can skip re-renders when the same leaderboard data
@@ -171,6 +178,8 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
   isCurrentUser,
   styles,
   color,
+  axRecompose,
+  avatarSize,
 }: LeaderboardRowProps) {
   const name = displayName ?? 'Member';
   // SW-44. This used to be `name.slice(0, 2).toUpperCase()` on the line above,
@@ -215,26 +224,33 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
       >
         {ordinalLabel(rank)}
       </AppText>
-      <AvatarCircle uri={avatarUrl} initials={initials} size={AVATAR_SIZE} color={color} />
-      <View style={styles.nameWrap}>
+      <AvatarCircle uri={avatarUrl} initials={initials} size={avatarSize} color={color} />
+      <View style={[styles.rowContent, axRecompose && styles.rowContentAx]}>
+        <View style={[styles.nameWrap, axRecompose && styles.nameWrapAx]}>
+          <AppText
+            variant="body"
+            style={[styles.name, isCurrentUser && styles.nameSelf]}
+          >
+            {name}
+          </AppText>
+          {isCurrentUser ? (
+            <AppText variant="label" style={styles.youBadge} {...decorativeProps}>
+              you
+            </AppText>
+          ) : null}
+          {verifiedCount > 0 ? (
+            <AppText variant="label" style={styles.verifiedBadge} {...decorativeProps}>
+              {verifiedCount} verified
+            </AppText>
+          ) : null}
+        </View>
         <AppText
-          variant="body"
-          style={[styles.name, isCurrentUser && styles.nameSelf]}
+          variant="mono"
+          style={[styles.points, axRecompose && styles.pointsAx]}
         >
-          {name}
+          {points.toLocaleString()} pts
         </AppText>
-        {isCurrentUser ? (
-          <AppText variant="label" style={styles.youBadge} {...decorativeProps}>
-            you
-          </AppText>
-        ) : null}
-        {verifiedCount > 0 ? (
-          <AppText variant="label" style={styles.verifiedBadge} {...decorativeProps}>
-            {verifiedCount} verified
-          </AppText>
-        ) : null}
       </View>
-      <AppText variant="mono" style={styles.points}>{points.toLocaleString()} pts</AppText>
     </View>
   );
 });
@@ -242,11 +258,18 @@ const LeaderboardRow = React.memo(function LeaderboardRow({
 export default function LeaderboardScreen({ visible, onClose }: Props) {
   const color = useColor();
   const styles = useMemo(() => makeStyles(color), [color]);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
+  const avatarSize = Math.round(
+    AVATAR_SIZE * Math.max(1, Math.min(fontScale, TYPE_BLOCK.chrome)),
+  );
   // The pull gesture must not fight the body's own scroll: `useAtTop`
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
-  const scrollRef = useRef(null);
+  // Holds the native scroll node, not the FlatList instance — see the ref
+  // callback below for why.
+  const scrollRef = useRef<unknown>(null);
   // SW-45: this sheet ran flush to the screen bottom while the tab bar sits at
   // 861-914, so scrolled rows painted straight over a ghosted "Home / Tasks /
   // Profile" — the red Tasks badge showed through behind the 4th-place row's
@@ -320,9 +343,11 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
         isCurrentUser={item.id === user?.id}
         styles={styles}
         color={color}
+        axRecompose={axRecompose}
+        avatarSize={avatarSize}
       />
     ),
-    [user?.id, styles, color],
+    [user?.id, styles, color, axRecompose, avatarSize],
   );
 
   return (
@@ -331,10 +356,15 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       onClose={onClose}
       title="Leaderboard"
       subtitle={tab === 'month' ? 'Top 20 contributors this month' : 'Top 20 contributors by points'}
+      subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}
       closeLabel="Close leaderboard"
       glass
       engineered
-      shrinkStyle={styles.cap}
+      // VP1 fix3 (Global Fix 3): reaches the top safe area instead of
+      // content-hugging at a flat 90% cap, which left dead space above a
+      // short list. `shrinkStyle={styles.cap}` is gone — its maxHeight:'90%'
+      // would have clobbered the expanded 100% cap (it applies last).
+      presentation="expanded"
       cardStyle={styles.card}
       // SW-45: the sheet clears the tab bar. Folded into the primitive's
       // `Math.max(floor, insets.bottom)` rather than replacing it, so the home
@@ -420,7 +450,13 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
           ) : (
             <FlatList
               data={entries}
-              ref={scrollRef}
+              // FlatList's OWN ref exposes FlatList's imperative API
+              // (scrollToIndex, etc.), not the native node RNGH tags with
+              // .handlerTag — that only lands on whatever `renderScrollComponent`
+              // renders internally, which is RNGH's ScrollView now that FlatList
+              // itself is imported from react-native-gesture-handler.
+              // getNativeScrollRef() reaches through to exactly that node.
+              ref={(r) => { scrollRef.current = r?.getNativeScrollRef() ?? null; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               keyExtractor={(e) => e.id}
@@ -460,19 +496,15 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
 
 function makeStyles(color: ColorTheme) {
   return StyleSheet.create({
-    // `Sheet`'s own 90% cap is what this sheet always wanted; the difference
-    // is that the primitive's RESOLVES. D22: the '90%' here sat on a card
-    // whose parent was content-sized, so it never applied and a long list at
-    // large type ran off the screen (G6/SR-099, the same shape four sibling
-    // sheets had). Declared anyway, so the intent is legible where the sheet
-    // is configured rather than only in the primitive's default.
-    cap: { maxHeight: '90%' },
     // Not `padded`: this sheet's children carry their own gutters (the list
     // rows are full-bleed with inset content, and the footer spans the card).
     card: { paddingTop: spacing.tight },
     // Placement only — the control's own drawing lives in the primitive.
     segment: { marginHorizontal: spacing.xl, marginBottom: spacing.md },
-    list: { flexGrow: 0 },
+    // Own the remaining expanded-sheet viewport. Without shrink/minHeight the
+    // list lays out at content height, crushes the header, and cannot scroll to
+    // the lower rows at accessibility sizes.
+    list: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -495,6 +527,18 @@ function makeStyles(color: ColorTheme) {
     // rankTop: brand → brandText — brand (#1466E0) hit ≈4.45 on the dark
     // podiumGold row (FAIL); brandText is the arbitrated on-glass select ink.
     rankTop: { color: color.brandText, fontWeight: font.weight.bold },
+    rowContent: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    rowContentAx: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      gap: spacing.tight,
+    },
     nameWrap: {
       flex: 1,
       flexDirection: 'row',
@@ -502,6 +546,7 @@ function makeStyles(color: ColorTheme) {
       flexWrap: 'wrap',
       gap: 5, // compact badge gap — intentional between tight(4) and xs(6)
     },
+    nameWrapAx: { flex: 0, alignSelf: 'stretch' },
     name: {
       fontSize: font.size.base,
       color: color.text,
@@ -537,6 +582,7 @@ function makeStyles(color: ColorTheme) {
       minWidth: 60,
       textAlign: 'right',
     },
+    pointsAx: { minWidth: 0, textAlign: 'left' },
     stateWrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: spacing.xl },
     stateText: { fontSize: font.size.sm, color: color.inkGlassMuted, fontFamily: font.family.bodyMedium, textAlign: 'center' },
     stateHint: {

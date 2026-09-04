@@ -59,7 +59,7 @@ const RESOURCES: Resource[] = [
     icon: Building2,
     title: 'Report it to your city',
     blurb:
-      'Most municipalities take sidewalk, curb-ramp, and crossing-signal requests directly — often through a 311 service or a public-works web form.',
+      'Most municipalities take sidewalk, curb-ramp, and crossing-signal requests directly, often through a 311 service or a public-works web form.',
   },
   {
     icon: Users,
@@ -174,7 +174,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
           showsVerticalScrollIndicator={false}
         >
           <AppText variant="body" style={styles.intro}>
-            Flagging a barrier is the first step. These resources help get it fixed —
+            Flagging a barrier is the first step. These resources help get it fixed
             and help you plan around it in the meantime.
           </AppText>
 
@@ -233,7 +233,7 @@ export default function ResourcesScreen({ visible, onClose }: Props) {
           })}
 
           <AppText variant="body" style={styles.footnote}>
-            Flagstone is community-powered — these are starting points, not endorsements.
+            Flagstone is community-powered. These are starting points, not endorsements.
           </AppText>
         </ScrollView>
       </SafeAreaView>

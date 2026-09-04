@@ -139,9 +139,10 @@ describe('D3/C3 — the rows were moved, not rewritten', () => {
   });
 
   it('keeps every filter label and its selected-state announcement', () => {
-    // A11Y-215 (SC 2.5.3): the "Mine" chip's name now CONTAINS its visible
-    // text, so a voice-control user can speak what they see.
-    for (const label of ['Show all flags', 'Mine, show only my flags', 'Show all categories', 'Filter by category', 'Sort order']) {
+    // A11Y-215 (SC 2.5.3): each button name contains the visible control text.
+    // The two explicit group names stop the visible "All" controls from
+    // sounding identical to a screen-reader or voice-control user.
+    for (const label of ['Reports', 'Reports, All', 'Reports, Mine, show only my flags', 'Category', 'Category, All', 'Filter by category', 'Sort order']) {
       expect(`${label}: ${tasks.includes(label)}`).toBe(`${label}: true`);
     }
     // A11Y-216: `pressed`, not `selected` — Chromium drops aria-selected on
@@ -149,6 +150,17 @@ describe('D3/C3 — the rows were moved, not rewritten', () => {
     // mirrors pressed into the native trait, so VoiceOver is unchanged.
     expect(tasks).toMatch(/a11yToggle\(\{ pressed: !mineOnly, disabled: !mineOnlyHydrated \}\)/);
     expect(tasks).toMatch(/a11yToggle\(\{ pressed: categoryFilter === null \}\)/);
+  });
+
+  it('uses the existing expanded Sheet path with an RNGH scroll body at XXXL', () => {
+    expect(sheetBlock).toMatch(/presentation="expanded"/);
+    expect(sheetBlock).toMatch(/minBottomPad=\{spacing\.xxl\}/);
+    expect(sheetBlock).toMatch(/atTop=\{filterSheetAtTop\}/);
+    expect(sheetBlock).toMatch(/scrollRef=\{filterSheetScrollRef\}/);
+    expect(sheetBlock).toMatch(/<ScrollView[\s\S]*?onScroll=\{onFilterSheetScroll\}/);
+    expect(sheetBlock).toMatch(/<View style=\{styles\.sortChipWrap\}>/);
+    expect(sheetBlock).not.toMatch(/adjustsFontSizeToFit/);
+    expect(sheetBlock).not.toMatch(/numberOfLines=\{1\}/);
   });
 
   it('every control in the new row clears 44pt', () => {

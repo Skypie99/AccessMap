@@ -62,10 +62,10 @@ jest.mock('expo-image-picker', () => ({
 
 type MockHandle = PlatformMapHandle & { showCallout: jest.Mock };
 
-function makeMap(): MockHandle {
+function makeMap(results: boolean[] = [true]): MockHandle {
   return {
     animateTo: jest.fn(),
-    showCallout: jest.fn(),
+    showCallout: jest.fn(() => results.shift() ?? results.at(-1) ?? true),
     zoomBy: jest.fn(),
   } as unknown as MockHandle;
 }
@@ -83,7 +83,7 @@ afterEach(() => {
 describe('T1 rung 0 — the same-tick attempt (F3-06)', () => {
   it('fires showCallout synchronously, before any timer runs', () => {
     const map = makeMap();
-    retryShowCallout(map, 'f1', () => false);
+    retryShowCallout(() => map, 'f1', () => false);
     // No timer advance: the first attempt already landed, same tick.
     expect(map.showCallout).toHaveBeenCalledTimes(1);
     expect(map.showCallout).toHaveBeenCalledWith('f1');
@@ -91,7 +91,7 @@ describe('T1 rung 0 — the same-tick attempt (F3-06)', () => {
 
   it('skips every attempt — including rung 0 — when already cancelled', () => {
     const map = makeMap();
-    retryShowCallout(map, 'f1', () => true);
+    retryShowCallout(() => map, 'f1', () => true);
     expect(map.showCallout).not.toHaveBeenCalled();
     jest.runAllTimers();
     expect(map.showCallout).not.toHaveBeenCalled();
@@ -99,32 +99,32 @@ describe('T1 rung 0 — the same-tick attempt (F3-06)', () => {
 
   it('tolerates a null map on every rung (marker path not mounted yet)', () => {
     expect(() => {
-      retryShowCallout(null, 'f1', () => false);
+      retryShowCallout(() => null, 'f1', () => false);
       jest.runAllTimers();
     }).not.toThrow();
   });
 });
 
-describe('T1 ladder — the 250/400/550/700 retries survive rung 0', () => {
-  it('retries at each rung while un-cancelled (showCallout is idempotent)', () => {
-    const map = makeMap();
-    retryShowCallout(map, 'f1', () => false);
+describe('T1 ladder — retries readiness and stops after the first presentation', () => {
+  it('retries missing markers, then stops permanently after the first success', () => {
+    const map = makeMap([false, false, true]);
+    retryShowCallout(() => map, 'f1', () => false);
     expect(map.showCallout).toHaveBeenCalledTimes(1); // rung 0
     jest.advanceTimersByTime(250);
     expect(map.showCallout).toHaveBeenCalledTimes(2);
     jest.advanceTimersByTime(150); // t=400
     expect(map.showCallout).toHaveBeenCalledTimes(3);
-    jest.advanceTimersByTime(150); // t=550
-    expect(map.showCallout).toHaveBeenCalledTimes(4);
+    jest.advanceTimersByTime(150); // t=550 — already settled at t=400
+    expect(map.showCallout).toHaveBeenCalledTimes(3);
     jest.advanceTimersByTime(150); // t=700
-    expect(map.showCallout).toHaveBeenCalledTimes(5);
+    expect(map.showCallout).toHaveBeenCalledTimes(3);
     jest.runAllTimers(); // nothing left
-    expect(map.showCallout).toHaveBeenCalledTimes(5);
+    expect(map.showCallout).toHaveBeenCalledTimes(3);
   });
 
   it('the returned canceller clears all pending rungs; double-cancel is a no-op', () => {
-    const map = makeMap();
-    const cancel = retryShowCallout(map, 'f1', () => false);
+    const map = makeMap([false, false, false, false, false]);
+    const cancel = retryShowCallout(() => map, 'f1', () => false);
     jest.advanceTimersByTime(250); // rung 0 + 250 landed
     cancel();
     cancel(); // idempotent — the effect sites may double-cancel via cleanup
@@ -133,9 +133,9 @@ describe('T1 ladder — the 250/400/550/700 retries survive rung 0', () => {
   });
 
   it('a caller isCancelled predicate silences later rungs mid-ladder', () => {
-    const map = makeMap();
+    const map = makeMap([false, false, false, false, false]);
     let cancelled = false;
-    retryShowCallout(map, 'f1', () => cancelled);
+    retryShowCallout(() => map, 'f1', () => cancelled);
     jest.advanceTimersByTime(250);
     cancelled = true; // e.g. the deep-link effect cleanup flipped its flag
     jest.runAllTimers();
@@ -144,16 +144,16 @@ describe('T1 ladder — the 250/400/550/700 retries survive rung 0', () => {
 });
 
 describe('T1 shared scheduler — last-tap-wins across every path (F3-04)', () => {
-  it('rapid Nearby A→B (~450ms apart) yields exactly B: A’s 550/700 rungs are cancelled', () => {
+  it('rapid Nearby A→B yields exactly one presentation for each mounted marker', () => {
     const map = makeMap();
     const scheduler = createCalloutScheduler(() => map);
     scheduler.schedule('A'); // t=0: A rung 0
-    jest.advanceTimersByTime(450); // A's 250 + 400 fired
-    expect(callsFor(map, 'A')).toBe(3);
-    scheduler.schedule('B'); // t=450: B rung 0; A's 550/700 die here
+    jest.advanceTimersByTime(450);
+    expect(callsFor(map, 'A')).toBe(1);
+    scheduler.schedule('B');
     jest.runAllTimers();
-    expect(callsFor(map, 'A')).toBe(3); // never again
-    expect(callsFor(map, 'B')).toBe(5); // rung 0 + full ladder
+    expect(callsFor(map, 'A')).toBe(1);
+    expect(callsFor(map, 'B')).toBe(1);
     // The last word on screen is B — the flag the user actually asked for.
     expect(map.showCallout.mock.calls.at(-1)?.[0]).toBe('B');
   });
@@ -166,12 +166,12 @@ describe('T1 shared scheduler — last-tap-wins across every path (F3-04)', () =
     jest.advanceTimersByTime(300);
     scheduler.schedule('B'); // handler-style caller
     jest.runAllTimers();
-    expect(callsFor(map, 'A')).toBe(2); // rung 0 + 250 only
-    expect(callsFor(map, 'B')).toBe(5);
+    expect(callsFor(map, 'A')).toBe(1);
+    expect(callsFor(map, 'B')).toBe(1);
   });
 
   it('cancelPending() kills a mid-flight ladder (leaving the Map tab)', () => {
-    const map = makeMap();
+    const map = makeMap([false, false, false, false, false]);
     const scheduler = createCalloutScheduler(() => map);
     scheduler.schedule('A');
     jest.advanceTimersByTime(250);
@@ -190,20 +190,18 @@ describe('T1 shared scheduler — last-tap-wins across every path (F3-04)', () =
     scheduler.schedule('B'); // shared cancel of A is now a harmless double-cancel
     jest.runAllTimers();
     expect(callsFor(map, 'A')).toBe(1); // rung 0 only (fired before cancel)
-    expect(callsFor(map, 'B')).toBe(5);
+    expect(callsFor(map, 'B')).toBe(1);
   });
 
-  it('reads the map handle at schedule time (parity with the old call sites)', () => {
+  it('reads the live map handle on every readiness rung', () => {
     const map = makeMap();
     let current: PlatformMapHandle | null = null;
     const scheduler = createCalloutScheduler(() => current);
-    scheduler.schedule('early'); // map not mounted yet — every rung no-ops
-    jest.runAllTimers();
+    scheduler.schedule('early'); // rung 0 sees no mounted map
     current = map;
-    scheduler.schedule('late');
+    jest.advanceTimersByTime(250); // next rung sees the newly mounted handle
     jest.runAllTimers();
-    expect(callsFor(map, 'early')).toBe(0);
-    expect(callsFor(map, 'late')).toBe(5);
+    expect(callsFor(map, 'early')).toBe(1);
   });
 });
 
@@ -235,5 +233,9 @@ describe('T1 wiring — source invariants (the four flows ride the ONE scheduler
   it('the deep link’s 800ms param-clear still trails the last (700ms) rung', () => {
     expect(src).toContain('clearParamTimer = setTimeout(');
     expect(src).toContain('}, 800);');
+  });
+
+  it('the Tasks focus intent is also cleared after its final readiness rung', () => {
+    expect(src).toContain('navigation.setParams({ focusFlag: undefined, ts: undefined });');
   });
 });

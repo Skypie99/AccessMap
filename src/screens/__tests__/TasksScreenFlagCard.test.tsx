@@ -126,12 +126,15 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof TaskCard>> = 
     onLongPress: jest.fn(),
     onSetStatus: jest.fn(),
     onShowDetails: jest.fn(),
+    onSignInToReview: jest.fn(),
   };
   const utils = render(
     <TaskCard
       flag={baseFlag}
       isBusy={false}
       isOwn={false}
+      canReview
+      isAdmin={false}
       userLocation={null}
       selectionActive={false}
       selected={false}
@@ -145,7 +148,10 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof TaskCard>> = 
 
 describe('TaskCard — the composition, re-ranked (F1/F2/F3)', () => {
   it('renders disc, title, census, description and the action row', () => {
-    const { getByText } = renderCard();
+    // MOD1: Reject is admin-only now — render as admin so this composition
+    // test still exercises the full row (dedicated admin-gating tests live
+    // in the "MOD1: Reject is admin-only" describe block below).
+    const { getByText } = renderCard({ isAdmin: true });
     expect(getByText('Blocked path')).toBeTruthy(); // category title
     // The census: severity, word, status, then whatever the host appends —
     // one sentence in one order, where five objects used to sit.
@@ -210,7 +216,8 @@ describe('TaskCard — F3: one filled verb, one segmented pair, one link', () =>
   });
 
   it('the siblings share ONE ghost container, which draws the only hairline', () => {
-    const { getByTestId, getByText } = renderCard();
+    // MOD1: this pair (Resolved + Reject) only both exist for an admin viewer.
+    const { getByTestId, getByText } = renderCard({ isAdmin: true });
     const container = StyleSheet.flatten(getByTestId('card-actions-segmented').props.style);
     // The container owns the border and clips the ends, which is what makes two
     // square cells read as one object rather than as two ghost buttons.
@@ -245,7 +252,12 @@ describe('TaskCard — F3: one filled verb, one segmented pair, one link', () =>
   });
 
   it('a lone sibling draws no divider (the already-verified card)', () => {
-    const { getByText } = renderCard({ flag: { ...baseFlag, status: 'verified' } as FlagRow });
+    // MOD1: Reject (admin-only) is the "lone sibling" once Verify promotes
+    // Resolved to the filled lead — needs an admin viewer to exist at all.
+    const { getByText } = renderCard({
+      flag: { ...baseFlag, status: 'verified' } as FlagRow,
+      isAdmin: true,
+    });
     const reject = StyleSheet.flatten(getByText('Reject').parent?.props.style);
     expect(reject.borderLeftWidth).toBeUndefined();
   });
@@ -286,7 +298,7 @@ describe('TaskCard — handler wiring (byte-identical behavior)', () => {
   });
 
   it("Reject → onSetStatus(id, 'rejected', isOwn) — confirmation lives upstream in setStatus", () => {
-    const { getByText, handlers } = renderCard();
+    const { getByText, handlers } = renderCard({ isAdmin: true });
     fireEvent.press(getByText('Reject'));
     expect(handlers.onSetStatus).toHaveBeenCalledWith('flag-1', 'rejected', false);
   });
@@ -304,6 +316,63 @@ describe('TaskCard — handler wiring (byte-identical behavior)', () => {
     expect(handlers.onPress).toHaveBeenCalledWith(baseFlag);
     fireEvent(title, 'longPress');
     expect(handlers.onLongPress).toHaveBeenCalledWith(baseFlag);
+  });
+});
+
+describe('TaskCard — MOD1: Reject is admin-only', () => {
+  it('hides Reject from a non-admin reviewer by default', () => {
+    const { queryByText } = renderCard();
+    expect(queryByText('Reject')).toBeNull();
+  });
+
+  it('shows Reject to an admin reviewer', () => {
+    const { getByText } = renderCard({ isAdmin: true });
+    expect(getByText('Reject')).toBeTruthy();
+  });
+
+  it('a non-admin still gets Verify, Resolved and Details', () => {
+    const { getByText } = renderCard();
+    for (const label of ['Verify', 'Resolved', 'Details']) {
+      expect(getByText(label)).toBeTruthy();
+    }
+  });
+});
+
+describe('TaskCard — guest review boundary', () => {
+  it('replaces every verdict with one sign-in action while keeping Details', () => {
+    const { getAllByText, getByText, queryByText, queryByTestId } = renderCard({
+      canReview: false,
+    });
+
+    expect(getAllByText('Sign in to review')).toHaveLength(1);
+    expect(getByText('Details')).toBeTruthy();
+    for (const verdict of ['Verify', 'Resolved', 'Reject']) {
+      expect(queryByText(verdict)).toBeNull();
+    }
+    expect(queryByTestId('card-actions-segmented')).toBeNull();
+  });
+
+  it('routes the account boundary without invoking a mutation handler', () => {
+    const { getByText, handlers } = renderCard({ canReview: false });
+
+    fireEvent.press(getByText('Sign in to review'));
+
+    expect(handlers.onSignInToReview).toHaveBeenCalledTimes(1);
+    expect(handlers.onSetStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not expose long-press selection or advertise it to assistive technology', () => {
+    const { getByRole } = renderCard({ canReview: false });
+    const summary = getByRole('button', {
+      name: 'Blocked path, severity 4 of 5, Significant, status Open. Tap to view on map.',
+    });
+    let cardPressable = summary.parent;
+    while (cardPressable && cardPressable.props.accessible !== false) {
+      cardPressable = cardPressable.parent;
+    }
+
+    expect(cardPressable?.props.onLongPress).toBeUndefined();
+    expect(summary.props.accessibilityHint).toBe('Opens the Map tab focused on this flag.');
   });
 });
 
@@ -357,7 +426,7 @@ describe('TaskCard — S13: actions are not trapped in an accessible parent', ()
 // when a location has resolved (null-guarded on userLocation via distanceInfo).
 describe('TaskCard — T8: each action names its flag', () => {
   it('with no location, action labels are category-only (no distance)', () => {
-    const { getByLabelText } = renderCard({ userLocation: null });
+    const { getByLabelText } = renderCard({ userLocation: null, isAdmin: true });
     expect(getByLabelText('Verify this flag — Blocked path')).toBeTruthy();
     expect(getByLabelText('Reject this flag — Blocked path')).toBeTruthy();
     expect(getByLabelText('View flag details — Blocked path')).toBeTruthy();

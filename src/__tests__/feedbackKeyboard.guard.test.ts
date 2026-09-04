@@ -22,11 +22,16 @@ const src = fs.readFileSync(
   path.join(__dirname, '..', 'components/FeedbackModal.tsx'),
   'utf8',
 );
+const sheetSrc = fs.readFileSync(
+  path.join(__dirname, '..', 'components/ui/Sheet.tsx'),
+  'utf8',
+);
 
 describe('BUG-3 — the feedback sheet stays fully visible above the keyboard', () => {
-  it('lifts the card with KeyboardAvoidingView (iOS padding)', () => {
-    expect(src).toMatch(/<KeyboardAvoidingView/);
-    expect(src).toContain("behavior={Platform.OS === 'ios' ? 'padding' : undefined}");
+  it('delegates the card lift to the shared Sheet KeyboardAvoidingView (iOS padding)', () => {
+    expect(src).toMatch(/<Sheet[\s\S]*?presentation="expanded"[\s\S]*?keyboardAvoiding/);
+    expect(sheetSrc).toMatch(/<KeyboardAvoidingView/);
+    expect(sheetSrc).toContain("behavior={Platform.OS === 'ios' ? 'padding' : undefined}");
   });
 
   it('tracks keyboard visibility via keyboardDidShow/Hide (both platforms)', () => {
@@ -35,9 +40,8 @@ describe('BUG-3 — the feedback sheet stays fully visible above the keyboard', 
   });
 
   it('reclaims the bottom inset while the keyboard is up (card gets shorter, never taller)', () => {
-    expect(src).toMatch(
-      /paddingBottom:\s*kbVisible\s*\?\s*spacing\.md\s*:\s*Math\.max\(spacing\.xl,\s*insets\.bottom\)/,
-    );
+    expect(src).toContain('minBottomPad={kbVisible ? spacing.md : spacing.xl}');
+    expect(sheetSrc).toContain('{ paddingBottom: Math.max(minBottomPad, insets.bottom) }');
   });
 
   it('shrinks the writing box only while the keyboard is up (reply-email + actions stay in view)', () => {

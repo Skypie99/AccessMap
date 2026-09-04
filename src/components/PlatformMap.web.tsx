@@ -44,7 +44,9 @@ export interface PlatformMapHandle {
     },
     opts?: { calloutClear?: boolean },
   ) => void;
-  showCallout: (flagId: string) => void;
+  /** Returns false while the requested marker is not mounted, allowing the
+   * caller to retry readiness without reopening an already-visible popup. */
+  showCallout: (flagId: string) => boolean;
   /** S4 / D6 — parity with the native handle. Leaflet keeps one popup open per
    *  map, so this is `closePopup()`, not a sweep. */
   hideCallout: () => void;
@@ -357,6 +359,12 @@ function ensureCalloutStyles() {
   const el = document.createElement('style');
   el.id = CALLOUT_CSS_ID;
   el.textContent =
+    // The native callout already paints `color.surface` — an opaque, proven
+    // reading surface. Do not let Leaflet's version-dependent popup defaults
+    // turn the web twin into translucent map chrome: the barrier/card reading
+    // layer must own its white floor and dark ink over every tile.
+    '.am-map-callout .leaflet-popup-content-wrapper,.am-map-callout .leaflet-popup-tip{background:#fff!important;color:#222!important;opacity:1}' +
+    '.am-map-callout .leaflet-popup-content-wrapper{border-radius:12px;overflow:hidden}' +
     '.am-callout-btn{background:#1466E0;transition:background-color .12s}' +
     '.am-callout-btn:hover{background:#0F53BE}' +
     '.am-callout-btn:active{background:#0F53BE}' +
@@ -505,6 +513,7 @@ function ClusteredMarkers({
                 stamped onto live popups by the effect in PlatformMap (react-
                 leaflet never diffs popup options after construction). */}
             <Popup
+              className="am-map-callout"
               autoPan={!reducedMotion}
               autoPanPaddingTopLeft={
                 popupInsetTop > 0 ? [POPUP_AUTOPAN_PAD_X, popupInsetTop] : undefined
@@ -1009,7 +1018,10 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
       showCallout: (id) => {
         // Opening fires popupopen synchronously; under RM the listener above
         // delivers the instant clear in the same frame (F3-06).
-        markerRefs.current[id]?.openPopup();
+        const marker = markerRefs.current[id];
+        if (!marker) return false;
+        marker.openPopup();
+        return true;
       },
       hideCallout: () => {
         // Leaflet holds at most one open popup per map, so the map itself is the

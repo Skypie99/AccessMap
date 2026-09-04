@@ -15,7 +15,7 @@
  * simulator walk at AXL.
  */
 import React from 'react';
-import { Text } from 'react-native';
+import { FlatList, Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 import NearbyFlagsModal from '../NearbyFlagsModal';
 import type { FlagRow } from '@/types/database';
@@ -40,6 +40,13 @@ const flag = {
   status: 'verified',
   user_id: 'u1',
   created_at: '2026-08-19T12:00:00.000Z',
+} as unknown as FlagRow;
+
+const secondFlag = {
+  ...flag,
+  id: 'f2',
+  category: 'no_ramp',
+  description: 'A second flag keeps the search and category controls available.',
 } as unknown as FlagRow;
 
 const baseProps = {
@@ -93,5 +100,25 @@ describe('PROTECT-1 — the card speaks in one breath, and the words did not mov
       .findAll((n) => typeof n.type === 'string' && Boolean(n.props.accessibilityLabel))
       .map((n) => n.props.accessibilityLabel);
     expect(labelled.filter((l: string) => l.includes('Blocked path'))).toHaveLength(1);
+  });
+});
+
+describe('R2-F1 — secondary chrome scrolls with Nearby content', () => {
+  it('supplies the notice, search, and category controls through the FlatList header', () => {
+    const { UNSAFE_getByType } = render(
+      <NearbyFlagsModal {...baseProps} flags={[flag, secondFlag]} />,
+    );
+
+    const list = UNSAFE_getByType(FlatList);
+    const header = list.props.ListHeaderComponent;
+
+    // The title/Close row stays outside FlatList as recovery chrome. Everything
+    // below it is a list header, so it can scroll away at accessibility sizes.
+    expect(header).toBeTruthy();
+
+    const headerUtils = render(header);
+    expect(headerUtils.getByText('Allow location access to sort flags by distance. Showing the most recent first.')).toBeTruthy();
+    expect(headerUtils.getByLabelText('Search flags')).toBeTruthy();
+    expect(headerUtils.getByLabelText('Filter by category')).toBeTruthy();
   });
 });

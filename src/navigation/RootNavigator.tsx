@@ -1,6 +1,5 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { BlurView } from 'expo-blur';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -20,6 +19,11 @@ import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { useReduceTransparency } from '@/lib/accessibility';
 import { TabBarButton } from './TabBarButton';
+import { TabBarGlass, liquidTabInk } from './TabBarGlass';
+import {
+  FLOATING_TAB_BAR_CAPSULE_HEIGHT,
+  FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING,
+} from './tabBarGeometry';
 import FeedbackModal from '@/components/FeedbackModal';
 import HelpModal from '@/components/HelpModal';
 import ChangelogModal from '@/components/ChangelogModal';
@@ -35,6 +39,10 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { computeTasksBadge, applySceneInert } from '@/navigation/perceptionHelpers';
 import { createLinking, type TakePendingUrl } from './linking';
 import { ScreenFallback } from './ScreenFallback';
+import {
+  schedulePushEducationAfterTabPress,
+  type CancellableInteractionTask,
+} from './postSignInPushGate';
 
 // Settings + Admin are reached ONLY from the hamburger drawer (Admin is also
 // gated by is_admin), so they never appear on first paint. Code-split them out
@@ -144,27 +152,6 @@ const tabIcon =
   function TabIcon({ color: tintColor, size }: { color: string; size: number }) {
     return <Icon size={size} color={tintColor} strokeWidth={2.2} />;
   };
-
-/**
- * Frosted-glass background for the bottom tab bar (native only — Phase 7a).
- * Rendered behind the bar's buttons via screenOptions.tabBarBackground. The
- * bar is positioned absolute + transparent on native so this blur shows the
- * content scrolling underneath. Honors Reduce Transparency (opaque fallback,
- * no blur) — mirrors GlassSurface's accessibility contract.
- */
-function TabBarGlass() {
-  const color = useColor();
-  const reduceTransparency = useReduceTransparency();
-  if (reduceTransparency) {
-    return <View style={[StyleSheet.absoluteFill, { backgroundColor: color.tabBarBg }]} />;
-  }
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={24} tint={color.tabBarBlurTint as 'light' | 'dark'} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: color.tabBarGlassFloor }]} />
-    </View>
-  );
-}
 
 interface Props {
   // Which tab to open on first render. Used by App.tsx to honor the user's
@@ -286,14 +273,61 @@ function ScreenInertLayer({ children }: { children: React.ReactNode }) {
  * the provider — useSharedModals would see no context).
  */
 function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamList }) {
-  const { setOpen } = useSharedModals();
+  const { open: sharedModalOpen, setOpen } = useSharedModals();
+  const { open: drawerOpen } = useDrawer();
+  const { pushEducationPending, consumePendingPushEducation } = useAuth();
   const color = useColor();
   const styles = makeStyles(color);
   const insets = useSafeAreaInsets();
   const isAdmin = useIsAdmin();
+  const reduceTransparency = useReduceTransparency();
+  const usesLiquidTabBar = Platform.OS === 'ios' && !reduceTransparency;
+  // The crystal floor is intentionally less opaque than the legacy tab floor.
+  // These existing high-contrast inks keep labels and icons legible over map
+  // detail; fallbacks retain their established tab-specific inks.
+  const { active: activeTabInk, inactive: inactiveTabInk } = liquidTabInk(color, reduceTransparency);
 
   const { flags } = useFlags();
   const tasksBadge = computeTasksBadge(flags);
+
+  // Keep tab-press scheduling stable while every eligibility value remains
+  // live. The callback is intentionally driven only by an explicit tab press;
+  // mounting, foregrounding, and modal dismissal never call it themselves.
+  const pushGateStateRef = useRef({
+    pending: pushEducationPending,
+    appState: AppState.currentState,
+    sharedModalOpen,
+    drawerOpen,
+  });
+  pushGateStateRef.current = {
+    pending: pushEducationPending,
+    appState: AppState.currentState,
+    sharedModalOpen,
+    drawerOpen,
+  };
+  const consumePushRef = useRef(consumePendingPushEducation);
+  consumePushRef.current = consumePendingPushEducation;
+  const pushTasksRef = useRef(new Set<CancellableInteractionTask>());
+
+  const handleVisibleTabPress = useCallback(() => {
+    let task: CancellableInteractionTask | null = null;
+    task = schedulePushEducationAfterTabPress(
+      () => ({ ...pushGateStateRef.current, appState: AppState.currentState }),
+      () => consumePushRef.current(),
+      () => {
+        if (task) pushTasksRef.current.delete(task);
+      },
+    );
+    if (task) pushTasksRef.current.add(task);
+  }, []);
+
+  useEffect(
+    () => () => {
+      for (const task of pushTasksRef.current) task.cancel();
+      pushTasksRef.current.clear();
+    },
+    [],
+  );
 
   const renderHeaderRight = () => (
     <Pressable
@@ -311,6 +345,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
   return (
     <Tab.Navigator
       initialRouteName={initialRouteName}
+      screenListeners={{ tabPress: handleVisibleTabPress }}
       // Per-screen safety net: a render crash in one tab shows an in-place
       // "Try again" fallback instead of bubbling to the app-level boundary and
       // blanking the whole app. The tab bar and other tabs stay usable.
@@ -319,7 +354,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           <ErrorBoundary variant="screen">{children}</ErrorBoundary>
         </ScreenInertLayer>
       )}
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerStyle: {
           backgroundColor: color.headerBg,
           borderBottomWidth: 1,
@@ -341,25 +376,40 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
         headerTintColor: color.headerFg,
         headerTitleAlign: 'center',
         headerRight: renderHeaderRight,
-        tabBarActiveTintColor: color.tabBarActiveTint,
-        tabBarInactiveTintColor: color.tabBarInactiveTint,
-        // BP11 / T3: every tab answers the hand — selection haptic + the
-        // nav-chrome pressed dim, a11y props forwarded. Hidden routes override
-        // this per-screen with `tabBarButton: () => null`.
-        tabBarButton: (props) => <TabBarButton {...props} />,
-        // Native: a frosted-glass background behind the bar (Phase 7a). On web
-        // we keep the CSS backdropFilter path in tabBarStyle instead.
+        tabBarActiveTintColor: activeTabInk,
+        tabBarInactiveTintColor: inactiveTabInk,
+        // BP11 / T3: every tab answers the hand with a selection haptic while
+        // keeping its a11y props forwarded and visual contrast stable. Hidden
+        // routes override this per-screen with `tabBarButton: () => null`.
+        tabBarButton: (props) => (
+          <TabBarButton
+            {...props}
+            dividerInk={color.navBorder}
+            selectedFill={color.glassSelectedTint}
+            showDivider={route.name === 'Home' || route.name === 'Tasks'}
+          />
+        ),
+        // Native: TabBarGlass supplies liquid glass on normal iOS and preserves
+        // opaque fallback material paths. Web keeps its CSS backdrop filter.
         tabBarBackground: Platform.OS === 'web' ? undefined : () => <TabBarGlass />,
         tabBarStyle: {
-          borderTopWidth: 1,
+          // The native edge lives on the capsule; a full-width line would turn
+          // the transparent safe-area remainder into a second visual bar.
+          borderTopWidth: Platform.OS === 'web' || !usesLiquidTabBar ? 1 : 0,
           borderTopColor: color.navBorder,
           // Grow by the bottom safe-area inset so the home indicator never
           // overlaps the tab labels. 68 (was 62) gives the label's real line
           // box room — at 62 the shrinkable label wrapper was squeezed to ~7px
-          // and clipped "Home / Tasks / Profile" in half.
-          height: 68 + insets.bottom,
-          paddingBottom: 8 + insets.bottom,
-          paddingTop: 6,
+          // and clipped "Home / Tasks / Profile" in half. VP1 fix2 retested
+          // this rather than assuming it: measured the label's rendered vs.
+          // natural line-box height (clientHeight vs scrollHeight) at every
+          // value from 62-68 and it's a clean 1:1 relationship with zero
+          // slack — 67 already clips (12/16px), so 68 is the true floor, not
+          // a stale leftover. paddingTop instead absorbs the lighter-footprint
+          // ask: it only shifts the icon block, never the label's own budget.
+          height: FLOATING_TAB_BAR_CAPSULE_HEIGHT + insets.bottom,
+          paddingBottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + insets.bottom,
+          paddingTop: 4,
           ...(Platform.OS === 'web'
             ? {
                 backgroundColor: color.tabBarBg,
@@ -385,7 +435,7 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
           marginTop: 2,
           letterSpacing: 0.2,
         },
-      }}
+      })}
     >
       {/* Visible tabs: Home · Tasks · Profile (Phase 7a 3-tab layout). */}
       <Tab.Screen

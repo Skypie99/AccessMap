@@ -9,7 +9,11 @@
  * refreshUpdateCount with the now-saved prefs).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+// RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { ScrollView } from 'react-native-gesture-handler';
 import { useAuth } from '@/lib/auth';
 import {
   NOTIFICATION_PREFS_LOADED_ANNOUNCEMENT,
@@ -18,6 +22,7 @@ import {
 import { AppText } from '@/components/ui/AppText';
 import { PrefsRow } from '@/components/ui/PrefsRow';
 import { Sheet } from '@/components/ui/Sheet';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { useAtTop } from '@/components/ui/SheetPull';
 import { STATUS_LABELS } from '@/lib/flags';
 import { StatusBadge } from './StatusBadge';
@@ -30,7 +35,7 @@ import {
 import type { FlagStatus } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { font, radius, spacing } from '@/theme';
-import { decorativeProps } from '@/lib/accessibility';
+import { decorativeProps, isAxRecompose } from '@/lib/accessibility';
 
 interface Props {
   visible: boolean;
@@ -85,6 +90,8 @@ export default function NotificationPrefsModal({
 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   // The pull gesture must not fight the body's own scroll: `useAtTop`
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
@@ -165,12 +172,14 @@ export default function NotificationPrefsModal({
       onClose={onClose}
       title="Updates"
       subtitle="Choose which flag updates surface on your Profile."
+      subtitleMaxFontSizeMultiplier={TYPE_BLOCK.header}
+      reflowHeaderTitle={axRecompose}
       closeLabel="Close updates settings"
       closeHint="Closes the update preferences panel"
       glass
       engineered
       padded
-      shrinkStyle={styles.cap}
+      presentation="expanded"
       minBottomPad={spacing.xxl}
       atTop={atTop}
       scrollRef={scrollRef}
@@ -208,6 +217,7 @@ export default function NotificationPrefsModal({
                   subtitle={description}
                   value={prefs[prefKey]}
                   onValueChange={(v) => handleToggle(prefKey, v)}
+                  reflow={axRecompose}
                   leading={
                     /* Decorative — the Switch already carries the full
                        accessible label + state, so announcing the badge would
@@ -229,10 +239,6 @@ export default function NotificationPrefsModal({
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at 85%.
-    // C13: the corner radius came with the primitive — this sheet was the one
-    // at `lg` while the whole family sat at `xl`.
-    cap: { maxHeight: '85%' },
     notice: {
       backgroundColor: color.warningBg,
       borderRadius: radius.sm,
@@ -244,7 +250,7 @@ const makeStyles = (color: ColorTheme) =>
     noticeText: { color: color.warningFg, fontSize: font.size.sm, lineHeight: 18 },
     center: { alignItems: 'center', paddingVertical: spacing.xxxl },
     // gap lives on contentContainerStyle — a ScrollView ignores gap on `style`.
-    list: {},
+    list: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
     listContent: { gap: spacing.sm },
     statusBadge: {
       paddingHorizontal: spacing.sm,

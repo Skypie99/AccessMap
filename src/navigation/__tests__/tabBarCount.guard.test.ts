@@ -96,4 +96,12 @@ describe('SW-13 + SW-38 — the announced tab count', () => {
     // instead of inventing a new announcement on platforms the walk never saw.
     expect(src).toMatch(/if \(Platform\.OS !== 'ios'\) return undefined;/);
   });
+
+  it('keeps exactly two dividers', () => {
+    expect(src).toContain("showDivider={route.name === 'Home' || route.name === 'Tasks'}");
+  });
+
+  it('keeps the native safe-area strip transparent and absolute', () => {
+    expect(src).toMatch(/position: 'absolute',\s*backgroundColor: 'transparent'/);
+  });
 });

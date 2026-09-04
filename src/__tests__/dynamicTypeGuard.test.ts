@@ -407,7 +407,7 @@ function scanRule2(): Violation[] {
 // decorative or dead — selectCheck/avatarEditBadge lost their text children in
 // Tier-1's dead-style sweep, RankBadge was deleted with the dead components,
 // and the rest are decorative dots/swatches (sevDot, severityDot, HomeScreen
-// dot, HeatmapLegend swatch, ReportsBreakdownCard track, PhotoGallery addTile).
+// dot, ReportsBreakdownCard track, PhotoGallery addTile).
 // The broad form would need a ~6-name exemption list to stay green while
 // adding zero real-bug coverage; this subset already catches the real class
 // (the badgeCount shape) name-independently — see the self-test below.

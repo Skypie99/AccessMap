@@ -6,13 +6,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
-  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
+// RNGH FlatList AND ScrollView, not react-native's — their refs expose
+// .handlerTag, which SheetPull's simultaneousHandlers={scrollRef} needs to
+// coexist with pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { useAuth } from '@/lib/auth';
 import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -40,7 +43,7 @@ import {
 } from '@/lib/watchedFlagsFilter';
 import { a11y, font, radius, spacing } from '@/theme';
 import { ArrowDown, MapPin, RefreshCw, Star } from 'lucide-react-native';
-import { a11yToggle, decorativeProps } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose } from '@/lib/accessibility';
 import { severityA11y, statusA11y } from '@/lib/a11yText';
 import type { FlagRow } from '@/types/database';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
@@ -110,11 +113,15 @@ export function sortWatchedFlags(items: FlagRow[], mode: WatchedSort): FlagRow[]
 export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewOnMap, refreshKey = 0 }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
+  const { fontScale } = useWindowDimensions();
+  const axRecompose = isAxRecompose(fontScale);
   // The pull gesture must not fight the body's own scroll: `useAtTop`
   // disables it whenever the content is scrolled away from its top, so a
   // downward drag scrolls back up instead of dismissing (SheetPull's `atTop`).
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
-  const scrollRef = useRef(null);
+  // Holds the native scroll node, not the FlatList instance — see the ref
+  // callback below for why.
+  const scrollRef = useRef<unknown>(null);
   // Keyboard-up bottom-inset reclaim (Recipe F step 3).
   const keyboardVisible = useKeyboardVisible();
   const { user } = useAuth();
@@ -358,9 +365,13 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
       glass
       engineered
       padded
-      fill
+      // VP1 fix3 (Global Fix 3): information-heavy panels use the max
+      // practical reading height instead of a content-hugging 55%/85%
+      // floor+cap. `expanded` fills from just under the safe-area top to
+      // minBottomPad, same as Leaderboard below and the pattern already
+      // proven on FeedbackModal/ReportContentModal/StatusHistoryModal.
+      presentation="expanded"
       keyboardAvoiding
-      shrinkStyle={styles.kav}
       cardStyle={keyboardVisible ? styles.cardKeyboard : styles.cardRhythm}
       minBottomPad={spacing.xxl + 4}
       atTop={atTop}
@@ -477,7 +488,13 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           {!loading && displayFlags.length > 0 ? (
             <FlatList
               data={displayFlags} keyExtractor={(item) => item.id} renderItem={renderItem}
-              ref={scrollRef}
+              // FlatList's OWN ref exposes FlatList's imperative API
+              // (scrollToIndex, etc.), not the native node RNGH tags with
+              // .handlerTag — that only lands on whatever `renderScrollComponent`
+              // renders internally, which is RNGH's ScrollView now that FlatList
+              // itself is imported from react-native-gesture-handler.
+              // getNativeScrollRef() reaches through to exactly that node.
+              ref={(r) => { scrollRef.current = r?.getNativeScrollRef() ?? null; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
               contentContainerStyle={styles.list}
@@ -493,9 +510,17 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
           ) : (
             <ScrollView
               style={styles.stateBody}
+              // scrollRef is typed unknown so it can hold either bridge's
+              // node (see the FlatList ref above). RNGH's ScrollView carries
+              // .handlerTag directly on its own ref — no getNativeScrollRef()
+              // indirection needed here, that's a FlatList-only quirk.
+              ref={(r) => { scrollRef.current = r; }}
               onScroll={onScroll}
               scrollEventThrottle={scrollEventThrottle}
-              contentContainerStyle={styles.stateBodyContent}
+              contentContainerStyle={[
+                styles.stateBodyContent,
+                axRecompose && styles.stateBodyContentAx,
+              ]}
               keyboardShouldPersistTaps="handled"
             >
             {loading ? (
@@ -522,9 +547,15 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
             ) : flags.length === 0 ? (
               // W5: Star and Search, two glyphs for two flavours of the same
               // nothing, become one mark. Every word is the shipped word,
-              // including the emphasis on the control's name.
+              // including the emphasis on the control's name. At AX the
+              // required title + instruction already fill this control-heavy
+              // viewport; the path is decorative, so it yields its height to
+              // the copy instead of forcing the final line below the edge.
               <EmptyState
                 title="No watched flags yet"
+                mark={axRecompose ? false : undefined}
+                style={axRecompose ? styles.emptyStateAx : undefined}
+                bodyStyle={axRecompose ? styles.emptyStateBodyAx : undefined}
                 body={
                   <>
                     Open any flag on the map or in Tasks and tap{' '}
@@ -536,6 +567,8 @@ export default function MyWatchedModal({ visible, onClose, onSelectFlag, onViewO
               <EmptyState
                 title="No matches"
                 body="Try a different search term or status filter."
+                style={axRecompose ? styles.emptyStateAx : undefined}
+                bodyStyle={axRecompose ? styles.emptyStateBodyAx : undefined}
               />
               ) : null}
             </ScrollView>
@@ -564,12 +597,6 @@ function chipActiveFg(status: WatchedStatusFilter, color: ColorTheme): string {
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    kav: {
-      width: '100%',
-      minHeight: '55%',
-      maxHeight: '85%',
-      flexShrink: 1,
-    },
     // The sheet's inter-child rhythm. `padded` supplies `md`; this surface
     // shipped tighter and its rows carry their own spacing.
     cardRhythm: { gap: spacing.tight },
@@ -586,14 +613,29 @@ const makeStyles = (color: ColorTheme) =>
     // palette — the accent bar takes `error` so the left edge reads too.
     refreshErrorBanner: { backgroundColor: color.errorBg, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: color.error },
     refreshErrorText: { fontSize: font.size.sm, color: color.errorFg, lineHeight: 18 },
-    // SW-42: the non-list states' scroller. flexShrink:1 is the load-bearing
-    // half — it is what lets the body absorb the card's shrink by scrolling
-    // instead of letting overflow:'hidden' eat it (FeedbackModal `body`, the
-    // reference Recipe F implementation, carries exactly this). flexGrow:1 +
-    // centring on the CONTENT container keeps a short empty state optically
-    // centred when there is room, which is how it looked before.
-    stateBody: { flexShrink: 1 },
+    // SW-42 / FV-4: the non-list scroller owns the sheet's remaining viewport.
+    // flexShrink keeps overflow scrollable under the cap; flexGrow + minHeight
+    // stop accessibility text from being laid out in a content-sized viewport
+    // that the sheet footer then clips.
+    stateBody: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
     stateBodyContent: { flexGrow: 1, justifyContent: 'center' },
+    // Centering a taller-than-viewport empty state creates negative overflow
+    // that a ScrollView cannot reveal. Start at the top only at AX sizes; the
+    // body remains scrollable and normal-text composition stays centered.
+    stateBodyContentAx: { justifyContent: 'flex-start' },
+    // The top-align and width fixes made the leading sentence reachable, but
+    // the decorative mark, remaining vertical pad, and normal 1.4 body leading
+    // still put the final AX line below this control-heavy viewport. Spend that
+    // space on the required instruction; normal text keeps the shared recipe.
+    emptyStateAx: {
+      paddingVertical: 0,
+      paddingHorizontal: 0,
+      gap: spacing.tight,
+    },
+    emptyStateBodyAx: {
+      maxWidth: '100%',
+      lineHeight: font.lineHeight.sm,
+    },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: spacing.md },
     // M-40 error-banner (self-contained solid pin — errorBg + errorFg, the
     // MyReports/ActivityFeed sibling pattern; no new arbiter pair, stacks _doc).

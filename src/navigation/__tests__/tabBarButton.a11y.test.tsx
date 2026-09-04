@@ -11,10 +11,11 @@
  * stopped announcing which tab was active. This test would have caught it.
  */
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { TabBarButton } from '../TabBarButton';
+import { FLOATING_TAB_BAR_SELECTED_FILL_WIDTH } from '../tabBarGeometry';
 
 jest.mock('@/lib/haptics', () => ({
   hapticSelection: jest.fn(),
@@ -83,5 +84,55 @@ describe('TabBarButton — a11y + press vocabulary', () => {
     const { getByTestId } = renderTab({ onLongPress });
     fireEvent(getByTestId('tab-Home'), 'longPress');
     expect(onLongPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a decorative crystal divider without putting it in the tab order', () => {
+    const { UNSAFE_getByProps } = renderTab({ showDivider: true, dividerInk: '#123456' });
+    // Hidden decorative elements are deliberately invisible to the normal
+    // a11y-aware query path, so inspect the host prop directly.
+    const divider = UNSAFE_getByProps({ testID: 'tab-segment-divider' });
+    expect(divider.props.accessibilityElementsHidden).toBe(true);
+    expect(divider.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(StyleSheet.flatten(divider.props.style)).toMatchObject({
+      top: 12,
+      bottom: 12,
+      right: 0,
+      borderRightColor: '#123456',
+    });
+  });
+
+  it('VP1 fix3: renders no underline at all — three simultaneous selection signals read as busy, so the chip + OS-level active ink now carry selection alone', () => {
+    const { queryByTestId } = renderTab({ 'aria-selected': true, selectedFill: '#112233' });
+    expect(queryByTestId('tab-segment-underline')).toBeNull();
+    expect(queryByTestId('tab-segment-underline-mask')).toBeNull();
+  });
+
+  it('VP1: draws a decorative selection wash behind the selected tab, hugging its content', () => {
+    const { UNSAFE_getByProps } = renderTab({ 'aria-selected': true, selectedFill: '#112233' });
+    const fill = UNSAFE_getByProps({ testID: 'tab-segment-fill' });
+    expect(fill.props.accessibilityElementsHidden).toBe(true);
+    expect(StyleSheet.flatten(fill.props.style)).toMatchObject({
+      backgroundColor: '#112233',
+    });
+  });
+
+  it('VP1: does not render the selection wash for an unselected tab', () => {
+    const { queryByTestId } = renderTab({ 'aria-selected': false, selectedFill: '#112233' });
+    expect(queryByTestId('tab-segment-fill')).toBeNull();
+  });
+
+  it('VP1 fix2: the wash is a fixed content-hugging width, not insets that scale with segment width', () => {
+    // The original geometry used left/right insets on the full flex segment,
+    // so it stretched into a highlight BAND on wider devices. A fixed width
+    // centered via left:50% + a matching negative marginLeft (the same trick
+    // SignInScreen already uses) stays the same size regardless of how wide
+    // the tab segment itself is.
+    const { UNSAFE_getByProps } = renderTab({ 'aria-selected': true, selectedFill: '#112233' });
+    const fill = UNSAFE_getByProps({ testID: 'tab-segment-fill' });
+    const flat = StyleSheet.flatten(fill.props.style);
+    expect(flat.width).toBe(FLOATING_TAB_BAR_SELECTED_FILL_WIDTH);
+    expect(flat.left).toBe('50%');
+    expect(flat.marginLeft).toBe(-(FLOATING_TAB_BAR_SELECTED_FILL_WIDTH / 2));
+    expect(flat.right).toBeUndefined();
   });
 });

@@ -15,6 +15,7 @@
 
 import React from 'react';
 import {
+  Animated,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -27,11 +28,11 @@ import {
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useColor } from '@/theme/ThemeContext';
-import { decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { decorativeProps, useFocusOnOpen } from '@/lib/accessibility';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
 import { AppText } from './AppText';
 import { GlassSurface } from './GlassSurface';
-import { SheetPull } from './SheetPull';
+import { SheetPull, type SheetPullHandle, useSheetPullDismissLifecycle } from './SheetPull';
 
 export interface SheetHeaderProps {
   title: string;
@@ -49,6 +50,12 @@ export interface SheetHeaderProps {
   /** Second line under the title, inside the header block (T3: one container,
    *  one multiplier). Achievements' "N of M earned" is this. */
   subtitle?: string;
+  /** Optional local cap for text-heavy headers whose body expands at AX sizes.
+   *  Omitted consumers retain the existing AppText body policy. */
+  subtitleMaxFontSizeMultiplier?: number;
+  /** Let the title take its intrinsic vertical height instead of sharing the
+   *  subtitle's row height. Opt in only for AX title/subtitle stacks. */
+  reflowHeaderTitle?: boolean;
   /** Spoken form of `subtitle` when the written one is abbreviated. */
   subtitleLabel?: string;
   /** Hint on the close button, for the sheets whose siblings carry one. */
@@ -120,6 +127,8 @@ export function SheetHeader({
   right,
   accessory,
   subtitle,
+  subtitleMaxFontSizeMultiplier,
+  reflowHeaderTitle,
   subtitleLabel,
   flush,
   titleRef,
@@ -135,7 +144,7 @@ export function SheetHeader({
             variant="heading"
             size={font.size.xl}
             color={color.textStrong}
-            style={styles.title}
+            style={[styles.title, reflowHeaderTitle && styles.titleReflow]}
             accessibilityRole="header"
             // T4 — a sheet title shrinks to 0.8 and then WRAPS. It never
             // clamps to one line, which is what the Leaderboard's own header
@@ -151,6 +160,7 @@ export function SheetHeader({
               variant="body"
               size={font.size.sm}
               color={color.inkGlassMuted}
+              maxFontSizeMultiplier={subtitleMaxFontSizeMultiplier}
               accessibilityLabel={subtitleLabel}
             >
               {subtitle}
@@ -181,16 +191,30 @@ export function SheetHeader({
 export interface SheetProps {
   visible: boolean;
   onClose: () => void;
+  /** Native dismissal-complete hook for owners that must present a successor
+   * surface only after this sheet has actually left the iOS hierarchy. */
+  onDismiss?: () => void;
   title: string;
   children: React.ReactNode;
   /** Override the card style (e.g. a different surface or paddingTop). */
   cardStyle?: ViewStyle;
+  /**
+   * `standard` keeps the existing content-sized sheet geometry. `expanded`
+   * fills from the safe area's top edge (plus the smallest shared gutter) to
+   * the existing bottom-safe-area pad, without changing the header or pull
+   * mechanics. No current screen opts in during Wave 1.
+   */
+  presentation?: 'standard' | 'expanded';
   /** Optional right-side header accessory (replaces the close button). */
   headerRight?: React.ReactNode;
   /** Optional control BESIDE Close (the list sheets' Refresh circle). */
   headerAccessory?: React.ReactNode;
   /** Second header line, and its spoken form. */
   subtitle?: string;
+  /** Forwarded to the subtitle only; default behavior remains unchanged. */
+  subtitleMaxFontSizeMultiplier?: number;
+  /** Forwarded to the header title only; default geometry remains unchanged. */
+  reflowHeaderTitle?: boolean;
   subtitleLabel?: string;
   /** Close button label + hint, when the default `Close {title}` is not the
    *  wording the surface already ships. */
@@ -260,12 +284,16 @@ export interface SheetProps {
 export function Sheet({
   visible,
   onClose,
+  onDismiss,
   title,
   children,
   cardStyle,
+  presentation = 'standard',
   headerRight,
   headerAccessory,
   subtitle,
+  subtitleMaxFontSizeMultiplier,
+  reflowHeaderTitle,
   subtitleLabel,
   closeLabel,
   closeHint,
@@ -287,7 +315,10 @@ export function Sheet({
   // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
   // modal render-tests mount these sheets without one. Same value in the app.
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
-  const reducedMotion = useReducedMotion();
+  const pullRef = React.useRef<SheetPullHandle>(null);
+  const { modalAnimationType, backdropOpacity, beginPullDismiss } = useSheetPullDismissLifecycle(visible);
+  const expanded = presentation === 'expanded';
+  const expandedTopMargin = insets.top + spacing.sm;
   // WCAG 2.4.3: when the sheet opens, move the screen-reader cursor onto its
   // title so it doesn't stay on the control behind the sheet.
   const titleRef = useFocusOnOpen<Text>(visible);
@@ -300,6 +331,8 @@ export function Sheet({
         right={headerRight}
         accessory={headerAccessory}
         subtitle={subtitle}
+        subtitleMaxFontSizeMultiplier={subtitleMaxFontSizeMultiplier}
+        reflowHeaderTitle={reflowHeaderTitle}
         subtitleLabel={subtitleLabel}
         closeLabel={closeLabel}
         closeHint={closeHint}
@@ -312,6 +345,8 @@ export function Sheet({
   const padPair = [
     padded && styles.cardPadded,
     fill && styles.cardFill,
+    expanded && styles.cardFill,
+    expanded && styles.cardExpanded,
     { paddingBottom: Math.max(minBottomPad, insets.bottom) },
     cardStyle,
   ];
@@ -325,6 +360,9 @@ export function Sheet({
         styles.cardShadow,
         bulkGlassShadow(color),
         fill && styles.cardFill,
+        expanded && styles.cardFill,
+        expanded && styles.cardShadowExpanded,
+        expanded && { marginTop: expandedTopMargin },
         // With a KAV present the cap belongs to the KAV, not here.
         keyboardAvoiding ? null : shrinkStyle,
       ]}
@@ -347,6 +385,7 @@ export function Sheet({
         { backgroundColor: color.surface },
         shadow.e3,
         ...padPair,
+        expanded && { marginTop: expandedTopMargin },
         keyboardAvoiding ? null : shrinkStyle,
       ]}
     >
@@ -358,8 +397,12 @@ export function Sheet({
       aria-label={title}
       visible={visible}
       transparent
-      animationType={reducedMotion ? 'none' : 'slide'}
+      animationType={modalAnimationType}
       onRequestClose={onClose}
+      onDismiss={() => {
+        pullRef.current?.resetAfterDismiss();
+        onDismiss?.();
+      }}
     >
       {/* G1/SR-063 — the VoiceOver escape gesture (two-finger Z) lands HERE,
           on the containment node, NOT on <Modal>. RN's Modal.render() forwards
@@ -369,8 +412,8 @@ export function Sheet({
           typecheck, satisfy any naive guard, and do absolutely nothing. On a
           View it is real: RCTView.m:447 accessibilityPerformEscape.
           One edit here covers both Sheet consumers. */}
-      <View
-        style={[styles.backdrop, { backgroundColor: color.scrim }]}
+      <Animated.View
+        style={[styles.backdrop, { backgroundColor: color.scrim, opacity: backdropOpacity }]}
         accessibilityViewIsModal
         onAccessibilityEscape={onClose}
         testID={testID}
@@ -386,16 +429,19 @@ export function Sheet({
             `onRequestClose` and `onAccessibilityEscape` already take, so the
             focus-return choreography is inherited rather than forked. */}
         <SheetPull
+          ref={pullRef}
           onDismiss={onClose}
+          onDismissStart={beginPullDismiss}
           enabled={pullEnabled}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
-          style={styles.pull}
+          style={expanded ? styles.pullExpanded : styles.pull}
+          visible={visible}
         >
           {keyboardAvoiding ? (
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={[styles.kav, shrinkStyle]}
+              style={[styles.kav, expanded && styles.kavExpanded, shrinkStyle]}
             >
               {card}
             </KeyboardAvoidingView>
@@ -403,7 +449,7 @@ export function Sheet({
             card
           )}
         </SheetPull>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -442,13 +488,19 @@ const styles = StyleSheet.create({
   // The pull wrapper must not become a layout node of its own: the backdrop's
   // flex-end anchor and the card's cap both depend on the chain above it.
   pull: { width: '100%' },
+  pullExpanded: { width: '100%', flexGrow: 1 },
   kav: { width: '100%', maxHeight: '90%', flexShrink: 1 },
+  kavExpanded: { maxHeight: '100%', flexGrow: 1 },
   // `padded`: the CARD owns the gutter and the inter-child rhythm, so a
   // transplanted body keeps the geometry it was written against.
   cardPadded: { paddingHorizontal: spacing.xl, gap: spacing.md },
   // SW-42 follow-up: fill the height a floor reserves rather than sitting at
   // the top of it, which would turn a height floor into a gap.
   cardFill: { flexGrow: 1 },
+  // Expanded fills the existing safe-area-backed sheet footprint; its dynamic
+  // top margin is supplied at render time from `insets.top + spacing.sm`.
+  cardExpanded: { maxHeight: '100%', flexShrink: 1 },
+  cardShadowExpanded: { maxHeight: '100%', flexShrink: 1 },
   handleWrap: { alignItems: 'center', paddingTop: spacing.sm, paddingBottom: spacing.tight },
   handle: { width: 36, height: 4, borderRadius: radius.full },
   headerRow: {
@@ -461,6 +513,16 @@ const styles = StyleSheet.create({
   },
   titleWrap: { flex: 1, gap: 2 },
   title: { flex: 1 },
+  // `flex:1` is correct for the compact one-line header, but in a tall
+  // title/subtitle stack it turns the title into a zero-basis flexible child.
+  // The first AX repair added longhands beside that shorthand; the flattened
+  // native style still carried `flex:1`, and Yoga continued to collapse the
+  // title while measuring the subtitle. Override the shorthand itself so the
+  // title contributes its intrinsic height. Non-adopters keep the exact default.
+  titleReflow: {
+    flex: 0,
+    flexShrink: 0,
+  },
   // `padded` case: the card already supplies the gutter, so the header must
   // not add a second one.
   headerRowFlush: { paddingHorizontal: 0 },

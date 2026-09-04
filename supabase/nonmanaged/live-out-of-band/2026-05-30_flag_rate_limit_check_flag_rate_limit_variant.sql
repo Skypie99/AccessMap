@@ -1,3 +1,19 @@
+-- CLASSIFICATION (added 2026-08-28 migration-history truth repair): live-out-of-band.
+-- Read-only catalog evidence confirms the function check_flag_rate_limit() and the
+-- trigger enforce_flag_rate_limit ARE currently live in the hosted database (pg_proc /
+-- pg_trigger), but no version in the hosted migration ledger
+-- (supabase_migrations.schema_migrations) contains this implementation. The ledger's
+-- 20260530064949 "flag_creation_rate_limit" version instead defines a DIFFERENT
+-- function/trigger pair, check_flag_creation_rate_limit() / enforce_flag_creation_rate_limit
+-- (also confirmed live) — that is now the managed migration at
+-- supabase/migrations/20260530064949_flag_creation_rate_limit.sql. This file was
+-- previously (incorrectly) checked in AT that same managed path/version, which did not
+-- truthfully represent the hosted ledger's recorded SQL for that version. It is preserved
+-- here, unmodified, as the separate historical truth it represents: a live-out-of-band
+-- change never recorded in the migration ledger.
+--
+-- Original header follows, unmodified:
+--
 -- Migration: Flag creation rate limit
 -- Prevents abuse: max 20 flags per user per 24 hours
 -- Apply in Supabase SQL Editor

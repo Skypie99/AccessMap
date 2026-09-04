@@ -3,6 +3,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
+  InteractionManager,
   KeyboardAvoidingView,
   Linking,
   Modal,
@@ -14,10 +15,11 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
 import type { LayoutChangeEvent } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction } from '@/lib/location';
+import { arrivalPermissionDenied, getCurrentPositionWithTimeout, initialLocationAction, locationErrorMessage } from '@/lib/location';
 import { failureBannerText, offlineBannerText } from '@/lib/copy';
 import { announce } from '@/lib/announce';
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -30,8 +32,6 @@ import { clearLiveStatusMessage, setLiveStatus } from '@/lib/liveStatus';
 import { confirm, notify } from '@/lib/confirm';
 import {
   AlertTriangle,
-  ChevronDown,
-  ChevronRight,
   HelpCircle,
   List,
   LocateFixed,
@@ -67,7 +67,6 @@ import {
 } from '@/lib/contextTags';
 import { DISTANCE_OPTIONS, loadMapFilters, saveMapFilters } from '@/lib/mapFilters';
 import { haversineKm, regionForNearestFlags } from '@/lib/distance';
-import { loadFilterPanelCollapsed, saveFilterPanelCollapsed } from '@/lib/filterPanelPrefs';
 import { loadHeatmapEnabled, saveHeatmapEnabled } from '@/lib/heatmapPrefs';
 import {
   DEFAULT_HEATMAP_MODE,
@@ -75,6 +74,8 @@ import {
   type HeatmapMode,
 } from '@/lib/heatmap';
 import { useHeatCells } from '@/components/HeatmapLayer';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import {
   deleteSet,
   FilterSetError,
@@ -100,6 +101,7 @@ import PlatformMap, {
 } from '@/components/PlatformMap';
 import type { DetailAction } from '@/components/FlagDetailModal';
 import { AppText } from '@/components/ui/AppText';
+import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { OverflowFade } from '@/components/ui/OverflowFade';
@@ -108,7 +110,6 @@ import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useScreenReader, useReducedMotion, a11yToggle, decorativeProps, isAxRecompose, useSurfaceTrigger } from '@/lib/accessibility';
 import LegendModal from './LegendModal';
-import HeatmapLegend from '@/components/HeatmapLegend';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import NearbyFlagsModal from './NearbyFlagsModal';
 import AddressSearchModal from '@/components/AddressSearchModal';
@@ -152,7 +153,7 @@ const DEFAULT_REGION: PlatformMapRegion = {
 // access is off. The assertive DENIED banner keeps its own stronger wording.
 // PROPOSED (BP13, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
 const NO_LOCATION_HINT =
-  "Location isn't on yet — showing the most recent flags, not ones near you.";
+  "Location isn't on yet. Showing the most recent flags, not ones near you.";
 
 // T7 (F4-03 / F5-03): fit a region to the loaded flags for the honest no-location
 // arrival — a TRUE frame instead of the hardcoded San-Francisco default, so a
@@ -188,13 +189,6 @@ function regionForFlags(rows: readonly { lat: number; lng: number }[]): Platform
   };
 }
 
-// Filter-panel height budget (G5). OVERLAY_PADDING mirrors styles.overlay's
-// padding; PANEL_BRACKET_ALLOWANCE reserves room for the action bar above the
-// panel and the FAB bottom bar below it. flexShrink on filterPanel corrects any
-// imprecision, so these only need to be in the right ballpark.
-const OVERLAY_PADDING = 16;
-const PANEL_BRACKET_ALLOWANCE = 160;
-
 // Sky's refinement ① (map-chrome B-refined, 2026-08-12): the command bar hugs
 // the status bar — the overlay's top pad drops from safe-area+16 to safe-area+8,
 // so the bar's top edge sits at insets.top + 8 (asserted by mapChromeBudget).
@@ -214,22 +208,29 @@ const CALLOUT_CHROME_MARGIN = 8;
 // the COMMON case the marker is already there, and rung 0 lands the payoff in
 // the same frame as the camera move (T1/F3-06: under Reduce Motion that means
 // jump + callout as one designed cut — the old ≥250ms dead beat is gone).
-// showCallout/openPopup are idempotent, so the extra calls are harmless once
-// it lands. `isCancelled` lets the caller abort (effect cleanup, or a newer
-// focus) so we never pop a stale callout. Returns a canceller that clears the
-// pending timers. Exported for the jest guards.
+// A successful attempt STOPS the ladder. Reopening an already-visible native
+// callout is not idempotent: repeated showCallout calls produced the visible
+// open → close → open pulse on Tasks → Map. `isCancelled` lets the caller abort
+// (effect cleanup, or a newer focus) so we never pop a stale callout. The map
+// handle is read at every rung because it may mount after scheduling.
 export function retryShowCallout(
-  map: PlatformMapHandle | null,
+  getMap: () => PlatformMapHandle | null,
   flagId: string,
   isCancelled: () => boolean,
 ): () => void {
-  if (!isCancelled()) map?.showCallout(flagId);
+  let settled = false;
+  const attempt = () => {
+    if (settled || isCancelled()) return;
+    settled = getMap()?.showCallout(flagId) === true;
+  };
+  attempt();
   const timers = [250, 400, 550, 700].map((ms) =>
-    setTimeout(() => {
-      if (!isCancelled()) map?.showCallout(flagId);
-    }, ms),
+    setTimeout(attempt, ms),
   );
-  return () => timers.forEach(clearTimeout);
+  return () => {
+    settled = true;
+    timers.forEach(clearTimeout);
+  };
 }
 
 // T1 (F3-04): ONE shared scheduler so every callout flow is last-tap-wins —
@@ -247,7 +248,7 @@ export function createCalloutScheduler(getMap: () => PlatformMapHandle | null): 
   return {
     schedule(flagId, isCancelled = () => false) {
       cancelCurrent(); // last-tap-wins: kill the previous flag's pending rungs
-      const cancel = retryShowCallout(getMap(), flagId, isCancelled);
+      const cancel = retryShowCallout(getMap, flagId, isCancelled);
       cancelCurrent = cancel;
       return cancel;
     },
@@ -274,7 +275,7 @@ const HEATMAP_MODE: HeatmapMode = DEFAULT_HEATMAP_MODE;
 // B10 (L7-07): the web locate-failure copy, shared by the setter (in the catch)
 // and the message-targeted clear (at the start of each locate attempt) so they
 // agree on exactly which banner to dismiss.
-const LOCATE_FAILED_MSG = "Couldn't find your location — check your connection and try again.";
+const LOCATE_FAILED_MSG = "Couldn't find your location. Check your connection and try again.";
 
 // M3 (re-sweep 2026-06-09): a deep-linked flag can live outside the first
 // page of loaded flags, in which case animateTo centers the map on empty
@@ -355,16 +356,16 @@ export default function MapScreen() {
   // Phase 7a: the bottom tab bar is now absolute (frosted glass) on native, so
   // lift the bottom overlay (FAB tray + legend) above it.
   const tabBarHeight = useBottomTabBarHeight();
-  // Reactive viewport height (rotation-safe) + safe-area insets, used to bound
-  // the filter panel's maxHeight so it can't cover the FABs (G5). Context form
-  // (non-throwing) since a provider isn't guaranteed in every render path.
-  const { height: windowHeight, fontScale } = useWindowDimensions();
+  // Reactive font scale drives the command-bar recomposition below. Safe-area
+  // insets are read separately through the non-throwing context fallback.
+  const { fontScale } = useWindowDimensions();
   // D1 / T4: the one-line command bar has no room for the word "Explore" at
   // large Dynamic Type — it rendered "Ex…". At the recomposition point the bar
   // drops the word and keeps ☰ · count · tools; the header landmark survives
   // (see barCenter below). `fontScale` off useWindowDimensions is the reactive
   // read of the same native value PixelRatio.getFontScale() returns.
   const barTitleHidden = isAxRecompose(fontScale);
+  const axRecompose = barTitleHidden;
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
   // S8: the map wears its own editorial header inside the box-none overlay now
   // (the dark nav bar is gone), so it drives the drawer + Feedback itself.
@@ -429,13 +430,19 @@ export default function MapScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
   // Direction B: the command bar's ⋯ overflow reveals an inline tool sheet
-  // (Send feedback / Map legend / Refresh flags / Save a place) — a panel-class
-  // surface like the filter panel, not a Modal.
+  // (Send feedback / Map legend / Refresh flags / Save a place). Unlike the
+  // expanded Filter flags sheet, this compact tool surface is not a Modal.
   const [toolsOpen, setToolsOpen] = useState(false);
   // Declared here, beside the tool sheet, rather than down with the rest of the
   // filter state: S4 made these two the pair that one function closes, and
   // `clearMapSurfaces` below has to be in scope for the effects that call it.
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const {
+    atTop: filterAtTop,
+    onScroll: onFilterScroll,
+    scrollEventThrottle: filterScrollEventThrottle,
+  } = useAtTop();
+  const filterScrollRef = useRef(null);
   // G5 focus-return triggers. Each one owns the handle of the control that
   // opened its surface, so closing the surface hands the screen-reader cursor
   // back to that control instead of stranding it (WCAG 2.4.3). Local pairs
@@ -518,7 +525,7 @@ export default function MapScreen() {
   // (Direction B) The 7-tool scrolling action bar is gone — Search + Filters
   // live in the command bar, the ⋯ sheet holds Feedback/Legend/Refresh/Save,
   // Recenter moved to the FAB column, and the severity/category cycles retired to
-  // the filter panel — so the tray's overflow-fade measure chain retires with it.
+  // the Filter flags sheet — so the tray's overflow-fade measure chain retires.
 
   // T14 (F2-07): the two silent filter-panel chip rails earn the same overflow
   // scent as the action bar, from the one shared contract (never a fork).
@@ -536,26 +543,31 @@ export default function MapScreen() {
   // onLayout is a passive read — the box-none overlay law is untouched.
   const commandBarH = useRef(0);
   const [chromeBandPx, setChromeBandPx] = useState(0);
+  const [locationBannerPx, setLocationBannerPx] = useState(0);
   const onCommandBarLayout = useCallback((e: LayoutChangeEvent) => {
     commandBarH.current = e.nativeEvent.layout.height;
     setChromeBandPx(Math.round(commandBarH.current));
   }, []);
+  const onLocationBannerLayout = useCallback((e: LayoutChangeEvent) => {
+    setLocationBannerPx(Math.round(e.nativeEvent.layout.height));
+  }, []);
+  const locationBannerInset = permissionDenied ? locationBannerPx + spacing.sm : 0;
 
   // S4 / D6 — ONE SURFACE AT A TIME ABOVE THE MAP.
   //
-  // The walk opened the filter panel, tapped a pin, went to Home, came back and
+  // The walk opened filters, tapped a pin, went to Home, came back and
   // tapped Report: the report sheet landed on a map that still had the filter
-  // panel AND the callout open under it, with "SEVERITY 4 OF 5" peeking above
+  // filter surface AND the callout open under it, with "SEVERITY 4 OF 5" peeking above
   // the sheet's top edge and the callout's blue button ghosting through the
   // panel and the legend (§16, §18, D3, D5 — five sightings, worst in dark).
   // Nothing ever put the map's own surfaces away, so they accumulated.
   //
-  // This is the one place that does. It closes the two INLINE panel-class
-  // surfaces (the filter panel and the ⋯ tool sheet — neither is a Modal) and
+  // This is the one place that does. It closes both map-owned filter/tool
+  // surfaces (the expanded filter Sheet and the inline ⋯ tool sheet) and
   // hides the callout, which is owned by the marker and therefore has to be
-  // dismissed imperatively. It does NOT close modals: the Nearby list stays up
-  // under the detail sheet on purpose (the screen-reader path returns focus to
-  // its row), and it does NOT touch the camera or `focusedFlagId` — where the
+  // dismissed imperatively. It does not close unrelated content modals: the
+  // Nearby list stays up under the detail sheet on purpose (the screen-reader
+  // path returns focus to its row), and it does not touch the camera or `focusedFlagId` — where the
   // map is looking, and which pin the user came for, both survive a sheet.
   const clearMapSurfaces = useCallback(() => {
     setFiltersOpen(false);
@@ -582,13 +594,6 @@ export default function MapScreen() {
     // object, so this does not re-run every render — and the same is true of
     // clearMapSurfaces, which closes over setters and a ref only.
   }, [screenReaderOn, nearbyTrigger, clearMapSurfaces]);
-  // Whether the filter panel (when open) shows just its header row or all
-  // sections. Persists across launches via filterPanelPrefs. Hydrated
-  // alongside the filter values; the save-effect below is gated on
-  // filterPanelHydrated so we don't clobber the stored value with the
-  // initial default during the brief mount→load window.
-  const [panelCollapsed, setPanelCollapsed] = useState(false);
-  const [panelCollapsedHydrated, setPanelCollapsedHydrated] = useState(false);
   // Heat-map toggle — defaults to OFF (Dani's design compile: don't obscure
   // pins on first load). Persisted via heatmapPrefs.ts. `heatmapHydrated`
   // gates the save-effect so we don't clobber the stored value during the
@@ -654,6 +659,29 @@ export default function MapScreen() {
   const [presetNameModalOpen, setPresetNameModalOpen] = useState(false);
   const [presetNameDraft, setPresetNameDraft] = useState('');
   const [savingPreset, setSavingPreset] = useState(false);
+  const pendingFilterSurfaceRef = useRef<'save-set' | 'save-preset' | 'presets' | null>(null);
+
+  const finishPendingFilterSurface = useCallback(() => {
+    const pending = pendingFilterSurfaceRef.current;
+    pendingFilterSurfaceRef.current = null;
+    if (pending === 'save-set') setNameModalOpen(true);
+    else if (pending === 'save-preset') setPresetNameModalOpen(true);
+    else if (pending === 'presets') setPresetsModalOpen(true);
+  }, []);
+
+  const closeFiltersThenOpen = useCallback(
+    (surface: 'save-set' | 'save-preset' | 'presets') => {
+      pendingFilterSurfaceRef.current = surface;
+      setFiltersOpen(false);
+      // RN exposes Modal.onDismiss only on iOS. Other platforms hand off after
+      // the current interaction queue, which is a lifecycle boundary rather
+      // than an animation-duration guess.
+      if (Platform.OS !== 'ios') {
+        InteractionManager.runAfterInteractions(finishPendingFilterSurface);
+      }
+    },
+    [finishPendingFilterSurface],
+  );
 
   // True while this screen is on screen — checked before any setState that
   // runs after an `await` so a slow request can't update a torn-down screen.
@@ -667,10 +695,10 @@ export default function MapScreen() {
 
   // D4 Safeguard #1 — Viewport geofence for realtime flag events.
   //
-  // Tracks the latest known map region so the D4 payload handler can discard
+  // Tracks the latest SETTLED map region so the D4 payload handler can discard
   // flags whose lat/lng fall outside what the user is currently viewing.
-  // Seeded from DEFAULT_REGION on mount; updated when `location` resolves
-  // (see useEffect below that syncs with `initialRegion`).
+  // Seeded from DEFAULT_REGION; PlatformMap refreshes it only after native map
+  // motion settles, never through a controlled region prop or per-frame state.
   //
   // We use a ref (not state) because the viewport gate callback is a closure
   // over this ref — no re-render needed when the region changes.
@@ -730,7 +758,7 @@ export default function MapScreen() {
 
   // (Direction B, 2026-08-12) The severity + category QUICK-CYCLE buttons that
   // used to live in the persistent top tray are removed. Their surviving home is
-  // the filter panel's severity discs + category chips (SPEC §11 B) — the
+  // the Filter flags sheet's severity discs + category chips (SPEC §11 B) — the
   // persistent chrome no longer carries a one-tap cycle. `minSeverity` /
   // `activeCategories` state and every panel control that reads them are intact.
 
@@ -766,11 +794,10 @@ export default function MapScreen() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [saved, sets, storedDefault, collapsed, heatOn] = await Promise.all([
+      const [saved, sets, storedDefault, heatOn] = await Promise.all([
         loadMapFilters(),
         listSets(),
         getDefaultSetId(),
-        loadFilterPanelCollapsed(),
         loadHeatmapEnabled(),
       ]);
       if (cancelled) return;
@@ -791,24 +818,14 @@ export default function MapScreen() {
       if (saved) setMaxDistanceKm(saved.maxDistanceKm);
       setSavedSets(sets);
       setDefaultIdState(defaultSet ? defaultSet.id : null);
-      setPanelCollapsed(collapsed);
       setHeatmapEnabled(heatOn);
       setFiltersHydrated(true);
-      setPanelCollapsedHydrated(true);
       setHeatmapHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
-
-  // Persist the panel collapsed/expanded toggle. Same fire-and-forget
-  // pattern as mapFilters — the worst case on a storage failure is the
-  // user's next session opens with the default (expanded) state.
-  useEffect(() => {
-    if (!panelCollapsedHydrated) return;
-    saveFilterPanelCollapsed(panelCollapsed);
-  }, [panelCollapsed, panelCollapsedHydrated]);
 
   // Persist the heat-map visibility toggle. Same fire-and-forget pattern.
   useEffect(() => {
@@ -819,7 +836,9 @@ export default function MapScreen() {
   // Q1: re-show the heat notice whenever the heat layer is (re-)enabled. Keyed
   // on the toggle only, so a dismiss sticks until the user turns heat off and on.
   useEffect(() => {
-    if (heatmapEnabled) setHeatNoticeDismissed(false);
+    if (heatmapEnabled) {
+      setHeatNoticeDismissed(false);
+    }
   }, [heatmapEnabled]);
 
   // Apply a saved set: copy its filter triple over the active filters.
@@ -904,8 +923,8 @@ export default function MapScreen() {
   // Open the save-name modal with an empty draft.
   const openSaveModal = useCallback(() => {
     setNameDraft('');
-    setNameModalOpen(true);
-  }, []);
+    closeFiltersThenOpen('save-set');
+  }, [closeFiltersThenOpen]);
 
   // Commit the draft name. saveSet does the cap + duplicate checks; we
   // map its typed error onto a single user-facing Alert. On success the
@@ -934,8 +953,8 @@ export default function MapScreen() {
   // Open the per-user preset save-name prompt with an empty draft.
   const openPresetSaveModal = useCallback(() => {
     setPresetNameDraft('');
-    setPresetNameModalOpen(true);
-  }, []);
+    closeFiltersThenOpen('save-preset');
+  }, [closeFiltersThenOpen]);
 
   // Snapshot the current filter triple as a new named preset for the
   // signed-in user. Loads the existing list, appends via addPreset (which
@@ -1296,7 +1315,10 @@ export default function MapScreen() {
             action: { label: 'Retry', onPress: () => requestLocationRef.current() },
           });
         } else {
-          Alert.alert("Couldn't find your location", errorMessage(e));
+          // Prompt B B-UX-003: locationErrorMessage keeps raw native
+          // diagnostics (e.g. kCLErrorDomain text) out of this alert while
+          // still passing the specific, actionable timeout message through.
+          Alert.alert("Couldn't find your location", locationErrorMessage(e));
         }
       }
     } finally {
@@ -1380,11 +1402,18 @@ export default function MapScreen() {
     // (realtime + the freshness window keep the list current). Saves a
     // round-trip — and the radio/battery cost — on every card tap.
     void refreshFlagsIfStale();
+    // Consume the navigation intent after the final readiness rung. Clearing
+    // sooner would run this effect's cleanup and cancel the ladder before a
+    // slow marker can mount; leaving it set replays the old intent on remount.
+    const clearFocusTimer = setTimeout(() => {
+      navigation.setParams({ focusFlag: undefined, ts: undefined });
+    }, 800);
     return () => {
       cancelled = true;
       cancelCallout();
+      clearTimeout(clearFocusTimer);
     };
-  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale, calloutScheduler]);
+  }, [route.params?.focusFlag, route.params?.ts, refreshFlagsIfStale, calloutScheduler, navigation]);
 
   // Phase 7a: Home's "Report" pill navigates here with openReport:true so the
   // report sheet opens on arrival. Clear the param right away (mirroring the L9
@@ -1502,14 +1531,6 @@ export default function MapScreen() {
     [location],
   );
 
-  // Keep the viewport ref in sync with the resolved initial region. This fires
-  // once when `location` becomes non-null, giving the gate an accurate starting
-  // region rather than the fallback DEFAULT_REGION.
-  useEffect(() => {
-    currentRegionRef.current = initialRegion;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
-
   // T7 (F4-03 / F5-03): the honest no-location arrival's TRUE FRAME. With no usable
   // location, a hardcoded San-Francisco viewport under a confident "Showing N flags"
   // pill is the inverted-honesty shape S4/S6 killed. So on the FIRST flags-load while
@@ -1540,6 +1561,13 @@ export default function MapScreen() {
   // the frame exactly once: `didInitialFitRef` now means "the FINAL frame is
   // claimed" and only the located fit (or an intent arrival) sets it.
   const didFallbackFitRef = useRef(false);
+  // Search, saved places, and a direct map touch all take ownership of the
+  // viewport. Keep this as a ref so retiring one-time arrival fits neither
+  // controls the native map nor causes a render while a gesture is in flight.
+  const retireArrivalFits = useCallback(() => {
+    didInitialFitRef.current = true;
+    didFallbackFitRef.current = true;
+  }, []);
   useEffect(() => {
     if (didInitialFitRef.current) return; // one-time
     // A CAMERA-MOVING intent arrival (Tasks focusFlag / deep-link flagId) owns the
@@ -1563,12 +1591,6 @@ export default function MapScreen() {
     // the question is still being asked?
     let isFinalFrame: boolean;
     if (location) {
-      // M2, the LOCATED frame. No-gesture proxy by object identity: `initialRegion`
-      // is memoized on `location` alone and the sync effect above assigns that exact
-      // object, so `=== initialRegion` means "still the seed". Anything that has
-      // since claimed the camera — an address search, a saved-place jump — reassigns
-      // this ref at its own call site, and the fit stands down.
-      if (currentRegionRef.current !== initialRegion) return;
       // The user dot is a MEMBER of the fit, not just its origin: a viewer standing
       // just outside a tight cluster would otherwise lose their own dot off the edge.
       const fitted = regionForNearestFlags(location, flags);
@@ -1582,11 +1604,6 @@ export default function MapScreen() {
       // finally, and the arrival effect clears it when permission is not granted.
       if (locating) return;
       if (didFallbackFitRef.current) return; // the placeholder paints once
-      // No-gesture proxy: currentRegionRef only syncs to `location` on this screen, so
-      // `=== DEFAULT_REGION` means "still the seed" — no resolved location. (A user pan on
-      // the pre-fit SF DEFAULT isn't tracked — no onRegionChange — but the fit only replaces
-      // that irrelevant default frame with the real flags; an INTENT camera is retired above.)
-      if (currentRegionRef.current !== DEFAULT_REGION) return;
       region = regionForFlags(flags);
       isFinalFrame = false;
     }
@@ -1615,7 +1632,6 @@ export default function MapScreen() {
       // paints once without locking out the located fit behind it.
       if (isFinalFrame) didInitialFitRef.current = true;
       else didFallbackFitRef.current = true;
-      currentRegionRef.current = region; // keep the viewport gate honest post-fit
       mapRef.current.snapToRegion(region);
     };
     commitFit(10);
@@ -1624,10 +1640,20 @@ export default function MapScreen() {
     loadingFlags,
     locating,
     location,
-    initialRegion,
     route.params?.focusFlag,
     route.params?.flagId,
   ]);
+
+  const handleMapInteractionStart = useCallback(() => {
+    // A direct touch is the user taking control. Retire both the final and
+    // provisional one-time fits before native panning/pinching can settle, so
+    // no delayed arrival effect snaps the viewport back beneath their fingers.
+    retireArrivalFits();
+  }, [retireArrivalFits]);
+
+  const handleMapRegionSettled = useCallback((region: PlatformMapRegion) => {
+    currentRegionRef.current = region;
+  }, []);
 
 
   // The pin callout's "Open details" — the one path where the surface being
@@ -1797,6 +1823,34 @@ export default function MapScreen() {
   // on tap, spend it on the dismissal-COMPLETE event. Everywhere but iOS the map
   // is never detached and onDismiss never fires, so the move stays inline.
   const pendingDetailFocus = useRef<FlagRow | null>(null);
+  const pendingDetailSignIn = useRef(false);
+  const detailSignInTaskRef = useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
+
+  const completeDetailSignIn = useCallback(() => {
+    if (!pendingDetailSignIn.current) return;
+    pendingDetailSignIn.current = false;
+    navigation.navigate('Profile');
+  }, [navigation]);
+
+  const handleDetailSignInToReview = useCallback(() => {
+    // A Profile handoff outranks any previously queued local camera move.
+    pendingDetailFocus.current = null;
+    pendingDetailSignIn.current = true;
+    setSelectedFlag(null);
+    if (Platform.OS !== 'ios') {
+      detailSignInTaskRef.current?.cancel();
+      detailSignInTaskRef.current = InteractionManager.runAfterInteractions(
+        completeDetailSignIn,
+      );
+    }
+  }, [completeDetailSignIn]);
+
+  useEffect(
+    () => () => {
+      detailSignInTaskRef.current?.cancel();
+    },
+    [],
+  );
 
   const handleDetailViewOnMap = useCallback((flag: FlagRow) => {
     // The marker highlight is plain state and survives the dismissal — only the
@@ -1846,13 +1900,17 @@ export default function MapScreen() {
   }, []);
 
   const handleDetailDismissed = useCallback(() => {
+    if (pendingDetailSignIn.current) {
+      completeDetailSignIn();
+      return;
+    }
     const pending = pendingDetailFocus.current;
     if (!pending) return;
     // Spend it exactly once: a later dismissal that wasn't a "View on map" tap
     // must not re-move the camera under the user.
     pendingDetailFocus.current = null;
     centerOnFlag(pending);
-  }, [centerOnFlag]);
+  }, [centerOnFlag, completeDetailSignIn]);
 
   // The Report FAB is dimmed until we have a location on NATIVE (where the
   // recenter button is the way to turn location on). On WEB we keep it
@@ -1870,14 +1928,16 @@ export default function MapScreen() {
         focusedFlagId={focusedFlagId}
         showsUserLocation
         reducedMotion={reducedMotion}
+        onMapInteractionStart={handleMapInteractionStart}
+        onRegionSettled={handleMapRegionSettled}
         onLongPressMap={handleMapLongPress}
         onOpenDetails={handleOpenDetails} // S3: pin callout "Open details" → detail sheet
         heatCells={heatCells}
         heatmapMode={HEATMAP_MODE}
         // T1 (F2-01): the full vertical band a callout must clear — safe area +
-        // overlay padding + the measured persistent chrome rows + margin. The
-        // map clamps it (≤45% of its own height) before use.
-        chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + CALLOUT_CHROME_MARGIN}
+        // overlay padding + measured persistent chrome and denied-location
+        // banner + margin. The map clamps it (≤45% of its own height) before use.
+        chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + locationBannerInset + CALLOUT_CHROME_MARGIN}
       />
 
       <View
@@ -1992,7 +2052,7 @@ export default function MapScreen() {
                       ? 'Loading…'
                       : 'Updating…'
                     : loadError && flags.length === 0
-                      ? '—'
+                      ? '…'
                       : filtersActive
                         ? `${filteredFlags.length} of ${flags.length}`
                         : `${flags.length} flag${flags.length === 1 ? '' : 's'}`}
@@ -2014,7 +2074,13 @@ export default function MapScreen() {
             </PressableScale>
             {/* Filters — glows ctaFill when the panel is open or a filter is active */}
             <PressableScale
-              onPress={() => { setToolsOpen(false); setFiltersOpen((v) => !v); }}
+              onPress={() => {
+                if (filtersOpen) setFiltersOpen(false);
+                else {
+                  clearMapSurfaces();
+                  setFiltersOpen(true);
+                }
+              }}
               style={[styles.barBtn, (filtersOpen || filtersActive) && styles.barBtnActive]}
               pressedTint={filtersOpen || filtersActive ? color.ctaFillPressed : color.borderPressed}
               accessibilityRole="button"
@@ -2068,8 +2134,8 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* ⋯ tool sheet (Direction B) — an inline panel-class surface (mirrors
-            the filter panel), NOT a Modal, so it never joins the dismissal-
+        {/* ⋯ tool sheet (Direction B) — a compact inline panel-class surface,
+            NOT a Modal, so it never joins the dismissal-
             standard Modal census. It carries the four tools demoted from the old
             tray. The saved-places quick-jump chip row is retired (Q4): place
             jumps live in SavedPlacesModal (reached via "Save a place"). */}
@@ -2096,7 +2162,7 @@ export default function MapScreen() {
                 // bottom bar, which now holds legendTrigger.ref (M4): it is the
                 // legend's own door and it survives this sheet closing, where a
                 // ⋯ tool row does not. clearMapSurfaces closes this sheet
-                // (and the filter panel, and the callout) so nothing is left
+                // (and the filter sheet, and the callout) so nothing is left
                 // stranded behind the modal.
                 clearMapSurfaces();
                 legendTrigger.register();
@@ -2134,65 +2200,37 @@ export default function MapScreen() {
           </GlassSurface>
         )}
 
-        {filtersOpen && (
-          <GlassSurface
-            style={[
-              styles.filterPanel,
-              // Bound the panel to the viewport minus overlay padding and the
-              // space reserved for the action bar + FAB tray, so the FABs stay
-              // visible; flexShrink on filterPanel trims any imprecision (G5).
-              {
-                maxHeight:
-                  windowHeight -
-                  insets.top -
-                  insets.bottom -
-                  OVERLAY_PADDING * 2 -
-                  spacing.sm -
-                  PANEL_BRACKET_ALLOWANCE,
-              },
-            ]}
-            variant="row"
-            overlayTint={color.glassMapWash}
-            borderRadius={radius.lg}
-          >
-            <View style={styles.filterHeaderRow}>
+        <Sheet
+          visible={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          onDismiss={finishPendingFilterSurface}
+          title="Filter flags"
+          closeLabel="Close filters"
+          glass
+          padded
+          presentation="expanded"
+          minBottomPad={spacing.xl}
+          atTop={filterAtTop}
+          scrollRef={filterScrollRef}
+          testID="mapFilterSheet"
+          headerAccessory={
+            filtersActive ? (
               <Pressable
-                onPress={() => setPanelCollapsed((v) => !v)}
+                onPress={clearFilters}
                 hitSlop={8}
-                style={({ pressed }) => [styles.filterTitleRow, pressed && styles.filterPillPressed]}
+                style={({ pressed }) => [styles.clearBtn, pressed && styles.filterPillPressed]}
                 accessibilityRole="button"
-                accessibilityLabel={
-                  panelCollapsed ? 'Expand filter panel' : 'Collapse filter panel'
-                }
-                accessibilityHint={
-                  panelCollapsed
-                    ? 'Shows saved filters, categories, severity, and status'
-                    : 'Hides the filter sections, leaving just the header'
-                }
-                {...a11yToggle({ expanded: !panelCollapsed })}
+                accessibilityLabel="Clear all filters"
               >
-                <AppText variant="heading" style={styles.filterTitle}>Filter flags</AppText>
-                {panelCollapsed ? (
-                  <ChevronRight size={16} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
-                ) : (
-                  <ChevronDown size={16} color={color.inkSelect} strokeWidth={2.4} {...decorativeProps} />
-                )}
+                <AppText variant="label" style={styles.clearLink}>Clear</AppText>
               </Pressable>
-              {filtersActive && (
-                <Pressable
-                  onPress={clearFilters}
-                  hitSlop={8}
-                  style={({ pressed }) => [styles.clearBtn, pressed && styles.filterPillPressed]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear all filters"
-                >
-                  <AppText variant="label" style={styles.clearLink}>Clear</AppText>
-                </Pressable>
-              )}
-            </View>
-
-            {!panelCollapsed && (
-              <ScrollView
+            ) : undefined
+          }
+        >
+              <GestureScrollView
+                ref={filterScrollRef}
+                onScroll={onFilterScroll}
+                scrollEventThrottle={filterScrollEventThrottle}
                 style={styles.filterPanelScroll}
                 contentContainerStyle={styles.filterPanelScrollContent}
                 showsVerticalScrollIndicator
@@ -2356,7 +2394,6 @@ export default function MapScreen() {
 
                 {/* Heat-map toggle — sits above Status because it's a render
                 axis (what gets drawn) not a fetch axis (what gets fetched).
-                Hidden under panelCollapsed alongside the rest of the panel.
                 Off by default per Dani's design compile. */}
                 <AppText variant="heading" style={styles.filterSubLabel}>Layers</AppText>
                 <View style={styles.filterRow}>
@@ -2407,7 +2444,7 @@ export default function MapScreen() {
                   })}
                 </View>
                 {activeStatuses.size === 0 && (
-                  <AppText variant="bodyMedium" style={styles.statusHint}>Pick at least one status — otherwise nothing will show up.</AppText>
+                  <AppText variant="bodyMedium" style={styles.statusHint}>Pick at least one status; otherwise nothing will show up.</AppText>
                 )}
 
                 {/* "Who does this affect?" — disability filter (Sprint 3). A
@@ -2523,7 +2560,7 @@ export default function MapScreen() {
                         </View>
                       </Pressable>
                       <Pressable
-                        onPress={() => { clearMapSurfaces(); setPresetsModalOpen(true); }}
+                        onPress={() => closeFiltersThenOpen('presets')}
                         style={({ pressed }) => [
                           styles.presetBtn,
                           styles.presetBtnSecondary,
@@ -2538,8 +2575,44 @@ export default function MapScreen() {
                     </View>
                   </>
                 )}
-              </ScrollView>
-            )}
+              </GestureScrollView>
+        </Sheet>
+
+        {/* Jordan Art. 7 disclaimer — the single retained Heat Zone information
+            card stays immediately below the command/filter surface so the map
+            controls below it retain the reclaimed viewport. The copy is
+            byte-frozen; only its stack position is intentional here. */}
+        {heatmapEnabled && !heatNoticeDismissed && (
+          <GlassSurface
+            style={styles.heatNotice}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
+          >
+            <View style={styles.heatNoticeRow}>
+              <TypeBlock cap={TYPE_BLOCK.chrome}>
+                <AppText
+                  variant="body"
+                  style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
+                  accessible
+                  accessibilityRole="text"
+                  accessibilityLiveRegion="polite"
+                >
+                  Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
+                  Coverage is based on community reports and varies by area.
+                </AppText>
+              </TypeBlock>
+              <Pressable
+                style={styles.heatNoticeClose}
+                onPress={() => setHeatNoticeDismissed(true)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss heat map notice"
+              >
+                <X size={16} color="#414B5A" strokeWidth={2.4} />
+              </Pressable>
+            </View>
           </GlassSurface>
         )}
 
@@ -2554,9 +2627,12 @@ export default function MapScreen() {
             ]}
             accessibilityRole="button"
             // A11Y-211: the visible banner ends "Tap to retry." and this is a
-            // BUTTON, so the accessible name must carry the verb too — Tasks
-            // composes it already and the two screens disagreed. 2.5.3-adjacent.
-            accessibilityLabel={`${loadError} Tap to retry.`}
+            // BUTTON, so the accessible name must carry the verb too. Prompt B
+            // B-UX-001: routed through the SAME failureBannerText() as the
+            // visible text below (was a hand-composed `${loadError} Tap to
+            // retry.` that silently disagreed with the visible sentence
+            // whenever loadError didn't already end in a period).
+            accessibilityLabel={failureBannerText(loadError)}
             accessibilityHint="Tries to load flags again"
             {...a11yToggle({ busy: loadingFlags })}
             // Announces re-renders of this region on Android too; iOS uses
@@ -2666,7 +2742,7 @@ export default function MapScreen() {
             >
               <AppText variant="heading" style={styles.emptyCardTitle}>No barriers reported here yet</AppText>
               <AppText variant="body" style={styles.emptyCardBody}>
-                Be the first — tap Report to drop a pin on an accessibility barrier you know about.
+                Be the first: tap Report to drop a pin on an accessibility barrier you know about.
               </AppText>
             </View>
           </GlassSurface>
@@ -2695,7 +2771,7 @@ export default function MapScreen() {
             <ActivityIndicator
               color="#414B5A" {...decorativeProps}
             />
-            <AppText variant="body" style={styles.bannerLocatingText}>Finding your location…</AppText>
+            <AppText variant="body" style={styles.bannerText}>Finding your location…</AppText>
           </GlassSurface>
         )}
 
@@ -2704,24 +2780,34 @@ export default function MapScreen() {
             denied); reuses the banner INK only. Mutually exclusive with the
             denied banner below, which stays byte-identical. */}
         {noLocationHint && (
-          <View
+          <GlassSurface
             style={styles.banner}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
             accessibilityRole="text"
             accessibilityLiveRegion="polite"
           >
             <AppText variant="body" style={styles.bannerText}>
               {NO_LOCATION_HINT}
             </AppText>
-          </View>
+          </GlassSurface>
         )}
 
         {permissionDenied && (
-          <View
-            style={styles.banner}
+          <GlassSurface
+            style={[styles.banner, !axRecompose && styles.bannerInline]}
+            onLayout={onLocationBannerLayout}
+            borderRadius={radius.md}
+            tint="light"
+            tintColor="rgba(255,255,255,0.65)"
+            solidColor="rgba(255,255,255,0.95)"
             accessibilityRole="alert"
             accessibilityLiveRegion="assertive"
           >
-            <AppText variant="body" style={styles.bannerText}>
+            <TypeBlock cap={TYPE_BLOCK.chrome}>
+            <AppText variant="body" style={[styles.bannerText, !axRecompose && styles.bannerInlineText]}>
               Location is off, so the map shows the most recent flags, not ones near you. Turn on
               location access to find flags nearby.
             </AppText>
@@ -2734,7 +2820,7 @@ export default function MapScreen() {
             {permissionLocked && canOpenSettings && (
               <Pressable
                 onPress={() => void Linking.openSettings()}
-                style={({ pressed }) => [styles.bannerLink, pressed && styles.bannerLinkPressed]}
+                style={({ pressed }) => [styles.bannerLink, !axRecompose && styles.bannerLinkInline, pressed && styles.bannerLinkPressed]}
                 accessibilityRole="button"
                 accessibilityLabel="Open Settings"
                 accessibilityHint="Opens this app's settings, where location access can be turned back on"
@@ -2742,83 +2828,22 @@ export default function MapScreen() {
                 <AppText variant="label" style={styles.bannerLinkText}>Open Settings</AppText>
               </Pressable>
             )}
-          </View>
-        )}
-
-        {/* Jordan Art. 7 disclaimer — shown whenever the heat layer is active.
-            Must be visible (not buried in the filter panel) per the conditional
-            pass. The black #1a1a1a slab becomes a translucent always-light 0.65
-            pin (8.28→6.52:1 on #222, the map glows through it). Q1 (Sky): a
-            session-dismiss X, re-shown on every heat re-enable. Copy is
-            BYTE-FROZEN (Jordan-verified — LENS6 C2). A11Y-213: the GlassSurface
-            is not an accessible leaf; the text node carries the role + live
-            region, the X is its own reachable button. */}
-        {heatmapEnabled && !heatNoticeDismissed && (
-          <GlassSurface
-            style={styles.heatNotice}
-            borderRadius={radius.md}
-            tint="light"
-            tintColor="rgba(255,255,255,0.65)"
-            solidColor="rgba(255,255,255,0.95)"
-          >
-            <View style={styles.heatNoticeRow}>
-              <AppText
-                variant="body"
-                style={[styles.heatNoticeText, styles.heatNoticeTextGrow]}
-                accessible
-                accessibilityRole="text"
-                accessibilityLiveRegion="polite"
-              >
-                Heat zones only appear where at least {DEFAULT_K_FLOOR} flags have been reported.
-                Based on community reports — coverage varies by area.
-              </AppText>
-              <Pressable
-                style={styles.heatNoticeClose}
-                onPress={() => setHeatNoticeDismissed(true)}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Dismiss heat map notice"
-              >
-                <X size={16} color="#414B5A" strokeWidth={2.4} />
-              </Pressable>
-            </View>
+            </TypeBlock>
           </GlassSurface>
         )}
 
-        {/* B7-A (L7-11): the disclaimer above states the k-threshold RULE but is
-            silent about the OUTCOME. When heat is on and there IS data but no
-            cell clusters enough to qualify, the tinted layer is simply blank —
-            which reads as broken. This complementary line names the outcome so
-            "on + empty" ≠ "broken". (heatCells is the global loaded set, not a
-            viewport query, so the copy stays honest about coverage, not "view".) */}
-        {heatmapEnabled && heatCells.length === 0 && filteredFlags.length > 0 && (
-          <GlassSurface
-            style={styles.heatNotice}
-            borderRadius={radius.md}
-            tint="light"
-            tintColor="rgba(255,255,255,0.65)"
-            solidColor="rgba(255,255,255,0.95)"
-          >
-            <AppText
-              variant="body"
-              style={styles.heatNoticeText}
-              accessible
-              accessibilityRole="text"
-              accessibilityLiveRegion="polite"
-            >
-              No heat zones qualify yet — coverage grows as more reports come in.
-            </AppText>
-          </GlassSurface>
-        )}
         </View>
 
-        {/* Bottom bar: legend (left, conditional) + FABs (right) */}
-        <View style={styles.bottomBar}>
-          {/* Flex slot reserves the left half so HeatmapLegend wraps against the
-              true remaining width beside the intrinsic-width fabColumn, instead
-              of overlapping the FABs at narrow widths (G6). */}
+        {/* Bottom bar: legend (left) + FABs (right) */}
+        <View style={styles.bottomBar} pointerEvents="box-none">
+          {/* The compact Legend door reserves the left half beside the intrinsic
+              FAB column. The full explanation remains one tap away in
+              LegendModal; no large on-map key competes with map detail.
+              VP1 fix2 (Sky): one content-hugging pill, no separate dismiss X —
+              the whole pill opens the legend, and only the expanded LegendModal
+              closes via its own top-right X. Anchored to the corner via
+              legendSlot's flex:1 + alignItems:'flex-start' below. */}
           <View style={styles.legendSlot} pointerEvents="box-none">
-            {heatmapEnabled ? <HeatmapLegend /> : null}
             {/* M4 (Q10): the Legend is ONE tap. It was two — ⋯ then a row filed
                 under a "?" icon — and the legend is the product's TEACHING
                 surface: five colours, five numbers, five human sentences. The
@@ -2830,7 +2855,7 @@ export default function MapScreen() {
                 liteColors = engineered gradient, so this adds ZERO blur panes to
                 the budget — the command bar's single live pane is still the only
                 one on this screen). The ⋯ row stays where it is for muscle
-                memory; HeatmapLegend above is a different object and untouched. */}
+                memory; the full modal remains the detailed teaching surface. */}
             <PressableScale
               ref={legendTrigger.ref}
               style={styles.fabCrystalPill}
@@ -2869,7 +2894,7 @@ export default function MapScreen() {
               </View>
             </PressableScale>
           </View>
-          <View style={styles.fabColumn}>
+          <View style={styles.fabColumn} pointerEvents="box-none">
             {/* Recenter — demoted from the old top tray into the FAB column, at the
                 top of the stack (Direction B, matches the governing mockup). A
                 crystal circle: the engineered crystal material sits behind a
@@ -2957,10 +2982,13 @@ export default function MapScreen() {
             <PressableScale
               ref={nearbyTrigger.ref}
               style={styles.fabCrystalPill}
-              // Crystal List pill (Sky Q3). The word "List" (15px bold = NOT
-              // WCAG-large) needs 4.5, so it darkens from color.brand to
-              // textStrong on the thin crystal (arbiter 5.58/5.40); the icon
-              // takes the crystal ink. dimOnPress={false} — glass hides a dim.
+              // Crystal Nearby pill (Sky Q3; VP1 fix3 renamed "List" → "Nearby"
+              // so the button matches the sheet it opens — "Nearby flags",
+              // not "List"). The label (15px bold = NOT WCAG-large) needs 4.5,
+              // so it darkens from color.brand to textStrong on the thin
+              // crystal (arbiter 5.58/5.40, unaffected by the word change —
+              // same size/weight); the icon takes the crystal ink.
+              // dimOnPress={false} — glass hides a dim.
               dimOnPress={false}
               onPress={() => {
                 // register() captures this button's native handle BEFORE the
@@ -2987,7 +3015,7 @@ export default function MapScreen() {
               />
               <View style={styles.fabSecondaryRow}>
                 <List size={16} color={barIconColor} strokeWidth={2.2} />
-                <AppText variant="label" style={styles.fabCrystalText}>List</AppText>
+                <AppText variant="label" style={styles.fabCrystalText}>Nearby</AppText>
               </View>
             </PressableScale>
             {/* Jordan Condition 2: hide Report FAB for guest users.
@@ -3173,6 +3201,7 @@ export default function MapScreen() {
           onEdited={(updated) => patchFlag(updated.id, updated)}
           onDeleted={handleDetailDeleted}
           onViewOnMap={handleDetailViewOnMap}
+          onSignInToReview={handleDetailSignInToReview}
           onDismiss={handleDetailDismissed}
         />
       </Suspense>
@@ -3188,6 +3217,7 @@ export default function MapScreen() {
         // The dismissal-COMPLETE event — only now is the legend button back on
         // screen and safe to aim the screen-reader cursor at.
         onDismiss={legendTrigger.restore}
+        tabBarHeight={tabBarHeight}
       />
 
       <AddressSearchModal
@@ -3204,12 +3234,9 @@ export default function MapScreen() {
             latitudeDelta: 0.02,
             longitudeDelta: 0.02,
           };
-          // M2: a searched centre OWNS the camera. Recording it here is what the
-          // one-time first-frame fit reads as "something already claimed this" —
-          // without it, a search that lands before the first flags-load would be
-          // yanked back to the fitted frame a moment later. It also keeps the D4
-          // viewport geofence pointed where the user is actually looking.
-          currentRegionRef.current = searched;
+          // M2: a searched centre owns the camera. Retire arrival fits before
+          // the imperative move; the viewport ref updates only after settle.
+          retireArrivalFits();
           mapRef.current?.animateTo(searched);
         }}
       />
@@ -3240,8 +3267,8 @@ export default function MapScreen() {
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           };
-          // M2: a saved-place jump OWNS the camera, same claim as a search.
-          currentRegionRef.current = jumped;
+          // M2: a saved-place jump owns the camera, same claim as a search.
+          retireArrivalFits();
           mapRef.current?.animateTo(jumped);
         }}
       />
@@ -3615,7 +3642,12 @@ const makeStyles = (color: ColorTheme) =>
     // M10 group: must shrink (RN Views default flexShrink 0) so the nested
     // filterPanel's own flexShrink/maxHeight bound still engages against the
     // absolute-fill overlay. Never give this flex:1 or a fixed height.
-    overlayTopGroup: { flexShrink: 1 },
+    // VP1 fix3: gap here (not per-child margin) is the one place that keeps
+    // every conditional banner in this column apart — the error banner and a
+    // location banner can both be visible at once (e.g. a fetch failure while
+    // location is still undetermined), and with zero margin on either they'd
+    // render flush against each other.
+    overlayTopGroup: { flexShrink: 1, gap: spacing.sm },
     // Direction B command bar (Sky-locked B-refined). ONE crystal pill replaces
     // the old title row + pill/tray row. GlassSurface variant="row" owns the
     // material (liteColors = the crystal tokens); this outer style carries only
@@ -3667,8 +3699,8 @@ const makeStyles = (color: ColorTheme) =>
     // rail gets so its absolute OverflowFade edge pins to that rail's right edge
     // (not the panel). Redundant on native, required on the web export.
     overflowFadeWrap: { position: 'relative' },
-    // ⋯ tool sheet — a right-aligned inline panel (mirrors the filter panel's
-    // washed row material). Holds the four demoted tools as labelled rows.
+    // ⋯ tool sheet — a right-aligned inline panel using the washed row
+    // material. Holds the four demoted tools as labelled rows.
     toolSheet: {
       alignSelf: 'flex-end',
       marginBottom: spacing.sm,
@@ -3703,47 +3735,13 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       ...(color.scheme === 'light' ? shadow.e1 : {}),
     },
-    filterPanel: {
-      marginTop: spacing.sm,
-      // flexShrink lets the panel give up height inside the absolute-fill overlay
-      // so it can't grow past its siblings and cover the FABs (G5, layer 1).
-      flexShrink: 1,
-      // Frosted-glass surface supplied by <GlassSurface> (translucent + blur with
-      // an AA contrast floor); falls back to a solid fill under Reduce Transparency.
-      // No backgroundColor here — GlassSurface owns the surface.
-      borderRadius: radius.lg,
-      padding: spacing.md,
-      gap: spacing.sm,
-      // No border here — the row variant paints its own hairline edge (a second
-      // border would double it). Shadow light-only (over the engineered/blur
-      // dark panel the dark drop reads as fringing, not lift).
-      ...(color.scheme === 'light' ? shadow.e2 : {}),
-    },
-    // The scrollable region holding the 8 filter sections. flexShrink lets it
-    // shrink within the maxHeight-bounded panel so filterHeaderRow stays pinned
-    // and the sections scroll (G5, layer 2). Content gap replaces the panel gap
-    // the sections lose by moving into the scroll container.
+    // The shared expanded Sheet owns the viewport and safe-area cap; this
+    // scroll region owns all filter sections inside that stable frame.
     filterPanelScroll: {
       flexShrink: 1,
     },
     filterPanelScrollContent: {
       gap: spacing.sm,
-    },
-    filterHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    filterTitle: { fontSize: font.size.base, fontWeight: font.weight.bold, color: color.textStrong },
-    filterTitleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingVertical: 4,
-      // The header row itself is the tap target; combined with the parent
-      // panel padding this gives a comfortable 44pt area despite the small
-      // visible glyph.
-      minHeight: 32,
     },
     // Bare text link on the washed panel (4.5 floor): light brandTextAlt
     // #0E4499 / dark inkSelect #B4CFFA. Plain brand was 4.25:1 L / failed dark.
@@ -3822,21 +3820,38 @@ const makeStyles = (color: ColorTheme) =>
     },
     sevPillText: { fontSize: font.size.sm, color: color.glassChipInk, fontWeight: font.weight.bold },
     statusHint: { fontSize: font.size.caption, color: color.warningFg, marginTop: spacing.tight },
+    // The denied banner has a sentence plus an optional Settings route. Stack
+    // them so both receive the banner's full inner width and can reflow at
+    // accessibility sizes instead of overflowing a centered horizontal row.
+    // VP1 fix3: this used to be a solid `color.overlaySoft` fill — a
+    // 95%-opaque near-BLACK slab in dark mode (no blur), visually unrelated to
+    // every other map control. GlassSurface now supplies the same pinned-light
+    // material as `bannerLocating`/`heatNotice` below (Global Fix 5) — the
+    // no-location-hint and permission-denied banners join that family instead
+    // of standing apart. Layout-only; the material lives on the GlassSurface
+    // props at each call site.
     banner: {
-      alignSelf: 'center',
-      backgroundColor: color.overlaySoft,
+      alignSelf: 'stretch',
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+      paddingVertical: spacing.xs,
       borderRadius: radius.md,
-      flexDirection: 'row',
-      gap: spacing.sm,
-      alignItems: 'center',
+      flexDirection: 'column',
+      gap: spacing.xs,
+      alignItems: 'stretch',
     },
-    // Frosted variant of `banner` for the NEUTRAL "Finding your location…" info
-    // banner only. Identical layout, but no solid backgroundColor — <GlassSurface>
-    // owns the surface (translucent + blur with an AA contrast floor; opaque
-    // fallback under Reduce Transparency). The semantic alert banners
-    // (permission / offline / error) keep their solid fills for urgency.
+    // At ordinary text sizes, keep the actionable Settings route alongside
+    // the sentence so this informational banner stays compact. XXXL uses the
+    // stacked `banner` composition above so the link remains independently
+    // reachable and the sentence can wrap without horizontal clipping.
+    bannerInline: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    bannerInlineText: { flex: 1, minWidth: 0 },
+    // Compact variant of `banner` for the "Finding your location…" info pill —
+    // same pinned-light material, laid out as a centered row instead of a
+    // stretched column.
     bannerLocating: {
       alignSelf: 'center',
       paddingHorizontal: spacing.md,
@@ -3846,7 +3861,11 @@ const makeStyles = (color: ColorTheme) =>
       gap: spacing.sm,
       alignItems: 'center',
     },
-    bannerText: { fontSize: font.size.sm, color: color.text },
+    // Pinned-light literal, shared by every banner on the pinned-light glass
+    // family above (banner / bannerLocating). #333 on the 0.82 white floor =
+    // 8.28:1 (arbiter-proved) — themed color.text would go light-on-light in
+    // dark mode once the surface stopped following the theme.
+    bannerText: { fontSize: font.size.sm, color: '#333' },
     // D26: the banner's route out. Sits under the sentence rather than beside
     // it so it survives the reflow at large type, and carries the 44pt box
     // itself.
@@ -3857,18 +3876,22 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
       paddingRight: spacing.sm,
     },
+    bannerLinkInline: {
+      alignSelf: 'center',
+      marginTop: 0,
+      paddingRight: 0,
+    },
     bannerLinkPressed: { opacity: 0.7 },
+    // Pinned-light literal (light theme's own inkSelect) — dark theme's
+    // inkSelect (#B4CFFA) is tuned for a dark surface and would go
+    // light-on-light now that `banner` is always the pinned-light material.
     bannerLinkText: {
-      color: color.inkSelect,
+      color: '#0F53BE',
       fontWeight: font.weight.bold,
       fontSize: font.size.sm,
       textDecorationLine: 'underline',
     },
-    // Pinned-light literal — NOT the shared bannerText (the permission banner
-    // renders that on a themed dark fill). #333 on the 0.82 white banner = 8.28:1.
-    bannerLocatingText: { fontSize: font.size.sm, color: '#333' },
     errorBanner: {
-      marginTop: spacing.sm,
       backgroundColor: color.error,
       paddingHorizontal: 14,
       paddingVertical: spacing.md,
@@ -3964,7 +3987,7 @@ const makeStyles = (color: ColorTheme) =>
     // bottom bar so it's visible whenever the heat layer is on, regardless
     // of whether the filter panel is open. Semi-transparent so it doesn't
     // fully obscure the map edge, muted font so it reads as informational
-    // (not an error) and doesn't compete with the HeatmapLegend swatches.
+    // (not an error) and doesn't compete with the map’s primary controls.
     // Heat notice (both the Art. 7 rule + the "no zones qualify" outcome). The
     // #1a1a1a black slab is retired for a translucent always-light 0.65 pin (the
     // GlassSurface owns the surface — no backgroundColor here). #222 ink at ≥500
@@ -3981,34 +4004,33 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.caption,
       color: '#222', // pinned-light literal, ≥500 weight (glass type law)
       fontWeight: font.weight.medium,
-      lineHeight: 15,
+      lineHeight: 20,
+      minWidth: 0,
     },
     // In the dismissible (row) form the text grows so the X pins to the right.
     heatNoticeTextGrow: { flex: 1 },
-    // 24pt glyph box + hitSlop 10 = 44 effective (the house small-target idiom).
+    // A genuine 44pt box, rather than a smaller glyph with a virtual target,
+    // keeps the independently reachable dismissal reliable for touch and
+    // assistive technology.
     heatNoticeClose: {
-      width: 24,
-      height: 24,
+      width: a11y.minTargetSize,
+      height: a11y.minTargetSize,
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: -1,
+      marginVertical: -spacing.xs,
     },
     bottomBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-end',
     },
-    // Left half of the bottom bar. flex:1 makes it claim the space beside the
-    // intrinsic-width fabColumn, giving HeatmapLegend a definite bounding width
-    // so its internal flexWrap wraps instead of pushing into the FABs (G6).
+    // Left half of the bottom bar, with a definite bound beside the intrinsic
+    // fabColumn so the pill does not overlap the controls. flex:1 + box-none
+    // keeps the rest of this half pass-through to the map beneath it.
     legendSlot: {
       flex: 1,
       marginRight: spacing.sm,
       alignItems: 'flex-start',
-      // The heat legend (when on) stacks ABOVE the persistent Legend pill, so
-      // the pill keeps the bottom line with the List pill opposite it. Same
-      // gap as fabColumn so the two sides of the bottom bar breathe alike.
-      gap: 10,
     },
     // The three discs the button explains. Tight gap: they read as one glyph,
     // not as three controls.
@@ -4046,8 +4068,8 @@ const makeStyles = (color: ColorTheme) =>
       ...(color.scheme === 'light' ? shadow.e2 : {}),
     },
     fabSecondaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    // List word on crystal: textStrong (5.58 L / 5.40 D) — color.brand would fail
-    // 4.5 on the thin crystal (a 15px-bold label is NOT WCAG-large).
+    // "Nearby" word on crystal: textStrong (5.58 L / 5.40 D) — color.brand would
+    // fail 4.5 on the thin crystal (a 15px-bold label is NOT WCAG-large).
     fabCrystalText: { color: color.textStrong, fontWeight: font.weight.bold, fontSize: 15 },
     // Shared icon+label row. Replaces two identical inline
     // `{ flexDirection:'row', alignItems:'center', gap:6 }` objects (Save-preset

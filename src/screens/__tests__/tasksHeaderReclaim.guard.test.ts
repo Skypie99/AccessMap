@@ -46,7 +46,7 @@ const searchRowBlock = (() => {
 })();
 
 const toolSheetBlock = (() => {
-  const start = tasks.indexOf('visible={toolSheetOpen}');
+  const start = tasks.indexOf('visible={toolSheetOpen');
   const end = tasks.indexOf('Points/notice flash', start);
   return start > -1 && end > start ? tasks.slice(start, end) : '';
 })();
@@ -123,27 +123,33 @@ describe('the control now lives in the ⋯ tool sheet', () => {
   });
 });
 
-describe('the truth table is unchanged', () => {
-  it('still requires a non-empty list AND not-already-selecting', () => {
-    // The two halves now sit in two places, and they still compose to the old
-    // conjunction: the ⋯ circle that opens the sheet is inside the search row's
-    // own `flags.length > 0` wrapper, and the row inside the sheet carries
-    // `!selection.active`. Re-entering selection mode from here would call
-    // enterSelectionEmpty and silently drop a selection the user had built.
+describe('the signed-in truth table is preserved and guests cannot select', () => {
+  it('requires a user, a non-empty list, and not-already-selecting', () => {
+    // The ⋯ circle that opens the sheet is inside the search row's own
+    // `flags.length > 0` wrapper. Both the trigger and row now also require a
+    // signed-in user because selection is a review capability. Re-entering
+    // selection mode from here would call enterSelectionEmpty and silently
+    // drop a selection the user had built.
     expect(tasks).toMatch(/\{flags\.length > 0 && \(\s*\n\s*<View style=\{styles\.searchRow\}>/);
-    expect(toolSheetBlock).toMatch(/\{!selection\.active && \(/);
+    expect(toolSheetBlock).toMatch(/\{!!user && !selection\.active && \(/);
   });
 
-  it('never opens an empty drawer', () => {
-    // Both rows are gated, so the ⋯ itself has to be gated on their union or a
-    // user in selection mode with no filters taps it and gets nothing.
-    expect(searchRowBlock).toMatch(/\{\(!selection\.active \|\| tasksFiltersActive\) && \(/);
+  it('never opens an empty drawer and leaves guest-safe Clear filters reachable', () => {
+    // A signed-in user sees tools while not selecting. A guest sees the ⋯ only
+    // when an active filter gives the drawer its one guest-safe row.
+    expect(searchRowBlock).toMatch(
+      /\{\(\(!!user && !selection\.active\) \|\| tasksFiltersActive\) && \(/,
+    );
+    expect(toolSheetBlock).toContain(
+      'visible={toolSheetOpen && (!!user || tasksFiltersActive)}',
+    );
   });
 
   it('keeps the long-press path it was always the discoverable twin of', () => {
-    // It matters more now that the button is two taps deep.
+    // It matters more now that the button is two taps deep. The card owns the
+    // matching auth gate, so guests cannot reach it through the twin either.
     expect(tasks).toMatch(/enterSelectionEmpty/);
-    expect(tasks).toMatch(/onLongPress/);
+    expect(tasks).toMatch(/onLongPress=\{user \? handleCardLongPress : undefined\}/);
   });
 });
 

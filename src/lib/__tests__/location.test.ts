@@ -10,7 +10,7 @@
  * else resolves to 'clear'.
  */
 
-import { initialLocationAction, peekLocationState } from '@/lib/location';
+import { initialLocationAction, locationErrorMessage, peekLocationState } from '@/lib/location';
 
 describe('initialLocationAction — MapScreen mount permission gate', () => {
   it("fetches when permission is already granted", () => {
@@ -89,5 +89,36 @@ describe('peekLocationState — the peek caption tells the truth', () => {
         }
       }
     }
+  });
+});
+
+describe('locationErrorMessage — Prompt B B2/Fable B-UX-003 presentation boundary', () => {
+  it('passes the specific timeout message through unchanged', () => {
+    expect(
+      locationErrorMessage(new Error('Location request timed out. Check your signal and try again.')),
+    ).toBe('Location request timed out. Check your signal and try again.');
+  });
+
+  it('replaces a raw native diagnostic with the calm, actionable copy', () => {
+    // The exact shape expo-location/CoreLocation can surface on iOS — this is
+    // precisely the text that must never reach the user.
+    expect(locationErrorMessage(new Error('kCLErrorDomain error 0.'))).toBe(
+      "Couldn't get your location. Check that Location Services is on and try again. You can keep using the map without it.",
+    );
+  });
+
+  it('replaces a bare/empty error the same way', () => {
+    expect(locationErrorMessage(new Error())).toBe(
+      "Couldn't get your location. Check that Location Services is on and try again. You can keep using the map without it.",
+    );
+    expect(locationErrorMessage(undefined)).toBe(
+      "Couldn't get your location. Check that Location Services is on and try again. You can keep using the map without it.",
+    );
+  });
+
+  it('never leaks a raw native code/domain string into the returned copy', () => {
+    const result = locationErrorMessage(new Error('kCLErrorDomain error 1: some native detail'));
+    expect(result).not.toContain('kCLErrorDomain');
+    expect(result).not.toContain('error 1');
   });
 });

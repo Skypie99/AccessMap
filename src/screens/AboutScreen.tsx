@@ -194,7 +194,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
               Credits
             </AppText>
             <AppText variant="body" style={styles.bodyText}>
-              A small project by Sky, built to learn by doing on open tools — OpenStreetMap maps,
+              A small project by Sky, built to learn by doing on open tools: OpenStreetMap maps,
               open icon sets, Expo, React Native, and Supabase. The barrier data belongs to the
               people who report it.
             </AppText>
@@ -217,7 +217,7 @@ export default function AboutScreen({ visible, onClose }: Props) {
             </AppText>
             <AppText variant="body" style={styles.bodyText}>
               Status changes (open → verified → resolved) are logged so the community can see the
-              history of a flag — open any flag&apos;s details to view it. The log doesn&apos;t
+              history of a flag. Open any flag&apos;s details to view it. The log doesn&apos;t
               identify who made each change.
             </AppText>
             <AppText variant="body" style={styles.bodyText}>

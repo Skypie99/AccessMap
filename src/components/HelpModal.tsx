@@ -1,25 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
-  type Text,
   View,
 } from 'react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
+import { ScrollView } from 'react-native-gesture-handler';
 import { bulkGlassShadow, font, radius, shadow, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps } from '@/lib/accessibility';
 import { AppText } from '@/components/ui/AppText';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { Sheet } from '@/components/ui/Sheet';
+import { useAtTop } from '@/components/ui/SheetPull';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
-import { ChevronDown, ChevronRight, Search, X } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, Search } from 'lucide-react-native';
 import { openFeedbackComposer } from '@/lib/feedback';
 import { filterFaqs } from '@/lib/helpSearch';
 import { POINTS } from '@/lib/points';
 import SearchInputRow from '@/components/SearchInputRow';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 
 interface Props {
   visible: boolean;
@@ -41,7 +38,7 @@ interface FaqItem {
 const FAQS: FaqItem[] = [
   {
     q: 'How do I report a place that needs attention?',
-    a: 'From the Home screen, tap the "Report" button — or open the full map and press and hold (long-press) the spot. Pick a category (broken sidewalk, missing ramp, blocked path, etc.), set how severe it is from 1 to 5, and add a short description. Signed-in users can also attach a photo.',
+    a: 'From the Home screen, tap the "Report" button, or open the full map and press and hold (long-press) the spot. Pick a category (broken sidewalk, missing ramp, blocked path, etc.), set how severe it is from 1 to 5, and add a short description. Signed-in users can also attach a photo.',
   },
   {
     q: 'How do points work?',
@@ -50,7 +47,7 @@ const FAQS: FaqItem[] = [
     // also paying 5 for the report, 3 for a photo and 1 for a comment. Measured
     // on a real account: one flag took someone from 90 to 124. Every number
     // below now comes from POINTS, which covers all of it.
-    a: `You earn ${POINTS.submitReport} points for filing a report (signed in — anonymous reports don't earn points), ${POINTS.addPhoto} for adding a photo to it, and ${POINTS.addComment} for leaving a comment. When one of your reports is verified by someone else you earn ${POINTS.reporter.verify}, and another ${POINTS.reporter.resolve} when it's marked resolved. Helping out earns too: ${POINTS.actor.verify} points for verifying someone else's report and ${POINTS.actor.resolve} for marking one resolved. Rejecting a report awards no points.`,
+    a: `You earn ${POINTS.submitReport} points for filing a report (signed in; anonymous reports don't earn points), ${POINTS.addPhoto} for adding a photo to it, and ${POINTS.addComment} for leaving a comment. When one of your reports is verified by someone else you earn ${POINTS.reporter.verify}, and another ${POINTS.reporter.resolve} when it's marked resolved. Helping out earns too: ${POINTS.actor.verify} points for verifying someone else's report and ${POINTS.actor.resolve} for marking one resolved. Rejecting a report awards no points.`,
   },
   {
     q: 'What\'s the difference between "verified" and "resolved"?',
@@ -58,10 +55,10 @@ const FAQS: FaqItem[] = [
   },
   {
     q: 'Are my photos and location private?',
-    a: "Photos and the flag location are public — they're visible to everyone using the app, which is the whole point of a community map. Your email is never attached to a flag's public view. Your display name can be \u2014 it appears on the leaderboard and alongside comments, and other signed-in people can tell which reports are yours. Avoid including faces or identifying info in your photos.",
+    a: "Photos and the flag location are public; they're visible to everyone using the app, which is the whole point of a community map. Your email is never attached to a flag's public view. Your display name appears on the leaderboard and alongside comments, and other signed-in people can tell which reports are yours. Avoid including faces or identifying info in your photos.",
   },
   {
-    q: 'I use a screen reader — what should I know?',
+    q: 'I use a screen reader. What should I know?',
     a: "The full map automatically opens an accessible list of nearby flags when it detects a screen reader, so you can browse without the visual map. Every button is labeled, status changes are announced, and color is always paired with text. If something doesn't announce or focus correctly, please send feedback.",
   },
   {
@@ -70,7 +67,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: "Why can't I see flags I expected to see?",
-    a: 'You probably have a filter active. Open the full map and tap the filters icon (the sliders) at the top → check Categories, Minimum severity, and Status. The "Clear" link in the filter panel header resets everything. (The magnifying glass searches for an address — it doesn\'t filter.)',
+    a: 'You probably have a filter active. Open the full map and tap the filters icon (the sliders) at the top → check Categories, Minimum severity, and Status. The "Clear" link in the filter panel header resets everything. (The magnifying glass searches for an address; it doesn\'t filter.)',
   },
 ];
 
@@ -85,10 +82,9 @@ const FAQS: FaqItem[] = [
 export default function HelpModal({ visible, onClose }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
-  // Read the inset context directly (zero fallback) instead of
-  // useSafeAreaInsets(), which throws when there's no SafeAreaProvider — the
-  // modal render-tests mount these sheets without one. Same value in the app.
-  const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  const { atTop, onScroll, scrollEventThrottle } = useAtTop();
+  const scrollRef = React.useRef(null);
+  const keyboardVisible = useKeyboardVisible();
   // Tracks which FAQ is expanded by question text (not index) — using
   // text means the "expanded" state survives filtering. If we keyed on
   // array index instead, filtering the list down would shift items and
@@ -111,48 +107,21 @@ export default function HelpModal({ visible, onClose }: Props) {
   // re-renders (e.g. when only openQuestion changes).
   const filteredFaqs = useMemo(() => filterFaqs(FAQS, query), [query]);
   const showEmpty = query.trim().length > 0 && filteredFaqs.length === 0;
-  // WCAG 2.3.3: snap (no slide) when the user prefers reduced motion.
-  const reducedMotion = useReducedMotion();
-  // A11Y-201 (2.4.3): move the SR cursor onto the title when this surface opens.
-  const titleRef = useFocusOnOpen<Text>(visible);
-
   return (
-    <Modal
-      aria-label="Help & FAQ"
+    <Sheet
       visible={visible}
-      animationType={reducedMotion ? 'none' : 'slide'}
-      transparent
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Help & FAQ"
+      closeLabel="Close help"
+      glass
+      presentation="expanded"
+      keyboardAvoiding
+      pullEnabled={!keyboardVisible}
+      minBottomPad={spacing.xl}
+      atTop={atTop}
+      scrollRef={scrollRef}
+      testID="helpModal-backdrop"
     >
-      {/* accessibilityViewIsModal tells iOS VoiceOver that everything
-          behind this view is inert while the modal is up — focus can't
-          wander out of the modal and read the underlying screen. Alex P5.
-          (We intentionally don't set importantForAccessibility on the
-          backdrop itself — "no-hide-descendants" would hide the modal's
-          own contents from TalkBack. Android relies on RN Modal's own
-          focus trap and the elevation/z-index of the backdrop.) */}
-      <View style={styles.backdrop} accessibilityViewIsModal onAccessibilityEscape={onClose} testID="helpModal-backdrop">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
-        >
-        <View style={styles.cardWrap}>
-        <GlassSurface variant="bulk" borderRadius={0} style={styles.card}>
-          <View style={styles.headerRow}>
-            <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
-              Help & FAQ
-            </AppText>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { backgroundColor: color.borderPressed }]}
-              accessibilityRole="button"
-              accessibilityLabel="Close help"
-            >
-              <X size={18} color={color.text} strokeWidth={2.2} />
-            </Pressable>
-          </View>
-
           {/* Search row — sits between the header and the scrollable FAQ
               list. Extracted to SearchInputRow for reuse across modals. */}
           <SearchInputRow
@@ -170,9 +139,12 @@ export default function HelpModal({ visible, onClose }: Props) {
           />
 
           <ScrollView
+            ref={scrollRef}
+            onScroll={onScroll}
+            scrollEventThrottle={scrollEventThrottle}
             keyboardShouldPersistTaps="handled"
             style={styles.body}
-            contentContainerStyle={[styles.bodyContent, { paddingBottom: Math.max(spacing.lg, insets.bottom) }]}
+            contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >
             {showEmpty && (
@@ -231,11 +203,7 @@ export default function HelpModal({ visible, onClose }: Props) {
               </Pressable>
             </View>
           </ScrollView>
-        </GlassSurface>
-        </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+    </Sheet>
   );
 }
 

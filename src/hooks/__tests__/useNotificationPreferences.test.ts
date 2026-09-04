@@ -1,237 +1,281 @@
-/**
- * Tests for useNotificationPreferences hook internals.
- *
- * Because @testing-library/react-native is not installed, we exercise the
- * hook's observable behavior by directly testing the module's logic:
- *
- *  - DEFAULT_NOTIFICATION_PREFERENCES shape and immutability
- *  - loadNotificationPreferences / saveNotificationPreferences via AsyncStorage
- *  - Parsing: defaults when storage is empty, missing fields, or corrupt JSON
- *  - Each of the 4 preference keys can be toggled and persisted
- *  - Per-user isolation (different keys for different userIds)
- *
- * This mirrors the test strategy used in src/lib/__tests__/notificationPrefs.test.ts
- * (which also tests raw load/save helpers rather than hook lifecycle).
- */
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 
-// ---------------------------------------------------------------------------
-// In-memory AsyncStorage stub — same pattern as existing lib tests.
-// The variable is prefixed `mock` so Jest's scope check permits the
-// reference inside jest.mock() (Babel restricts out-of-scope access,
-// but allows variables whose names start with "mock", case-insensitive).
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Import the tested module (after mocks are registered)
-// ---------------------------------------------------------------------------
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   type NotificationPreferences,
+  useNotificationPreferences,
 } from '../useNotificationPreferences';
 
-const mockStore = new Map<string, string>();
+const mockGetItem = jest.fn<Promise<string | null>, [string]>();
+const mockSetItem = jest.fn<Promise<void>, [string, string]>();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
-    getItem: jest.fn(async (k: string) => mockStore.get(k) ?? null),
-    setItem: jest.fn(async (k: string, v: string) => {
-      mockStore.set(k, v);
-    }),
-    __reset: () => mockStore.clear(),
-    __setRaw: (k: string, v: string) => mockStore.set(k, v),
+    getItem: (key: string) => mockGetItem(key),
+    setItem: (key: string, value: string) => mockSetItem(key, value),
   },
 }));
 
-const mockAsyncStorage = jest.requireMock('@react-native-async-storage/async-storage').default;
+const storageKey = (userId: string) => `@accessmap/push_notif_prefs_v1:${userId}`;
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+async function renderLoaded(userId: string | null, raw: string | null = null) {
+  mockGetItem.mockResolvedValue(raw);
+  const hook = renderHook(() => useNotificationPreferences(userId));
+  await waitFor(() => expect(hook.result.current.loading).toBe(false));
+  return hook;
+}
 
 beforeEach(() => {
-  mockAsyncStorage.__reset();
-  jest.clearAllMocks();
+  // mockReset removes implementations and queued one-shot values as well as
+  // call history, so no unresolved read/write can contaminate the next case.
+  mockGetItem.mockReset();
+  mockSetItem.mockReset();
+  mockSetItem.mockResolvedValue(undefined);
 });
 
-// ---------------------------------------------------------------------------
-// Storage helpers mirrored from the hook (for black-box integration tests)
-// ---------------------------------------------------------------------------
-
-const PREFIX = '@accessmap/push_notif_prefs_v1:';
-
-function storageKey(userId: string) {
-  return PREFIX + userId;
-}
-
-async function loadFromStorage(userId: string): Promise<NotificationPreferences> {
-  const raw = await AsyncStorage.getItem(storageKey(userId));
-  if (!raw) return { ...DEFAULT_NOTIFICATION_PREFERENCES };
-  try {
-    const obj = JSON.parse(raw) as Record<string, unknown>;
-    return {
-      flagStatusUpdates: typeof obj.flagStatusUpdates === 'boolean' ? obj.flagStatusUpdates : true,
-      nearbyFlags: typeof obj.nearbyFlags === 'boolean' ? obj.nearbyFlags : true,
-      watchedFlagUpdates:
-        typeof obj.watchedFlagUpdates === 'boolean' ? obj.watchedFlagUpdates : true,
-      bulkWatchAlerts: typeof obj.bulkWatchAlerts === 'boolean' ? obj.bulkWatchAlerts : true,
-    };
-  } catch {
-    return { ...DEFAULT_NOTIFICATION_PREFERENCES };
-  }
-}
-
-async function saveToStorage(userId: string, prefs: NotificationPreferences): Promise<void> {
-  await AsyncStorage.setItem(storageKey(userId), JSON.stringify(prefs));
-}
-
-// ---------------------------------------------------------------------------
-// 1. DEFAULT_NOTIFICATION_PREFERENCES — shape and all-true values
-// ---------------------------------------------------------------------------
-
 describe('DEFAULT_NOTIFICATION_PREFERENCES', () => {
-  it('is all-true by default', () => {
+  it('preserves the exported all-true shape and immutability contract', () => {
     expect(DEFAULT_NOTIFICATION_PREFERENCES).toEqual({
       flagStatusUpdates: true,
       nearbyFlags: true,
       watchedFlagUpdates: true,
       bulkWatchAlerts: true,
     });
-  });
-
-  it('is frozen (immutable)', () => {
     expect(Object.isFrozen(DEFAULT_NOTIFICATION_PREFERENCES)).toBe(true);
   });
-});
 
-// ---------------------------------------------------------------------------
-// 2. loadFromStorage — returns defaults when nothing is stored
-// ---------------------------------------------------------------------------
+  it('returns a mutable state copy rather than the exported frozen object', async () => {
+    const { result } = await renderLoaded('user-default-copy');
 
-describe('load behavior', () => {
-  it('returns defaults for a user with no stored data', async () => {
-    const result = await loadFromStorage('user-1');
-    expect(result).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
-  });
-
-  it('returns DEFAULT_NOTIFICATION_PREFERENCES on invalid JSON', async () => {
-    mockAsyncStorage.__setRaw(storageKey('user-1'), '{not-valid-json');
-    const result = await loadFromStorage('user-1');
-    expect(result).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
-  });
-
-  it('defaults missing fields to true (defensive against partial writes)', async () => {
-    mockAsyncStorage.__setRaw(storageKey('user-1'), JSON.stringify({ nearbyFlags: false }));
-    const result = await loadFromStorage('user-1');
-    expect(result.nearbyFlags).toBe(false);
-    expect(result.flagStatusUpdates).toBe(true);
-    expect(result.watchedFlagUpdates).toBe(true);
-    expect(result.bulkWatchAlerts).toBe(true);
+    expect(result.current.preferences).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
+    expect(result.current.preferences).not.toBe(DEFAULT_NOTIFICATION_PREFERENCES);
+    expect(Object.isFrozen(result.current.preferences)).toBe(false);
   });
 });
 
-// ---------------------------------------------------------------------------
-// 3–6. Toggling each of the 4 preferences and verifying persistence
-// ---------------------------------------------------------------------------
+describe('real hook load behavior', () => {
+  it('finishes with defaults when storage is empty', async () => {
+    const { result } = await renderLoaded('empty-user');
 
-describe('toggling flagStatusUpdates', () => {
-  it('persists false and reads back false, others stay true', async () => {
-    const prefs: NotificationPreferences = {
-      ...DEFAULT_NOTIFICATION_PREFERENCES,
-      flagStatusUpdates: false,
-    };
-    await saveToStorage('alice', prefs);
-    const loaded = await loadFromStorage('alice');
-    expect(loaded.flagStatusUpdates).toBe(false);
-    expect(loaded.nearbyFlags).toBe(true);
-    expect(loaded.watchedFlagUpdates).toBe(true);
-    expect(loaded.bulkWatchAlerts).toBe(true);
+    expect(mockGetItem).toHaveBeenCalledWith(storageKey('empty-user'));
+    expect(result.current.preferences).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
   });
-});
 
-describe('toggling nearbyFlags', () => {
-  it('persists false and reads back false, others stay true', async () => {
-    const prefs: NotificationPreferences = {
-      ...DEFAULT_NOTIFICATION_PREFERENCES,
-      nearbyFlags: false,
-    };
-    await saveToStorage('alice', prefs);
-    const loaded = await loadFromStorage('alice');
-    expect(loaded.nearbyFlags).toBe(false);
-    expect(loaded.flagStatusUpdates).toBe(true);
-    expect(loaded.watchedFlagUpdates).toBe(true);
-    expect(loaded.bulkWatchAlerts).toBe(true);
-  });
-});
-
-describe('toggling watchedFlagUpdates', () => {
-  it('persists false and reads back false, others stay true', async () => {
-    const prefs: NotificationPreferences = {
-      ...DEFAULT_NOTIFICATION_PREFERENCES,
-      watchedFlagUpdates: false,
-    };
-    await saveToStorage('alice', prefs);
-    const loaded = await loadFromStorage('alice');
-    expect(loaded.watchedFlagUpdates).toBe(false);
-    expect(loaded.flagStatusUpdates).toBe(true);
-    expect(loaded.nearbyFlags).toBe(true);
-    expect(loaded.bulkWatchAlerts).toBe(true);
-  });
-});
-
-describe('toggling bulkWatchAlerts', () => {
-  it('persists false and reads back false, others stay true', async () => {
-    const prefs: NotificationPreferences = {
-      ...DEFAULT_NOTIFICATION_PREFERENCES,
-      bulkWatchAlerts: false,
-    };
-    await saveToStorage('alice', prefs);
-    const loaded = await loadFromStorage('alice');
-    expect(loaded.bulkWatchAlerts).toBe(false);
-    expect(loaded.flagStatusUpdates).toBe(true);
-    expect(loaded.nearbyFlags).toBe(true);
-    expect(loaded.watchedFlagUpdates).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 7. Per-user isolation
-// ---------------------------------------------------------------------------
-
-describe('per-user isolation', () => {
-  it('keeps separate preferences per user id', async () => {
-    await saveToStorage('alice', {
-      ...DEFAULT_NOTIFICATION_PREFERENCES,
-      nearbyFlags: false,
-    });
-    await saveToStorage('bob', {
-      ...DEFAULT_NOTIFICATION_PREFERENCES,
-      bulkWatchAlerts: false,
-    });
-
-    const alice = await loadFromStorage('alice');
-    const bob = await loadFromStorage('bob');
-
-    expect(alice.nearbyFlags).toBe(false);
-    expect(alice.bulkWatchAlerts).toBe(true);
-
-    expect(bob.nearbyFlags).toBe(true);
-    expect(bob.bulkWatchAlerts).toBe(false);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 8. Round-trip: save then load preserves all 4 keys
-// ---------------------------------------------------------------------------
-
-describe('round-trip persistence', () => {
-  it('round-trips a full prefs object through AsyncStorage', async () => {
-    const prefs: NotificationPreferences = {
+  it('loads a complete persisted object', async () => {
+    const persisted: NotificationPreferences = {
       flagStatusUpdates: false,
       nearbyFlags: true,
       watchedFlagUpdates: false,
       bulkWatchAlerts: true,
     };
-    await saveToStorage('user-rt', prefs);
-    const loaded = await loadFromStorage('user-rt');
-    expect(loaded).toEqual(prefs);
+    const { result } = await renderLoaded('complete-user', JSON.stringify(persisted));
+
+    expect(result.current.preferences).toEqual(persisted);
+  });
+
+  it('fills missing or invalid persisted fields from current defaults', async () => {
+    const { result } = await renderLoaded(
+      'partial-user',
+      JSON.stringify({ nearbyFlags: false, watchedFlagUpdates: 'not-a-boolean' }),
+    );
+
+    expect(result.current.preferences).toEqual({
+      flagStatusUpdates: true,
+      nearbyFlags: false,
+      watchedFlagUpdates: true,
+      bulkWatchAlerts: true,
+    });
+  });
+
+  it('fails soft to defaults for malformed JSON', async () => {
+    const { result } = await renderLoaded('malformed-user', '{not-json');
+
+    expect(result.current.preferences).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
+  });
+
+  it('fails soft to defaults when the storage read rejects', async () => {
+    mockGetItem.mockRejectedValue(new Error('read unavailable'));
+    const { result } = renderHook(() => useNotificationPreferences('read-error-user'));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.preferences).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
+  });
+
+  it('finishes with defaults for a null user and makes updates a no-op', async () => {
+    const { result } = renderHook(() => useNotificationPreferences(null));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.setPreference('nearbyFlags', false);
+    });
+
+    expect(result.current.preferences).toEqual(DEFAULT_NOTIFICATION_PREFERENCES);
+    expect(mockGetItem).not.toHaveBeenCalled();
+    expect(mockSetItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('real hook async lifecycle', () => {
+  it('discards a deferred load that resolves after unmount', async () => {
+    const pending = deferred<string | null>();
+    mockGetItem.mockReturnValue(pending.promise);
+    const invalidUpdateSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { result, unmount } = renderHook(() =>
+      useNotificationPreferences('unmounted-user'),
+    );
+    const beforeUnmount = result.current;
+
+    expect(beforeUnmount.loading).toBe(true);
+    unmount();
+    await act(async () => {
+      pending.resolve(JSON.stringify({ nearbyFlags: false }));
+      await pending.promise;
+      await Promise.resolve();
+    });
+
+    expect(result.current).toBe(beforeUnmount);
+    expect(
+      invalidUpdateSpy.mock.calls.some(([message]) =>
+        String(message).includes('state update on an unmounted component'),
+      ),
+    ).toBe(false);
+    invalidUpdateSpy.mockRestore();
+  });
+
+  it('prevents a late User A load from overwriting User B or changing B loading state', async () => {
+    const userA = deferred<string | null>();
+    const userB = deferred<string | null>();
+    mockGetItem.mockImplementation((key) => {
+      if (key === storageKey('user-a')) return userA.promise;
+      if (key === storageKey('user-b')) return userB.promise;
+      throw new Error(`unexpected key: ${key}`);
+    });
+
+    const hook = renderHook(
+      ({ userId }: { userId: string }) => useNotificationPreferences(userId),
+      { initialProps: { userId: 'user-a' } },
+    );
+    hook.rerender({ userId: 'user-b' });
+
+    const bPreferences: NotificationPreferences = {
+      flagStatusUpdates: true,
+      nearbyFlags: false,
+      watchedFlagUpdates: true,
+      bulkWatchAlerts: false,
+    };
+    await act(async () => {
+      userB.resolve(JSON.stringify(bPreferences));
+      await userB.promise;
+    });
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(hook.result.current.preferences).toEqual(bPreferences);
+
+    await act(async () => {
+      userA.resolve(
+        JSON.stringify({
+          flagStatusUpdates: false,
+          nearbyFlags: true,
+          watchedFlagUpdates: false,
+          bulkWatchAlerts: true,
+        }),
+      );
+      await userA.promise;
+      await Promise.resolve();
+    });
+
+    expect(hook.result.current.loading).toBe(false);
+    expect(hook.result.current.preferences).toEqual(bPreferences);
+  });
+
+  it('does not reload on an ordinary rerender, but loads exactly once for a new user', async () => {
+    mockGetItem.mockImplementation(async (key) =>
+      key === storageKey('user-a')
+        ? JSON.stringify({ nearbyFlags: false })
+        : JSON.stringify({ bulkWatchAlerts: false }),
+    );
+    const hook = renderHook(
+      ({ userId }: { userId: string }) => useNotificationPreferences(userId),
+      { initialProps: { userId: 'user-a' } },
+    );
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+
+    hook.rerender({ userId: 'user-a' });
+    await act(async () => Promise.resolve());
+    expect(mockGetItem).toHaveBeenCalledTimes(1);
+    expect(mockSetItem).not.toHaveBeenCalled();
+
+    hook.rerender({ userId: 'user-b' });
+    await waitFor(() => {
+      expect(hook.result.current.loading).toBe(false);
+      expect(hook.result.current.preferences.bulkWatchAlerts).toBe(false);
+    });
+    expect(mockGetItem).toHaveBeenCalledTimes(2);
+    expect(mockGetItem).toHaveBeenNthCalledWith(2, storageKey('user-b'));
+    expect(mockSetItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('real hook persistence', () => {
+  it('updates optimistically and writes the full next object to the per-user key', async () => {
+    const write = deferred<void>();
+    mockSetItem.mockReturnValue(write.promise);
+    const { result, unmount } = await renderLoaded('optimistic-user');
+
+    act(() => {
+      result.current.setPreference('nearbyFlags', false);
+    });
+
+    const expected: NotificationPreferences = {
+      flagStatusUpdates: true,
+      nearbyFlags: false,
+      watchedFlagUpdates: true,
+      bulkWatchAlerts: true,
+    };
+    expect(result.current.preferences).toEqual(expected);
+    expect(mockSetItem).toHaveBeenCalledWith(
+      storageKey('optimistic-user'),
+      JSON.stringify(expected),
+    );
+
+    unmount();
+    await act(async () => {
+      write.resolve();
+      await write.promise;
+    });
+  });
+
+  it('keeps optimistic state and warns once when persistence rejects', async () => {
+    const writeError = new Error('disk full');
+    mockSetItem.mockRejectedValue(writeError);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const { result } = await renderLoaded('write-error-user');
+
+    act(() => {
+      result.current.setPreference('watchedFlagUpdates', false);
+    });
+
+    await waitFor(() => expect(warnSpy).toHaveBeenCalledTimes(1));
+    expect(result.current.preferences).toEqual({
+      flagStatusUpdates: true,
+      nearbyFlags: true,
+      watchedFlagUpdates: false,
+      bulkWatchAlerts: true,
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to persist notification preferences',
+      writeError,
+    );
+    warnSpy.mockRestore();
   });
 });

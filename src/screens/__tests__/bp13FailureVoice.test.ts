@@ -35,6 +35,14 @@ describe('copy.ts — the one true failure register (behavioural)', () => {
     expect(failureBannerText('offline — TAP TO RETRY.')).toBe('offline — TAP TO RETRY.');
   });
 
+  it('B-UX-001: does NOT double the period when the provider message already ends in one', () => {
+    // FEATURE_UNAVAILABLE ends in its own period; the composed banner must have
+    // exactly one sentence boundary at the join, not "…yet.. Tap to retry."
+    expect(failureBannerText("That feature isn't available yet.")).toBe(
+      "That feature isn't available yet. Tap to retry.",
+    );
+  });
+
   it('the retry verb is a plain second sentence (not an em-dash status line)', () => {
     expect(RETRY_VERB).toBe('Tap to retry.');
     expect(RETRY_VERB).not.toContain('—');
@@ -49,7 +57,7 @@ describe('T9 — Home never announces a false census; the wait is worded', () =>
     // The count branch must sit BEHIND the error gate so a settled failure never
     // computes `${flags.length} barriers` with flags.length === 0.
     expect(headline).toContain('error && flags.length === 0');
-    expect(headline).toContain("? '—'");
+    expect(headline).toContain("? '…'");
   });
 
   it('the first-load wait says "Loading…" instead of a bare display-size em-dash', () => {

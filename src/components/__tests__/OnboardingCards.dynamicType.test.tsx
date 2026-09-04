@@ -34,6 +34,7 @@ import React from 'react';
 import { AccessibilityInfo, ScrollView, StyleSheet, Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
+import * as Location from 'expo-location';
 import OnboardingCards, {
   ONBOARDING_BODY_MAX_FONT_SCALE,
   ONBOARDING_TITLE_MAX_FONT_SCALE,
@@ -68,6 +69,7 @@ jest.mock('@/lib/pushNotifications', () => ({
 jest.mock('@/lib/analytics', () => ({ trackEvent: jest.fn() }));
 
 const mockWindow = useWindowDimensions as unknown as jest.Mock;
+const mockRequestLocation = Location.requestForegroundPermissionsAsync as jest.Mock;
 const WIDTH = 390;
 const setFontScale = (fontScale: number) =>
   mockWindow.mockReturnValue({ width: WIDTH, height: 844, scale: 3, fontScale });
@@ -322,6 +324,24 @@ describe('analytics parity with the replay (the consequential flow reported noth
       outcome: 'declined',
       platform: expect.any(String),
     });
+  });
+
+  it('Not now never requests location, including through the remaining onboarding flow', () => {
+    setFontScale(1);
+    const onDone = jest.fn();
+    const u = render(<OnboardingCards onDone={onDone} />);
+    toCard(u, 3);
+
+    fireEvent.press(u.getByLabelText('Not now'));
+    expect(mockRequestLocation).not.toHaveBeenCalled();
+
+    // Card 4 is the unrelated notification decision; card 5 is the finisher.
+    // Neither may retroactively turn the location deferral into an OS request.
+    fireEvent.press(u.getByLabelText('Not now'));
+    fireEvent.press(u.getByLabelText('Continue'));
+
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(mockRequestLocation).not.toHaveBeenCalled();
   });
 
   it('and onDone still runs on every exit path (the gate is one-way)', () => {

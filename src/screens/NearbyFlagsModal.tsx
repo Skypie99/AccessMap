@@ -207,6 +207,84 @@ export default function NearbyFlagsModal({
     [distanceMap, onSelectFlag],
   );
 
+  // The title and Close control are the recovery chrome. The location notice,
+  // search, and category controls are useful, but keeping all three fixed
+  // starves the list at accessibility sizes. Making them the list header keeps
+  // the opening composition intact while letting them scroll once content needs
+  // the room.
+  const secondaryChrome = (
+    <>
+      {!location && (
+        <View style={styles.notice}>
+          <AppText variant="body" style={styles.noticeText}>
+            Allow location access to sort flags by distance. Showing the most recent first.
+          </AppText>
+        </View>
+      )}
+
+      {/* Search bar — shown only when the list has at least two flags
+          (one-flag lists don't benefit from search). Pure client-side
+          filter via searchFlags(). Extracted to SearchInputRow. */}
+      {flags.length >= 2 && (
+        <SearchInputRow
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onClear={() => setSearchQuery('')}
+          placeholder="Search descriptions, categories, status…"
+          accessibilityLabel="Search flags"
+        />
+      )}
+
+      {/* Category filter chips — only shown when the list has flags in
+          more than one category, so there's something to filter. */}
+      {presentCategories.length > 1 && (
+        <View style={styles.overflowFadeWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipBarScroll}
+            contentContainerStyle={styles.chipBar}
+            accessibilityLabel="Filter by category"
+            accessibilityRole="tablist"
+            {...categoryFade.scrollHandlers}
+          >
+            {/* "All" chip */}
+            <Pressable
+              onPress={() => setFilterCat(null)}
+              style={[styles.chip, filterCat === null && styles.chipActive]}
+              accessibilityRole="tab"
+              accessibilityLabel="Show all categories"
+              {...a11yToggle({ selected: filterCat === null })}
+            >
+              <AppText variant="label" style={[styles.chipText, filterCat === null && styles.chipTextActive]}>
+                All ({flags.length})
+              </AppText>
+            </Pressable>
+            {presentCategories.map((cat) => {
+              const active = filterCat === cat;
+              const count = flags.filter((f) => f.category === cat).length;
+              return (
+                <Pressable
+                  key={cat}
+                  onPress={() => setFilterCat(active ? null : cat)}
+                  style={[styles.chip, active && styles.chipActive]}
+                  accessibilityRole="tab"
+                  accessibilityLabel={`Filter by ${CATEGORY_LABELS[cat]}, ${count} ${count === 1 ? 'flag' : 'flags'}`}
+                  {...a11yToggle({ selected: active })}
+                >
+                  <AppText variant="label" style={[styles.chipText, active && styles.chipTextActive]}>
+                    {CATEGORY_LABELS[cat]} ({count})
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <OverflowFade visible={categoryFade.hasMore} />
+        </View>
+      )}
+    </>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -259,75 +337,6 @@ export default function NearbyFlagsModal({
           </Pressable>
         </View>
 
-        {!location && (
-          <View style={styles.notice}>
-            <AppText variant="body" style={styles.noticeText}>
-              Allow location access to sort flags by distance. Showing the most recent first.
-            </AppText>
-          </View>
-        )}
-
-        {/* Search bar — shown only when the list has at least two flags
-            (one-flag lists don't benefit from search). Pure client-side
-            filter via searchFlags(). Extracted to SearchInputRow. */}
-        {flags.length >= 2 && (
-          <SearchInputRow
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onClear={() => setSearchQuery('')}
-            placeholder="Search descriptions, categories, status…"
-            accessibilityLabel="Search flags"
-          />
-        )}
-
-        {/* Category filter chips — only shown when the list has flags in
-            more than one category, so there's something to filter. */}
-        {presentCategories.length > 1 && (
-          <View style={styles.overflowFadeWrap}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipBarScroll}
-            contentContainerStyle={styles.chipBar}
-            accessibilityLabel="Filter by category"
-            accessibilityRole="tablist"
-            {...categoryFade.scrollHandlers}
-          >
-            {/* "All" chip */}
-            <Pressable
-              onPress={() => setFilterCat(null)}
-              style={[styles.chip, filterCat === null && styles.chipActive]}
-              accessibilityRole="tab"
-              accessibilityLabel="Show all categories"
-              {...a11yToggle({ selected: filterCat === null })}
-            >
-              <AppText variant="label" style={[styles.chipText, filterCat === null && styles.chipTextActive]}>
-                All ({flags.length})
-              </AppText>
-            </Pressable>
-            {presentCategories.map((cat) => {
-              const active = filterCat === cat;
-              const count = flags.filter((f) => f.category === cat).length;
-              return (
-                <Pressable
-                  key={cat}
-                  onPress={() => setFilterCat(active ? null : cat)}
-                  style={[styles.chip, active && styles.chipActive]}
-                  accessibilityRole="tab"
-                  accessibilityLabel={`Filter by ${CATEGORY_LABELS[cat]}, ${count} ${count === 1 ? 'flag' : 'flags'}`}
-                  {...a11yToggle({ selected: active })}
-                >
-                  <AppText variant="label" style={[styles.chipText, active && styles.chipTextActive]}>
-                    {CATEGORY_LABELS[cat]} ({count})
-                  </AppText>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-          <OverflowFade visible={categoryFade.hasMore} />
-          </View>
-        )}
-
         <FlatList
           // Recipe S (the FlagDetailModal A11Y-228 precedent): let the list
           // inset itself for the keyboard rather than wrapping in a KAV, which
@@ -340,6 +349,8 @@ export default function NearbyFlagsModal({
           renderItem={renderItem}
           removeClippedSubviews
           initialNumToRender={10}
+          ListHeaderComponent={secondaryChrome}
+          ListHeaderComponentStyle={styles.listHeader}
           contentContainerStyle={displayFlags.length === 0 ? styles.emptyWrap : styles.list}
           ListEmptyComponent={
             <View style={styles.emptyInner}>
@@ -419,8 +430,9 @@ const makeStyles = (color: ColorTheme) =>
       color: color.warningFg,
       lineHeight: 18,
     },
-    list: { padding: spacing.lg, paddingBottom: spacing.xxxl },
-    emptyWrap: { flexGrow: 1 },
+    list: { paddingBottom: spacing.xxxl },
+    listHeader: { marginBottom: spacing.lg },
+    emptyWrap: { flexGrow: 1, paddingBottom: spacing.xxxl },
     emptyInner: {
       flex: 1,
       alignItems: 'center',
@@ -446,6 +458,7 @@ const makeStyles = (color: ColorTheme) =>
       borderRadius: radius.lg,
       padding: spacing.lg,
       gap: spacing.sm,
+      marginHorizontal: spacing.lg,
       marginBottom: spacing.md,
       ...shadow.e1,
       minHeight: 44,

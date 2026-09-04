@@ -96,12 +96,18 @@ function makeChain(terminal: () => unknown): Record<string, unknown> {
 const mockFrom = jest.fn();
 
 const mockRpc = jest.fn();
+const mockGetUser = jest.fn();
+const mockRemove = jest.fn();
+const mockInvoke = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
     from: (...args: unknown[]) => mockFrom(...args),
     rpc: (...args: unknown[]) => mockRpc(...args),
+    auth: { getUser: () => mockGetUser() },
+    storage: { from: () => ({ remove: mockRemove }) },
+    functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
   },
 }));
 
@@ -142,6 +148,9 @@ beforeEach(() => {
   // reset those stale queue entries bleed into subsequent tests.
   // clearAllMocks() only clears usage data and leaves queues intact.
   jest.resetAllMocks();
+  mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null });
+  mockRemove.mockResolvedValue({ data: [], error: null });
+  mockInvoke.mockResolvedValue({ data: { status: 'deleted' }, error: null });
 });
 
 // ---------------------------------------------------------------------------
@@ -292,15 +301,13 @@ describe('updateFlagStatus', () => {
 
 describe('deleteFlag', () => {
   it('resolves without throwing on success', async () => {
-    // A successful delete reports the deleted row back: deleteFlag asks for
-    // `.select('id')` precisely so zero rows can be read as the refusal it is
-    // (RLS filters rather than raising). See sr050DeleteFlagPhotos.test.ts.
-    setupChain({ data: [{ id: 'f1' }], error: null });
+    // The client only accepts the narrow route's explicit terminal outcome.
     await expect(deleteFlag('f1')).resolves.toBeUndefined();
+    expect(mockInvoke).toHaveBeenCalledWith('delete-flag', { body: { flagId: 'f1' } });
   });
 
   it('throws when Supabase returns an error', async () => {
-    setupChain({ data: null, error: { message: 'not found', code: '404' } });
+    mockInvoke.mockResolvedValueOnce({ data: null, error: { message: 'not found', code: '404' } });
     await expect(deleteFlag('f1')).rejects.toMatchObject({ code: '404' });
   });
 });

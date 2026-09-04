@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
@@ -7,7 +8,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   Share,
   StyleSheet,
   Text,
@@ -15,13 +15,18 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+// RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { ScrollView } from 'react-native-gesture-handler';
 import { AppText } from '@/components/ui/AppText';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { GlassSurface } from '@/components/ui/GlassSurface';
 import { OverflowFade } from '@/components/ui/OverflowFade';
 import { SheetGrabber } from '@/components/ui/Sheet';
-import { SheetPull, useAtTop } from '@/components/ui/SheetPull';
+import { SheetPull, useAtTop, type SheetPullHandle, useSheetPullDismissLifecycle } from '@/components/ui/SheetPull';
 import { useHorizontalOverflowFade } from '@/hooks/useOverflowFade';
+import { useFocusedInputScroll } from '@/hooks/useFocusedInputScroll';
 import { SeverityDisc } from '@/components/SeverityDisc';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { hapticNotify, hapticSelection } from '@/lib/haptics';
@@ -32,16 +37,16 @@ import { useAuth } from '@/lib/auth';
 import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/errors';
 import { webShare } from '@/lib/webShare';
-import { notify } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
 import { isContentBlockedError, showBlockedContentAlert } from '@/lib/blockedContent';
 import { useLegalSheets } from '@/components/LegalSheets';
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
+  cancelFlagPhotoUpload,
   createAnonFlag,
   createFlag,
   type ContextTagsCapability,
-  removeUploadedFlagPhotos,
   severityColor,
   SEVERITY_DESCRIPTIONS,
   SEVERITY_LABELS,
@@ -76,7 +81,7 @@ import type { FlagCategory, FlagRow, FlagSeverity } from '@/types/database';
 import { setLiveStatus } from '@/lib/liveStatus';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { a11y, font, gradient, radius, severity as severityRamp, shadow, spacing } from '@/theme';
-import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
+import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen } from '@/lib/accessibility';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 /** Lucide icon for each disability tag — adds visual distinction (no emoji, per
@@ -144,6 +149,38 @@ interface Props {
   locationSource?: 'gps' | 'pin';
 }
 
+interface ReportDraftBaseline {
+  category: FlagCategory;
+  severity: FlagSeverity | null;
+  description: string;
+  photoUris: string[];
+  photoAlts: Record<string, string>;
+  contextTags: ContextTag[];
+  location: Props['location'];
+  locationSource: NonNullable<Props['locationSource']>;
+}
+
+function normalizePhotoAlts(photoUris: readonly string[], photoAlts: Record<string, string>) {
+  return Object.fromEntries(
+    photoUris.map((uri) => [uri, photoAlts[uri]?.trim() ?? '']),
+  );
+}
+
+function sameStringArray(a: readonly string[], b: readonly string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+function samePhotoAlts(a: Record<string, string>, b: Record<string, string>) {
+  const aKeys = Object.keys(a).sort();
+  const bKeys = Object.keys(b).sort();
+  return sameStringArray(aKeys, bKeys) && aKeys.every((key) => a[key] === b[key]);
+}
+
+function sameLocation(a: Props['location'], b: Props['location']) {
+  if (a === null || b === null) return a === b;
+  return a.lat === b.lat && a.lng === b.lng;
+}
+
 export default function ReportFlagModal({ visible, location, onClose, onCreated, onRequestLocation, onDismiss, locationDenied, onPlaceOnMap, locationSource = 'gps' }: Props) {
   const color = useColor();
   const styles = makeStyles(color);
@@ -190,7 +227,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     }
   };
 
-  const reducedMotion = useReducedMotion();
+  const { modalAnimationType, backdropOpacity, beginPullDismiss } = useSheetPullDismissLifecycle(visible);
   // Pull-to-dismiss gating (map-gestures SPEC §2.6). `atTop` is the half of the
   // rule that keeps this form usable: mid-scroll, a downward drag belongs to the
   // ScrollView, never to the dismissal. `keyboardVisible` is the other gate —
@@ -202,7 +239,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // are the two exits that still keep everything.
   const { atTop, onScroll, scrollEventThrottle } = useAtTop();
   const keyboardVisible = useKeyboardVisible();
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const pullRef = useRef<SheetPullHandle>(null);
+  const descriptionReveal = useFocusedInputScroll(scrollRef, keyboardVisible, spacing.lg);
   // Non-throwing context read — render tests mount without a provider (the
   // M15 family recipe; see MyWatchedModal).
   const insets = React.useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0, left: 0, right: 0 };
@@ -281,6 +320,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // shift a description onto the wrong photo.
   const [photoAlts, setPhotoAlts] = useState<Record<string, string>>({});
   const [contextTags, setContextTags] = useState<ContextTag[]>([]);
+  // A persistent modal can temporarily hide for pin placement, so the baseline
+  // belongs to a report session rather than every visible prop transition.
+  const baselineRef = useRef<ReportDraftBaseline | null>(null);
+  const reportSessionActiveRef = useRef(false);
+  const locationChangeRequestedRef = useRef(false);
+  const confirmingCloseRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   // S11: a WRITE that outruns this threshold surfaces an in-sheet "still
   // trying" overlay while the insert CONTINUES (never aborted — a
@@ -306,6 +351,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
   // hint instead of letting the user pick tags that get silently dropped.
   const [tagsCapability, setTagsCapability] = useState<ContextTagsCapability>('unknown');
   useEffect(() => subscribeContextTagsCapability(setTagsCapability), []);
+
+  // Capture defaults before the consume-once sign-in draft restores below. A
+  // restored draft is user-authored work and must therefore still be protected.
+  useEffect(() => {
+    if (!visible || reportSessionActiveRef.current) return;
+    reportSessionActiveRef.current = true;
+    baselineRef.current = {
+      category,
+      severity,
+      description: description.trim(),
+      photoUris: [...photoUris],
+      photoAlts: normalizePhotoAlts(photoUris, photoAlts),
+      contextTags: [...contextTags],
+      location,
+      locationSource,
+    };
+  }, [category, contextTags, description, location, locationSource, photoAlts, photoUris, severity, visible]);
 
   // A11Y-226 (WCAG 3.3.7): rehydrate a stashed guest draft when the form
   // opens. The stash is written by the anon banner's "Sign in" press below —
@@ -372,35 +434,49 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     setPhotoAlts({});
     setContextTags([]);
     setAppliedTemplateId(null);
+    baselineRef.current = null;
+    reportSessionActiveRef.current = false;
+    locationChangeRequestedRef.current = false;
   };
 
   /**
-   * SW-52 — an explicit cancel must not leave the draft loaded.
+   * R2-F3 — every explicit close path asks before it discards meaningful work.
    *
-   * This modal is a persistent `visible`-prop component: it never unmounts, so
-   * every field survives a close. `reset()` only ran after a SUCCESSFUL submit,
-   * which meant cancelling left the whole form populated for the next session —
-   * including the photos. Proven live on 2026-08-20: a library photo was
-   * attached, the report was cancelled, and a LATER, unrelated report submitted
-   * without the picker ever being opened carried that photo onto the public map.
-   * The points feed corroborated it independently, awarding "Earned 3 points:
-   * Added a photo" for a report in which no photo was ever chosen.
-   *
-   * A user can attach something personal, think better of it, cancel — and have
-   * it published anyway, attached to a report they filed somewhere else. EXIF is
-   * stripped on upload so coordinates do not leak, but the image does.
-   *
-   * Bound to the explicit cancel doors ONLY (the Cancel button, onRequestClose,
-   * and the pull-to-dismiss, which the comment above already calls the same
-   * door). Deliberately NOT bound to visibility or to onDismiss, because two
-   * other paths hide this sheet and both MUST keep the draft:
-   *   - the "Sign in" handoff, which saves the draft explicitly and announces
-   *     that it kept it, and
-   *   - the SW-37 "place the pin on the map" round trip, which hides the sheet
-   *     without closing it precisely so the user does not lose their typing on
-   *     the way to fixing their location.
+   * The baseline is scoped to the current report session. Background GPS
+   * resolution stays clean; only an explicit location replacement can make the
+   * effective location part of the draft. Sign-in and pin-placement continue to
+   * use their intentional preservation paths without calling this guard.
    */
-  const handleCancel = () => {
+  const requestClose = async () => {
+    if (submittingRef.current || confirmingCloseRef.current) return;
+    const baseline = baselineRef.current;
+    const dirty =
+      baseline !== null &&
+      (
+        category !== baseline.category ||
+        severity !== baseline.severity ||
+        description.trim() !== baseline.description ||
+        !sameStringArray(photoUris, baseline.photoUris) ||
+        !samePhotoAlts(normalizePhotoAlts(photoUris, photoAlts), baseline.photoAlts) ||
+        !sameStringArray(contextTags, baseline.contextTags) ||
+        (
+          locationChangeRequestedRef.current &&
+          (!sameLocation(location, baseline.location) || locationSource !== baseline.locationSource)
+        )
+      );
+
+    if (dirty) {
+      confirmingCloseRef.current = true;
+      const discard = await confirm(
+        'Discard report?',
+        'Your unsent report will be lost.',
+        'Discard',
+        true,
+      );
+      confirmingCloseRef.current = false;
+      if (!discard) return;
+    }
+
     reset();
     onClose();
   };
@@ -586,12 +662,12 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         if (Platform.OS === 'web') {
           notify(
             'Daily limit reached',
-            "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
+            "You've reported 5 barriers today. Thanks for contributing! Sign in to report more.",
           );
         } else {
           Alert.alert(
             'Daily limit reached',
-            "You've reported 5 barriers today — thanks for contributing! Sign in to report more.",
+            "You've reported 5 barriers today. Thanks for contributing! Sign in to report more.",
             [
               { text: 'Sign In', onPress: onClose },
               { text: 'OK', style: 'cancel' },
@@ -618,7 +694,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         // web-anonymous cohort — via the persistent-mounted, guest-reachable
         // live region (visible + announced). Fires after onClose (PROTECT-3).
         setLiveStatus({
-          message: 'Report filed — thanks for flagging this barrier',
+          message: 'Report filed. Thanks for flagging this barrier',
           tone: 'success',
           autoDismissMs: 4000,
         });
@@ -632,23 +708,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       return;
     }
 
-    // Authenticated submission path — full feature set.
-    // Hoisted OUTSIDE the try so the catch can clean up Storage orphans.
-    // Photos upload BEFORE createFlag, so a mid-loop upload failure or a
-    // createFlag failure would otherwise leave already-uploaded blobs with
-    // no DB row referencing them (Decision 5, Option A — cleanup on failure
-    // only; no retry-reuse of uploaded URLs).
-    const photoUrls: string[] = [];
-    const uploadedPaths: string[] = [];
+    // Authenticated path. Every photo gets a durable intent before direct
+    // Storage receives bytes; a failed submit preserves that uncertainty for
+    // server reconciliation rather than deleting based on client timing.
+    const preparedPhotos: { intentId: string; url: string; path: string }[] = [];
     try {
-      // Upload all picked photos. First URL doubles as the legacy photo_url
-      // field for backwards-compat with clients that haven't migrated to
-      // the flag_photos junction table yet.
       for (const uri of photoUris) {
         const dims = photoDimsRef.current[uri];
-        const { url, path } = await uploadFlagPhoto(user.id, uri, dims?.width, dims?.height);
-        photoUrls.push(url);
-        uploadedPaths.push(path);
+        preparedPhotos.push(await uploadFlagPhoto(user.id, uri, dims?.width, dims?.height));
       }
 
       const result = await createFlag(user.id, {
@@ -657,24 +724,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
         category,
         severity,
         description: description.trim() ? description.trim() : null,
-        photo_url: photoUrls[0] ?? null,
-        // Alt of the FIRST photo — it is the one photo_url points at.
-        photo_alt: photoUris[0] ? photoAlts[photoUris[0]] || null : null,
+        // Only the commit RPC writes canonical photo provenance after exact
+        // bucket/key/owner verification. Direct report creation is photo-free.
+        photo_url: null,
+        photo_alt: null,
         // Only send the field when the user actually picked tags. Empty
         // array means "no context"; createFlag still tries the column path
         // so it stays exercised, but skipping it keeps the legacy insert
         // path cheap (one round-trip) when no tags are selected.
         context_tags: contextTags.length > 0 ? [...contextTags] : undefined,
       });
-      // The created flag now references these photos (photo_url above + the
-      // junction rows below) — from this line on they are NOT orphans and
-      // must never be deleted. Clear the cleanup list immediately so the
-      // catch below (e.g. the F57 junction path rethrowing something
-      // unexpected) can't remove photos a live flag points at.
-      uploadedPaths.length = 0;
-
-      // Insert junction rows for all uploaded photos. Silent no-op if the
-      // flag_photos migration hasn't been applied yet.
+      // The server, not a client success report, creates photo metadata.
       // F57 (re-sweep): a junction-row failure AFTER createFlag succeeded used
       // to reject the whole submit — the user was told it failed, retried, and
       // created a DUPLICATE public flag. The report exists; say photos didn't
@@ -682,16 +742,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       try {
         await batchInsertFlagPhotos(
           result.row.id,
-          photoUrls.map((url, i) => ({
-            url,
+          preparedPhotos.map((photo, i) => ({
+            intentId: photo.intentId,
             alt: photoUris[i] ? photoAlts[photoUris[i]] || null : null,
           })),
         );
       } catch (photoLinkErr) {
         console.warn('[report] photo link insert failed:', photoLinkErr);
-        if (photoUrls.length > 0) {
+        if (preparedPhotos.length > 0) {
           notify(
-            'Report filed — photos not attached',
+            'Report filed. Photos not attached',
             'Your report was saved, but its photos could not be attached. You can add photos again from the flag details.',
           );
         }
@@ -706,7 +766,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           'Your report was filed, but the context tags you picked could not be stored yet (server update pending). The picker will be re-enabled automatically once it is.',
         );
       }
-      track('flag_created', { category, severity, hasPhoto: photoUrls.length > 0 });
+      track('flag_created', { category, severity, hasPhoto: preparedPhotos.length > 0 });
       hapticNotify('success');
       reset();
       onCreated(result.row);
@@ -720,19 +780,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
       // (PROTECT-8). Presentation-only — no change to flags.ts or the upload.
       setLiveStatus({
         message:
-          photoUrls.length > 0
-            ? 'Report filed — thanks for flagging this barrier. Location data was removed from your photos.'
-            : 'Report filed — thanks for flagging this barrier',
+          preparedPhotos.length > 0
+            ? 'Report filed. Thanks for flagging this barrier. Location data was removed from your photos.'
+            : 'Report filed. Thanks for flagging this barrier',
         tone: 'success',
         autoDismissMs: 4000,
       });
     } catch (e) {
-      // Best-effort Storage orphan cleanup: an upload mid-loop failure or a
-      // createFlag failure left blobs no DB row references. Fire-and-forget
-      // (removeUploadedFlagPhotos never throws) so the ORIGINAL error always
-      // surfaces to the user below. Empty after createFlag succeeds — photos
-      // referenced by a created flag are never deleted.
-      if (uploadedPaths.length > 0) void removeUploadedFlagPhotos(uploadedPaths);
+      // Server cancellation records AMBIGUOUS, never client-inferred absence.
+      // The operation can later be reviewed on the same deletion request.
+      if (preparedPhotos.length > 0) {
+        void Promise.all(preparedPhotos.map((photo) => cancelFlagPhotoUpload(photo.intentId))).catch(() => undefined);
+      }
       // §SKY-7: same coherence fix as the comment path — a description
       // rejected by the filter now offers the guidelines it was judged
       // against. Every other failure keeps notify() unchanged, so the three
@@ -749,6 +808,86 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     }
   };
 
+  // A sticky action row is useful at normal text, but at AX it subtracts a
+  // fixed block from an already keyboard-reduced viewport. Keep one action
+  // drawing and move it into the form scroller only for the large-text
+  // composition, where it remains reachable without covering form content.
+  const actionsInScroll = axRecompose;
+  const actions = (
+    <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
+      <Pressable
+        onPress={() => void requestClose()}
+        disabled={submitting}
+        style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Cancel and close"
+        {...a11yToggle({ disabled: submitting })}
+      >
+        <AppText variant="label" style={styles.cancelText}>Cancel</AppText>
+      </Pressable>
+      <Pressable
+        onPress={handleSubmit}
+        disabled={submitting || submitBlocked}
+        style={[
+          styles.actionBtn,
+          styles.submitBtn,
+          // C5: ONE disabled grammar. A blocked fill wears the soft-tint
+          // pair (brandSoft/brandOnSoft) — the same grammar the rest of
+          // the estate's inert fills use — instead of a glowing brand
+          // gradient held at 0.6 opacity, which reads as a live button
+          // somebody dimmed. The BUSY state is not this: it keeps the
+          // gradient and the white ink, because a button mid-flight is
+          // working, not inert.
+          submitBlocked && styles.submitBtnBlocked,
+          submitting && styles.submitBtnDisabled,
+        ]}
+        accessibilityRole="button"
+        // Q6: one label, seen and spoken. The visible word and the
+        // accessible name are the SAME string now — see the label below.
+        accessibilityLabel={isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
+        // SW-37: never point a blocked user at the ONE control that cannot
+        // help them. Under a denial "Use my location" only re-asks a
+        // question the OS has already answered.
+        accessibilityHint={blockedReason()}
+        {...a11yToggle({ disabled: submitting || submitBlocked, busy: submitting })}
+      >
+        {({ pressed }) => (
+          <>
+            {!submitBlocked && (
+            <LinearGradient
+              colors={gradient.brand}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
+              pointerEvents="none"
+            />
+            )}
+            {/* T4: pressed scrim ABOVE the gradient, BELOW the label — the
+                brand CTA answers the finger without dimming its white text. */}
+            {pressed && (
+              <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.submitPressedScrim]} />
+            )}
+            {submitting ? (
+              // T9 (F5-09): keep WORDS beside the spinner — a silent spinner
+              // makes the wait wordless; "Filing your report…" says what's happening.
+              <View style={styles.submitBusyRow}>
+                <ActivityIndicator color={color.textOnBrand} />
+                <AppText variant="label" style={styles.submitText}>Filing your report…</AppText>
+              </View>
+            ) : (
+              <AppText
+                variant="label"
+                style={[styles.submitText, submitBlocked && styles.submitTextBlocked]}
+              >
+                {isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
+              </AppText>
+            )}
+          </>
+        )}
+      </Pressable>
+    </View>
+  );
+
   return (
     // WCAG 2.3.3 (Animation from Interactions): skip the slide animation
     // when the user has requested reduced motion.
@@ -759,36 +898,55 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // the same thing was correctly inert. S11 escalates-never-aborts, so the
     // insert continues after the close and a re-filled resubmit duplicates it.
     // This removes the asymmetry; it does not invent a new trap.
-    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={() => { if (!submitting) handleCancel(); }} onDismiss={onDismiss} aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}>
-      <View style={styles.backdrop}>
+    <Modal
+      visible={visible}
+      animationType={modalAnimationType}
+      transparent
+      onRequestClose={() => void requestClose()}
+      onDismiss={() => {
+        pullRef.current?.resetAfterDismiss();
+        onDismiss?.();
+      }}
+      aria-label={isAnon ? 'Report anonymously' : 'Report a flag'}
+    >
+      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
         {/* KAV wraps the WHOLE card from the backdrop (the FeedbackModal /
             AddressSearchModal recipe): rooted here its keyboard-overlap math
-            uses screen coordinates, so the sticky footer truly rides above
-            the keyboard. Nesting it inside the card measured parent-relative
-            frames and under-lifted (adversarial-review finding). Safe now
-            that the card no longer carries flex:1. The 88% cap lives on the
-            KAV so the percentage resolves against the full-height backdrop. */}
+            uses screen coordinates, so the normal sticky footer and the AX
+            body scroller both end above the keyboard. Nesting it inside the
+            card measured parent-relative frames and under-lifted
+            (adversarial-review finding). The 88% normal cap lives on the KAV
+            so the percentage resolves against the full-height backdrop. */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+          style={[styles.kav, (axRecompose || keyboardVisible) && styles.kavExpanded]}
         >
         {/* Pull-down-to-dismiss. The card is the drag target; the containment
-            node, the escape handler and the 88%-cap chain below are untouched —
-            SheetPull only adds a transform wrapper. `onDismiss={onClose}` is the
-            same handler the Cancel button and onRequestClose use, so the swipe
-            inherits the focus-return contract instead of forking a second
+            node and escape handler are unchanged. SheetPull only adds a
+            transform wrapper, with an expanded viewport at XXXL or while the
+            keyboard is visible. `onDismiss={requestClose}`
+            is the same guard the Cancel button and onRequestClose use, so the
+            swipe inherits the focus-return contract instead of forking a second
             dismissal path. Guarded by !submitting exactly like Cancel: the
             gesture must never be the one door that closes a submitting sheet. */}
         <SheetPull
-          onDismiss={handleCancel}
+          ref={pullRef}
+          onDismiss={() => void requestClose()}
+          onDismissStart={beginPullDismiss}
           enabled={!submitting && !keyboardVisible}
           atTop={atTop}
           simultaneousHandlers={scrollRef}
+          style={(axRecompose || keyboardVisible) ? styles.pullExpanded : undefined}
+          visible={visible}
         >
         <GlassSurface
           variant="bulk"
           borderRadius={0}
-          style={styles.card}
+          style={[
+            styles.card,
+            (axRecompose || keyboardVisible) && styles.cardExpanded,
+            (axRecompose || keyboardVisible) && { marginTop: insets.top + spacing.sm },
+          ]}
           accessibilityViewIsModal
           // G1 + G9: the same `!submitting` guard the visible Cancel and
           // onRequestClose use. This is the LIVE containment node — RN's Modal
@@ -797,20 +955,23 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           // used to be one there anyway (SR-116 / A11Y-209), with this comment
           // pointing at a line number that had since drifted; the dead prop is
           // now gone rather than annotated.
-          onAccessibilityEscape={() => {
-            if (!submitting) handleCancel();
-          }}
+          onAccessibilityEscape={() => void requestClose()}
         >
           {/* The drag affordance. Every other sheet wearing this pill now backs
               it with a real gesture; this one had no pill at all. AT-hidden by
               the primitive — the labelled Cancel is the screen-reader door. */}
           <SheetGrabber />
-          {/* WCAG 1.4.4: content scrolls under the 88% cap; Cancel/Report
-              buttons stay pinned as sticky footer. */}
+          {/* WCAG 1.4.4: content scrolls within the available viewport. Normal
+              actions stay pinned; AX actions join this scroller so the footer
+              cannot consume the editor's keyboard-safe reveal space. */}
           <ScrollView
             ref={scrollRef}
-            style={styles.scrollContent}
+            style={[
+              styles.scrollContent,
+              (axRecompose || keyboardVisible) && styles.scrollContentExpanded,
+            ]}
             contentContainerStyle={styles.scrollContentContainer}
+            onLayout={descriptionReveal.onViewportLayout}
             keyboardShouldPersistTaps="handled"
             // Drag #1 puts the keyboard away (the pull is gated off while it is
             // up); drag #2, from the top, dismisses the sheet. Without this the
@@ -823,10 +984,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             // isn't hidden behind the keyboard. iOS-only prop; false elsewhere.
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           >
-          {/* T3: the sheet's own header cluster — title + the coordinates line
-              under it — on one multiplier. The mono line used to cap at 1.4 and
-              the heading at 1.5; neither matched the other or the labels below. */}
-          <TypeBlock cap={TYPE_BLOCK.header}>
+          {/* P1: the report title and location prompt are reading content inside
+              a scrollable sheet, not fixed chrome. Keep the pair on one uncapped
+              multiplier so both visibly follow accessibility Dynamic Type. */}
+          <TypeBlock cap={TYPE_BLOCK.content}>
           <AppText ref={titleRef} variant="heading" style={styles.title} accessibilityRole="header">
             {isAnon ? 'Report anonymously' : 'Report a flag'}
           </AppText>
@@ -848,7 +1009,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             {/* T1: mono is for numerals that are data. A sentence is not, so
                 the human line moved off the mono face; the coordinate below
                 keeps it. */}
-            <AppText variant={location ? 'bodyMedium' : 'mono'} style={styles.location}>
+            <AppText variant="bodyMedium" style={styles.location}>
               {location
                 ? locationSource === 'pin'
                   ? 'At the pin you placed'
@@ -904,9 +1065,16 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               an in-sheet retry so recovery doesn't mean abandoning the flow.
               requestLocation announces its own outcome (found / permission
               denied), so this one control drives the whole recover loop. */}
+          {/* These bounded recovery controls use the shared chrome multiplier:
+              their labels still scale, while the fixed MapPin glyphs and the
+              lower form remain proportionate at accessibility sizes. */}
+          <TypeBlock cap={TYPE_BLOCK.chrome}>
           {!location && onRequestLocation && (
             <Pressable
-              onPress={onRequestLocation}
+              onPress={() => {
+                locationChangeRequestedRef.current = true;
+                onRequestLocation();
+              }}
               style={({ pressed }) => [styles.useLocationBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="Use my location"
@@ -926,7 +1094,10 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               screen where the user is actually stuck. */}
           {!location && onPlaceOnMap && (
             <Pressable
-              onPress={onPlaceOnMap}
+              onPress={() => {
+                locationChangeRequestedRef.current = true;
+                onPlaceOnMap();
+              }}
               style={({ pressed }) => [styles.useLocationBtn, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="Place the pin on the map"
@@ -936,6 +1107,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               <AppText variant="label" style={styles.useLocationText}>Place the pin on the map</AppText>
             </Pressable>
           )}
+          </TypeBlock>
 
           {/* SW-37 (guest half): the dead end, explained. A guest with location
               denied has no manual-placement route by design, so leaving them
@@ -967,7 +1139,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               >
                 <Lock size={15} color={color.brandOnSoft} strokeWidth={2.2} {...decorativeProps} />
                 <View style={styles.anonBannerBody}>
-                  <AppText variant="label" style={styles.anonBannerTitle}>Reporting anonymously — your identity is not stored.</AppText>
+                  <AppText variant="label" style={styles.anonBannerTitle}>Reporting anonymously. Your identity is not stored.</AppText>
                 </View>
               </View>
               <Pressable
@@ -999,6 +1171,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
 
           {/* Quick-fill templates — auth only; hidden in anon mode to keep
               the simplified form focused on the three core fields. */}
+          {/* P1: quick-fill and category controls live in scrollable rails, so
+              their labels can grow without the default label multiplier cap. */}
+          <TypeBlock cap={TYPE_BLOCK.content}>
           {!isAnon && templates.length > 0 && (
             <>
               <AppText variant="label" style={styles.label} accessibilityRole="header">
@@ -1089,6 +1264,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           </ScrollView>
           <OverflowFade visible={categoriesFade.hasMore} />
           </View>
+          </TypeBlock>
 
           <AppText variant="label" style={styles.label} accessibilityRole="header">Severity</AppText>
           {/* F4 / X7 — at >=1.5x the five-across picker becomes the Legend's rows.
@@ -1126,12 +1302,17 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                       submitting && styles.chipDisabled,
                     ]}
                     accessibilityRole="radio"
-                    accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
+                    accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]}. ${SEVERITY_DESCRIPTIONS[s]}`}
                     {...a11yToggle({ checked: active, disabled: submitting })}
                   >
                     {/* The Legend's atom, at the Legend's size. Decorative — the
                         row above carries the whole authored label. */}
-                    <SeverityDisc severity={s} size={32} digitSize={font.size.base} />
+                    <SeverityDisc
+                      severity={s}
+                      size={32}
+                      digitSize={font.size.base}
+                      scaleWithType
+                    />
                     {/* T3, and the device caught this one. The word sat on
                         `label` (cap 1.6) over a meaning on uncapped `body`, so
                         at accessibility sizes "Minor" was drawn SMALLER than
@@ -1189,7 +1370,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                     submitting && styles.chipDisabled,
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]} — ${SEVERITY_DESCRIPTIONS[s]}`}
+                  accessibilityLabel={`Severity ${s}: ${SEVERITY_LABELS[s]}. ${SEVERITY_DESCRIPTIONS[s]}`}
                   {...a11yToggle({ pressed: active, disabled: submitting })}
                 >
                   {/* WCAG 1.4.1 (Use of Color): the active button is signalled by
@@ -1225,21 +1406,15 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           )}
 
           {/* Inline hint: updates as the user taps a severity level so
-              they know what each number means before submitting.
-              T3 (X7): uncapped `body` made this the LARGEST text on the sheet at
-              accessibility-extra-large — bigger than "Report anonymously" itself.
-              It labels the picker above it, so it belongs to the form's header
-              block, not to the reading copy. Capped with the title it sits under.
-              Deliberately NOT applied to the sheet's honest prose (the anon
-              banner, the photo nudge, the submission explainer): that is reading
-              content and stays uncapped, because capping body copy at 1.6 would
-              stop it short of the 200% that WCAG 1.4.4 asks for. */}
+              they know what each number means before submitting. It is the
+              readable meaning of the selected value, so it follows the same
+              uncapped content contract as the large-type severity rows. */}
           {/* Q5: with nothing chosen there is no meaning to state, so the line
               carries the ASK instead of a meaning nobody selected. The live
               region is the same one — a screen-reader user hears the instruction
               become the answer the moment they rate.
               PLACEHOLDER COPY (SKY-WORDS-REQUIRED): the instruction sentence. */}
-          <TypeBlock cap={TYPE_BLOCK.header}>
+          <TypeBlock cap={TYPE_BLOCK.content}>
           {severity === null ? (
             <AppText
               variant="body"
@@ -1262,7 +1437,14 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           )}
           </TypeBlock>
 
-          <AppText variant="label" style={styles.label} accessibilityRole="header">Description (optional)</AppText>
+          <AppText
+            variant="label"
+            style={styles.label}
+            accessibilityRole="header"
+            onLayout={descriptionReveal.onLayout}
+          >
+            Description (optional)
+          </AppText>
           <TextInput
             value={description}
             onChangeText={(text) => {
@@ -1271,7 +1453,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               // template — stop showing its chip as 'applied'.
               if (appliedTemplateId) setAppliedTemplateId(null);
             }}
-            placeholder="Describe the barrier — e.g. broken curb cut on Main St"
+            placeholder="Describe the barrier, e.g. broken curb cut on Main St"
             placeholderTextColor={color.placeholderText}
             multiline
             // Mirror the DB check constraint
@@ -1280,6 +1462,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
             // Cap the input here too so the user can't paste a wall of
             // text only to get a Postgres error after upload+insert.
             maxLength={2000}
+            onFocus={descriptionReveal.onFocus}
+            onBlur={descriptionReveal.onBlur}
             // L4: TextInput has no `disabled` prop — editable={false} is the
             // RN way to lock it while the submit is in flight.
             editable={!submitting}
@@ -1362,7 +1546,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   context chips below — seasonal tags are just a subset of
                   context_tags. */}
               <AppText variant="label" style={styles.label} accessibilityRole="header">
-                Seasonal (optional) — does this change with the seasons?
+                Seasonal (optional): does this change with the seasons?
               </AppText>
               <View style={styles.row}>
                 {SEASONAL_TAGS.map((tag) => {
@@ -1584,7 +1768,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
                   the insert without the field — the user can still file the
                   report, the tags are just dropped. See flags.ts → createFlag. */}
               <AppText variant="label" style={styles.label} accessibilityRole="header">
-                Context (optional) — when is this most relevant?
+                Context (optional): when is this most relevant?
               </AppText>
               <View style={styles.row}>
                 {CONTEXT_TAGS.map((tag) => {
@@ -1642,8 +1826,9 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
               the city non-relationship. The finish-line success banner is
               S10 (P5); this is the pre-click sentence. */}
           <AppText variant="body" style={styles.submitMoment}>
-            Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn&apos;t notify the city — see Resources.
+            Your report appears on the map right away for everyone; neighbours can verify it. Flagstone doesn&apos;t notify the city. See Resources.
           </AppText>
+          {actionsInScroll ? actions : null}
           </ScrollView>
 
           {/* S11: in-sheet "still trying" overlay for a slow WRITE. The insert
@@ -1652,89 +1837,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           {submitStalled && submitting ? (
             <View style={styles.submitStall} accessibilityLiveRegion="polite">
               <AppText variant="label" style={styles.submitStallText}>
-                Still trying — check your signal
+                Still trying. Check your signal
               </AppText>
             </View>
           ) : null}
 
-          {/* BP-5: the house sheet-bottom pattern — spacing floor, inset-aware
-              so Cancel/Submit clear the home indicator on notched devices. */}
-          <View style={[styles.actions, { paddingBottom: Math.max(spacing.xxl, insets.bottom) }]}>
-            <Pressable
-              onPress={handleCancel}
-              disabled={submitting}
-              style={({ pressed }) => [styles.actionBtn, styles.cancelBtn, pressed && styles.chipPressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel and close"
-              {...a11yToggle({ disabled: submitting })}
-            >
-              <AppText variant="label" style={styles.cancelText}>Cancel</AppText>
-            </Pressable>
-            <Pressable
-              onPress={handleSubmit}
-              disabled={submitting || submitBlocked}
-              style={[
-                styles.actionBtn,
-                styles.submitBtn,
-                // C5: ONE disabled grammar. A blocked fill wears the soft-tint
-                // pair (brandSoft/brandOnSoft) — the same grammar the rest of
-                // the estate's inert fills use — instead of a glowing brand
-                // gradient held at 0.6 opacity, which reads as a live button
-                // somebody dimmed. The BUSY state is not this: it keeps the
-                // gradient and the white ink, because a button mid-flight is
-                // working, not inert.
-                submitBlocked && styles.submitBtnBlocked,
-                submitting && styles.submitBtnDisabled,
-              ]}
-              accessibilityRole="button"
-              // Q6: one label, seen and spoken. The visible word and the
-              // accessible name are the SAME string now — see the label below.
-              accessibilityLabel={isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
-              // SW-37: never point a blocked user at the ONE control that cannot
-              // help them. Under a denial "Use my location" only re-asks a
-              // question the OS has already answered.
-              accessibilityHint={blockedReason()}
-              {...a11yToggle({ disabled: submitting || submitBlocked, busy: submitting })}
-            >
-              {({ pressed }) => (
-                <>
-                  {!submitBlocked && (
-                  <LinearGradient
-                    colors={gradient.brand}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
-                    pointerEvents="none"
-                  />
-                  )}
-                  {/* T4: pressed scrim ABOVE the gradient, BELOW the label — the
-                      brand CTA answers the finger without dimming its white text. */}
-                  {pressed && (
-                    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.submitPressedScrim]} />
-                  )}
-                  {submitting ? (
-                    // T9 (F5-09): keep WORDS beside the spinner — a silent spinner
-                    // makes the wait wordless; "Filing your report…" says what's happening.
-                    <View style={styles.submitBusyRow}>
-                      <ActivityIndicator color={color.textOnBrand} />
-                      <AppText variant="label" style={styles.submitText}>Filing your report…</AppText>
-                    </View>
-                  ) : (
-                    <AppText
-                      variant="label"
-                      style={[styles.submitText, submitBlocked && styles.submitTextBlocked]}
-                    >
-                      {isAnon ? SUBMIT_LABEL_ANON : SUBMIT_LABEL}
-                    </AppText>
-                  )}
-                </>
-              )}
-            </Pressable>
-          </View>
+          {/* BP-5: normal text keeps the sticky house footer. At AX the same
+              action row is the final item in the body scroller above. */}
+          {actionsInScroll ? null : actions}
         </GlassSurface>
         </SheetPull>
         </KeyboardAvoidingView>
-      </View>
+      </Animated.View>
       {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
       {legal.sheets}
     </Modal>
@@ -1748,10 +1862,12 @@ const makeStyles = (color: ColorTheme) =>
       backgroundColor: color.scrim,
       justifyContent: 'flex-end',
     },
-    // WCAG 1.4.4: the 88% cap lives HERE (direct child of the full-height
-    // backdrop) so the percentage resolves; on the card it would resolve
-    // against the auto-height KAV and silently become no cap at all.
+    // Normal text preserves the content-hugging 88% presentation. Keyboard and
+    // accessibility layouts opt into the expanded chain below; at AX the action
+    // row also joins the body scroller instead of reserving a fixed footer.
     kav: { width: '100%', maxHeight: '88%' },
+    kavExpanded: { maxHeight: '100%', flexGrow: 1 },
+    pullExpanded: { width: '100%', flexGrow: 1 },
     card: {
       // No flex:1 — the sheet sizes to its content (the 3-field anonymous form
       // used to be stretched to 88% with a blank band; sweep minor) and only
@@ -1763,14 +1879,15 @@ const makeStyles = (color: ColorTheme) =>
       paddingBottom: 0,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
-      // The bulk variant owns the surface; clip it to the rounded top. The
-      // sticky footer, KAV/88% cap, and severity-button architecture are
-      // untouched — material only (PROTECT-3).
+      // The bulk variant owns the surface; clip it to the rounded top. Footer
+      // placement is chosen at render time; the material remains unchanged.
       overflow: 'hidden',
     },
+    cardExpanded: { maxHeight: '100%', flexGrow: 1 },
     // Shrink-to-cap, never grow: the body yields inside the 88% card so the
     // long form still scrolls, while a short form hugs its content.
-    scrollContent: { flexGrow: 0, flexShrink: 1 },
+    scrollContent: { flexGrow: 0, flexShrink: 1, minHeight: 0 },
+    scrollContentExpanded: { flexGrow: 1 },
     scrollContentContainer: { gap: spacing.md, paddingBottom: spacing.tight },
     title: {
       fontSize: font.size.xxl,
@@ -1818,6 +1935,7 @@ const makeStyles = (color: ColorTheme) =>
       flexDirection: 'row',
       alignItems: 'center',
       alignSelf: 'flex-start',
+      maxWidth: '100%',
       gap: spacing.tight,
       minHeight: a11y.minTargetSize,
       paddingHorizontal: 12,
@@ -1830,8 +1948,9 @@ const makeStyles = (color: ColorTheme) =>
       fontSize: font.size.xs,
       fontWeight: font.weight.bold,
       color: color.brandOnSoft,
+      flexShrink: 1,
     },
-    // S15: submit-moment caption — small muted line above the sticky footer.
+    // S15: submit-moment caption — small muted line before the action row.
     submitMoment: {
       fontSize: font.size.xs,
       color: color.inkGlassMuted,
@@ -1939,15 +2058,15 @@ const makeStyles = (color: ColorTheme) =>
       lineHeight: font.lineHeight.base,
     },
     sevHint: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.text,
       fontFamily: font.family.bodyMedium,
-      lineHeight: 18,
+      lineHeight: font.lineHeight.sm,
       marginTop: -4,
     },
     sevHintLabel: { fontWeight: font.weight.bold, color: color.textStrong },
     charCounter: {
-      fontSize: 12,
+      fontSize: font.size.xs,
       color: color.inkGlassMuted,
       fontFamily: font.family.bodyMedium,
       textAlign: 'right',
@@ -2038,7 +2157,7 @@ const makeStyles = (color: ColorTheme) =>
     },
     anonBannerBody: { flex: 1 },
     anonBannerTitle: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       fontWeight: font.weight.semibold,
       color: color.brandOnSoft,
     },
@@ -2049,7 +2168,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     anonBannerLinkText: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       fontWeight: font.weight.bold,
       color: color.brandOnSoft,
       textDecorationLine: 'underline',
@@ -2101,7 +2220,7 @@ const makeStyles = (color: ColorTheme) =>
       justifyContent: 'center',
     },
     anonPhotoNudgeText: {
-      fontSize: 13,
+      fontSize: font.size.sm,
       color: color.inkGlassMuted,
       fontFamily: font.family.bodyMedium,
     },

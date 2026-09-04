@@ -78,7 +78,7 @@ const CARDS: Card[] = [
     brandMark: true,
     tone: 'brand',
     title: 'Welcome to Flagstone',
-    body: 'Drop a pin where you find an accessibility issue — a missing ramp, a broken sidewalk, a blocked path — so others can plan around it, or help fix it.',
+    body: 'Drop a pin where you find an accessibility issue, such as a missing ramp, broken sidewalk, or blocked path, so others can plan around it or help fix it.',
   },
   {
     severityScale: true,
@@ -90,7 +90,7 @@ const CARDS: Card[] = [
     Icon: Star,
     tone: 'gold',
     title: 'Earn points together',
-    body: 'You earn points when your reports get verified or resolved by others — and when you verify or resolve theirs. Help build the map.',
+    body: 'You earn points when your reports get verified or resolved by others and when you verify or resolve theirs. Help build the map.',
   },
 ];
 

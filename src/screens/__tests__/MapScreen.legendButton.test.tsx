@@ -132,8 +132,18 @@ describe('M4 — the source invariants behind that pill', () => {
     expect(MAP).toContain('<View style={styles.legendSlot} pointerEvents="box-none">');
   });
 
-  it('HeatmapLegend is a different object and is left alone', () => {
+  it('VP1 fix2 (Sky): is one content-hugging pill, not a compound pill+dismiss-X pair', () => {
+    // The pill used to sit beside its own separate 44pt dismiss button, which
+    // read as a wide two-part control. Sky's correction: no separate X on the
+    // collapsed shortcut at all — the whole pill opens the legend, and only
+    // the expanded LegendModal closes (via its own top-right X).
     const slot = MAP.slice(MAP.indexOf('styles.legendSlot'), MAP.indexOf('styles.fabColumn'));
-    expect(slot).toContain('{heatmapEnabled ? <HeatmapLegend /> : null}');
+    expect(slot).not.toContain('legendDismissBtn');
+    expect(slot).not.toContain('Dismiss map legend shortcut');
+    expect(slot).not.toContain('HeatmapLegend');
+    // The session-local "hide the shortcut forever" state went with it — its
+    // only trigger was the removed dismiss button, so keeping the state around
+    // unreachable would just be dead code.
+    expect(MAP).not.toContain('legendDismissed');
   });
 });

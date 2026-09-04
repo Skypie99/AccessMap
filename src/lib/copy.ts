@@ -9,7 +9,7 @@
 import { relativeTime } from './relativeTime';
 
 /** Banner shown when a screen is serving the saved offline cache. */
-export const OFFLINE_BANNER_TEXT = 'Showing saved data — connect for the latest.';
+export const OFFLINE_BANNER_TEXT = 'Showing saved data; connect for the latest.';
 
 /**
  * B9 (L7-02): the offline banner, now stating the data's AGE when we know it.
@@ -20,7 +20,7 @@ export const OFFLINE_BANNER_TEXT = 'Showing saved data — connect for the lates
  */
 export function offlineBannerText(cachedAt?: string | null): string {
   return cachedAt
-    ? `Showing saved data from ${relativeTime(cachedAt)} — connect for the latest.`
+    ? `Showing saved data from ${relativeTime(cachedAt)}; connect for the latest.`
     : OFFLINE_BANNER_TEXT;
 }
 
@@ -65,12 +65,27 @@ export const PRIVACY_POLICY_LINK_HINT = 'Opens the privacy policy';
  * through this — NOT a shared component; each screen keeps its own container.
  * Mirrors Tasks' original inline recipe: append the verb unless the provider
  * message already carries it, so a double "Tap to retry." never appears.
+ *
+ * Prompt B B-UX-001: `providerMessage` (e.g. FEATURE_UNAVAILABLE) already ends
+ * in its own period, so appending `. ${RETRY_VERB}` produced a double period —
+ * "…yet.. Tap to retry." Strip a trailing period before appending so the
+ * composed sentence has exactly one boundary either way.
  */
 export function failureBannerText(providerMessage: string): string {
-  return providerMessage.toLowerCase().includes('tap to retry')
-    ? providerMessage
-    : `${providerMessage}. ${RETRY_VERB}`;
+  if (providerMessage.toLowerCase().includes('tap to retry')) return providerMessage;
+  return `${providerMessage.replace(/\.+$/, '')}. ${RETRY_VERB}`;
 }
+
+/**
+ * Flag Detail's photo gallery, on a load failure. Deliberately fixed rather
+ * than composed via failureBannerText: the gallery's failures are varied
+ * (missing column, network, auth) and this evidence surface must never
+ * reuse the real "No photos" empty-state copy or label for a failure — the
+ * two must stay visually and semantically distinct. AGENT-PROPOSED wording,
+ * adjudicated in Fable's Prompt B UX review (B-UX-002).
+ * PROPOSED (Prompt B B-UX-002, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
+ */
+export const GALLERY_LOAD_FAILED_TEXT = "Couldn't load photos. Tap to retry.";
 
 /* ───────────────────────────────────────────────────────────────────────────
  * B-1 — the moderation controls: Report (Apple 1.2(b)), Hide (1.2(c)), and
@@ -161,7 +176,7 @@ export const BLOCK_CONTROL_LABEL = 'Block';
  * PROPOSED (1.2(c) Block, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
 export const BLOCK_CONFIRM_BODY =
-  "You won't see comments from this person again. They aren't told, and this doesn't stop them posting or seeing your reports. It applies on this device only and won't survive reinstalling the app. If something breaks the community guidelines, use Report instead — that's the one that reaches a person.";
+  "You won't see comments from this person again. They aren't told, and this doesn't stop them posting or seeing your reports. It applies on this device only and won't survive reinstalling the app. If something breaks the community guidelines, use Report instead; that's the one that reaches a person.";
 
 /**
  * Confirm-button label on the block dialog. AGENT-PROPOSED wording.
@@ -223,7 +238,7 @@ export const BLOCKED_PEOPLE_EMPTY = "You haven't blocked anyone on this device."
  * AGENT-PROPOSED wording.
  */
 export const PUSH_SIGNED_OUT_SUBTITLE =
-  'Sign in to turn on push notifications — they follow your account, not this device.';
+  'Sign in to turn on push notifications. They follow your account, not this device.';
 
 /**
  * The unblock action. Deliberately "Unblock everyone" rather than a per-person
@@ -657,7 +672,7 @@ export const HIDDEN_COMMENTS_EMPTY_BODY =
  * visibly does. Uses Sky's own "is wrong" so the answer echoes the control.
  * PROPOSED (W1, S-8) — Sky's final wording lands in DECISIONS §A / BP16.
  */
-export const DISPUTE_RECORDED_MESSAGE = "Thanks — we've recorded that you think this flag is wrong.";
+export const DISPUTE_RECORDED_MESSAGE = "Thanks. We've recorded that you think this flag is wrong.";
 
 /**
  * Shown when this device has already spent its one vote on this flag
@@ -695,8 +710,9 @@ export const DISPUTE_FAILED_TITLE = "Couldn't record that";
 /* ───────────────────────────────────────────────────────────────────────────
  * THE TERMS & COMMUNITY GUIDELINES (Apple 1.2, §SKY-6)
  *
- * Sky ratified this text on 2026-07-27. It sat in the repo as a document for a
- * day and could not be read from inside the app — which is the gap `§SKY-6`
+ * Sky ratified this text on 2026-07-27 and approved its D1 Option A account-
+ * deletion revision on 2026-08-27. It sat in the repo as a document for a day
+ * and could not be read from inside the app — which is the gap `§SKY-6`
  * closes: "Words rendered VERBATIM from 14_MODERATION_TEXTS_v1.md §1; render,
  * never rewrite."
  *
@@ -710,7 +726,7 @@ export const DISPUTE_FAILED_TITLE = "Couldn't record that";
 
 /**
  * The document's own title, verbatim from §1's first line.
- * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 14_MODERATION_TEXTS_v1.md §1.
  */
 export const TERMS_TITLE = 'Flagstone Terms & Community Guidelines';
 
@@ -718,9 +734,9 @@ export const TERMS_TITLE = 'Flagstone Terms & Community Guidelines';
  * The effective-date line, verbatim from §1's first line. Carries the version
  * because §1's own "Changes" paragraph promises a new date at the top when the
  * terms change — so this string IS the promise being kept.
- * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 14_MODERATION_TEXTS_v1.md §1.
  */
-export const TERMS_EFFECTIVE = 'Effective 2026-07-27 · v1.0';
+export const TERMS_EFFECTIVE = 'Effective 2026-08-27 · v1.1';
 
 /**
  * The nine titled paragraphs, verbatim and in Sky's order. `heading` is the
@@ -731,7 +747,7 @@ export const TERMS_EFFECTIVE = 'Effective 2026-07-27 · v1.0';
  * `FEEDBACK_EMAIL`, because this block's contract is verbatim transcription and
  * an interpolation would not be. The guard test asserts the two are equal
  * instead, so they cannot drift without going red.
- * RATIFIED by Sky 2026-07-27 — DECISIONS §SKY-4, 14_MODERATION_TEXTS_v1.md §1.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 14_MODERATION_TEXTS_v1.md §1.
  */
 export const TERMS_SECTIONS = [
   {
@@ -760,7 +776,7 @@ export const TERMS_SECTIONS = [
   },
   {
     heading: 'Your account.',
-    body: "You can delete your account any time from your Profile. Anything you've contributed may stay in the app, with your name removed, so the community's record of barriers stays whole.",
+    body: 'You can delete your account any time from your Profile. Deleting your account permanently removes your profile information, reports and their associated content, direct contributions, feedback, and uploaded photos. This cannot be undone.',
   },
   {
     heading: 'Changes.',
@@ -825,22 +841,22 @@ export const TERMS_LINK_HINT = 'Opens the terms and community guidelines';
 
 /**
  * Document title, as the policy itself states it.
- * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 15_PRIVACY_POLICY_v1.md §The policy text.
  */
 export const PRIVACY_TITLE = 'Flagstone Privacy Policy';
 
 /**
  * Effective date and version, the policy's own second line.
- * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 15_PRIVACY_POLICY_v1.md §The policy text.
  */
-export const PRIVACY_EFFECTIVE = 'Effective 2026-07-29 · v1.0';
+export const PRIVACY_EFFECTIVE = 'Effective 2026-08-27 · v1.1';
 
 /**
  * The fourteen policy paragraphs, in document order. `heading` is the bolded
  * lead-in INCLUDING its trailing period; `body` is the rest of the paragraph.
  * Rendered as separate elements so a screen reader can jump the document by
  * heading — the only practical way to navigate a policy non-visually.
- * RATIFIED by Sky 2026-07-29 — DECISIONS §SKY-8 + §SKY-9, 15_PRIVACY_POLICY_v1.md §The policy text.
+ * RATIFIED by Sky 2026-08-27 — D1-AMEND-02, 15_PRIVACY_POLICY_v1.md §The policy text.
  */
 export const PRIVACY_SECTIONS = [
   {
@@ -873,7 +889,7 @@ export const PRIVACY_SECTIONS = [
   },
   {
     heading: 'Who else sees your data.',
-    body: "My hosting provider (Supabase) stores it so the app can work. When you type into the address search, that text goes to OpenStreetMap's Nominatim service to look up the place — that's the only thing it receives. Apple sees whatever Apple normally sees when you download an app from the App Store. That's it. I don't sell your data, I don't share it for advertising, and there are no third-party trackers in the app.",
+    body: "My hosting provider (Supabase) stores it so the app can work. When you type into the address search, that text goes to OpenStreetMap's Nominatim service to look up the place. That's the only thing it receives. Apple sees whatever Apple normally sees when you download an app from the App Store. That's it. I don't sell your data, I don't share it for advertising, and there are no third-party trackers in the app.",
   },
   {
     heading: 'Getting a copy of your data.',
@@ -881,7 +897,7 @@ export const PRIVACY_SECTIONS = [
   },
   {
     heading: 'Deleting your account.',
-    body: "You can delete your account any time from your Profile. Your account and personal details go. Reports and comments you contributed may stay in the app with your name removed, so the community's record of barriers stays whole. Photos attached to your reports may remain unless you delete the report itself first.",
+    body: 'You can delete your account any time from your Profile. Deleting your account permanently removes your profile information, reports and their associated content, direct contributions, feedback, points history, notification data, and uploaded photos. This cannot be undone.',
   },
   {
     heading: 'Children.',

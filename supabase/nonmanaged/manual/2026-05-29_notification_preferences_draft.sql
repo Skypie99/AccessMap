@@ -1,3 +1,20 @@
+-- CLASSIFICATION (added 2026-08-28 migration-history truth repair): manual/ambiguous.
+-- Read-only catalog evidence: public.notification_preferences and its 3 policies are
+-- live, but the 4 per-column COMMENT ON COLUMN statements below (lines further down,
+-- flag_status_updates/nearby_flags/watched_flag_updates/bulk_watch_alerts) are NOT
+-- reflected live (col_description() returns null for all 4 columns), and this file
+-- lacks the "drop policy if exists" guards present in the hosted-ledger version. So
+-- this artifact does not match live catalog state either — there is no live-catalog
+-- proof it was ever applied exactly as written, hence "manual/ambiguous" rather than
+-- "live-out-of-band". It was previously (incorrectly) checked in as the managed
+-- migration for hosted version 20260529175840 "notification_preferences", which does
+-- not truthfully represent the hosted ledger's recorded SQL for that version (the
+-- ledger version is now at
+-- supabase/migrations/20260529175840_notification_preferences.sql). Preserved here,
+-- unmodified, as a separate historical draft.
+--
+-- Original header follows, unmodified:
+--
 -- PROPOSAL ONLY — apply via Supabase Dashboard after Sky review
 --
 -- Creates the notification_preferences table and enables Row Level Security

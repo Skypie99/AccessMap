@@ -16,20 +16,31 @@
 
 import React from 'react';
 import { SharedModalsProvider } from '@/lib/sharedModalsContext';
-import { AccessibilityInfo, Alert, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Alert, Modal, StyleSheet, Text, View } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 // Mocked below — jest.mock calls are hoisted above all imports, so this
 // resolves to the mock module. Imported here (not mid-file) to keep
 // import/first happy.
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/lib/auth';
+import { TYPE_BLOCK } from '@/components/ui/TypeBlock';
+
+const mockConfirm = jest.fn().mockResolvedValue(true);
+
+jest.mock('@/lib/confirm', () => ({
+  ...jest.requireActual('@/lib/confirm'),
+  confirm: (...args: unknown[]) => mockConfirm(...args),
+}));
 
 // ---------------------------------------------------------------------------
 // Import component (after all mocks are registered)
 // ---------------------------------------------------------------------------
 import ReportFlagModal from '../ReportFlagModal';
+import { GlassSurface } from '@/components/ui/GlassSurface';
+import { SheetPull } from '@/components/ui/SheetPull';
 import { takeReportDraft } from '@/lib/reportDraft';
 import { validReportTemplates } from '@/lib/reportTemplates';
+import { font } from '@/theme';
 import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 
 // ---------------------------------------------------------------------------
@@ -123,17 +134,16 @@ const SAMPLE_AUTH_ROW = {
 const mockCreateAnonFlag = jest.fn().mockResolvedValue(SAMPLE_ANON_ROW);
 const mockCreateFlag = jest.fn().mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
 const mockSubscribeContextTagsCapability = jest.fn(() => () => {});
-// FIX B (storage orphan cleanup): uploadFlagPhoto returns { url, path };
-// removeUploadedFlagPhotos is the best-effort cleanup the submit catch fires.
-// Both hoisted so tests can stage per-call results and assert calls.
+// D1F4: uploads have durable server-created intents. A failed report asks the
+// server to resolve that intent; the client never treats local cleanup as proof.
 const mockUploadFlagPhoto = jest.fn();
-const mockRemoveUploadedFlagPhotos = jest.fn();
+const mockCancelFlagPhotoUpload = jest.fn();
 
 jest.mock('@/lib/flags', () => ({
   createAnonFlag: (...args: unknown[]) => mockCreateAnonFlag(...args),
   createFlag: (...args: unknown[]) => mockCreateFlag(...args),
   uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
-  removeUploadedFlagPhotos: (...args: unknown[]) => mockRemoveUploadedFlagPhotos(...args),
+  cancelFlagPhotoUpload: (...args: unknown[]) => mockCancelFlagPhotoUpload(...args),
   subscribeContextTagsCapability: (...args: unknown[]) => mockSubscribeContextTagsCapability(...args),
   getContextTagsCapability: jest.fn().mockReturnValue('unknown'),
   CATEGORY_LABELS: {
@@ -211,11 +221,13 @@ jest.mock('@/lib/contextTags', () => ({
   CONTEXT_TAG_LABELS: {},
   DISABILITY_TAGS: [],
   DISABILITY_TAG_LABELS: {},
-  SEASONAL_TAGS: [],
-  SEASONAL_TAG_LABELS: {},
+  SEASONAL_TAGS: ['icy_winter'],
+  SEASONAL_TAG_LABELS: { icy_winter: 'Icy in winter' },
   MAX_CONTEXT_TAGS: 5,
-  toggleTag: jest.fn((curr: unknown[]) => curr),
-  isSeasonalTag: jest.fn(() => false),
+  toggleTag: jest.fn((curr: string[], tag: string) => (
+    curr.includes(tag) ? curr.filter((value) => value !== tag) : [...curr, tag]
+  )),
+  isSeasonalTag: jest.fn((tag: string) => tag === 'icy_winter'),
   isDisabilityTag: jest.fn(() => false),
 }));
 
@@ -343,6 +355,13 @@ const mockWindow = useWindowDimensions as unknown as jest.Mock;
 const setFontScale = (fontScale: number) =>
   mockWindow.mockReturnValue({ width: 390, height: 844, scale: 3, fontScale });
 
+function expectUncappedText(node: {
+  props: { maxFontSizeMultiplier?: number; allowFontScaling?: boolean };
+}) {
+  expect(node.props.maxFontSizeMultiplier).toBeUndefined();
+  expect(node.props.allowFontScaling).not.toBe(false);
+}
+
 function rate(utils: ReturnType<typeof render>, level: number) {
   // The live meaning line's own label also starts "Severity 3:" once a level is
   // chosen, so match the DISC by its role rather than by prefix alone.
@@ -379,16 +398,30 @@ function renderAnon(
 
 function renderAuth(
   user: User = { id: 'user-abc' },
-  props: Partial<{ visible: boolean; severity: number | null }> = {},
+  props: Partial<{
+    visible: boolean;
+    severity: number | null;
+    location: typeof LOCATION | null;
+    locationSource: 'gps' | 'pin';
+    locationDenied: boolean;
+    onClose: () => void;
+    onRequestLocation: () => void;
+    onPlaceOnMap: () => void;
+  }> = {},
 ) {
   mockUseAuth.mockReturnValue({ user } as ReturnType<typeof useAuth>);
+  const location = props.location === undefined ? LOCATION : props.location;
   const utils = render(
     withProvider(
       <ReportFlagModal
         visible={props.visible ?? true}
-        location={LOCATION}
-        onClose={jest.fn()}
+        location={location}
+        locationSource={props.locationSource}
+        locationDenied={props.locationDenied}
+        onClose={props.onClose ?? jest.fn()}
         onCreated={jest.fn()}
+        onRequestLocation={props.onRequestLocation}
+        onPlaceOnMap={props.onPlaceOnMap}
       />,
     ),
   );
@@ -424,22 +457,28 @@ async function addPhoto(utils: ReturnType<typeof render>, uri: string) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // clearAllMocks preserves queued mockResolvedValueOnce results. Reset this
+  // local confirmation mock as well so a prior simulated Cancel cannot alter
+  // the next dismissal contract case in the full suite.
+  mockConfirm.mockReset();
+  mockConfirm.mockResolvedValue(true);
   setFontScale(1);
   mockCheckAnonRateLimit.mockResolvedValue(undefined);
   mockCreateAnonFlag.mockResolvedValue(SAMPLE_ANON_ROW);
   mockCreateFlag.mockResolvedValue({ row: SAMPLE_AUTH_ROW, tagsAccepted: true });
   mockSubscribeContextTagsCapability.mockReturnValue(() => {});
-  // Default upload: derive { url, path } from the picked uri so multi-photo
-  // tests get distinct, recognizable storage paths.
+  // Default upload: every result carries a durable intent reference.
   mockUploadFlagPhoto.mockImplementation((_userId: unknown, uri: unknown) => {
     const name = String(uri).split('/').pop() ?? 'photo.jpg';
     return Promise.resolve({
+      intentId: `intent-${name}`,
       url: `http://example.com/${name}`,
       path: `user-abc/${name}`,
     });
   });
-  mockRemoveUploadedFlagPhotos.mockResolvedValue(undefined);
+  mockCancelFlagPhotoUpload.mockResolvedValue(undefined);
   mockBatchInsertFlagPhotos.mockResolvedValue(undefined);
+  (validReportTemplates as jest.Mock).mockReturnValue([]);
 });
 
 // handleSubmit keeps running after a test's `waitFor` resolves
@@ -468,7 +507,7 @@ describe('anon form (user === null)', () => {
 
   it('shows the identity-not-stored banner', () => {
     const { getByText } = renderAnon();
-    expect(getByText('Reporting anonymously — your identity is not stored.')).toBeTruthy();
+    expect(getByText('Reporting anonymously. Your identity is not stored.')).toBeTruthy();
   });
 
   it('shows the anon sign-in-to-add-a-photo note instead of the photo section', () => {
@@ -564,7 +603,7 @@ describe('auth form (user !== null)', () => {
 
   it('does NOT show the identity-not-stored banner', () => {
     const { queryByText } = renderAuth();
-    expect(queryByText('Reporting anonymously — your identity is not stored.')).toBeNull();
+    expect(queryByText('Reporting anonymously. Your identity is not stored.')).toBeNull();
   });
 
   it('does NOT show the "Sign in to attach a photo" note', () => {
@@ -697,35 +736,32 @@ describe('submit routing — auth path', () => {
 // ===========================================================================
 // 5. Storage orphan cleanup — FIX B (Decision 5, Option A)
 //
-// Photos upload BEFORE createFlag. If anything fails between the first
-// upload and createFlag resolving, the already-uploaded blobs are orphans
-// and the catch must hand their storage paths to removeUploadedFlagPhotos.
-// Once createFlag resolves, the photos are referenced by the new flag and
-// must NEVER be cleaned up — even when the junction insert (F57) fails.
+// Photos receive a durable PREPARED intent before direct upload. If report
+// creation fails, the client asks the server to resolve the same intent. Once
+// the flag exists, client cleanup must not undo it even when linking fails.
 // ===========================================================================
 
-describe('storage orphan cleanup on failed submit (auth path)', () => {
-  it('cleans up the already-uploaded path and skips createFlag when an upload fails mid-loop', async () => {
+describe('uncommitted photo intent handling on failed submit (auth path)', () => {
+  it('cancels the already-prepared intent and skips createFlag when an upload fails mid-loop', async () => {
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
     await addPhoto(utils, 'file:///p2.jpg');
 
     mockUploadFlagPhoto
-      .mockResolvedValueOnce({ url: 'http://example.com/p1.jpg', path: 'user-abc/p1.jpg' })
+      .mockResolvedValueOnce({ intentId: 'intent-p1', url: 'http://example.com/p1.jpg', path: 'user-abc/p1.jpg' })
       .mockRejectedValueOnce(new Error('upload failed'));
 
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
-      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+      expect(mockCancelFlagPhotoUpload).toHaveBeenCalledTimes(1);
     });
-    // Only the photo that actually reached Storage gets cleaned up.
-    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['user-abc/p1.jpg']);
-    // The flag insert never ran — the blobs were pure orphans.
+    expect(mockCancelFlagPhotoUpload).toHaveBeenCalledWith('intent-p1');
+    // The flag insert never ran — the intent remains server-visible.
     expect(mockCreateFlag).not.toHaveBeenCalled();
   });
 
-  it('cleans up ALL uploaded paths when createFlag itself fails', async () => {
+  it('cancels ALL prepared intents when createFlag itself fails', async () => {
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
     await addPhoto(utils, 'file:///p2.jpg');
@@ -735,12 +771,10 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     fireEvent.press(utils.getByLabelText('Submit report'));
 
     await waitFor(() => {
-      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+      expect(mockCancelFlagPhotoUpload).toHaveBeenCalledTimes(2);
     });
-    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith([
-      'user-abc/p1.jpg',
-      'user-abc/p2.jpg',
-    ]);
+    expect(mockCancelFlagPhotoUpload).toHaveBeenNthCalledWith(1, 'intent-p1.jpg');
+    expect(mockCancelFlagPhotoUpload).toHaveBeenNthCalledWith(2, 'intent-p2.jpg');
   });
 
   it('still surfaces the original submit error to the user after cleanup', async () => {
@@ -759,7 +793,7 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     alertSpy.mockRestore();
   });
 
-  it('performs NO cleanup on a fully successful submit', async () => {
+  it('performs NO cancellation on a fully successful submit', async () => {
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
     await addPhoto(utils, 'file:///p2.jpg');
@@ -774,10 +808,10 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(mockUploadFlagPhoto).toHaveBeenCalledTimes(2);
-    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalled();
   });
 
-  it('performs NO cleanup when only the junction insert fails after createFlag succeeded (F57)', async () => {
+  it('performs NO cancellation when only the junction insert fails after createFlag succeeded (F57)', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');
@@ -792,8 +826,8 @@ describe('storage orphan cleanup on failed submit (auth path)', () => {
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    // The flag exists and references the photos — they are NOT orphans.
-    expect(mockRemoveUploadedFlagPhotos).not.toHaveBeenCalled();
+    // The flag exists; client cleanup must not roll it back.
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalled();
     warn.mockRestore();
   });
 });
@@ -1076,11 +1110,15 @@ describe('active-severity cue (WCAG 1.4.1 — non-color selection signal)', () =
   const hasCheckTick = (btn: { findAll: (p: (n: { type: unknown }) => boolean) => unknown[] }) =>
     btn.findAll((n) => typeof n.type === 'string' && /svg/i.test(String(n.type))).length > 0;
 
-  // The severity Pressable's label is `Severity N: <label> — <desc>` (the
-  // em-dash distinguishes it from the live-region hint, whose label is just
-  // `Severity N: <desc>` with no em-dash). Grab the BUTTON for a given level.
-  const sevButton = (utils: ReturnType<typeof renderAuth>, n: number) =>
-    utils.getByLabelText(new RegExp(`^Severity ${n}:.*\\u2014`));
+  // The live meaning line's label also starts "Severity N:". Grab the BUTTON
+  // by role so this guard does not couple selection semantics to punctuation.
+  const sevButton = (utils: ReturnType<typeof renderAuth>, n: number) => {
+    const button = utils
+      .getAllByLabelText(new RegExp(`^Severity ${n}:`))
+      .find((el) => el.props.accessibilityRole === 'button');
+    if (!button) throw new Error(`no severity ${n} button`);
+    return button;
+  };
 
   it('selects severity 3 by default and marks exactly one severity button selected', () => {
     const utils = renderAuth();
@@ -1198,7 +1236,7 @@ describe('S11 — slow write escalates, never aborts (no double-insert)', () => 
       act(() => {
         jest.advanceTimersByTime(12_000);
       });
-      expect(utils.getByText('Still trying — check your signal')).toBeTruthy();
+      expect(utils.getByText('Still trying. Check your signal')).toBeTruthy();
       expect(mockCreateAnonFlag).toHaveBeenCalledTimes(1);
 
       // Resolve — exactly one flag lands and the overlay clears.
@@ -1240,7 +1278,7 @@ describe('S10 — confirm the submit', () => {
     await waitFor(() => {
       expect(mockSetLiveStatus).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringMatching(/Report filed — thanks for flagging this barrier/),
+          message: expect.stringMatching(/Report filed\. Thanks for flagging this barrier/),
           tone: 'success',
         }),
       );
@@ -1297,7 +1335,7 @@ describe('S10 — confirm the submit', () => {
 // ---------------------------------------------------------------------------
 
 describe('A11Y-226 — guest draft survives the sign-in handoff', () => {
-  it('press "Sign in" → draft stashed + announced + closed; a fresh mount restores and announces', () => {
+  it('press "Sign in" → draft stashed + announced + closed; a fresh mount restores, announces, and protects it', async () => {
     const announceSpy = jest
       .spyOn(AccessibilityInfo, 'announceForAccessibility')
       .mockImplementation(() => {});
@@ -1318,13 +1356,25 @@ describe('A11Y-226 — guest draft survives the sign-in handoff', () => {
     announceSpy.mockClear();
 
     // …and the form's next mount (signed-in world) restores the draft.
-    const second = renderAuth();
+    const onClose = jest.fn();
+    const second = renderAuth({ id: 'user-abc' }, { onClose });
     expect(
       second.getByDisplayValue('Broken curb cut at 5th and Main'),
     ).toBeTruthy();
     expect(announceSpy).toHaveBeenCalledWith(
       expect.stringContaining('draft was restored'),
     );
+
+    mockConfirm.mockResolvedValueOnce(false);
+    fireEvent.press(second.getByLabelText('Cancel and close'));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledWith(
+      'Discard report?',
+      'Your unsent report will be lost.',
+      'Discard',
+      true,
+    ));
+    expect(second.getByDisplayValue('Broken curb cut at 5th and Main')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
 
     second.unmount();
     announceSpy.mockRestore();
@@ -1515,6 +1565,10 @@ describe('SW-52 — cancelling a report actually discards it', () => {
 
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
+    await waitFor(() => {
+      expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+    });
+
     // The sheet never unmounted — this is the same component, reopened. Q5: the
     // reset clears the RATING too, so the next report has to be rated again
     // before it is filable. That is the point of the reset, not a wrinkle in it.
@@ -1528,7 +1582,7 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     expect(mockUploadFlagPhoto).not.toHaveBeenCalled();
   });
 
-  it('clears the rating too, so the next report is re-judged (Q5)', () => {
+  it('clears the rating too, so the next report is re-judged (Q5)', async () => {
     const utils = renderAuth({ id: 'user-abc' }, { severity: 4 });
     // Rated: the ask is gone and Submit is live.
     expect(utils.queryByText('Choose how hard this makes the path to use.')).toBeNull();
@@ -1539,10 +1593,12 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
     // Back to the ask, and Submit is inert again.
-    expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
-    expect(
-      utils.getByLabelText('Submit report').props.accessibilityState.disabled,
-    ).toBe(true);
+    await waitFor(() => {
+      expect(utils.getByText('Choose how hard this makes the path to use.')).toBeTruthy();
+      expect(
+        utils.getByLabelText('Submit report').props.accessibilityState.disabled,
+      ).toBe(true);
+    });
   });
 
   it('clears the typed description too', async () => {
@@ -1555,9 +1611,14 @@ describe('SW-52 — cancelling a report actually discards it', () => {
     );
     expect(utils.getByDisplayValue('Abandoned draft')).toBeTruthy();
 
+    mockConfirm.mockResolvedValue(true);
     fireEvent.press(utils.getByLabelText('Cancel and close'));
 
-    expect(utils.queryByDisplayValue('Abandoned draft')).toBeNull();
+    await waitFor(() => {
+      expect(
+        utils.getByLabelText('Description of the accessibility issue').props.value,
+      ).toBe('');
+    });
   });
 
   it('a FAILED submit still keeps the draft (this must not regress)', async () => {
@@ -1577,6 +1638,198 @@ describe('SW-52 — cancelling a report actually discards it', () => {
       expect(mockCreateFlag).toHaveBeenCalled();
     });
     expect(utils.getByDisplayValue('Survives a failure')).toBeTruthy();
+  });
+});
+
+describe('R2-F3 — a meaningful Report draft is protected before dismissal', () => {
+  it('closes an untouched form without prompting; the default category is not dirty', () => {
+    const onClose = jest.fn();
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats whitespace-only description as clean but protects meaningful description', async () => {
+    const cleanClose = jest.fn();
+    const clean = renderAuth({ id: 'user-abc' }, { severity: null, onClose: cleanClose });
+    fireEvent.changeText(clean.getByLabelText('Description of the accessibility issue'), '  \n ');
+    fireEvent.press(clean.getByLabelText('Cancel and close'));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(cleanClose).toHaveBeenCalledTimes(1);
+
+    const onClose = jest.fn();
+    mockConfirm.mockResolvedValueOnce(false);
+    const dirty = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+    fireEvent.changeText(dirty.getByLabelText('Description of the accessibility issue'), 'Keep this report');
+    fireEvent.press(dirty.getByLabelText('Cancel and close'));
+
+    await waitFor(() => {
+      expect(mockConfirm).toHaveBeenCalledWith(
+        'Discard report?',
+        'Your unsent report will be lost.',
+        'Discard',
+        true,
+      );
+    });
+    expect(dirty.getByDisplayValue('Keep this report')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(mockCreateFlag).not.toHaveBeenCalled();
+  });
+
+  it('returns to clean when the only editable change is reverted', () => {
+    const onClose = jest.fn();
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+    const description = utils.getByLabelText('Description of the accessibility issue');
+
+    fireEvent.changeText(description, 'Temporary wording');
+    fireEvent.changeText(description, '');
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('protects category, severity, seasonal context, staged photos, and quick-fill changes', async () => {
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null });
+    fireEvent.press(utils.getByLabelText('Category: Broken sidewalk'));
+    rate(utils, 4);
+    fireEvent.press(utils.getByLabelText('Icy in winter'));
+    await addPhoto(utils, 'file:///staged.jpg');
+    fireEvent.changeText(
+      utils.getByLabelText('Photo description for screen reader users'),
+      'A raised edge blocks the curb ramp.',
+    );
+
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+
+    const templates = validReportTemplates as unknown as jest.Mock;
+    templates.mockReturnValueOnce([
+      {
+        id: 'winter-ramp',
+        label: 'Winter ramp',
+        category: 'no_ramp',
+        severity: 3,
+        description: 'Template text',
+      },
+    ]);
+    const quickFill = renderAuth({ id: 'user-abc' }, { severity: null });
+    fireEvent.press(quickFill.getByLabelText('Apply template: Winter ramp'));
+    fireEvent.press(quickFill.getByLabelText('Cancel and close'));
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(2));
+  });
+
+  it('routes request-close, accessibility escape, and pull dismissal through the guard', async () => {
+    const routes = [
+      {
+        name: 'request-close',
+        invoke: (utils: ReturnType<typeof render>) =>
+          utils.UNSAFE_getByType(Modal).props.onRequestClose(),
+      },
+      {
+        name: 'accessibility escape',
+        invoke: (utils: ReturnType<typeof render>) =>
+          utils.UNSAFE_getByType(GlassSurface).props.onAccessibilityEscape(),
+      },
+      {
+        name: 'pull dismissal',
+        invoke: (utils: ReturnType<typeof render>) =>
+          utils.UNSAFE_getByType(SheetPull).props.onDismiss(),
+      },
+    ];
+
+    for (const route of routes) {
+      const onClose = jest.fn();
+      mockConfirm.mockResolvedValueOnce(false);
+      const utils = renderAuth({ id: 'user-abc' }, { severity: null, onClose });
+      fireEvent.changeText(
+        utils.getByLabelText('Description of the accessibility issue'),
+        `Keep this report after ${route.name}`,
+      );
+
+      route.invoke(utils);
+
+      await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+      expect(onClose).not.toHaveBeenCalled();
+      expect(
+        utils.getByDisplayValue(`Keep this report after ${route.name}`),
+      ).toBeTruthy();
+      utils.unmount();
+      mockConfirm.mockClear();
+    }
+  });
+
+  it('protects an explicitly requested location replacement', async () => {
+    const onClose = jest.fn();
+    mockConfirm.mockResolvedValueOnce(false);
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+
+    function LocationHarness() {
+      const [location, setLocation] = React.useState<typeof LOCATION | null>(null);
+      return (
+        <SharedModalsProvider>
+          <ReportFlagModal
+            visible
+            location={location}
+            onClose={onClose}
+            onCreated={jest.fn()}
+            onRequestLocation={() => setLocation(LOCATION)}
+          />
+        </SharedModalsProvider>
+      );
+    }
+
+    const utils = render(<LocationHarness />);
+    fireEvent.press(utils.getByLabelText('Use my location'));
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps passive GPS arrival in the opening state', () => {
+    const onClose = jest.fn();
+    mockUseAuth.mockReturnValue({ user: { id: 'user-abc' } } as ReturnType<typeof useAuth>);
+
+    function PassiveLocationHarness() {
+      const [location, setLocation] = React.useState<typeof LOCATION | null>(null);
+      React.useEffect(() => setLocation(LOCATION), []);
+      return (
+        <SharedModalsProvider>
+          <ReportFlagModal
+            visible
+            location={location}
+            onClose={onClose}
+            onCreated={jest.fn()}
+          />
+        </SharedModalsProvider>
+      );
+    }
+
+    const utils = render(<PassiveLocationHarness />);
+    fireEvent.press(utils.getByLabelText('Cancel and close'));
+
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the product body role for the location warning and keeps coordinates monospace', () => {
+    const utils = renderAuth(
+      { id: 'user-abc' },
+      { location: null, severity: null },
+    );
+    expect(utils.getByText('Waiting for location…').props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontFamily: font.family.bodyMedium })]),
+    );
+
+    const withLocation = renderAuth();
+    fireEvent.press(withLocation.getByLabelText('Show coordinates'));
+    expect(withLocation.getByText('49.28000, -123.12000').props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontFamily: font.family.mono })]),
+    );
   });
 });
 
@@ -1826,6 +2079,72 @@ describe('Q5 — no default severity, so every report is a judgment', () => {
 });
 
 // ===========================================================================
+// P1 — the remaining Report controls genuinely inherit XXXL Dynamic Type
+//
+// The earlier source guard only distinguished numeric sizes from theme tokens.
+// Both still scale identically in React Native; the live failure was the finite
+// maxFontSizeMultiplier that reached these Text nodes. Assert the rendered
+// contract instead: undefined means the system setting is not capped.
+// ===========================================================================
+
+describe('P1 — remaining Report controls preserve their XXXL hierarchy', () => {
+  it('uncaps reading content and bounds the two fixed-glyph location controls', () => {
+    setFontScale(3.1);
+    const utils = renderAuth(
+      { id: 'user-abc' },
+      {
+        location: null,
+        locationDenied: true,
+        onRequestLocation: jest.fn(),
+        onPlaceOnMap: jest.fn(),
+        severity: null,
+      },
+    );
+
+    for (const label of ['Report a flag', 'Location is off for Flagstone']) {
+      expectUncappedText(utils.getByText(label));
+    }
+
+    for (const label of ['Use my location', 'Place the pin on the map']) {
+      const node = utils.getByText(label);
+      expect(node.props.maxFontSizeMultiplier).toBe(TYPE_BLOCK.chrome);
+      expect(node.props.allowFontScaling).not.toBe(false);
+    }
+
+    expect(StyleSheet.flatten(utils.getByText('Place the pin on the map').props.style)).toMatchObject({
+      flexShrink: 1,
+    });
+  });
+
+  it('uncaps quick-fill and category labels while preserving corrected lower copy', () => {
+    setFontScale(3.1);
+    (validReportTemplates as jest.Mock).mockReturnValue([
+      { id: 'snow-ramp', label: 'Snow-blocked ramp', category: 'no_ramp', severity: 4 },
+    ]);
+    const utils = renderAuth({ id: 'user-abc' }, { severity: null });
+
+    for (const label of [
+      'Quick-fill templates (optional)',
+      'Snow-blocked ramp',
+      'Category',
+      'No ramp',
+      'Broken sidewalk',
+      'Blocked path',
+      'Missing signal',
+      'Steep grade',
+      'Other',
+    ]) {
+      expectUncappedText(utils.getByText(label));
+    }
+
+    // Already-correct lower reading copy stays uncapped as the focused wrappers
+    // above change; this is the preservation seam live QA asked us to keep.
+    expectUncappedText(utils.getByText('Location is removed from your photos automatically.'));
+    expectUncappedText(utils.getByText(/Your report appears on the map right away/));
+  });
+});
+
+// ===========================================================================
 // F4 / X7 — the picker recomposes at large type
 //
 // Five 44pt circles beside 40pt type read as a row of bullets: targets at the
@@ -1864,6 +2183,43 @@ describe('F4 / X7 — the picker becomes the Legend at large type', () => {
     }
     // The compact discs are gone, not stacked underneath.
     expect(bySeverity(utils, 3, 'button')).toBeUndefined();
+  });
+
+  it('at XXXL all five digits scale with their discs and the selected caption is uncapped', () => {
+    setFontScale(3.1);
+    const utils = renderAnon({ severity: null });
+
+    for (const n of [1, 2, 3, 4, 5]) {
+      const row = bySeverity(utils, n, 'radio');
+      if (!row) throw new Error(`missing severity ${n} radio row`);
+
+      const digit = row
+        .findAllByType(Text)
+        .find((node) => node.props.children === n);
+      if (!digit) throw new Error(`missing severity ${n} numeric digit`);
+      expect(StyleSheet.flatten(digit.props.style).fontSize).toBe(font.size.base * 2);
+      expect(digit.props.allowFontScaling).not.toBe(false);
+
+      const disc = row
+        .findAllByType(View)
+        .find((node) => node.props.accessibilityElementsHidden === true);
+      if (!disc) throw new Error(`missing severity ${n} decorative disc`);
+      expect(StyleSheet.flatten(disc.props.style)).toMatchObject({ width: 64, height: 64 });
+    }
+
+    fireEvent.press(bySeverity(utils, 3, 'radio')!);
+    const caption = utils
+      .getAllByLabelText(/^Severity 3:/)
+      .find((node) => node.props.accessibilityLiveRegion === 'polite');
+    if (!caption) throw new Error('missing selected-severity caption');
+    expectUncappedText(caption);
+
+    const captionLabel = caption
+      .findAllByType(Text)
+      .find((node) => node.props.children === '3');
+    if (!captionLabel) throw new Error('missing selected-severity caption label');
+    expectUncappedText(captionLabel);
+    expect(bySeverity(utils, 3, 'radio')?.props.accessibilityState).toMatchObject({ checked: true });
   });
 
   it('a row says exactly what the disc said — the name survives the recomposition', () => {

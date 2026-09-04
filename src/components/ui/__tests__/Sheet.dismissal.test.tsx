@@ -20,6 +20,7 @@
 import React from 'react';
 import { Modal, View } from 'react-native';
 import { fireEvent, render, act } from '@testing-library/react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 
 import { Sheet } from '../Sheet';
 
@@ -89,5 +90,34 @@ describe('ui/Sheet — the dismissal standard', () => {
     const { utils } = mount();
     const handle = utils.UNSAFE_getByProps({ accessibilityElementsHidden: true });
     expect(handle.props.importantForAccessibility).toBe('no-hide-descendants');
+  });
+
+  it('a committed pull owns one card-and-scrim exit instead of starting a second Modal slide', () => {
+    jest.useFakeTimers();
+    try {
+      const { utils, onClose } = mount();
+      const modal = () => utils.UNSAFE_getByType(Modal);
+      const pull = utils.UNSAFE_getByType(PanGestureHandler);
+
+      expect(modal().props.animationType).toBe('slide');
+      act(() => {
+        pull.props.onHandlerStateChange({
+          nativeEvent: { state: State.END, translationY: 200, velocityY: 0 },
+        });
+      });
+
+      // SheetPull now owns the card and the containing Animated backdrop for
+      // this exit; disabling Modal's own slide prevents the trailing grey
+      // panel / close-reopen-close sequence after the card is already gone.
+      expect(modal().props.animationType).toBe('none');
+      expect(onClose).not.toHaveBeenCalled();
+
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(onClose).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

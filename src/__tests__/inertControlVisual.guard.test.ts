@@ -137,7 +137,9 @@ describe('SW-49 class — FlagDetailModal shares one `busy` across sixteen contr
     for (const name of ['primaryBtn', 'deleteBtn']) {
       const idx = src.indexOf(`styles.${name},`);
       expect(`${name} found: ${idx > -1}`).toBe(`${name} found: true`);
-      expect(src.slice(idx, idx + 900)).toContain('ActivityIndicator');
+      const end = src.indexOf('</Pressable>', idx);
+      expect(`${name} boundary found: ${end > idx}`).toBe(`${name} boundary found: true`);
+      expect(src.slice(idx, end)).toContain('ActivityIndicator');
     }
 
     /*

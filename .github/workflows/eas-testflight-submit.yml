@@ -1,61 +1,98 @@
-name: EAS TestFlight Submit
+name: EAS TestFlight Candidate
 
-# MANUAL ONLY, WITH APPROVAL. Previously this auto-built AND submitted to the
-# App Store on any `v*` tag push — that could ship to production unattended while
-# the D8 EXIF GPS privacy blocker is still open. Now:
-#   - dispatch-only (no tag/push trigger),
-#   - runs in the `release-approval` GitHub Environment so a required reviewer
-#     must approve the run before any build/submit happens (see SETUP note below),
-#   - production is hard-blocked by a privacy guard until D8 is closed.
-#
-# SETUP (one-time, in GitHub UI): Settings → Environments → New environment
-#   "release-approval" → add Sky as a Required reviewer. Until that environment
-#   exists with a reviewer, treat this workflow as not-yet-armed.
+# This is the only canonical build-and-upload path. It binds an accepted source
+# SHA to the workflow event and checked-out HEAD, then uses fixed EAS profiles.
+# For iOS, EAS auto-submit uploads the binary to App Store Connect/TestFlight;
+# this workflow does not initiate final Apple App Review submission.
+# D8 may remain pending while this exact candidate is created. D8 closure is
+# required before the separate, manual final App Store review submission.
 on:
   workflow_dispatch:
     inputs:
-      profile:
-        description: 'Build profile'
+      expected_release_sha:
+        description: 'FULL 40-character lowercase Git SHA accepted for this release'
         required: true
-        default: 'preview'
-        type: choice
-        options:
-          - preview
-          - preview2
-          - preview3
-          - production
-      d8_closed:
-        description: 'Type "yes" ONLY if the D8 EXIF GPS privacy blocker is closed (required for production)'
-        required: false
-        default: 'no'
         type: string
 
-# S-4 (security audit 2026-07-31): this workflow had NO `permissions:` block
-# while handling the most powerful secrets in the repo — EAS_TOKEN and an Apple
-# Developer account password — so it inherited an undeclared, possibly org-wide
-# read-write GITHUB_TOKEN scope. That inversion (the least-privileged workflow
-# declared a ceiling; the most-privileged one did not) is the finding.
-#
-# `contents: write` is genuinely required: the release step below publishes a
-# GitHub Release via softprops/action-gh-release. Declared explicitly rather
-# than inherited, and nothing broader is granted.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build-and-submit:
+  build-and-upload:
     runs-on: ubuntu-latest
-    name: Build & Submit (manual, approved)
+    name: Build and upload exact TestFlight candidate
     environment: release-approval
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Privacy gate — block production while D8 is open
+      - name: Validate accepted release SHA
+        env:
+          EXPECTED_RELEASE_SHA: ${{ inputs.expected_release_sha }}
         run: |
-          if [ "${{ github.event.inputs.profile }}" = "production" ] && [ "${{ github.event.inputs.d8_closed }}" != "yes" ]; then
-            echo "::error::Production submit blocked. The D8 EXIF GPS privacy leak is a pre-launch blocker. Re-run with d8_closed=yes ONLY after it is confirmed closed in PROJECT_STATE.md."
+          set -euo pipefail
+
+          if [[ ! "$EXPECTED_RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::expected_release_sha must be a full 40-character lowercase Git SHA"
             exit 1
           fi
+
+          if [ "$EXPECTED_RELEASE_SHA" != "$GITHUB_SHA" ]; then
+            echo "::error::expected_release_sha does not match GITHUB_SHA"
+            exit 1
+          fi
+
+          echo "Accepted release SHA matches GITHUB_SHA: $EXPECTED_RELEASE_SHA"
+
+      - uses: actions/checkout@v4
+
+      - name: Verify checked-out source identity
+        id: source_identity
+        env:
+          EXPECTED_RELEASE_SHA: ${{ inputs.expected_release_sha }}
+        run: |
+          set -euo pipefail
+
+          HEAD="$(git rev-parse HEAD)"
+
+          if [ "$HEAD" != "$GITHUB_SHA" ]; then
+            echo "::error::Checked-out HEAD does not match GITHUB_SHA"
+            exit 1
+          fi
+
+          if [ "$HEAD" != "$EXPECTED_RELEASE_SHA" ]; then
+            echo "::error::Checked-out HEAD does not match expected_release_sha"
+            exit 1
+          fi
+
+          echo "head_sha=$HEAD" >> "$GITHUB_OUTPUT"
+
+      - name: Guard fixed EAS profiles
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require('fs');
+          const eas = JSON.parse(fs.readFileSync('eas.json', 'utf8'));
+          const testflight = eas.build?.testflight;
+          const invariants = [
+            ['build.testflight.exists', Boolean(testflight)],
+            ['build.testflight.distribution', testflight?.distribution, 'store'],
+            ['build.testflight.environment', testflight?.environment, 'production'],
+            ['build.testflight.env.APP_ENV', testflight?.env?.APP_ENV, 'production'],
+            ['build.testflight.ios.buildConfiguration', testflight?.ios?.buildConfiguration, 'Release'],
+            ['build.testflight.ios.simulator', testflight?.ios?.simulator, false],
+            ['submit.production.exists', Boolean(eas.submit?.production)],
+          ];
+
+          let failed = false;
+          for (const [name, actual, expected = true] of invariants) {
+            console.log(`${name}=${String(actual)}`);
+            if (actual !== expected) {
+              console.error(`::error::EAS profile invariant failed: ${name}`);
+              failed = true;
+            }
+          }
+
+          if (failed) process.exit(1);
+          NODE
 
       - uses: actions/setup-node@v4
         with:
@@ -71,29 +108,49 @@ jobs:
       - name: Test
         run: npm test -- --passWithNoTests --forceExit
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli@latest
+      - name: Install pinned EAS CLI
+        run: |
+          set -euo pipefail
+          npm install --global eas-cli@23.0.0
+          eas --version
 
-      - name: Build with EAS
+      - name: Build and upload linked TestFlight candidate
+        id: eas_build_upload
         env:
-          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
-          EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
-        run: eas build --platform ios --profile ${{ github.event.inputs.profile }} --non-interactive
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
 
-      - name: Submit to App Store Connect
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "::error::EXPO_TOKEN is not configured"
+            exit 1
+          fi
+
+          eas build --platform ios --profile testflight --auto-submit-with-profile=production --wait --non-interactive
+
+      - name: Write non-secret provenance receipt
+        if: always()
         env:
-          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
-          EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
-          EXPO_APPLE_PASSWORD: ${{ secrets.EXPO_APPLE_PASSWORD }}
-          EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
-        run: eas submit --platform ios --profile production --latest --non-interactive
+          EXPECTED_RELEASE_SHA: ${{ inputs.expected_release_sha }}
+          CHECKED_OUT_HEAD: ${{ steps.source_identity.outputs.head_sha }}
+          EAS_STEP_OUTCOME: ${{ steps.eas_build_upload.outcome }}
+        run: |
+          set -euo pipefail
 
-      - name: Create GitHub Release (tag only)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-        with:
-          body: |
-            TestFlight build submitted for version ${{ github.ref_name }}.
-            Check App Store Connect for review status.
-          draft: false
-          prerelease: false
+          printf '%s\n' \
+            '## Release provenance receipt' \
+            "- Expected accepted SHA: $EXPECTED_RELEASE_SHA" \
+            "- GITHUB_SHA: $GITHUB_SHA" \
+            "- Checked-out HEAD: ${CHECKED_OUT_HEAD:-unavailable}" \
+            "- GITHUB_REF: $GITHUB_REF" \
+            "- GITHUB_RUN_ID: $GITHUB_RUN_ID" \
+            "- GITHUB_RUN_ATTEMPT: $GITHUB_RUN_ATTEMPT" \
+            "- GITHUB_WORKFLOW: $GITHUB_WORKFLOW" \
+            '- Fixed build profile: testflight' \
+            '- Fixed submit profile: production' \
+            '- Pinned EAS CLI version: 23.0.0' \
+            '- Destination: App Store Connect / TestFlight only' \
+            '- Final Apple App Review submission: not performed by this workflow' \
+            '- D8 policy: closure required before separate final App Store review submission' \
+            "- EAS build/upload step outcome: ${EAS_STEP_OUTCOME:-unavailable}" \
+            >> "$GITHUB_STEP_SUMMARY"

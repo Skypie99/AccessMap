@@ -25,7 +25,7 @@
  * Art direction 2026-08-21, board 10.
  */
 import React from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type TextStyle, type ViewStyle } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { TypeBlock, TYPE_BLOCK } from '@/components/ui/TypeBlock';
 import { decorativeProps } from '@/lib/accessibility';
@@ -69,6 +69,8 @@ export interface EmptyStateProps {
    */
   live?: boolean;
   style?: ViewStyle;
+  /** Optional local line-length override for a constrained adopting viewport. */
+  bodyStyle?: TextStyle;
 }
 
 /**
@@ -93,7 +95,7 @@ function PathMark() {
   );
 }
 
-export function EmptyState({ title, body, action, mark, live, style }: EmptyStateProps) {
+export function EmptyState({ title, body, action, mark, live, style, bodyStyle }: EmptyStateProps) {
   const color = useColor();
   const styles = makeStyles(color);
   return (
@@ -107,7 +109,7 @@ export function EmptyState({ title, body, action, mark, live, style }: EmptyStat
           found on four other surfaces). */}
       <TypeBlock cap={TYPE_BLOCK.content}>
         <AppText variant="heading" style={styles.title}>{title}</AppText>
-        {body ? <AppText variant="body" style={styles.body}>{body}</AppText> : null}
+        {body ? <AppText variant="body" style={[styles.body, bodyStyle]}>{body}</AppText> : null}
       </TypeBlock>
       {action}
     </View>

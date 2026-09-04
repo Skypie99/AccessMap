@@ -35,11 +35,14 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Platform,
-  ScrollView,
   StyleSheet,
   View,
   type AccessibilityRole,
 } from 'react-native';
+// RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { ScrollView } from 'react-native-gesture-handler';
 import { AppText } from '@/components/ui/AppText';
 import { Sheet } from '@/components/ui/Sheet';
 import { useAtTop } from '@/components/ui/SheetPull';
@@ -171,7 +174,7 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
       glass
       engineered
       padded
-      shrinkStyle={styles.cap}
+      presentation="expanded"
       minBottomPad={spacing.xxl}
       atTop={atTop}
       scrollRef={scrollRef}
@@ -251,9 +254,6 @@ export default function StatusHistoryModal({ visible, flagId, onClose }: Props) 
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // The sheet's own cap. `Sheet` defaults to 90%; this surface shipped at
-    // 80% and it is a short audit trail, so the tighter cap is content.
-    cap: { maxHeight: '80%' },
     body: { flexShrink: 1 },
     bodyContent: { gap: spacing.md, paddingBottom: spacing.sm, paddingTop: spacing.tight },
     center: {

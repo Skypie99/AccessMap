@@ -38,7 +38,7 @@
  * so screen-reader users dismiss with the escape scrub or the Close button, both
  * untouched. This wrapper adds no accessible node.
  */
-import React, { useCallback, useRef } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { Animated, Easing, Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { PanGestureHandler, State, type PanGestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 import { hapticSelection } from '@/lib/haptics';
@@ -75,6 +75,13 @@ export interface SheetPullProps {
    */
   onDismiss: () => void;
   /**
+   * Called once when a committed pull begins its owned exit. The transparent
+   * modal owner uses this to retire its scrim on the SAME native-timed exit,
+   * then switches off the Modal's own slide so it cannot perform a second
+   * close after the card is already gone.
+   */
+  onDismissStart?: () => void;
+  /**
    * Gate for states where dismissing would be wrong or confusing — mid-submit,
    * keyboard up. Mirrors whatever guard the surface's Cancel already uses.
    * Default true.
@@ -89,7 +96,73 @@ export interface SheetPullProps {
   simultaneousHandlers?: React.Ref<unknown> | React.Ref<unknown>[];
   /** Extra style for the drag wrapper (it already carries flexShrink). */
   style?: ViewStyle;
+  /**
+   * The owning controlled Modal's visibility. Supplying it lets the primitive
+   * clear its one-shot dismissal latch on a later open even on Android, where
+   * React Native does not call Modal.onDismiss.
+   */
+  visible?: boolean;
   testID?: string;
+}
+
+export interface SheetPullHandle {
+  /**
+   * Reset the native-driven translation after the owning Modal has actually
+   * dismissed. Resetting before that lifecycle event makes a completed pull
+   * jump back on-screen for one frame while React Native runs its own closing
+   * animation: the visible close → reopen/flash → close defect.
+   */
+  resetAfterDismiss: () => void;
+}
+
+/**
+ * One lifecycle for transparent Modal + SheetPull surfaces.
+ *
+ * Nearby intentionally does NOT use this: it is a native `pageSheet`, so
+ * UIKit owns both its sheet and dimming transition. A transparent Modal is a
+ * different class: SheetPull moves its card itself. Leaving the Modal's
+ * `slide` transition enabled after that movement asks React Native to run a
+ * second exit, leaving the scrim behind or briefly flashing the card back.
+ *
+ * The owner calls `beginPullDismiss` exactly when SheetPull commits. Card and
+ * scrim then use the same duration, and the owner's Modal switches to `none`
+ * before its controlled `visible` state turns false. Button/escape closes keep
+ * the existing native modal transition; this only owns a committed pull.
+ */
+export function useSheetPullDismissLifecycle(visible: boolean) {
+  const reducedMotion = useReducedMotion();
+  const [pullDismissing, setPullDismissing] = React.useState(false);
+  const backdropOpacity = useRef(new Animated.Value(1)).current;
+
+  React.useLayoutEffect(() => {
+    if (!visible) return;
+    backdropOpacity.stopAnimation();
+    backdropOpacity.setValue(1);
+    setPullDismissing(false);
+  }, [visible, backdropOpacity]);
+
+  const beginPullDismiss = useCallback(() => {
+    setPullDismissing(true);
+    backdropOpacity.stopAnimation();
+    if (reducedMotion) {
+      backdropOpacity.setValue(0);
+      return;
+    }
+    Animated.timing(backdropOpacity, {
+      toValue: 0,
+      duration: motion.duration.base,
+      easing: Easing.bezier(...motion.easing.accelerate),
+      useNativeDriver: true,
+    }).start();
+  }, [backdropOpacity, reducedMotion]);
+
+  return {
+    // A pull has its own native-driven card + scrim exit. Native Modal slide
+    // remains for normal Close/escape paths, but must not replay after a pull.
+    modalAnimationType: reducedMotion || pullDismissing ? ('none' as const) : ('slide' as const),
+    backdropOpacity,
+    beginPullDismiss,
+  };
 }
 
 /**
@@ -115,18 +188,22 @@ export function useAtTop() {
   return { atTop, onScroll, scrollEventThrottle: 16 as const };
 }
 
-export function SheetPull({
+export const SheetPull = forwardRef<SheetPullHandle, SheetPullProps>(function SheetPull({
   children,
   onDismiss,
+  onDismissStart,
   enabled = true,
   atTop = true,
   simultaneousHandlers,
   style,
+  visible,
   testID,
-}: SheetPullProps) {
+}, ref) {
   const reducedMotion = useReducedMotion();
   const rawY = useRef(new Animated.Value(0)).current;
   const cardHeight = useRef(0);
+  const dismissingRef = useRef(false);
+  const wasVisibleRef = useRef(visible);
 
   // Clamp upward drags to zero WITHOUT leaving the native thread: an
   // interpolation with extrapolateLeft:'clamp' is native-driver-safe, whereas
@@ -142,6 +219,29 @@ export function SheetPull({
     Animated.event([{ nativeEvent: { translationY: rawY } }], { useNativeDriver: true }),
   ).current;
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      resetAfterDismiss: () => {
+        rawY.setValue(0);
+        dismissingRef.current = false;
+      },
+    }),
+    [rawY],
+  );
+
+  React.useLayoutEffect(() => {
+    // Android does not deliver Modal.onDismiss. Reset on the next controlled
+    // open as well as at the native completion hook, otherwise a completed
+    // pull can leave the next presentation permanently gesture-disabled.
+    if (visible && wasVisibleRef.current === false) {
+      rawY.stopAnimation();
+      rawY.setValue(0);
+      dismissingRef.current = false;
+    }
+    wasVisibleRef.current = visible;
+  }, [visible, rawY]);
+
   const settleBack = useCallback(() => {
     if (reducedMotion) {
       rawY.setValue(0);
@@ -155,15 +255,20 @@ export function SheetPull({
   }, [rawY, reducedMotion]);
 
   const commit = useCallback(() => {
+    // A completed native gesture may surface more than one terminal callback
+    // around a modal-state update. It is still one user dismissal, never two.
+    if (dismissingRef.current) return;
+    dismissingRef.current = true;
     // Haptic at COMMIT, not at threshold-crossing. The crossing tick would read
     // better, but detecting it means an addListener on a native-driven value —
     // ~60 bridge events a second during the drag, which is exactly the cost the
     // native driver exists to avoid. Device pass can tell us if it's worth it.
     hapticSelection();
+    onDismissStart?.();
     const finish = () => {
-      // Reset BEFORE handing over, so reopening the sheet never flashes the
-      // half-dragged position from last time.
-      rawY.setValue(0);
+      // Keep the card below the viewport while the owning Modal completes its
+      // native dismissal. The owner resets rawY from Modal.onDismiss, which is
+      // the first lifecycle point where a reset cannot flash the card back in.
       onDismiss();
     };
     if (reducedMotion) {
@@ -176,7 +281,7 @@ export function SheetPull({
       easing: Easing.bezier(...motion.easing.accelerate),
       useNativeDriver: true,
     }).start(finish);
-  }, [rawY, reducedMotion, onDismiss]);
+  }, [rawY, reducedMotion, onDismiss, onDismissStart]);
 
   const onHandlerStateChange = useCallback(
     (e: PanGestureHandlerStateChangeEvent) => {
@@ -222,7 +327,7 @@ export function SheetPull({
       </Animated.View>
     </PanGestureHandler>
   );
-}
+});
 
 const styles = StyleSheet.create({
   // flexShrink mirrors what every adopting card already carries, so inserting

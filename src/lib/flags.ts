@@ -740,7 +740,7 @@ export function detectMimeFromBytes(buffer: ArrayBuffer): string | null {
 export async function uploadStrippedImage(
   userId: string,
   localUri: string,
-  buildPath: (userId: string, finalExt: string) => string,
+  buildPath: (userId: string, finalExt: string) => string | Promise<string>,
   webStripFailedMessage: string,
   srcWidth?: number,
   srcHeight?: number,
@@ -839,7 +839,7 @@ export async function uploadStrippedImage(
   const strippedMime = detectMimeFromBytes(arrayBuffer);
   const contentType = strippedMime === 'image/png' ? 'image/png' : 'image/jpeg';
   const finalExt = strippedMime === 'image/png' ? 'png' : 'jpg';
-  const filePath = buildPath(userId, finalExt);
+  const filePath = await buildPath(userId, finalExt);
 
   const { error: uploadErr } = await supabase.storage
     .from(FLAG_PHOTOS_BUCKET)
@@ -858,19 +858,61 @@ export async function uploadFlagPhoto(
   localUri: string,
   srcWidth?: number,
   srcHeight?: number,
-): Promise<{ url: string; path: string }> {
-  // Flag photos keep the `<uid>/<ts>.<ext>` object name. The web-strip-failure
-  // copy carries the F46 HEIC-specific hint (retrying the same undecodable
-  // file is doomed — point the user at JPG/PNG instead). srcWidth/srcHeight (the
-  // picker-reported dimensions, when available) drive the B8 downscale-on-ingest.
-  return uploadStrippedImage(
-    userId,
-    localUri,
-    (uid, finalExt) => `${uid}/${Date.now()}.${finalExt}`,
-    "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
-    srcWidth,
-    srcHeight,
-  );
+): Promise<{ intentId: string; url: string; path: string }> {
+  let intentId = '';
+  try {
+    const upload = await uploadStrippedImage(
+      userId,
+      localUri,
+      async (_userId, finalExt) => {
+        const { data, error } = await supabase
+          .rpc('prepare_flag_photo_upload', { p_extension: finalExt, p_kind: 'flag_photo' })
+          .single();
+        if (error || !data) throw error ?? new Error('Photo upload could not be prepared.');
+        intentId = data.intent_id;
+        return data.object_key;
+      },
+      "Photo privacy check failed: this photo couldn't be processed in the browser (HEIC photos often can't). Please choose a JPG or PNG instead.",
+      srcWidth,
+      srcHeight,
+    );
+    if (!intentId) throw new Error('Photo upload intent was not created.');
+    return { ...upload, intentId };
+  } catch (error) {
+    // A direct user-JWT upload can be ambiguous; never infer a terminal result
+    // from a client failure or timeout. The server retains it for review.
+    if (intentId) {
+      try {
+        await supabase.rpc('cancel_flag_photo_upload', { p_intent_id: intentId });
+      } catch {
+        // Preserve the original upload error; the durable intent remains a hold.
+      }
+    }
+    throw error;
+  }
+}
+
+export async function commitFlagPhotoUpload(
+  intentId: string,
+  flagId: string,
+  position: number,
+  altText: string | null | undefined,
+  setPrimary: boolean,
+): Promise<void> {
+  const { data, error } = await supabase.rpc('commit_flag_photo_upload', {
+    p_intent_id: intentId,
+    p_flag_id: flagId,
+    p_position: position,
+    p_alt_text: altText?.trim().slice(0, 200) || null,
+    p_set_primary: setPrimary,
+  });
+  if (error) throw error;
+  if (data !== 'COMMITTED') throw new Error('Photo upload outcome requires review.');
+}
+
+export async function cancelFlagPhotoUpload(intentId: string): Promise<void> {
+  const { error } = await supabase.rpc('cancel_flag_photo_upload', { p_intent_id: intentId });
+  if (error) throw error;
 }
 
 /**
@@ -983,6 +1025,32 @@ export interface CreateFlagInput {
 }
 
 /**
+ * The one projection shared by every full flag read (listFlags, listFlagsPage,
+ * listFlagsByUser, fetchFlagById, fetchFlagsByIds, listRecentFlags).
+ *
+ * Retains `photo_object_key` (the display key every full reader needs — see
+ * withDisplayPhotoUrl). Deliberately omits `photo_uploader_id`: no surface
+ * displays it, and selecting it would broaden contributor-identity disclosure
+ * through an ordinary read for no client benefit (Prompt B B2, Group 1).
+ */
+export const FLAG_READ_SELECT =
+  'id, user_id, lat, lng, category, description, severity, photo_url, photo_object_key, photo_alt, status, created_at';
+
+// Presentation only. Authorization, cleanup, provenance, and deletion use the
+// server-created object key and never parse the public display URL back.
+function withDisplayPhotoUrl(row: FlagRow): FlagRow {
+  if (!row.photo_object_key) return row;
+  return {
+    ...row,
+    photo_url: supabase.storage.from(FLAG_PHOTOS_BUCKET).getPublicUrl(row.photo_object_key).data.publicUrl,
+  };
+}
+
+function withDisplayPhotoUrls(rows: FlagRow[]): FlagRow[] {
+  return rows.map(withDisplayPhotoUrl);
+}
+
+/**
  * Fetch flags matching the given statuses. Capped at 500 rows so a runaway
  * table can't lock up the Map/Tasks screens. The shared FlagsProvider now
  * uses listFlagsPage() for the default open+verified set; this function is
@@ -997,12 +1065,12 @@ export interface CreateFlagInput {
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(500);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 export interface ListFlagsPageOptions {
@@ -1047,7 +1115,7 @@ export async function listFlagsPage(
   const limit = opts.limit ?? INITIAL_PAGE_SIZE;
   let query = supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -1056,7 +1124,7 @@ export async function listFlagsPage(
   }
   const { data, error } = await query;
   if (error) throw error;
-  const rows = (data ?? []) as FlagRow[];
+  const rows = withDisplayPhotoUrls((data ?? []) as FlagRow[]);
   const nextCursor = rows.length === limit ? (rows[rows.length - 1]?.created_at ?? null) : null;
   return { rows, nextCursor };
 }
@@ -1075,12 +1143,12 @@ export async function listFlagsPage(
 export async function listFlagsByUser(userId: string) {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 // Capability gate for the `flags.context_tags` column. Starts 'unknown' on
@@ -1362,107 +1430,26 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
 }
 
 /**
- * Delete a flag, and — SR-050 — the photos that belong to it.
+ * Delete a flag and its canonical public objects through the narrow
+ * `delete-flag` Edge route. The route derives and rechecks the owner/admin
+ * actor server-side, obtains canonical keys before the relational erase, and
+ * only finalizes that erase after exact Storage absence is established.
  *
- * RLS allows the row delete only when `user_id = auth.uid()`, so the caller does
- * not need to re-check ownership; Supabase rejects any other user's row.
- *
- * ─── WHY THE PHOTOS ARE PART OF THIS (11_SR050_TAKEDOWN_GAP.md) ───────────
- * Deleting the row used to leave every photo publicly fetchable forever, at a
- * URL anyone who had seen it still held. **A takedown that leaves the reported
- * photo up is not a takedown** — which is why this is a leg of Apple 1.2(b) and
- * not merely tidiness.
- *
- * ─── ORDER IS LOAD-BEARING ────────────────────────────────────────────────
- * The URLs live ON the rows being deleted. Gather first, delete second, or the
- * only record of what to clean up is gone by the time we look for it. The row
- * delete is what the user is owed, so it happens even if the photo sweep
- * cannot: `removeUploadedFlagPhotos` never throws, by design.
- *
- * ─── TWO CALLERS, ONE OF THEM CANNOT FINISH THE JOB ───────────────────────
- * `FlagDetailModal` calls this as the flag's OWNER; `AdminScreen` calls it as an
- * ADMIN taking down someone else's flag. Both are now permitted at the policy
- * level: the §C-12 `flag-photos admin delete` Storage policy this comment used
- * to describe as "written and waiting" was applied live on 2026-07-29, and both
- * it and `flags`' `admin delete any flag` were verified present in the live
- * catalog on 2026-08-18.
- *
- * ─── RESOLVED 2026-08-19 (was: WHAT BLOCKED BOTH PATHS) ───────────────────
- * History: both the flags admin policy and the Storage admin policy subselect
- * `public.users.is_admin`, RLS quals evaluate with the CALLER's privileges,
- * and `authenticated` briefly had no SELECT grant on that column — every
- * authenticated delete errored 42501 before rows were filtered. The column
- * grant went live 2026-08-18 (verified against the live DB 2026-08-19:
- * `authenticated` has SELECT on users.is_admin, and the `users update own
- * row` WITH CHECK pins is_admin so the companion UPDATE grant can't be used
- * for self-promotion). Delete works for owners and admins now; this note
- * stays so nobody re-diagnoses the old 42501 from stale docs.
+ * Legacy URLs deliberately remain outside this ordinary-report deletion path:
+ * URL shape is association evidence for the account-deletion workflow, never
+ * client-side authority to remove a moderator's or another person's object.
  */
 export async function deleteFlag(flagId: string) {
-  // Gather BEFORE the delete — see the order note above.
-  const paths = await collectFlagPhotoPaths(flagId);
-
-  // `.select('id')` is what makes a refused delete distinguishable from a
-  // completed one. RLS does not error when it denies a DELETE — it filters the
-  // row out and reports success over zero rows. Without this, a caller with no
-  // right to the flag gets a clean resolve, `onDeleted()` fires, and the UI
-  // hides a flag that is still very much in the table: the user is told their
-  // takedown worked when nothing happened. Zero rows is therefore a refusal,
-  // and 42501 is the code the house error map already turns into the standard
-  // "You don't have permission to do that." copy.
-  const { data, error } = await supabase.from('flags').delete().eq('id', flagId).select('id');
+  // Owner and moderator deletion share one server-authorized route. It reads
+  // canonical keys before relational deletion, verifies exact Storage owner
+  // metadata and exact absence after removal, then finalizes the row delete.
+  // The client never derives a legacy URL into an admin deletion capability.
+  const { data, error } = await supabase.functions.invoke('delete-flag', {
+    body: { flagId },
+  });
   if (error) throw error;
-  if (!data || data.length === 0) {
-    const denied = new Error('Delete matched no rows — the row is missing or RLS refused it.');
-    (denied as Error & { code?: string }).code = '42501';
-    throw denied;
-  }
-
-  // Best-effort, never throws. On the admin path RLS refuses this and it warns;
-  // the row is still gone, which is the contract the caller surfaces.
-  await removeUploadedFlagPhotos(paths);
-}
-
-/**
- * Every Storage path belonging to a flag: the legacy single `photo_url` plus
- * every row in the `flag_photos` junction. Deduped, because a flag's first
- * photo can legitimately appear in both.
- *
- * Returns `[]` rather than throwing on any failure. This runs on the delete
- * path, and a flag the user asked to remove must not survive because a photo
- * lookup had a bad day — that would be the feature failing at the only moment
- * it matters. Undeleted blobs are invisible to users and are what R-1's
- * server-side sweep is for.
- */
-async function collectFlagPhotoPaths(flagId: string): Promise<string[]> {
-  try {
-    const { data: auth } = await supabase.auth.getUser();
-    const uid = auth?.user?.id;
-    // No uid means no owner-folder to validate against, and every derivation
-    // would refuse anyway. Skip the round trips.
-    if (!uid) return [];
-
-    const [rowRes, photosRes] = await Promise.all([
-      supabase.from('flags').select('photo_url').eq('id', flagId).maybeSingle(),
-      supabase.from('flag_photos').select('url').eq('flag_id', flagId),
-    ]);
-
-    const urls: string[] = [];
-    const legacy = (rowRes.data as { photo_url?: string | null } | null)?.photo_url;
-    if (legacy) urls.push(legacy);
-    for (const p of (photosRes.data ?? []) as { url?: string | null }[]) {
-      if (p.url) urls.push(p.url);
-    }
-
-    const paths = new Set<string>();
-    for (const url of urls) {
-      const path = storagePathFromPublicUrl(url, uid);
-      if (path) paths.add(path);
-    }
-    return [...paths];
-  } catch (e) {
-    console.warn('[flags] SR-050: could not collect photo paths before delete:', e);
-    return [];
+  if (!data || typeof data !== 'object' || (data as { status?: unknown }).status !== 'deleted') {
+    throw new Error('Flag deletion did not reach a confirmed terminal result.');
   }
 }
 
@@ -1483,11 +1470,11 @@ async function collectFlagPhotoPaths(flagId: string): Promise<string[]> {
 export async function fetchFlagById(flagId: string): Promise<FlagRow | null> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .eq('id', flagId)
     .maybeSingle();
   if (error) throw error;
-  return (data as FlagRow | null) ?? null;
+  return data ? withDisplayPhotoUrl(data as FlagRow) : null;
 }
 
 /**
@@ -1509,10 +1496,10 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
   if (flagIds.length === 0) return [];
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .in('id', flagIds);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 /**
@@ -1548,11 +1535,11 @@ export async function fetchFlagsByIds(flagIds: string[]): Promise<FlagRow[]> {
 export async function listRecentFlags(limit = 100): Promise<FlagRow[]> {
   const { data, error } = await supabase
     .from('flags')
-    .select('id, user_id, lat, lng, category, description, severity, photo_url, photo_alt, status, created_at')
+    .select(FLAG_READ_SELECT)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []) as FlagRow[];
+  return withDisplayPhotoUrls((data ?? []) as FlagRow[]);
 }
 
 export const CATEGORY_LABELS: Record<FlagCategory, string> = {

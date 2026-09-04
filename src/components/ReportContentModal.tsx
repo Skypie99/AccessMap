@@ -72,11 +72,14 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
+// RNGH ScrollView, not react-native's — its ref exposes .handlerTag, which
+// SheetPull's simultaneousHandlers={scrollRef} needs to coexist with
+// pull-to-dismiss on native. Full mechanism: LegendModal.tsx.
+import { ScrollView } from 'react-native-gesture-handler';
 import { AppText } from '@/components/ui/AppText';
 import { Sheet } from '@/components/ui/Sheet';
 import { useAtTop } from '@/components/ui/SheetPull';
@@ -299,7 +302,7 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
       glass
       padded
       keyboardAvoiding
-      shrinkStyle={styles.kav}
+      presentation="expanded"
       cardStyle={styles.cardRhythm}
       minBottomPad={spacing.xl}
       atTop={atTop}
@@ -319,9 +322,9 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
                   </AppText>
                 </View>
               ) : (
-                // Scrolls under the 90% cap so the field stays reachable at
-                // large dynamic type with the keyboard up (WCAG 1.4.4). Header
-                // and actions stay pinned.
+                // Scrolls through the expanded safe-area geometry so the field
+                // stays reachable at large dynamic type with the keyboard up
+                // (WCAG 1.4.4). Header and actions stay pinned.
                 <ScrollView
                   style={styles.body}
               ref={scrollRef}
@@ -487,12 +490,6 @@ export default function ReportContentModal({ visible, target, onClose }: Props) 
 
 const makeStyles = (color: ColorTheme) =>
   StyleSheet.create({
-    // The cap that actually resolves — see the J2-5 note at the call site.
-    kav: {
-      width: '100%',
-      maxHeight: '90%',
-      flexShrink: 1,
-    },
     // The sheet's inter-child rhythm. `padded` supplies `md`; this surface
     // shipped tighter (its rows are radio lines, not cards).
     cardRhythm: { gap: spacing.sm },

@@ -24,6 +24,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { HeaderActions } from '@/components/ui/HeaderActions';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { hapticSelection } from '@/lib/haptics';
 import { signOut, supabase } from '@/lib/supabase';
 import { confirm, notify } from '@/lib/confirm';
@@ -635,7 +636,12 @@ export default function SettingsScreen() {
             styles.container,
             // S8: headerShown:false now — clear the status bar ourselves, uniform
             // with the headerless Home/Tasks/Profile (automatic is a web no-op).
-            { paddingTop: insets.top + spacing.lg, paddingBottom: tabBarHeight + 16 },
+            {
+              paddingTop: insets.top + spacing.lg,
+              // VP1 fix3: matches the shared helper Profile/Tasks already use
+              // (Global Fix 2) instead of an ad hoc +16 that drifted from it.
+              paddingBottom: getFloatingTabBarContentInset(tabBarHeight, insets.bottom),
+            },
           ]}
         >
         {/* S8: Settings gains the editorial header (was nav-header-only) — the

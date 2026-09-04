@@ -1,41 +1,30 @@
+import { getOrCreateAccountDeletionReceipt, type AccountDeletionReceipt } from './accountDeletionReceipt';
 import { signOut, supabase } from './supabase';
 
-/**
- * Thrown when the account WAS deleted server-side but this device couldn't
- * complete the local sign-out (e.g. connectivity dropped right after the
- * delete). Callers must NOT say "your account was not deleted".
- */
-export class AccountDeletedSignOutPendingError extends Error {
+/** The request is durable, but this device could not finish the local sign-out.
+ * Callers must not describe that as a failed deletion request. */
+export class AccountDeletionRequestSignOutPendingError extends Error {
   constructor() {
-    super(
-      'Your account was deleted, but this device could not finish signing out. Please restart the app.',
-    );
-    this.name = 'AccountDeletedSignOutPendingError';
+    super('Your deletion request was received, but this device could not finish signing out. Please restart the app.');
+    this.name = 'AccountDeletionRequestSignOutPendingError';
   }
 }
 
-// Permanently deletes the current user's account via the delete-account
-// Edge Function, then clears the local session.
-//
-// On success the auth context receives a SIGNED_OUT event and the app
-// navigates to SignInScreen automatically — callers don't need to navigate.
-//
-// On failure this throws and the caller stays logged in so they can retry.
-export async function deleteAccount(userId: string): Promise<void> {
-  const { error } = await supabase.functions.invoke('delete-account', {
-    method: 'POST',
+export type AccountDeletionRequest = { receipt: AccountDeletionReceipt; requestedAt: string | null };
+
+// Success means Transaction A committed REQUESTED only. The stateless worker
+// performs Transaction B, cleanup, verification, and Auth deletion later.
+export async function deleteAccount(userId: string): Promise<AccountDeletionRequest> {
+  const receipt = await getOrCreateAccountDeletionReceipt(userId);
+  const { data, error } = await supabase.functions.invoke('delete-account', {
+    method: 'POST', body: { operationId: receipt.operationId, receiptSecret: receipt.receiptSecret },
   });
-
   if (error) throw error;
+  if (!data || data.status !== 'requested') throw new Error('Deletion request was not accepted.');
 
-  // Clear local session, offline cache, tile cache, and push token.
-  // signOut() clears local storage before the server-side revoke call so it
-  // succeeds even though the auth.users row is already gone.
-  // F63: if the sign-out fails (network dropped after the successful delete),
-  // no SIGNED_OUT event fires and the caller's spinner would hang forever —
-  // throw a typed error so the UI can reset and explain honestly.
+  // Sign out locally only after the server has committed its durable write
+  // fence. SecureStore retains the receipt after Auth removal for completion.
   const result = await signOut(userId);
-  if (result?.error) {
-    throw new AccountDeletedSignOutPendingError();
-  }
+  if (result?.error) throw new AccountDeletionRequestSignOutPendingError();
+  return { receipt, requestedAt: typeof data.requestedAt === 'string' ? data.requestedAt : null };
 }
