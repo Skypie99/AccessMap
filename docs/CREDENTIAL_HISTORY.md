@@ -158,6 +158,12 @@ Detectors 3 and 4 together were measured across the full tracked-file census (~1
 size depends on the binary-extension filter; do not treat a specific file count here as a pinned
 number — test `A` pins only a floor of 500.)
 
+A second review round widened the label set again — `secret_key`, `SECRET_KEY`, `secretKey`,
+`access_key`, `ACCESS_KEY_ID`, `bearer` — because `.husky/pre-commit` already covered some of those
+and the residence guard has no business being weaker than the arrival gate. A bare `token` label was
+measured and **rejected**: 49 findings, all false positives (design-token logs, a "TokenDetails"
+report). `access_token` and `auth_token` carry the signal without the noise.
+
 **Known limitation, deliberately accepted.** The guard still cannot see a credential mentioned in
 *prose* — inline code in a sentence, with no `label: value` pair. That is the shape literal (b)
 had. A prose/inline-code detector was built and measured during TASK 00B and **rejected**: across

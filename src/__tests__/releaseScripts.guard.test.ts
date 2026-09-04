@@ -329,9 +329,18 @@ describe('FDA-046 — Android submission is hard-disabled', () => {
     // "TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json". Nothing could actually
     // submit with it, but the config OVERSTATED readiness: it read as though an
     // Android release path existed and had been configured. This app ships iOS
-    // only. Removing the block is what makes an accidental
-    // `eas submit --platform android` fail immediately, on missing
-    // configuration, instead of failing later on a missing key file.
+    // only, so the block was removed.
+    //
+    // CORRECTION (review, 2026-09-03): an earlier version of this comment said
+    // removing the block makes an accidental `eas submit --platform android`
+    // "fail immediately on missing configuration". That was FALSIFIED and is
+    // withdrawn — the old placeholder only warned and fell back to a prompt,
+    // and with no key path at all eas-cli resolves credentials via its
+    // credentials service off app.json android.package and goes INTERACTIVE.
+    // Neither state is a hard stop. What these tests actually guarantee is
+    // narrower and real: no Android submit CONFIG exists, no key is tracked,
+    // and no script or workflow can reach an Android submit. See
+    // docs/TESTFLIGHT_ACTION_ITEMS.md NH-4.
     // Non-vacuous by construction: assert the submit section still EXISTS with
     // an iOS profile first, so deleting `submit` wholesale fails here rather
     // than silently satisfying "no android anywhere".
@@ -369,7 +378,11 @@ describe('FDA-046 — Android submission is hard-disabled', () => {
   it('has no npm script and no workflow step in ANY workflow that could submit to Android', () => {
     // Both halves of this were too narrow when first written: the regex knew
     // only the long flag, and it scanned a single workflow file out of six.
-    const androidFlag = /(?:--platform|-p)[\s=]+android\b/;
+    // Covers: --platform android | --platform=android | -p android | -pandroid
+    // | quoted values | and `all`, because `eas build -p all
+    // --auto-submit-with-profile=production` would submit Android too. Case
+    // insensitive. `eas-cli submit` is caught by the submit pattern below.
+    const androidFlag = /(?:--platform|-p)[\s=]*["']?(?:android|all)\b/i;
 
     for (const [name, value] of Object.entries(scripts)) {
       expect([name, androidFlag.test(value)]).toEqual([name, false]);
@@ -382,7 +395,10 @@ describe('FDA-046 — Android submission is hard-disabled', () => {
     for (const file of workflows) {
       const source = fs.readFileSync(path.join(workflowDir, file), 'utf8');
       expect([file, androidFlag.test(source)]).toEqual([file, false]);
-      expect([file, /eas\s+submit/.test(source.replace(/^\s*#.*$/gm, ''))]).toEqual([file, false]);
+      expect([file, /eas(?:-cli)?\s+submit/i.test(source.replace(/^\s*#.*$/gm, ''))]).toEqual([
+        file,
+        false,
+      ]);
     }
   });
 });

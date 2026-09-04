@@ -81,7 +81,8 @@ const secretLabelled = () =>
     // `SUPABASE_SERVICE_ROLE_KEY`, `MY_API_KEY`, `client_secret`: the dominant
     // real-world env-var shape, and the one this repo's own .env.example uses.
     `(?<![A-Za-z0-9])(${L4}|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|` +
-      `service[_-]?role[_-]?key|private[_-]?key|webhook[_-]?${L4}|client[_-]?${L4})` +
+      `service[_-]?role[_-]?key|private[_-]?key|webhook[_-]?${L4}|client[_-]?${L4}|` +
+      `${L4}[_-]?key|${L4}key|access[_-]?key(?:[_-]?id)?|bearer)` +
       `(?![A-Za-z0-9])["'\`\\s]{0,3}[:|=,]\\s*["'\`]?([^\\s"'\`]+)`,
     'gi',
   );
@@ -335,9 +336,13 @@ function scan(files: string[]): Finding[] {
 
     // Detector 4 — recognisable credential FORMATS, no label required.
     lines.forEach((line, i) => {
-      if (placeholderish().test(line)) return;
       for (const { name, re } of FORMAT_DETECTORS) {
         for (const m of line.matchAll(re())) {
+          // Test the MATCH, not the line. Suppressing a whole line on any
+          // placeholder marker would hide a real unlabelled credential that
+          // merely shares a line with the word TODO or an example.com URL —
+          // and format detectors are precisely the ones that need no context.
+          if (placeholderish().test(m[0])) continue;
           out.push({ rel, line: i + 1, shape: `format:${name}, len=${m[0].length}`, lineText: line });
         }
       }
@@ -453,6 +458,14 @@ describe('no credentials in tree', () => {
       `MY_API_KEY=${V}`,
       `client_${L4} = ${V}`,
       `PRIVATE_KEY: ${V}`,
+      // Second round: labels .husky/pre-commit already covered but this guard
+      // did not, so the residence gate stayed weaker than the arrival gate.
+      `${L4}_key=${V}`,
+      `${L4.toUpperCase()}_KEY=${V}`,
+      `${L4}Key=${V}`,
+      `access_key=${V}`,
+      `ACCESS_KEY_ID=${V}`,
+      `bearer: ${V}`,
     ];
     const missed = mustHit.filter(
       (line) =>
@@ -468,6 +481,16 @@ describe('no credentials in tree', () => {
     const envish = `${L4}: process.env.WEBHOOK_${L4.toUpperCase()}`;
     expect(
       [...envish.matchAll(secretLabelled())]
+        .map((m) => shapeOf(m[2], { allowLongHex: true }))
+        .filter(Boolean),
+    ).toEqual([]);
+
+    // A bare `token` label is deliberately NOT in the alternation. It was
+    // measured across the tree and produced 49 findings, every one a false
+    // positive — design-token logs and a "TokenDetails" report. `access_token`
+    // and `auth_token` carry the signal without the noise.
+    expect(
+      [...`design token: ${V}`.matchAll(secretLabelled())]
         .map((m) => shapeOf(m[2], { allowLongHex: true }))
         .filter(Boolean),
     ).toEqual([]);
@@ -512,11 +535,18 @@ describe('no credentials in tree', () => {
   it('E · the two historical carriers still point at App Store Connect', () => {
     // A regression pin on the exact two files that leaked. They are allowed to
     // say the account exists; they are not allowed to say what it is.
+    // NOT `expect(notes).toMatch(...)`: a toMatch failure echoes the entire
+    // received string, so a rewritten carrier that reintroduced a credential
+    // would dump the whole file into the CI log — the same disclosure class as
+    // the raw-Finding comparison fixed below. Assert on a boolean instead.
     const notes = fs.readFileSync(
       path.join(REPO, 'docs', 'APP_STORE_REVIEWER_NOTES.md'),
       'utf8',
     );
-    expect(notes).toMatch(/App Store Connect/i);
+    expect(['APP_STORE_REVIEWER_NOTES.md', /App Store Connect/i.test(notes)]).toEqual([
+      'APP_STORE_REVIEWER_NOTES.md',
+      true,
+    ]);
 
     // The Build 33 migration-map repair (2026-08-28) moved this out of the
     // managed migrations directory; the old path made this assertion throw
@@ -531,7 +561,10 @@ describe('no credentials in tree', () => {
       ),
       'utf8',
     );
-    expect(migration).toMatch(/App Store Connect/i);
+    expect(['2026-05-31_reviewer_test_account.sql', /App Store Connect/i.test(migration)]).toEqual([
+      '2026-05-31_reviewer_test_account.sql',
+      true,
+    ]);
     // Map to the same shape string assertion C uses. Comparing raw Finding
     // objects here would pretty-print `lineText` — the matched line, i.e. the
     // credential — into the CI log on failure, in exactly the scenario this
