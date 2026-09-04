@@ -34,11 +34,14 @@ type CallSite = {
   line?: number;
   kind: 'rpc' | 'edge' | 'columns' | 'table';
   name: string;
-  onAbsent: 'hard' | 'graceful' | 'swallowed' | 'n/a';
+  onAbsent: string;
   deployed?: boolean;
 };
 type Surface = { surface: string; callSites: CallSite[]; finding: string | null };
 const surfaces: Surface[] = expectations.surfaces;
+// The manifest defines its own vocabulary; the guard reads it rather than
+// hardcoding a list that silently rejects a newly-needed classification.
+const onAbsentVocabulary: Record<string, string> = expectations.onAbsentDefinitions;
 const allCalls = surfaces.flatMap((s) => s.callSites.map((c) => ({ ...c, surface: s.surface })));
 
 describe('PHASE-02A — manifest shape', () => {
@@ -60,7 +63,7 @@ describe('PHASE-02A — manifest shape', () => {
         !c.file ||
         !c.name ||
         !['rpc', 'edge', 'columns', 'table'].includes(c.kind) ||
-        !['hard', 'graceful', 'swallowed', 'n/a'].includes(c.onAbsent),
+        !Object.keys(onAbsentVocabulary).includes(c.onAbsent),
     );
     expect(`unclassified call sites: ${bad.map((c) => c.name).join(', ') || 'none'}`).toBe(
       'unclassified call sites: none',
@@ -78,12 +81,27 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
   const absentRpc: string[] = deployed.rpc.absentAtAnySignature;
   const absentEdge: string[] = deployed.edgeFunctions.absent;
 
-  it('FDA-019 — signed-in photo upload calls RPCs production does not have', () => {
-    const photo = surfaces.find((s) => s.surface === 'photo-upload')!;
-    const broken = photo.callSites.filter((c) => c.kind === 'rpc' && absentRpc.includes(c.name));
-    expect(broken.length).toBeGreaterThan(0);
-    expect(broken.some((c) => c.onAbsent === 'hard')).toBe(true);
-    expect(photo.finding).toBe('FDA-019');
+  it('FDA-019 — flag photo upload is hard-broken, avatar upload is not', () => {
+    // Rev 2. Rev 1 lumped these together and asserted `.some(hard)`, which
+    // stayed green while two avatar sites were misclassified. They are
+    // genuinely different surfaces: the avatar path has a legacy fallback that
+    // works in production; the flag path has none.
+    const flagPhoto = surfaces.find((s) => s.surface === 'photo-upload-flag')!;
+    const avatar = surfaces.find((s) => s.surface === 'photo-upload-avatar')!;
+
+    expect(flagPhoto.finding).toBe('FDA-019');
+    const prepare = flagPhoto.callSites.find(
+      (c) => c.name === 'prepare_flag_photo_upload' && c.file === 'src/lib/flags.ts',
+    )!;
+    expect(prepare.onAbsent).toBe('hard');
+    expect(absentRpc).toContain('prepare_flag_photo_upload');
+
+    // The avatar surface must stay classified as recovering, not broken —
+    // if someone removes that fallback, this fails.
+    expect(avatar.finding).toBeNull();
+    const avatarPrepare = avatar.callSites.find((c) => c.name === 'prepare_flag_photo_upload')!;
+    expect(avatarPrepare.onAbsent).toBe('graceful');
+    expect(avatar.productionImpact).toMatch(/^WORKING/);
   });
 
   it('FDA-002 — flag deletion invokes an Edge Function that is not deployed', () => {
@@ -118,14 +136,24 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
 });
 
 describe('PHASE-02A — no undeclared dependency on an absent contract', () => {
-  const declared = new Set(allCalls.map((c) => c.name));
+  // Rev 2. Rev 1 compared NAME SETS, so a second call site for an
+  // already-declared name passed unnoticed, two file attributions were wrong
+  // and nothing checked the moderation COLUMN writes at all. Independent
+  // review found all of that while this suite was green. It now keys on
+  // file:line, which is what makes a green run mean something.
+  type Site = { file: string; line?: number; name: string; kind: string; onAbsent: string };
+  const declaredSites: Site[] = allCalls as Site[];
+  const key = (file: string, line: number) => `${file}:${line}`;
+  const declaredByPosition = new Set(
+    declaredSites.filter((c) => c.line !== undefined).map((c) => key(c.file, c.line!)),
+  );
 
   const sourceFiles: string[] = [];
   const walk = (dir: string) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name !== '__tests__') walk(full);
+        if (entry.name !== '__tests__' && entry.name !== '__mocks__') walk(full);
       } else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
         sourceFiles.push(full);
       }
@@ -133,55 +161,93 @@ describe('PHASE-02A — no undeclared dependency on an absent contract', () => {
   };
   walk(path.join(ROOT, 'src'));
 
-  const found = { rpc: new Set<string>(), edge: new Set<string>() };
-  for (const file of sourceFiles) {
-    const body = fs.readFileSync(file, 'utf8');
-    for (const m of body.matchAll(/\.rpc\(\s*['"]([A-Za-z0-9_]+)['"]/g)) found.rpc.add(m[1]);
-    for (const m of body.matchAll(/functions\.invoke\(\s*['"]([A-Za-z0-9_-]+)['"]/g))
-      found.edge.add(m[1]);
+  type Found = { file: string; line: number; name: string; kind: 'rpc' | 'edge' };
+  const found: Found[] = [];
+  for (const full of sourceFiles) {
+    const rel = path.relative(ROOT, full);
+    fs.readFileSync(full, 'utf8')
+      .split('\n')
+      .forEach((text, i) => {
+        // A doc comment naming an RPC is prose, not a call site.
+        if (/^\s*(\/\/|\*|\/\*)/.test(text)) return;
+        for (const m of text.matchAll(/\.rpc\(\s*['"]([A-Za-z0-9_]+)['"]/g)) {
+          found.push({ file: rel, line: i + 1, name: m[1], kind: 'rpc' });
+        }
+        for (const m of text.matchAll(/functions\.invoke\(\s*['"]([A-Za-z0-9_-]+)['"]/g)) {
+          found.push({ file: rel, line: i + 1, name: m[1], kind: 'edge' });
+        }
+      });
   }
 
-  it('every RPC the client calls is declared in the manifest', () => {
-    const undeclared = [...found.rpc].filter((n) => !declared.has(n));
-    expect(`undeclared RPC calls: ${undeclared.join(', ') || 'none'}`).toBe(
-      'undeclared RPC calls: none',
+  it('every RPC and Edge call site is declared at its exact file and line', () => {
+    const undeclared = found
+      .filter((f) => !declaredByPosition.has(key(f.file, f.line)))
+      .map((f) => `${f.file}:${f.line} ${f.name}`);
+    expect(`undeclared call sites: ${undeclared.join(', ') || 'none'}`).toBe(
+      'undeclared call sites: none',
     );
   });
 
-  it('every Edge Function the client invokes is declared in the manifest', () => {
-    const undeclared = [...found.edge].filter((n) => !declared.has(n));
-    expect(`undeclared Edge invocations: ${undeclared.join(', ') || 'none'}`).toBe(
-      'undeclared Edge invocations: none',
+  it('no declared call site points at a file or line that does not hold it', () => {
+    const stale = declaredSites
+      .filter((c) => (c.kind === 'rpc' || c.kind === 'edge') && c.line !== undefined)
+      .filter((c) => {
+        const full = path.join(ROOT, c.file);
+        if (!fs.existsSync(full)) return true;
+        const line = fs.readFileSync(full, 'utf8').split('\n')[c.line! - 1] ?? '';
+        return !line.includes(c.name);
+      })
+      .map((c) => `${c.file}:${c.line} ${c.name}`);
+    expect(`misattributed declarations: ${stale.join(', ') || 'none'}`).toBe(
+      'misattributed declarations: none',
     );
   });
 
-  it('an absent contract is only reachable through a declared, classified call', () => {
-    // The gate that would have caught Build 33: a call to something production
-    // does not deploy must be recorded, with its failure mode stated.
+  it('every touch of an absent column is declared, read AND write', () => {
+    const absentColumns = Object.keys(deployed.columns.absent).map((c) => c.split('.')[1]);
+    const declaredColumnSites = new Set(
+      declaredSites
+        .filter((c) => c.kind === 'columns' && c.line !== undefined)
+        .map((c) => key(c.file, c.line!)),
+    );
+    // Only PostgREST query expressions count. A TypeScript type member that
+    // names the same column is a declaration, not a touch — rev 2's first
+    // attempt flagged those and had to be tightened.
+    const OP = /\.(select|update|insert|upsert)\(/;
+    const undeclared: string[] = [];
+    for (const full of sourceFiles) {
+      const rel = path.relative(ROOT, full);
+      const lines = fs.readFileSync(full, 'utf8').split('\n');
+      lines.forEach((text, i) => {
+        if (!OP.test(text)) return;
+        // The operation's arguments may span lines; scan to the end of the call.
+        const window = lines.slice(i, i + 10).join('\n');
+        const args = window.slice(window.indexOf('('));
+        const upTo = args.indexOf(');') === -1 ? args : args.slice(0, args.indexOf(');'));
+        if (!absentColumns.some((col) => upTo.includes(col))) return;
+        if (!declaredColumnSites.has(key(rel, i + 1))) undeclared.push(`${rel}:${i + 1}`);
+      });
+    }
+    expect(`undeclared absent-column touches: ${undeclared.join(', ') || 'none'}`).toBe(
+      'undeclared absent-column touches: none',
+    );
+  });
+
+  it('every call reaching an absent contract states a failure mode', () => {
     const absent = new Set<string>([
       ...deployed.rpc.absentAtAnySignature,
       ...deployed.edgeFunctions.absent,
     ]);
-    const reached = [...found.rpc, ...found.edge].filter((n) => absent.has(n));
-    const unrecorded = reached.filter((n) => !declared.has(n));
-    expect(
-      `absent contracts called without a manifest entry: ${unrecorded.join(', ') || 'none'}`,
-    ).toBe('absent contracts called without a manifest entry: none');
-
-    // And every one that IS recorded must say what happens when it is missing.
-    for (const name of reached) {
-      const site = allCalls.find((c) => c.name === name)!;
-      expect(`${name} declares a failure mode: ${site.onAbsent !== 'n/a'}`).toBe(
-        `${name} declares a failure mode: true`,
-      );
+    for (const f of found.filter((f) => absent.has(f.name))) {
+      const site = declaredSites.find((c) => c.line === f.line && c.file === f.file);
+      expect(
+        `${f.file}:${f.line} declares a failure mode: ${site !== undefined && site.onAbsent !== 'n/a'}`,
+      ).toBe(`${f.file}:${f.line} declares a failure mode: true`);
     }
   });
 
   it('the graceful-degradation reference case stays graceful', () => {
-    // list_monthly_leaderboard is absent in production BY DESIGN and degrades
-    // to an empty state. It is the pattern FDA-004 should copy, so it must not
-    // quietly become a hard failure.
-    const leaderboard = allCalls.find((c) => c.name === 'list_monthly_leaderboard')!;
+    const leaderboard = declaredSites.find((c) => c.name === 'list_monthly_leaderboard')!;
     expect(leaderboard.onAbsent).toBe('graceful');
     expect(deployed.rpc.absentAtAnySignature).toContain('list_monthly_leaderboard');
   });

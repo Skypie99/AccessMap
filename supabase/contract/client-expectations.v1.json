@@ -1,90 +1,295 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
+  "revision": 2,
+  "revisionNote": "Rev 2 corrects rev 1 after independent review. Rev 1 was accurate at NAME granularity but wrong at CALL-SITE granularity: it omitted a call site, misattributed two files, classified four sites by the throw at the call rather than by what the caller does with it, and did not record the moderation-column WRITE sites at all. Classifications below are per call site and were each read at the cited line.",
   "sourceLineage": {
     "build33": "f5594171e75bc5ec92a87d0392c361601ddedfba",
     "phase01Candidate": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f"
   },
-  "note": "Every backend call the shipped client makes, and how it behaves when the contract is absent. 'hard' = the call throws and the user-visible action fails. 'graceful' = the client detects absence and degrades.",
+  "onAbsentDefinitions": {
+    "hard": "the call throws AND a user-visible action fails",
+    "degraded": "the call throws but the caller completes the primary action and tells the user what was lost",
+    "graceful": "absence is detected and a working alternative path or empty state is used",
+    "swallowed": "the error is caught and discarded; no user-visible effect",
+    "silent": "no error check at all \u2014 the failure is invisible to code and user alike",
+    "unreachable": "cannot be called when its prerequisite contract is absent",
+    "n/a": "the contract is deployed"
+  },
   "surfaces": [
     {
-      "surface": "photo-upload",
-      "platforms": ["mobile", "web"],
-      "callSites": [
-        { "file": "src/lib/flags.ts", "line": 869, "kind": "rpc", "name": "prepare_flag_photo_upload", "onAbsent": "hard" },
-        { "file": "src/lib/flags.ts", "line": 902, "kind": "rpc", "name": "commit_flag_photo_upload", "onAbsent": "hard" },
-        { "file": "src/lib/flags.ts", "line": 886, "kind": "rpc", "name": "cancel_flag_photo_upload", "onAbsent": "swallowed" },
-        { "file": "src/lib/flags.ts", "line": 914, "kind": "rpc", "name": "cancel_flag_photo_upload", "onAbsent": "hard" },
-        { "file": "src/lib/users.ts", "line": 100, "kind": "rpc", "name": "prepare_flag_photo_upload", "onAbsent": "hard" },
-        { "file": "src/lib/users.ts", "line": 133, "kind": "rpc", "name": "commit_avatar_photo_upload", "onAbsent": "hard" }
+      "surface": "photo-upload-flag",
+      "platforms": [
+        "mobile",
+        "web"
       ],
       "finding": "FDA-019",
-      "deployedAlternative": "storage policy 'flag-photos auth upload' (uid-folder INSERT) is live and authorized"
+      "callSites": [
+        {
+          "file": "src/lib/flags.ts",
+          "line": 869,
+          "kind": "rpc",
+          "name": "prepare_flag_photo_upload",
+          "onAbsent": "hard",
+          "note": "No fallback. Throws at 870, rethrown at 891. Signed-in flag-photo reporting fails."
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "line": 886,
+          "kind": "rpc",
+          "name": "cancel_flag_photo_upload",
+          "onAbsent": "swallowed",
+          "note": "Inner try/catch preserves the original upload error."
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "line": 902,
+          "kind": "rpc",
+          "name": "commit_flag_photo_upload",
+          "onAbsent": "hard",
+          "alsoDegradedVia": "batchInsertFlagPhotos -> ReportFlagModal.tsx:743 F57 catch keeps the report filed and shows 'Report filed. Photos not attached'",
+          "note": "Hard via photos.ts:73 addFlagPhoto; degraded via the report submit path."
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "line": 914,
+          "kind": "rpc",
+          "name": "cancel_flag_photo_upload",
+          "onAbsent": "swallowed",
+          "note": "Throws, but its only caller (ReportFlagModal.tsx:793) is void Promise.all(...).catch(() => undefined). No user-visible action fails."
+        }
+      ],
+      "deployedAlternative": "storage policy 'flag-photos auth upload' (uid-folder INSERT) is live and authorized \u2014 not wired up on this path",
+      "productionImpact": "BROKEN \u2014 a signed-in user cannot attach a photo to a flag report."
+    },
+    {
+      "surface": "photo-upload-avatar",
+      "platforms": [
+        "mobile",
+        "web"
+      ],
+      "finding": null,
+      "callSites": [
+        {
+          "file": "src/lib/users.ts",
+          "line": 100,
+          "kind": "rpc",
+          "name": "prepare_flag_photo_upload",
+          "onAbsent": "graceful",
+          "note": "users.ts:107-110 detects isFunctionMissing, sets useLegacyOwnerPath and returns a uid-folder key. Upload proceeds via the live storage policy, then a direct users UPDATE at 120-126. The EXIF/re-encode gates run BEFORE this, so the fallback cannot upload source bytes."
+        },
+        {
+          "file": "src/lib/users.ts",
+          "line": 133,
+          "kind": "rpc",
+          "name": "commit_avatar_photo_upload",
+          "onAbsent": "unreachable",
+          "note": "The useLegacyOwnerPath branch returns at 130 before reaching this line. Only reachable under a partial deployment (prepare present, commit absent) that the deployed contract says does not exist."
+        },
+        {
+          "file": "src/lib/users.ts",
+          "line": 144,
+          "kind": "rpc",
+          "name": "cancel_flag_photo_upload",
+          "onAbsent": "swallowed",
+          "note": "Guarded by `if (intentId)`, which is empty on the legacy path; inner catch discards."
+        }
+      ],
+      "deployedAlternative": "legacy uid-folder Storage upload + direct users UPDATE \u2014 live and exercised",
+      "productionImpact": "WORKING \u2014 avatar upload succeeds in production today via the legacy path."
     },
     {
       "surface": "flag-delete",
-      "platforms": ["mobile", "web", "admin"],
-      "callSites": [
-        { "file": "src/lib/flags.ts", "line": 1447, "kind": "edge", "name": "delete-flag", "onAbsent": "hard" }
+      "platforms": [
+        "mobile",
+        "web",
+        "admin"
       ],
       "finding": "FDA-002",
-      "deployedAlternative": "RLS policies 'flags delete own' + 'admin delete any flag' + 'flag-photos owner/admin delete' permit direct Data API DELETE"
+      "callSites": [
+        {
+          "file": "src/lib/flags.ts",
+          "line": 1447,
+          "kind": "edge",
+          "name": "delete-flag",
+          "onAbsent": "hard",
+          "note": "No fallback wired. All three callers surface the error."
+        }
+      ],
+      "deployedAlternative": "RLS 'flags delete own' + 'admin delete any flag' + 'flag-photos owner/admin delete' permit a direct Data API DELETE",
+      "productionImpact": "BROKEN \u2014 owner and admin flag deletion both fail."
     },
     {
       "surface": "account-deletion",
-      "platforms": ["mobile", "web"],
-      "callSites": [
-        { "file": "src/lib/account.ts", "kind": "edge", "name": "delete-account", "onAbsent": "n/a", "deployed": true, "deployedVersion": 4 },
-        { "file": "src/lib/accountDeletionReceipt.ts", "line": 88, "kind": "edge", "name": "account-deletion-status", "onAbsent": "hard" }
+      "platforms": [
+        "mobile",
+        "web"
       ],
       "finding": "FDA-003",
-      "deployedAlternative": "delete-account v4 returns status=deleted synchronously"
+      "callSites": [
+        {
+          "file": "src/lib/account.ts",
+          "line": 19,
+          "kind": "edge",
+          "name": "delete-account",
+          "onAbsent": "n/a",
+          "deployed": true,
+          "deployedVersion": 4
+        },
+        {
+          "file": "src/lib/accountDeletionReceipt.ts",
+          "line": 88,
+          "kind": "edge",
+          "name": "account-deletion-status",
+          "onAbsent": "hard",
+          "callerDegrade": "SignInScreen.tsx:99 and ProfileScreen.tsx:736 catch into a designed deletionStatusUnavailable state that retains the receipt",
+          "note": "Hard at the call; the callers have a designed unavailable state, so the user sees 'status unavailable' rather than a crash \u2014 but never a truthful completion."
+        }
+      ],
+      "deployedAlternative": "delete-account v4 returns status=deleted synchronously",
+      "productionImpact": "BROKEN \u2014 deletion succeeds but the app cannot confirm it."
     },
     {
       "surface": "moderation-queue",
-      "platforms": ["admin"],
-      "callSites": [
-        { "file": "src/lib/adminReports.ts", "line": 82, "kind": "columns", "name": "feedback.moderation_reviewed_at, moderation_resolution, moderation_action_intent", "onAbsent": "hard" }
+      "platforms": [
+        "admin"
       ],
       "finding": "FDA-004",
-      "deployedAlternative": null
+      "callSites": [
+        {
+          "file": "src/lib/adminReports.ts",
+          "line": 105,
+          "kind": "columns",
+          "name": "feedback.moderation_reviewed_at, moderation_resolution, moderation_action_intent",
+          "operation": "select",
+          "onAbsent": "hard",
+          "note": "42703 at the query on line 105; the column list is the REPORT_SELECT constant on line 82. AdminScreen.tsx:129 catches into reportsLoadError; the queue is unusable.",
+          "constantDefinedAt": "src/lib/adminReports.ts:82 (REPORT_SELECT)"
+        },
+        {
+          "file": "src/lib/adminReports.ts",
+          "line": 239,
+          "kind": "columns",
+          "name": "feedback.moderation_reviewed_at, moderation_reviewed_by, moderation_resolution",
+          "operation": "update",
+          "onAbsent": "hard",
+          "note": "closeReport returns { ok: false, error } \u2014 surfaced, does not throw."
+        },
+        {
+          "file": "src/lib/adminReports.ts",
+          "line": 275,
+          "kind": "columns",
+          "name": "feedback.moderation_reviewed_by, moderation_resolution",
+          "operation": "update",
+          "onAbsent": "silent",
+          "note": "HAZARD: markPendingResolution awaits and discards the result. Against production this writes nothing and reports nothing. The most dangerous of the four moderation sites."
+        },
+        {
+          "file": "src/lib/adminReports.ts",
+          "line": 307,
+          "kind": "columns",
+          "name": "feedback.moderation_action_intent, moderation_reviewed_by",
+          "operation": "update",
+          "onAbsent": "hard",
+          "note": "markActionIntent throws \u2014 correct, since this is the pre-action intent write that must land before a destructive mutation."
+        }
+      ],
+      "deployedAlternative": null,
+      "productionImpact": "BROKEN \u2014 the queue cannot load, and one write path fails silently."
     },
     {
       "surface": "leaderboard",
-      "platforms": ["mobile", "web"],
-      "callSites": [
-        { "file": "src/lib/users.ts", "line": 188, "kind": "rpc", "name": "list_monthly_leaderboard", "onAbsent": "graceful" }
+      "platforms": [
+        "mobile",
+        "web"
       ],
       "finding": null,
-      "note": "Capability-gated by design via isFunctionMissing(); degrades to empty state. This is the reference pattern for the FDA-004 repair. Monthly leaderboard is permanently empty in production until 2026-06-18_monthly_leaderboard_rpc_PROPOSED.sql is applied.",
-      "deployedAlternative": "all-time leaderboard over public.users"
+      "callSites": [
+        {
+          "file": "src/lib/users.ts",
+          "line": 188,
+          "kind": "rpc",
+          "name": "list_monthly_leaderboard",
+          "onAbsent": "graceful",
+          "note": "isFunctionMissing -> warn once, return []. Reference pattern for the FDA-004 capability gate."
+        }
+      ],
+      "deployedAlternative": "all-time leaderboard over public.users",
+      "productionImpact": "DEGRADED BY DESIGN \u2014 the monthly view is permanently empty until 2026-06-18_monthly_leaderboard_rpc_PROPOSED.sql is applied.",
+      "caveat": "isFunctionMissing matches 42883 / PGRST202 / 'could not find the function'. PGRST202 also fires on a SIGNATURE MISMATCH, so a future argument change degrades silently to an empty list rather than erroring. 'Absent' and 'wrong signature' are indistinguishable to this helper."
     },
     {
-      "surface": "disputes-and-reopen",
-      "platforms": ["mobile", "web"],
-      "callSites": [
-        { "file": "src/lib/disputes.ts", "kind": "rpc", "name": "increment_dispute_request", "onAbsent": "n/a", "deployed": true },
-        { "file": "src/lib/disputes.ts", "kind": "rpc", "name": "increment_reopen_request", "onAbsent": "n/a", "deployed": true }
+      "surface": "reopen-and-dispute",
+      "platforms": [
+        "mobile",
+        "web"
       ],
-      "finding": null
+      "finding": null,
+      "callSites": [
+        {
+          "file": "src/lib/flags.ts",
+          "line": 1410,
+          "kind": "rpc",
+          "name": "increment_reopen_request",
+          "onAbsent": "graceful",
+          "deployed": true,
+          "note": "Deployed. Has an isFunctionMissing fallback returning null; every other error throws."
+        },
+        {
+          "file": "src/lib/disputes.ts",
+          "line": 55,
+          "kind": "rpc",
+          "name": "increment_dispute_request",
+          "onAbsent": "graceful",
+          "deployed": true,
+          "note": "Deployed. Same fallback shape."
+        }
+      ],
+      "deployedAlternative": null,
+      "productionImpact": "WORKING"
     },
     {
       "surface": "realtime",
-      "platforms": ["mobile", "web"],
-      "callSites": [
-        { "file": "src/lib/realtime.ts", "kind": "rpc", "name": "log_realtime_event", "onAbsent": "n/a", "deployed": true }
+      "platforms": [
+        "mobile",
+        "web"
       ],
-      "finding": null
+      "finding": null,
+      "callSites": [
+        {
+          "file": "src/lib/realtimeLog.ts",
+          "line": 26,
+          "kind": "rpc",
+          "name": "log_realtime_event",
+          "onAbsent": "n/a",
+          "deployed": true
+        }
+      ],
+      "productionImpact": "WORKING"
     },
     {
       "surface": "notifications",
-      "platforms": ["mobile"],
-      "callSites": [
-        { "file": "src/lib/notifications.ts", "kind": "table", "name": "notification_preferences", "onAbsent": "n/a", "deployed": true },
-        { "file": "src/lib/notifications.ts", "kind": "table", "name": "push_tokens", "onAbsent": "n/a", "deployed": true }
+      "platforms": [
+        "mobile"
       ],
       "finding": "FDA-041",
-      "note": "Table contract is satisfied; the defect is that send-push-notification v6 does not filter recipients by these preferences. Behavioural, not contract-shaped — owned by Phase 07A."
+      "callSites": [
+        {
+          "file": "src/lib/notifications.ts",
+          "kind": "table",
+          "name": "notification_preferences",
+          "onAbsent": "n/a",
+          "deployed": true
+        },
+        {
+          "file": "src/lib/notifications.ts",
+          "kind": "table",
+          "name": "push_tokens",
+          "onAbsent": "n/a",
+          "deployed": true
+        }
+      ],
+      "productionImpact": "TABLE CONTRACT SATISFIED \u2014 the defect is that send-push-notification v6 does not filter recipients by these preferences. Behavioural, not contract-shaped. Phase 07A."
     }
   ]
 }

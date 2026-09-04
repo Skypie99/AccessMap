@@ -72,6 +72,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # PHASE-02A: the migration-lineage guard pins every APPLIED migration
+          # against its blob in the immutable Build 33 commit (f5594171). A
+          # shallow clone does not carry that object, so the strongest
+          # immutability check would degrade to "cannot verify" in CI.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -80,6 +86,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+
+      # PHASE-02A: the crosswalk is generated. If it drifts from the tree, the
+      # lineage guard is asserting against a stale record.
+      - name: Verify migration crosswalk is current
+        run: npm run contract:check
 
       - name: Run tests with coverage
         run: npm run test:ci -- --passWithNoTests --forceExit --watchAll=false
