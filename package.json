@@ -15,6 +15,8 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
+    "contract:crosswalk": "node scripts/generate-migration-crosswalk.mjs",
+    "contract:check": "node scripts/generate-migration-crosswalk.mjs --check",
     "release:preflight": "node scripts/release-preflight.mjs",
     "release:verify": "node scripts/verify-release-state.mjs",
     "release:status": "node scripts/release-status.mjs",

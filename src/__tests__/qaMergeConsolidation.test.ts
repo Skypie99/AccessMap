@@ -104,8 +104,19 @@ describe('QA merge — Steve security/robustness survived the merge (not reverte
 
 describe('QA merge — Peter performance record present', () => {
   it('the FK covering-index migration file is recorded in the repo', () => {
+    // PHASE-02A: this asserted the pre-Build-33 authoring path. The work was
+    // APPLIED to production as managed version 20260602045356; asserting the
+    // applied file is the stronger claim, and the hand-run authoring record is
+    // still kept as provenance. Resolved by slug so a renumber cannot silently
+    // disarm this the way the old literal path did.
+    const migrations = fs.readdirSync(path.join(SRC, '..', 'supabase/migrations'));
     expect(
-      fs.existsSync(path.join(SRC, '..', 'supabase/migrations/2026-06-01_perf_fk_covering_indexes.sql')),
+      migrations.some((n) => /^\d{14}_add_covering_indexes_foreign_keys\.sql$/.test(n)),
+    ).toBe(true);
+    expect(
+      fs.existsSync(
+        path.join(SRC, '..', 'supabase/nonmanaged/manual/2026-06-01_perf_fk_covering_indexes.sql'),
+      ),
     ).toBe(true);
   });
 });

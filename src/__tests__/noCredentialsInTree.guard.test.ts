@@ -5,7 +5,7 @@
  * WHY THIS EXISTS. On 2026-05-31 the App Store reviewer test-account credential
  * entered the repo in two places at once: a markdown table row in
  * `docs/APP_STORE_REVIEWER_NOTES.md`, and a comment in
- * `supabase/migrations/2026-05-31_reviewer_test_account.sql`. It sat in HEAD of
+ * `supabase/nonmanaged/destructive-data/2026-05-31_reviewer_test_account.sql`. It sat in HEAD of
  * a PUBLIC GitHub remote for ~62 days. Two separate redactions (c51c46a,
  * f8aa4f6) cleaned it, and it was finally rotated out-of-band on 2026-08-13.
  * The failure mode was never "nobody looked" — it was that each cleanup treated

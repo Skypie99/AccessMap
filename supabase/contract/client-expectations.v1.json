@@ -1,0 +1,90 @@
+{
+  "$schema": "./contract.schema.json",
+  "manifestVersion": 1,
+  "sourceLineage": {
+    "build33": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+    "phase01Candidate": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f"
+  },
+  "note": "Every backend call the shipped client makes, and how it behaves when the contract is absent. 'hard' = the call throws and the user-visible action fails. 'graceful' = the client detects absence and degrades.",
+  "surfaces": [
+    {
+      "surface": "photo-upload",
+      "platforms": ["mobile", "web"],
+      "callSites": [
+        { "file": "src/lib/flags.ts", "line": 869, "kind": "rpc", "name": "prepare_flag_photo_upload", "onAbsent": "hard" },
+        { "file": "src/lib/flags.ts", "line": 902, "kind": "rpc", "name": "commit_flag_photo_upload", "onAbsent": "hard" },
+        { "file": "src/lib/flags.ts", "line": 886, "kind": "rpc", "name": "cancel_flag_photo_upload", "onAbsent": "swallowed" },
+        { "file": "src/lib/flags.ts", "line": 914, "kind": "rpc", "name": "cancel_flag_photo_upload", "onAbsent": "hard" },
+        { "file": "src/lib/users.ts", "line": 100, "kind": "rpc", "name": "prepare_flag_photo_upload", "onAbsent": "hard" },
+        { "file": "src/lib/users.ts", "line": 133, "kind": "rpc", "name": "commit_avatar_photo_upload", "onAbsent": "hard" }
+      ],
+      "finding": "FDA-019",
+      "deployedAlternative": "storage policy 'flag-photos auth upload' (uid-folder INSERT) is live and authorized"
+    },
+    {
+      "surface": "flag-delete",
+      "platforms": ["mobile", "web", "admin"],
+      "callSites": [
+        { "file": "src/lib/flags.ts", "line": 1447, "kind": "edge", "name": "delete-flag", "onAbsent": "hard" }
+      ],
+      "finding": "FDA-002",
+      "deployedAlternative": "RLS policies 'flags delete own' + 'admin delete any flag' + 'flag-photos owner/admin delete' permit direct Data API DELETE"
+    },
+    {
+      "surface": "account-deletion",
+      "platforms": ["mobile", "web"],
+      "callSites": [
+        { "file": "src/lib/account.ts", "kind": "edge", "name": "delete-account", "onAbsent": "n/a", "deployed": true, "deployedVersion": 4 },
+        { "file": "src/lib/accountDeletionReceipt.ts", "line": 88, "kind": "edge", "name": "account-deletion-status", "onAbsent": "hard" }
+      ],
+      "finding": "FDA-003",
+      "deployedAlternative": "delete-account v4 returns status=deleted synchronously"
+    },
+    {
+      "surface": "moderation-queue",
+      "platforms": ["admin"],
+      "callSites": [
+        { "file": "src/lib/adminReports.ts", "line": 82, "kind": "columns", "name": "feedback.moderation_reviewed_at, moderation_resolution, moderation_action_intent", "onAbsent": "hard" }
+      ],
+      "finding": "FDA-004",
+      "deployedAlternative": null
+    },
+    {
+      "surface": "leaderboard",
+      "platforms": ["mobile", "web"],
+      "callSites": [
+        { "file": "src/lib/users.ts", "line": 188, "kind": "rpc", "name": "list_monthly_leaderboard", "onAbsent": "graceful" }
+      ],
+      "finding": null,
+      "note": "Capability-gated by design via isFunctionMissing(); degrades to empty state. This is the reference pattern for the FDA-004 repair. Monthly leaderboard is permanently empty in production until 2026-06-18_monthly_leaderboard_rpc_PROPOSED.sql is applied.",
+      "deployedAlternative": "all-time leaderboard over public.users"
+    },
+    {
+      "surface": "disputes-and-reopen",
+      "platforms": ["mobile", "web"],
+      "callSites": [
+        { "file": "src/lib/disputes.ts", "kind": "rpc", "name": "increment_dispute_request", "onAbsent": "n/a", "deployed": true },
+        { "file": "src/lib/disputes.ts", "kind": "rpc", "name": "increment_reopen_request", "onAbsent": "n/a", "deployed": true }
+      ],
+      "finding": null
+    },
+    {
+      "surface": "realtime",
+      "platforms": ["mobile", "web"],
+      "callSites": [
+        { "file": "src/lib/realtime.ts", "kind": "rpc", "name": "log_realtime_event", "onAbsent": "n/a", "deployed": true }
+      ],
+      "finding": null
+    },
+    {
+      "surface": "notifications",
+      "platforms": ["mobile"],
+      "callSites": [
+        { "file": "src/lib/notifications.ts", "kind": "table", "name": "notification_preferences", "onAbsent": "n/a", "deployed": true },
+        { "file": "src/lib/notifications.ts", "kind": "table", "name": "push_tokens", "onAbsent": "n/a", "deployed": true }
+      ],
+      "finding": "FDA-041",
+      "note": "Table contract is satisfied; the defect is that send-push-notification v6 does not filter recipients by these preferences. Behavioural, not contract-shaped — owned by Phase 07A."
+    }
+  ]
+}
