@@ -5,7 +5,7 @@
 | **Prompt code** | `FLAGSTONE REPAIR PROMPT 02A` |
 | **Findings owned** | FDA-027 (discovery), foundation for FDA-005 |
 | **Start SHA / tree** | `5a64c9174ae5d9d5a94ed543bc4663216df67e7f` / `edaa68182add5b9a41123f6864c7774f5969e03f` |
-| **End SHA / tree** | `bbe51e2fd1150379050ce022cf5603e1eada6295` / `fda0a26b644218883f1d16c7b52483cece460b40` (rev 2, after independent review) |
+| **End SHA / tree** | rev 2 content: `caef800cc9a1933c37312d7569ee00d34edd682e` / `5039662d8b2722d12edc3252b5c106f880b77d98`; this receipt's own SHA is recorded by the follow-up commit that corrects this line (a commit cannot contain its own hash) |
 | **Branch** | `repair/flagstone-p02-contract-truth-20260903` |
 | **Worktree** | `/Users/skypie/AccessMap-worktrees/flagstone-p02-contract-truth-20260903` (clean) |
 | **Production change** | **NONE** |
@@ -455,8 +455,8 @@ PROMPT_CODE: FLAGSTONE REPAIR PROMPT 02A
 FINDINGS_OWNED: FDA-027 (discovery); foundation for FDA-005
 START_SHA: 5a64c9174ae5d9d5a94ed543bc4663216df67e7f
 START_TREE: edaa68182add5b9a41123f6864c7774f5969e03f
-END_SHA: bbe51e2fd1150379050ce022cf5603e1eada6295
-END_TREE: fda0a26b644218883f1d16c7b52483cece460b40
+END_SHA: caef800cc9a1933c37312d7569ee00d34edd682e (rev-2 content); final tip = the follow-up commit that writes this line
+END_TREE: 5039662d8b2722d12edc3252b5c106f880b77d98 (rev-2 content)
 BRANCH: repair/flagstone-p02-contract-truth-20260903
 WORKTREE: /Users/skypie/AccessMap-worktrees/flagstone-p02-contract-truth-20260903 (clean)
 SOURCE_IDENTITY_PASS: YES — origin/main 70b52a30, Build 33 f5594171/a4a5e70c, base a0bf4d04,
