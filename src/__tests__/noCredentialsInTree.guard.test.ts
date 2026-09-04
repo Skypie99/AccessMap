@@ -64,6 +64,22 @@ const labelled = () => new RegExp(`\\b(${L1}|${L2}|${L3})\\b["'\`\\s]{0,3}[:|=]\
 /** A markdown header cell that names a credential column. */
 const columnLabel = () => new RegExp(`^\\s*(${L1}|${L2}|${L3}|${L4})\\s*$`, 'i');
 
+/**
+ * Non-login secret labels — webhook secrets, API keys, bearer/auth tokens,
+ * service-role keys.
+ *
+ * Detectors 1 and 2 only fire near review/demo ACCOUNT language, so this whole
+ * class sat outside the guard by construction: a rotated webhook secret could
+ * live in a tracked file forever and the suite stayed green. The delimiter set
+ * includes `,` so a SQL header pair — `jsonb_build_object('X-…-Secret', <v>)`
+ * — is reachable, and an opening quote is consumed before the value.
+ */
+const secretLabelled = () =>
+  new RegExp(
+    `\\b(${L4}|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|service[_-]?role[_-]?key)\\b["'\`\\s]{0,3}[:|=,]\\s*["'\`]?([^\\s"'\`]+)`,
+    'gi',
+  );
+
 /** Language that marks a hit as being about a review/demo/test login. */
 const accountLanguage = () =>
   new RegExp(
@@ -165,19 +181,35 @@ const isSource = (f: string) => ['.ts', '.tsx', '.js', '.jsx'].includes(path.ext
  * Describe a token if — and only if — it could actually be a credential.
  * Returns a SHAPE (never the token) so failures stay non-disclosing.
  */
-function shapeOf(raw: string): string | null {
+function shapeOf(raw: string, opts: { allowLongHex?: boolean } = {}): string | null {
   const t = raw.replace(/^[`'"([{|,<]+/, '').replace(/[`'")\]}|,.;:>]+$/, '');
 
   if (t.length < MIN_LEN) return null;
   if (/\s/.test(t)) return null;
-  if (!/[A-Za-z]/.test(t) || !/[0-9]/.test(t)) return null; // needs both classes
+
+  // A pure-hex token is normally a git SHA or a content digest, so it is
+  // discarded below. Detector 3 opts out of that for LONG hex, because
+  // `openssl rand -hex 32` — the shape this repo's own webhook README tells
+  // you to generate — is exactly 64 hex chars and would otherwise be excused
+  // by the very rule meant to suppress digests.
+  const isHex = /^[0-9a-f]+$/i.test(t);
+  const longHexSecret = !!opts.allowLongHex && isHex;
+
+  if (!longHexSecret && (!/[A-Za-z]/.test(t) || !/[0-9]/.test(t))) return null; // needs both classes
   if (placeholderish().test(t)) return null;
   if (/\\/.test(t)) return null; // regex/escape fragment, e.g. the hook's own pattern
   if (/[[\]{}]/.test(t)) return null; // character class / interpolation fragment
   if (/:\/\//.test(t) || /^https?/i.test(t)) return null; // URL
   if (/[/]/.test(t)) return null; // path
   if (/\.(md|te?xt|tsx?|jsx?|sql|json|ya?ml|sh|lock|toml)$/i.test(t)) return null; // filename
-  if (/^[0-9a-f]{7,64}$/i.test(t)) return null; // git SHA / hex digest
+  if (isHex) {
+    // Default path preserved byte-for-byte: 7–64 hex is a SHA/digest.
+    if (!opts.allowLongHex) {
+      if (/^[0-9a-f]{7,64}$/i.test(t)) return null; // git SHA / hex digest
+    } else if (t.length < 32) {
+      return null; // still short enough to be a SHA prefix
+    }
+  }
   if (/^\d{4}-\d{2}-\d{2}/.test(t)) return null; // ISO date
   if (/^v?\d+[.\d]*$/i.test(t)) return null; // version number
 
@@ -222,7 +254,12 @@ function scan(files: string[]): Finding[] {
       continue; // unreadable / binary-ish
     }
     if (text.includes('\0')) continue;
-    if (!nearby.test(text)) continue; // no review/demo-account language anywhere: not our law
+
+    // Account language gates the LOGIN detectors (1 and 2) only. It must NOT
+    // gate the file, because a non-login secret never carries review/demo
+    // account language — skipping the file here is precisely what made the
+    // webhook / API-key / token class invisible.
+    const hasAccountLanguage = nearby.test(text);
 
     const rel = path.relative(REPO, file);
     const scanned = isSource(file) ? stripComments(text) : text;
@@ -234,18 +271,20 @@ function scan(files: string[]): Finding[] {
         .some((l) => accountLanguage().test(l));
 
     // Detector 1 — an explicit label followed by a value.
-    lines.forEach((line, i) => {
-      for (const m of line.matchAll(labelled())) {
-        const shape = shapeOf(m[2]);
-        if (shape && relevant(i)) out.push({ rel, line: i + 1, shape, lineText: line });
-      }
-    });
+    if (hasAccountLanguage) {
+      lines.forEach((line, i) => {
+        for (const m of line.matchAll(labelled())) {
+          const shape = shapeOf(m[2]);
+          if (shape && relevant(i)) out.push({ rel, line: i + 1, shape, lineText: line });
+        }
+      });
+    }
 
     // Detector 2 — a markdown table COLUMN named for a credential. This is the
     // shape the pre-commit hook was blind to in 2026-05: the label is in the
     // header row, and the value sits in a row several lines below it, so no
     // single line ever contains both.
-    if (path.extname(file) === '.md') {
+    if (hasAccountLanguage && path.extname(file) === '.md') {
       for (let i = 0; i < lines.length; i++) {
         if (!isTableRow(lines[i])) continue;
         const idx = cells(lines[i]).findIndex((c) => columnLabel().test(c));
@@ -259,6 +298,17 @@ function scan(files: string[]): Finding[] {
         }
       }
     }
+
+    // Detector 3 — a non-login secret label followed by a value, anywhere in
+    // the tree. Deliberately NOT gated on account language, and it accepts long
+    // hex, so a rotated-but-committed webhook secret or API key is a finding
+    // instead of a silent pass.
+    lines.forEach((line, i) => {
+      for (const m of line.matchAll(secretLabelled())) {
+        const shape = shapeOf(m[2], { allowLongHex: true });
+        if (shape) out.push({ rel, line: i + 1, shape, lineText: line });
+      }
+    });
   }
   return out;
 }
@@ -274,7 +324,25 @@ function scan(files: string[]): Finding[] {
  * Adding an entry here is a decision to keep a credential-shaped string in a
  * tracked file — it should be hard, visible, and argued in review.
  */
-const ALLOWED: ReadonlyArray<{ rel: string; marker: string; why: string }> = [];
+const ALLOWED: ReadonlyArray<{ rel: string; marker: string; why: string }> = [
+  {
+    rel: 'supabase/migrations/20260529181141_notify_flag_status_webhook_trigger.sql',
+    // The marker is the HEADER NAME on the offending line, never the value.
+    marker: "'X-Webhook-Secret'",
+    why:
+      'IMMUTABLE HISTORICAL CARRIER. This file is not ordinary source: its own header ' +
+      'records it as reconstructed verbatim from the hosted Supabase migration ledger ' +
+      '(supabase_migrations.schema_migrations, version 20260529181141) during the ' +
+      '2026-08-28 migration-history truth repair, and qa-reports/2026-08-28_' +
+      'MigrationMapRepair_Evidence.md books it as RECONSTRUCTED in the 69/69 hosted-parity ' +
+      'set. Editing the SQL to make this scanner green would falsify a file that documents ' +
+      'itself as verbatim and would break the hosted<->local parity that repair established. ' +
+      'The secret it carries is DEAD: rotated into Supabase Vault on 2026-06-03, and the ' +
+      'trigger that used it was dropped live. Verified again 2026-09-03 — the live Vault ' +
+      'value does not match this literal. The value must never be reused; the file stays. ' +
+      'Canonical treatment of migration history is deferred to PHASE-02.',
+  },
+];
 
 const isAllowed = (f: Finding) =>
   ALLOWED.some((a) => f.rel === a.rel && f.lineText.includes(a.marker));
@@ -314,6 +382,34 @@ describe('no credentials in tree', () => {
     expect(shapeOf('(secure)')).toBeNull();
   });
 
+  it('B2 · the non-login secret detector fires on a long-hex secret', () => {
+    // Detector 3's own non-vacuity proof. Both values are assembled at runtime
+    // so neither is a literal in this file. The first is the shape
+    // `openssl rand -hex 32` produces — the shape the old guard excused as a
+    // "hex digest" — and it must now be seen when it sits next to a secret label.
+    const hex64 = 'abcdef0123456789'.repeat(4);
+    expect(hex64).toHaveLength(64);
+    expect(shapeOf(hex64)).toBeNull(); // still a digest to every other detector
+    expect(shapeOf(hex64, { allowLongHex: true })).not.toBeNull();
+
+    const header = ['X', 'Webhook', L4.charAt(0).toUpperCase() + L4.slice(1)].join('-');
+    const sqlish = `        '${header}', '${hex64}'`;
+    const hits = [...sqlish.matchAll(secretLabelled())]
+      .map((m) => shapeOf(m[2], { allowLongHex: true }))
+      .filter(Boolean);
+    expect(hits).toHaveLength(1);
+
+    // A short hex string is still a SHA prefix, not a secret.
+    expect(shapeOf('a1b2c3d4e5f6', { allowLongHex: true })).toBeNull();
+    // …and env-var indirection must never fire.
+    const envish = `${L4}: process.env.WEBHOOK_${L4.toUpperCase()}`;
+    expect(
+      [...envish.matchAll(secretLabelled())]
+        .map((m) => shapeOf(m[2], { allowLongHex: true }))
+        .filter(Boolean),
+    ).toEqual([]);
+  });
+
   it('C · no tracked file carries a credential-shaped literal next to account language', () => {
     // The core law. Values are never echoed — only location and shape — so a
     // real catch does not leak the thing it caught into the CI log.
@@ -337,8 +433,17 @@ describe('no credentials in tree', () => {
     );
     expect(notes).toMatch(/App Store Connect/i);
 
+    // The Build 33 migration-map repair (2026-08-28) moved this out of the
+    // managed migrations directory; the old path made this assertion throw
+    // ENOENT instead of asserting, which is how a guard rots into a no-op.
     const migration = fs.readFileSync(
-      path.join(REPO, 'supabase', 'migrations', '2026-05-31_reviewer_test_account.sql'),
+      path.join(
+        REPO,
+        'supabase',
+        'nonmanaged',
+        'destructive-data',
+        '2026-05-31_reviewer_test_account.sql',
+      ),
       'utf8',
     );
     expect(migration).toMatch(/App Store Connect/i);

@@ -40,7 +40,22 @@ check_pattern() {
   if [ -n "$MATCHES" ]; then
     echo ""
     echo "  [SECRET SCAN] $LABEL"
-    echo "$MATCHES" | head -5
+    # NEVER echo $MATCHES: it holds the raw staged diff lines, i.e. the secret
+    # itself, which would land in the developer's scrollback and in any log that
+    # captures this hook. Print a SHAPE only — length and character classes —
+    # mirroring shapeOf() in src/__tests__/noCredentialsInTree.guard.test.ts so
+    # the two gates disclose exactly as much as each other: nothing.
+    echo "$MATCHES" | head -5 | awk '{
+      n = length($0)
+      cls = ""
+      if ($0 ~ /[a-z]/) cls = cls "lower+"
+      if ($0 ~ /[A-Z]/) cls = cls "upper+"
+      if ($0 ~ /[0-9]/) cls = cls "digit+"
+      if ($0 ~ /[^A-Za-z0-9]/) cls = cls "symbol+"
+      sub(/\+$/, "", cls)
+      print "    staged line, len=" n ", " cls " (value withheld)"
+    }'
+    echo "    Run: git diff --cached   to see the offending lines yourself."
     FOUND=1
   fi
 }

@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -13,7 +14,10 @@ type BuildProfile = {
 
 type EasConfig = {
   build?: Record<string, BuildProfile>;
-  submit?: Record<string, { ios?: Record<string, unknown> }>;
+  submit?: Record<
+    string,
+    { ios?: Record<string, unknown>; android?: Record<string, unknown> }
+  >;
 };
 
 const REPO = path.join(__dirname, '..', '..');
@@ -309,5 +313,58 @@ describe('Release R1 approval, permissions, and release semantics', () => {
     expect(summary).toContain('EAS build/upload step outcome');
     expect(summary).not.toContain('TestFlight submitted');
     expect(summary).not.toContain('secrets.');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FDA-046 — Android submission is HARD-DISABLED
+// ---------------------------------------------------------------------------
+
+describe('FDA-046 — Android submission is hard-disabled', () => {
+  const easSource = fs.readFileSync(path.join(REPO, 'eas.json'), 'utf8');
+
+  it('declares no android submit configuration at all', () => {
+    // Until 2026-09-03 eas.json carried an android submit block whose
+    // serviceAccountKeyPath was the literal placeholder
+    // "TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json". Nothing could actually
+    // submit with it, but the config OVERSTATED readiness: it read as though an
+    // Android release path existed and had been configured. This app ships iOS
+    // only. Removing the block is what makes an accidental
+    // `eas submit --platform android` fail immediately, on missing
+    // configuration, instead of failing later on a missing key file.
+    for (const [profile, cfg] of Object.entries(eas.submit ?? {})) {
+      expect([profile, cfg.android]).toEqual([profile, undefined]);
+    }
+  });
+
+  it('carries no Google Play service-account key path, real or placeholder', () => {
+    expect(easSource).not.toMatch(/serviceAccountKeyPath/i);
+    expect(easSource).not.toMatch(/TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY/);
+  });
+
+  it('commits no Google Play service-account key to the tree', () => {
+    // A real key must never be added to re-enable this. It belongs in EAS
+    // secrets, and re-enabling Android is an owner decision, not a config edit.
+    const tracked = execSync('git ls-files', { cwd: REPO, maxBuffer: 1 << 26 })
+      .toString()
+      .split('\n');
+    const suspects = tracked.filter((f) =>
+      /service.?account|play.?store.*\.json|google.*service.*\.json/i.test(f),
+    );
+    expect(suspects).toEqual([]);
+  });
+
+  it('keeps the iOS submit profile intact (this is an iOS-only app, not a disabled one)', () => {
+    const ios = eas.submit?.production?.ios;
+    expect(ios).toBeDefined();
+    expect(ios?.ascAppId).toBe('6774709116');
+    expect(ios?.appleTeamId).toBe('S78F8ZA8QU');
+  });
+
+  it('has no npm script and no workflow step that could submit to Android', () => {
+    for (const value of Object.values(scripts)) {
+      expect(value).not.toMatch(/--platform\s+android/);
+    }
+    expect(workflowSource).not.toMatch(/--platform\s+android/);
   });
 });

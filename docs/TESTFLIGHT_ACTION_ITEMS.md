@@ -304,14 +304,55 @@ If aggregation runs, you're covered. If not (old EAS CLI or pod issue), you may 
 ### 🟢 NH-3 — `PROJECT_STATE.md` is stale about ASC App ID
 Line 81 says "ASC App ID: still needed in eas.json before automated TestFlight submit." Rory filled it in on 2026-05-30 (`6774709116`). Update PROJECT_STATE.md to reflect this.
 
-### 🟢 NH-4 — Android submit still has TODO placeholder
-`eas.json` → `submit.production.android.serviceAccountKeyPath` is still `"TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json"`. Android submission is not required for Phase 6 iOS launch, but this will cause the workflow to fail for any Android submit attempt.
+### ✅ NH-4 — Android submit placeholder — RESOLVED 2026-09-03 (FDA-046)
+**Resolved by hard-disabling Android submission**, not by supplying a key. The whole
+`submit.production.android` block — including the
+`"TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json"` placeholder — was removed from `eas.json`.
 
-### 🟢 NH-5 — `production` profile missing `SENTRY_DISABLE_AUTO_UPLOAD`
-The `testflight` profile has `"SENTRY_DISABLE_AUTO_UPLOAD": "true"` but the `production` profile does not. Sentry is not currently active (no plugin in app.json), so this is harmless now. But if Sentry is ever re-added, the production build would attempt source map upload and fail silently. Add the env var to `production` as a defensive measure.
+Flagstone ships iOS only. The placeholder never worked, but it overstated readiness: the config
+read as though an Android release path existed and had been configured. With the block gone, an
+accidental `eas submit --platform android` now fails immediately on *missing configuration*
+rather than later on a missing key file.
 
-### 🟢 NH-6 — `app.json` missing `owner` field
-`app.json` doesn't have `expo.owner`. The `extra.eas.projectId` is set, which EAS uses for routing — so this is functionally OK. But running `eas init` (as documented in the EAS setup guide) would fill this in cleanly and remove any ambiguity.
+Pinned by `src/__tests__/releaseScripts.guard.test.ts` →
+`describe('FDA-046 — Android submission is hard-disabled')`, which asserts: no `android` key in any
+submit profile; no `serviceAccountKeyPath` anywhere in `eas.json`; no Google service-account JSON
+tracked in git; the iOS submit profile still intact; and no npm script or workflow step carrying
+`--platform android`.
+
+**Re-enabling Android is an owner decision, not a config edit.** It requires a real Google Play
+service-account key, which belongs in EAS secrets and must never be committed.
+
+### ✅ NH-5 — `production` missing `SENTRY_DISABLE_AUTO_UPLOAD` — RESOLVED 2026-09-03 (FDA-046)
+Applied exactly the remediation this item prescribed: `"SENTRY_DISABLE_AUTO_UPLOAD": "true"` was
+added to `build.production.env` in `eas.json`, alongside the existing `APP_ENV`.
+
+Every **distribution** profile now carries the guard consistently — `preview` (and `preview2` /
+`preview3` by `extends`), `testflight`, and now `production`. `development` deliberately does not:
+it is an internal dev-client profile, outside the scope of this finding.
+
+Inert today and verified so: there is no `@sentry/*` dependency, no Sentry plugin in `app.json`,
+no Sentry source in `src/`, and no `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `sentry.properties`
+reference anywhere in the tree. Per `docs/RELEASE_PLAYBOOK.md` the var is a deliberate standing
+guard "in case it ever gets partially re-added" — this change makes that guard actually cover the
+profile named as the ship command.
+
+### 🟡 NH-6 — `app.json` missing `owner` field — DELIBERATELY LEFT OPEN 2026-09-03 (FDA-046)
+Reviewed and **intentionally not changed.** `expo.owner` is still absent.
+
+Absence is correct for a personal-account project: EAS resolves ownership from the authenticated
+account plus `extra.eas.projectId` (`a7149107-fb9b-4853-a053-648320c05cb6`), which is set. The
+field only starts to matter if the project moves to an Expo organization — and a *mismatched*
+`owner` is itself a hard build-blocker.
+
+**Why it was not filled in:** writing the correct value requires the authoritative EAS account
+identity, and confirming that means an authenticated EAS call — a remote action outside this
+phase's read-only remit. Guessing the slug would be worse than leaving it absent. It is therefore
+carried forward honestly as unresolved rather than closed on an assumption.
+
+Pinned meanwhile by `src/__tests__/appConfig.guard.test.ts` and the FDA-046 census: `slug` stays
+`accessmap` (changing it orphans the EAS project) and `scheme` stays `accessmap` (changing it
+breaks every `accessmap://` deep link).
 
 ---
 
