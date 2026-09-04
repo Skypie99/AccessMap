@@ -76,9 +76,32 @@ const columnLabel = () => new RegExp(`^\\s*(${L1}|${L2}|${L3}|${L4})\\s*$`, 'i')
  */
 const secretLabelled = () =>
   new RegExp(
-    `\\b(${L4}|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|service[_-]?role[_-]?key)\\b["'\`\\s]{0,3}[:|=,]\\s*["'\`]?([^\\s"'\`]+)`,
+    // NOT \b on either side. `_` is a word character, so \b can never match
+    // between `_` and a letter — which would blind this to `webhook_secret`,
+    // `SUPABASE_SERVICE_ROLE_KEY`, `MY_API_KEY`, `client_secret`: the dominant
+    // real-world env-var shape, and the one this repo's own .env.example uses.
+    `(?<![A-Za-z0-9])(${L4}|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|` +
+      `service[_-]?role[_-]?key|private[_-]?key|webhook[_-]?${L4}|client[_-]?${L4})` +
+      `(?![A-Za-z0-9])["'\`\\s]{0,3}[:|=,]\\s*["'\`]?([^\\s"'\`]+)`,
     'gi',
   );
+
+/**
+ * Detector 4 patterns — FORMAT-based, so they need no label at all.
+ *
+ * Everything above is label-driven, which means an unlabelled credential —
+ * a bare service_role JWT, an `sb_secret_…` key — was invisible to the guard
+ * while `.husky/pre-commit` has caught those shapes since 2026-05. That left
+ * the tree-resident guard strictly weaker than the arrival gate, on exactly
+ * the class it exists to cover: something committed with `--no-verify`, or
+ * committed before the hook existed.
+ */
+const FORMAT_DETECTORS: readonly { name: string; re: () => RegExp }[] = [
+  { name: 'supabase-service-jwt', re: () => /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g },
+  { name: 'supabase-secret-key', re: () => new RegExp('\\bsb_' + L4 + '_[A-Za-z0-9_-]{20,}', 'g') },
+  { name: 'aws-access-key-id', re: () => /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
+  { name: 'pem-private-key', re: () => /-----BEGIN [A-Z ]*PRIVATE KEY-----/g },
+];
 
 /** Language that marks a hit as being about a review/demo/test login. */
 const accountLanguage = () =>
@@ -309,6 +332,16 @@ function scan(files: string[]): Finding[] {
         if (shape) out.push({ rel, line: i + 1, shape, lineText: line });
       }
     });
+
+    // Detector 4 — recognisable credential FORMATS, no label required.
+    lines.forEach((line, i) => {
+      if (placeholderish().test(line)) return;
+      for (const { name, re } of FORMAT_DETECTORS) {
+        for (const m of line.matchAll(re())) {
+          out.push({ rel, line: i + 1, shape: `format:${name}, len=${m[0].length}`, lineText: line });
+        }
+      }
+    });
   }
   return out;
 }
@@ -319,10 +352,12 @@ function scan(files: string[]): Finding[] {
  * silent coverage hole. Anchored on a line MARKER, never a line number, so an
  * edit above it cannot re-point the exemption at a different site.
  *
- * Empty by design, following dynamicTypeGuard.test.ts: every candidate so far
- * was better handled by making `shapeOf` more precise than by silencing a path.
- * Adding an entry here is a decision to keep a credential-shaped string in a
- * tracked file — it should be hard, visible, and argued in review.
+ * Held empty until 2026-09-03, following dynamicTypeGuard.test.ts: every
+ * candidate before then was better handled by making `shapeOf` more precise
+ * than by silencing a path. It now carries exactly ONE entry, for a file that
+ * genuinely cannot be edited (see its `why`). Adding another is a decision to
+ * keep a credential-shaped string in a tracked file — it should stay hard,
+ * visible, and argued in review.
  */
 const ALLOWED: ReadonlyArray<{ rel: string; marker: string; why: string }> = [
   {
@@ -338,8 +373,10 @@ const ALLOWED: ReadonlyArray<{ rel: string; marker: string; why: string }> = [
       'set. Editing the SQL to make this scanner green would falsify a file that documents ' +
       'itself as verbatim and would break the hosted<->local parity that repair established. ' +
       'The secret it carries is DEAD: rotated into Supabase Vault on 2026-06-03, and the ' +
-      'trigger that used it was dropped live. Verified again 2026-09-03 — the live Vault ' +
-      'value does not match this literal. The value must never be reused; the file stays. ' +
+      'literal-bearing function body was replaced by Vault indirection — supabase/schema.sql ' +
+      'now defines notify_flag_status_webhook() reading vault.decrypted_secrets, so the ' +
+      'canonical bootstrap carries no literal (the trigger NAME persists). Verified again ' +
+      '2026-09-03: the live Vault value does not match this literal. Never reuse it; file stays. ' +
       'Canonical treatment of migration history is deferred to PHASE-02.',
   },
 ];
@@ -399,6 +436,32 @@ describe('no credentials in tree', () => {
       .filter(Boolean);
     expect(hits).toHaveLength(1);
 
+    // UNDERSCORE-PREFIXED LABELS. Regression pin for the boundary bug found in
+    // review on 2026-09-03: the first version anchored on \b, and `_` is a word
+    // character, so `\b` could never match between `_` and the label. Every
+    // env-var-shaped secret — the dominant real-world form, and the shape this
+    // repo's own .env.example uses — was silently unreachable.
+    const V = ['Synth', String(2026), 'Value', '9xQ'].join('');
+    const mustHit = [
+      `${L4}: ${V}`,
+      `'X-Webhook-${L4}', '${V}'`,
+      `api_key=${V}`,
+      `apiKey=${V}`,
+      `webhook_${L4}: ${V}`,
+      `WEBHOOK_${L4.toUpperCase()}=${V}`,
+      `SUPABASE_SERVICE_ROLE_KEY=${V}`,
+      `MY_API_KEY=${V}`,
+      `client_${L4} = ${V}`,
+      `PRIVATE_KEY: ${V}`,
+    ];
+    const missed = mustHit.filter(
+      (line) =>
+        [...line.matchAll(secretLabelled())]
+          .map((m) => shapeOf(m[2], { allowLongHex: true }))
+          .filter(Boolean).length === 0,
+    );
+    expect(missed).toEqual([]);
+
     // A short hex string is still a SHA prefix, not a secret.
     expect(shapeOf('a1b2c3d4e5f6', { allowLongHex: true })).toBeNull();
     // …and env-var indirection must never fire.
@@ -408,6 +471,28 @@ describe('no credentials in tree', () => {
         .map((m) => shapeOf(m[2], { allowLongHex: true }))
         .filter(Boolean),
     ).toEqual([]);
+  });
+
+  it('B3 · the format detectors fire without any label at all', () => {
+    // Detector 4's non-vacuity proof. Every value here is assembled at runtime
+    // and INVENTED — none is a real credential, and none is a literal in this
+    // file. Before 2026-09-03 the guard was purely label-based, so an unlabelled
+    // service_role JWT or sb_secret_ key sat in the tree unseen while
+    // .husky/pre-commit had caught those shapes since 2026-05.
+    const jwt = ['eyJ' + 'hbGciOiJIUzI1NiIs', 'eyJyb2xlIjoic3ludGgifQ', 'c3ludGhldGljc2ln'].join('.');
+    const sbKey = 'sb_' + L4 + '_' + 'SyntheticKeyMaterial0123456789';
+    const aws = 'AKIA' + 'SYNTHETIC000EXMP';
+    const pem = '-----BEGIN RSA PRIVATE KEY-----';
+
+    for (const sample of [jwt, sbKey, aws, pem]) {
+      const hit = FORMAT_DETECTORS.some((d) => d.re().test(sample));
+      expect([sample.slice(0, 6), hit]).toEqual([sample.slice(0, 6), true]);
+    }
+
+    // …and an env-var reference must never fire.
+    expect(
+      FORMAT_DETECTORS.some((d) => d.re().test("Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')")),
+    ).toBe(false);
   });
 
   it('C · no tracked file carries a credential-shaped literal next to account language', () => {
@@ -447,6 +532,14 @@ describe('no credentials in tree', () => {
       'utf8',
     );
     expect(migration).toMatch(/App Store Connect/i);
-    expect(scan([path.join(REPO, 'docs', 'APP_STORE_REVIEWER_NOTES.md')])).toEqual([]);
+    // Map to the same shape string assertion C uses. Comparing raw Finding
+    // objects here would pretty-print `lineText` — the matched line, i.e. the
+    // credential — into the CI log on failure, in exactly the scenario this
+    // guard exists for. A guard must not leak the thing it catches.
+    expect(
+      scan([path.join(REPO, 'docs', 'APP_STORE_REVIEWER_NOTES.md')]).map(
+        (f) => `${f.rel}:${f.line} → credential-shaped value (${f.shape})`,
+      ),
+    ).toEqual([]);
   });
 });

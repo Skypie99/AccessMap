@@ -21,6 +21,17 @@ here rather than re-raising a resolved incident or, worse, reusing the value.
 
 ### Why each is dead — the evidence
 
+> **Provenance of the live-system claims below.** The two statements that depend on the running
+> Supabase project — that the Vault `webhook_secret` no longer matches the committed literal, and
+> that the leaked reviewer address has zero rows in `auth.users` — are **owner-attested**, carried
+> forward from the accepted PHASE-00 evidence. They were **not** re-verified by a live database
+> call in the phase that wrote this file, and independent review correctly declined to confirm
+> them from a read-only offline checkout. What *is* independently verifiable in this repository,
+> and was checked: `supabase/schema.sql` defines `notify_flag_status_webhook()` reading
+> `vault.decrypted_secrets` with no literal in the function body, which corroborates the rotation
+> having happened. Treat the live-state claims as attested, and re-verify before relying on them
+> for a security decision.
+
 **(a) Webhook secret.** Rotated into Supabase Vault on 2026-06-03, and the trigger that consumed
 it was dropped on the live project. Re-verified 2026-09-03 against the live project
 (`kldlwszpfkdmsjrjhjym`): the Vault `webhook_secret` **does not match** the committed literal.
@@ -42,17 +53,38 @@ credential, and it was not reused.
 
 ## 2. What is — and is not — cleaned
 
-**Cleaned (working tree).** As of 2026-09-03 the canonical tree carries **no** free-standing copy
-of literal (b). The last tracked carrier,
+**Cleaned (working tree, on the integration branch).** As of 2026-09-03 the canonical *integration
+candidate* carries **no** free-standing copy of literal (b). The last tracked carrier,
 `design-reviews/sim-walk/2026-08-19/PROMPT_AUTHED_PASS.md`, was redacted in TASK 00B.
+
+> **`origin/main` is not yet clean.** Its tip still carries literal (b), in that same file —
+> verified 2026-09-03. `main` becomes clean only when this work is merged, which is Sky's call and
+> has not happened. Until then, "the tree is clean" is a statement about this branch, not about
+> what anyone gets by cloning the default branch.
 
 **Deliberately NOT cleaned (one file).**
 `supabase/migrations/20260529181141_notify_flag_status_webhook_trigger.sql` still contains literal
 (a), on purpose. See §3.
 
 **NOT cleaned, and NOT authorized to be cleaned: published Git history.** Both literals remain
-reachable in old commits, on this repository's public remote. A census on 2026-09-03 found the
-webhook literal on **10 refs, 3 of them public**.
+reachable in old commits, on this repository's public remote. Measured 2026-09-03 across all 257
+refs in this clone:
+
+| Literal | Ref tips containing it | Of those, `refs/remotes/origin/*` |
+|---|---|---|
+| (a) webhook secret | **71** | **33** |
+| (b) reviewer password | **226** | **48** — including `origin/main` |
+
+> An earlier draft of this file said "10 refs, 3 of them public" for literal (a). That number came
+> from an upstream handoff and was **never re-measured**; independent review on 2026-09-03 caught
+> it and a direct census confirmed the figures above. The exposure is roughly **7× wider** than
+> first written, and literal (b) — not mentioned at all in that draft — is on `origin/main` itself.
+> The conclusions below are unchanged (both values are dead, already public, and history is not
+> being rewritten), but a document whose entire purpose is to be the honest record has no business
+> carrying an unverified number.
+
+Remote-tracking refs may include branches already deleted upstream and not yet pruned, so the
+`origin/*` counts are an upper bound on currently-live public refs. Nothing was pruned to find out.
 
 **Rewriting that history is not authorized.** It would require a force-push over published refs,
 would break every existing clone, worktree, and recorded SHA — including the release control
@@ -109,9 +141,22 @@ Two structural gaps caused that, both now closed:
    which is exactly the shape `openssl rand -hex 32` produces, the shape this repo's own webhook
    README tells you to generate. A new **Detector 3** matches non-login secret labels and opts
    into long hex (≥ 32 chars; shorter hex is still treated as a SHA prefix).
+3. **Detector 3's first version anchored on `\b`, and `_` is a word character** — so `\b` could
+   never match between `_` and a label. `webhook_secret:`, `WEBHOOK_SECRET=`,
+   `SUPABASE_SERVICE_ROLE_KEY=`, `MY_API_KEY=` and `client_secret =` were all silently
+   unreachable: the dominant real-world env-var shape, and the shape this repo's own
+   `.env.example` uses. Caught in independent review the same day and fixed by anchoring on
+   non-alphanumeric boundaries instead. Pinned by a regression test.
+4. **Nothing was format-based.** Every detector needed a *label*, so an unlabelled service_role
+   JWT or `sb_secret_…` key was invisible to the tree guard while `.husky/pre-commit` had caught
+   those shapes since 2026-05 — leaving the residence guard strictly weaker than the arrival gate
+   on exactly the class it exists for. **Detector 4** adds label-independent format matching for
+   service_role JWTs, `sb_secret_` keys, AWS access-key IDs and PEM private-key headers.
 
-Detector 3 was measured across all 1,783 tracked files: **1 finding, 0 false positives** — the
-immutable carrier in §3, and nothing else.
+Detectors 3 and 4 together were measured across the full tracked-file census (~1,780 text files):
+**1 finding, 0 false positives** — the immutable carrier in §3, and nothing else. (The exact census
+size depends on the binary-extension filter; do not treat a specific file count here as a pinned
+number — test `A` pins only a floor of 500.)
 
 **Known limitation, deliberately accepted.** The guard still cannot see a credential mentioned in
 *prose* — inline code in a sentence, with no `label: value` pair. That is the shape literal (b)
@@ -121,7 +166,11 @@ code identifiers (`secureTextEntry`, `textContentType`, `autoComplete`) and a no
 Connect Key ID. Shipping it would have meant either a red CI or an allowlist large enough to
 defeat the point. Prose carriers remain a **review** responsibility, not an automated one.
 
-**Neither gate discloses what it catches.** The Jest guard reports `path:line → shape` only. The
+**Neither gate discloses what it catches** — but this needed a fix too. Assertion `E` compared raw
+`Finding` objects with `toEqual([])`, and a `Finding` carries `lineText`, so a failure would have
+pretty-printed the matched line — the credential — into the CI log, in precisely the scenario the
+guard exists for. It now maps to the same shape string assertion `C` uses. The Jest guard reports
+`path:line → shape` only. The
 `.husky/pre-commit` hook used to `echo "$MATCHES"`, printing up to five raw offending lines — the
 secret itself — into the developer's scrollback and any log capturing it. As of 2026-09-03 it
 prints a length-and-character-class shape instead, matching the Jest guard's discipline: a real

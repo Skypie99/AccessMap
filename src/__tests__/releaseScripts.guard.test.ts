@@ -332,6 +332,11 @@ describe('FDA-046 — Android submission is hard-disabled', () => {
     // only. Removing the block is what makes an accidental
     // `eas submit --platform android` fail immediately, on missing
     // configuration, instead of failing later on a missing key file.
+    // Non-vacuous by construction: assert the submit section still EXISTS with
+    // an iOS profile first, so deleting `submit` wholesale fails here rather
+    // than silently satisfying "no android anywhere".
+    expect(Object.keys(eas.submit ?? {})).toContain('production');
+    expect(eas.submit?.production?.ios).toBeDefined();
     for (const [profile, cfg] of Object.entries(eas.submit ?? {})) {
       expect([profile, cfg.android]).toEqual([profile, undefined]);
     }
@@ -361,10 +366,23 @@ describe('FDA-046 — Android submission is hard-disabled', () => {
     expect(ios?.appleTeamId).toBe('S78F8ZA8QU');
   });
 
-  it('has no npm script and no workflow step that could submit to Android', () => {
-    for (const value of Object.values(scripts)) {
-      expect(value).not.toMatch(/--platform\s+android/);
+  it('has no npm script and no workflow step in ANY workflow that could submit to Android', () => {
+    // Both halves of this were too narrow when first written: the regex knew
+    // only the long flag, and it scanned a single workflow file out of six.
+    const androidFlag = /(?:--platform|-p)[\s=]+android\b/;
+
+    for (const [name, value] of Object.entries(scripts)) {
+      expect([name, androidFlag.test(value)]).toEqual([name, false]);
     }
-    expect(workflowSource).not.toMatch(/--platform\s+android/);
+
+    const workflowDir = path.join(REPO, '.github', 'workflows');
+    const workflows = fs.readdirSync(workflowDir).filter((f) => /\.ya?ml$/.test(f));
+    expect(workflows.length).toBeGreaterThanOrEqual(6); // pin: don't silently scan fewer
+
+    for (const file of workflows) {
+      const source = fs.readFileSync(path.join(workflowDir, file), 'utf8');
+      expect([file, androidFlag.test(source)]).toEqual([file, false]);
+      expect([file, /eas\s+submit/.test(source.replace(/^\s*#.*$/gm, ''))]).toEqual([file, false]);
+    }
   });
 });

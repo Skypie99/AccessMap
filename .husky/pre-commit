@@ -40,20 +40,31 @@ check_pattern() {
   if [ -n "$MATCHES" ]; then
     echo ""
     echo "  [SECRET SCAN] $LABEL"
-    # NEVER echo $MATCHES: it holds the raw staged diff lines, i.e. the secret
+    # NEVER echo $MATCHES: it holds raw staged diff lines, i.e. the secret
     # itself, which would land in the developer's scrollback and in any log that
-    # captures this hook. Print a SHAPE only — length and character classes —
-    # mirroring shapeOf() in src/__tests__/noCredentialsInTree.guard.test.ts so
-    # the two gates disclose exactly as much as each other: nothing.
+    # captures this hook. Print a shape only.
+    #
+    # HONEST LIMITATION: each record is "<diffline>:+<content>", so what is
+    # described below is the whole ADDED LINE, not the credential token — the
+    # label and the "+" guarantee most character classes on nearly every hit.
+    # It is deliberately NOT the same thing as shapeOf() in
+    # src/__tests__/noCredentialsInTree.guard.test.ts, which shapes the matched
+    # VALUE. This is a locator, not a classifier; the developer has the working
+    # tree in front of them and the escape hatch below. What matters here is the
+    # invariant both gates share: a catch never prints what it caught.
     echo "$MATCHES" | head -5 | awk '{
-      n = length($0)
+      loc = $0
+      sub(/:.*$/, "", loc)          # diff-line number
+      body = $0
+      sub(/^[0-9]*:\+/, "", body)   # drop the grep prefix and the leading +
+      n = length(body)
       cls = ""
-      if ($0 ~ /[a-z]/) cls = cls "lower+"
-      if ($0 ~ /[A-Z]/) cls = cls "upper+"
-      if ($0 ~ /[0-9]/) cls = cls "digit+"
-      if ($0 ~ /[^A-Za-z0-9]/) cls = cls "symbol+"
+      if (body ~ /[a-z]/) cls = cls "lower+"
+      if (body ~ /[A-Z]/) cls = cls "upper+"
+      if (body ~ /[0-9]/) cls = cls "digit+"
+      if (body ~ /[^A-Za-z0-9]/) cls = cls "symbol+"
       sub(/\+$/, "", cls)
-      print "    staged line, len=" n ", " cls " (value withheld)"
+      print "    added line @diff:" loc ", len=" n ", " cls " (content withheld)"
     }'
     echo "    Run: git diff --cached   to see the offending lines yourself."
     FOUND=1

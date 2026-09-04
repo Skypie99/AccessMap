@@ -213,3 +213,44 @@ describe('Phase 3 — the submission collateral nothing was pinning', () => {
     expect(app.ios.bundleIdentifier).toBe('com.accessmap.app');
   });
 });
+
+// ---------------------------------------------------------------------------
+// FDA-046 — project identity is load-bearing and must not drift
+// ---------------------------------------------------------------------------
+
+describe('FDA-046 — EAS/Expo project identity is pinned', () => {
+  // These four values are the ones that are CATASTROPHIC rather than merely
+  // wrong to change, and until 2026-09-03 nothing in the repo asserted any of
+  // them — docs claimed they were pinned here, and they were not.
+  it('keeps the slug "accessmap" (changing it orphans the EAS project)', () => {
+    expect(app.slug).toBe('accessmap');
+  });
+
+  it('keeps the scheme "accessmap" (changing it breaks every accessmap:// deep link)', () => {
+    expect(app.scheme).toBe('accessmap');
+  });
+
+  it('keeps the EAS projectId that routes every build', () => {
+    expect(app.extra?.eas?.projectId).toBe('a7149107-fb9b-4853-a053-648320c05cb6');
+  });
+
+  it('keeps both platform identifiers on com.accessmap.app', () => {
+    // The app ships as Flagstone; the identifiers deliberately still say
+    // accessmap. See CLAUDE.md — this is history, not a bug to fix.
+    expect([app.ios.bundleIdentifier, app.android.package]).toEqual([
+      'com.accessmap.app',
+      'com.accessmap.app',
+    ]);
+    expect(app.name).toBe('Flagstone');
+  });
+
+  it('declares no expo.owner, deliberately', () => {
+    // Absence is correct for a personal-account project: EAS resolves ownership
+    // from the authenticated account plus extra.eas.projectId. A MISMATCHED
+    // owner is itself a hard build-blocker, so this must not be filled in on a
+    // guess — only from authoritative EAS account identity. Tracked as NH-6 in
+    // docs/TESTFLIGHT_ACTION_ITEMS.md. If this test ever fails because someone
+    // added an owner, confirm the value came from `eas whoami`, not a hunch.
+    expect(app.owner).toBeUndefined();
+  });
+});

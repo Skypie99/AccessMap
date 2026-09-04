@@ -310,9 +310,26 @@ Line 81 says "ASC App ID: still needed in eas.json before automated TestFlight s
 `"TODO_PATH_TO_GOOGLE_SERVICE_ACCOUNT_KEY.json"` placeholder — was removed from `eas.json`.
 
 Flagstone ships iOS only. The placeholder never worked, but it overstated readiness: the config
-read as though an Android release path existed and had been configured. With the block gone, an
-accidental `eas submit --platform android` now fails immediately on *missing configuration*
-rather than later on a missing key file.
+read as though an Android release path existed and had been configured.
+
+> **Correction (independent review, 2026-09-03).** An earlier version of this entry claimed that
+> removing the block makes `eas submit --platform android` "fail immediately on missing
+> configuration". **That claim was falsified and is withdrawn.** A reviewer traced eas-cli's actual
+> resolver and found that (a) the *old* placeholder never hard-failed either — it warned that the
+> file was missing and fell back to a prompt; and (b) with no `serviceAccountKeyPath` at all,
+> eas-cli resolves credentials via its credentials service using `app.json` → `android.package`
+> (which is present) and drops into an **interactive** "choose or upload a Google service-account
+> key" flow. So removing the block did not create a hard stop, and neither state was one.
+>
+> **What is actually true, and is verifiable from this repository:** there is no Android submit
+> configuration, no Google service-account key is tracked in git, and **no npm script and no CI
+> workflow can reach an Android submit** — the only automated path is
+> `eas build --platform ios --profile testflight --auto-submit-with-profile=production`. Android
+> submission therefore cannot happen by automation or by accident in CI. A human running the raw
+> CLI by hand would be prompted for Google credentials and **must decline**.
+>
+> This phase did not have eas-cli available to re-verify the resolver behaviour first-hand, so the
+> resolver detail above is recorded as a reviewer finding rather than as an owner-verified fact.
 
 Pinned by `src/__tests__/releaseScripts.guard.test.ts` →
 `describe('FDA-046 — Android submission is hard-disabled')`, which asserts: no `android` key in any
@@ -350,9 +367,14 @@ identity, and confirming that means an authenticated EAS call — a remote actio
 phase's read-only remit. Guessing the slug would be worse than leaving it absent. It is therefore
 carried forward honestly as unresolved rather than closed on an assumption.
 
-Pinned meanwhile by `src/__tests__/appConfig.guard.test.ts` and the FDA-046 census: `slug` stays
-`accessmap` (changing it orphans the EAS project) and `scheme` stays `accessmap` (changing it
-breaks every `accessmap://` deep link).
+**Now genuinely pinned.** An earlier version of this entry claimed `slug` and `scheme` were already
+guarded by `src/__tests__/appConfig.guard.test.ts`; independent review on 2026-09-03 found that
+file contained **zero** slug/scheme/owner assertions, and no test anywhere asserted `expo.scheme`.
+The claim was false when written. A `describe('FDA-046 — EAS/Expo project identity is pinned')`
+block was added to that file, so it is true now: `slug` stays `accessmap` (changing it orphans the
+EAS project), `scheme` stays `accessmap` (changing it breaks every `accessmap://` deep link), the
+EAS `projectId` and both platform identifiers are pinned, and `expo.owner` is asserted **absent**
+so filling it in on a guess fails a test rather than a build.
 
 ---
 
