@@ -41,6 +41,14 @@ import type { FlagRow } from '@/types/database';
 // Neutralize the SUT's side-effect CSS import (line 1). Virtual: the module has
 // no JS to load and jest has no .css transformer configured.
 jest.mock('leaflet/dist/leaflet.css', () => ({}), { virtual: true });
+jest.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}), { virtual: true });
+jest.mock('@maplibre/maplibre-gl-leaflet', () => ({
+  maplibreGL: jest.fn(() => ({
+    addTo() {},
+    remove() {},
+    getMaplibreMap: () => ({ once() {}, off() {} }),
+  })),
+}));
 
 // flags.ts + auth.tsx import supabase at module scope.
 jest.mock('@/lib/supabase', () => ({

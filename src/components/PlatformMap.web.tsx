@@ -1,4 +1,5 @@
 import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import React, {
   forwardRef,
   memo,
@@ -11,15 +12,13 @@ import React, {
 } from 'react';
 import { MapContainer, Marker, Popup, Rectangle, useMap, useMapEvents } from 'react-leaflet';
 import L, { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
+import { maplibreGL } from '@maplibre/maplibre-gl-leaflet';
 import Supercluster from 'supercluster';
 import { CATEGORY_LABELS, isAnon, SEVERITY_LABELS, severityColor, STATUS_LABELS } from '@/lib/flags';
 import { relativeTime } from '@/lib/relativeTime';
 import type { FlagCategory, FlagRow } from '@/types/database';
 import { heatmapSeverity as severityTokens } from '@/theme';
 import { useColor } from '@/theme/ThemeContext';
-import { useAuth } from '@/lib/auth';
-import { getCachedTile, setCachedTile } from '@/lib/tileCache';
-import { track } from '@/lib/analytics';
 import { colorForCell, HEATMAP_FILL_OPACITY, type HeatCell, type HeatmapMode } from '@/lib/heatmap';
 import { safeImageUrl } from '@/lib/remoteImageUrl';
 
@@ -610,129 +609,15 @@ function ClusteredMarkers({
   );
 }
 
-// ---------------------------------------------------------------------------
-// CachedTileLayer — extends L.TileLayer to intercept tile HTTP requests and
-// route them through the offline tile cache (getCachedTile / setCachedTile).
-//
-// Strategy per tile:
-//   1. Build the concrete tile URL (Leaflet already does this in getTileUrl).
-//   2. Check the cache (getCachedTile). On HIT: set img.src to the stored
-//      data-URI and call done() immediately — no network round-trip.
-//   3. On MISS: fetch() → Blob → FileReader → base64 data-URI → set img.src
-//      → fire-and-forget setCachedTile → call done().
-//   4. On ANY error (network, FileReader, cache write): fall back to setting
-//      img.src directly to the URL so Leaflet can try its own XHR retry path.
-//      A broken tile is never shown.
-// ---------------------------------------------------------------------------
-
-interface CachedTileLayerOptions extends L.TileLayerOptions {
-  userId: string | null;
-}
-
-class CachedTileLayer extends L.TileLayer {
-  private _userId: string | null;
-  // F31: set when the wrapper unmounts the layer. In-flight tile chains are
-  // not cancellable, but they must stop persisting tiles once the layer is
-  // gone (e.g. after sign-out, when the cache for that user was just cleared).
-  private _disposed = false;
-
-  constructor(urlTemplate: string, options: CachedTileLayerOptions) {
-    const { userId, ...rest } = options;
-    super(urlTemplate, rest);
-    this._userId = userId;
-  }
-
-  dispose(): void {
-    this._disposed = true;
-  }
-
-  createTile(
-    coords: L.Coords,
-    done: (err: Error | undefined, tile: HTMLElement) => void,
-  ): HTMLElement {
-    const img = document.createElement('img');
-    // Required for CORS tiles (e.g. OSM)
-    img.crossOrigin = 'anonymous';
-    img.alt = '';
-
-    const url = this.getTileUrl(coords);
-    const userId = this._userId;
-
-    if (!userId) {
-      // No authenticated user — skip cache, load tile directly.
-      img.onload = () => done(undefined, img);
-      img.onerror = () => done(undefined, img); // keep fallback: never broken
-      img.src = url;
-      return img;
-    }
-
-    void (async () => {
-      try {
-        // Step 1: cache hit?
-        const cached = await getCachedTile(userId, url);
-        if (cached) {
-          track('tile_cache_hit', { zoom: coords.z });
-          img.onload = () => done(undefined, img);
-          img.onerror = () => {
-            img.src = url;
-            done(undefined, img);
-          };
-          img.src = cached;
-          return;
-        }
-
-        // Step 2: cache miss — fetch, convert, store, display
-        track('tile_cache_miss', { zoom: coords.z });
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Tile fetch failed: ${response.status}`);
-        const blob = await response.blob();
-
-        const dataUri = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-
-        img.onload = () => done(undefined, img);
-        img.onerror = () => {
-          img.src = url;
-          done(undefined, img);
-        };
-        img.src = dataUri;
-
-        // Fire-and-forget: persist to cache; errors are swallowed by
-        // setCachedTile itself (it already logs internally). Skip if the
-        // layer was unmounted while this chain was in flight (F31).
-        if (!this._disposed) void setCachedTile(userId, url, dataUri);
-      } catch {
-        // Any error → graceful fallback to direct URL (never a broken tile)
-        img.onload = () => done(undefined, img);
-        img.onerror = () => done(undefined, img);
-        img.src = url;
-      }
-    })();
-
-    return img;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// CachedTileLayerWrapper — react-leaflet inner component that mounts the
-// CachedTileLayer imperatively via useMap(). Re-creates the layer whenever
-// userId changes so tiles are always keyed to the current authenticated user.
-// ---------------------------------------------------------------------------
-
-// S7: CARTO basemaps branched on the app's color scheme — Dark Matter in dark,
-// Positron (light_all) in light. The URL was hard-coded to dark_all, so light
-// mode rendered a near-black void (R6: "the map failed to load"). The light
-// family is a Sky-eye candidate (Positron light_all vs the warmer Voyager);
-// Positron keeps the pins + heat cells the most legible over the tiles.
-const OSM_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const OSM_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors ' +
-  '&copy; <a href="https://carto.com/attributions">CARTO</a>';
+// OpenFreeMap's documented MapLibre styles. The Leaflet bridge keeps the
+// established camera, marker, cluster, popup, and gesture ownership intact;
+// MapLibre renders only the vector basemap beneath those Leaflet layers.
+const OPENFREEMAP_DARK_STYLE = 'https://tiles.openfreemap.org/styles/dark';
+const OPENFREEMAP_LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+const OPENFREEMAP_ATTRIBUTION =
+  '<a href="https://openfreemap.org/">OpenFreeMap</a> ' +
+  '&copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> Data from ' +
+  '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 // S7: tame the third-party attribution strip to the app's hairline voice — KEPT
 // (legally required), just quieter and pinned always-light (GLASS §12 overlay
@@ -748,71 +633,50 @@ if (typeof document !== 'undefined' && !document.getElementById('accessmap-leafl
   document.head.appendChild(attrStyle);
 }
 
-// T1 (F3-05): how long the outgoing tile layer may linger if the incoming one
-// never fires 'load' (offline, throttled). Retirement is idempotent — the
-// timer is a hard backstop, not the happy path.
-const TILE_SWAP_FALLBACK_MS = 2000;
+// Keep the current basemap visible until its replacement has loaded. The timer
+// is a hard backstop for offline or failed style requests.
+const BASEMAP_SWAP_FALLBACK_MS = 2000;
 
-function CachedTileLayerWrapper({
-  userId,
-  tileUrl,
-}: {
-  userId: string | null;
-  tileUrl: string;
-}): null {
+function OpenFreeMapLayerWrapper({ styleUrl }: { styleUrl: string }): null {
   const map = useMap();
-
-  // T1 (F3-05): the live layer, owned ACROSS effect runs so a theme flip can
-  // overlap old and new instead of blanking. The old shape removed the
-  // outgoing layer in the effect cleanup — which React runs BEFORE the next
-  // effect body — so the map held an empty pane while the incoming family
-  // fetched its first tiles (the only surface that visibly rebuilt instead of
-  // transforming during the theme moment). Swap MECHANICS only — the tile
-  // family itself is Sky's open eye-candidate, untouched here.
-  const activeLayerRef = useRef<CachedTileLayer | null>(null);
+  const activeLayerRef = useRef<ReturnType<typeof maplibreGL> | null>(null);
 
   useEffect(() => {
-    const layer = new CachedTileLayer(tileUrl, {
-      attribution: OSM_ATTRIBUTION,
-      userId,
+    const layer = maplibreGL({
+      style: styleUrl,
+      // Leaflet remains the sole interaction owner for pan, wheel, pinch,
+      // keyboard, markers, clusters, and popups.
+      interactive: false,
+      // The bridge cannot surface source attribution until MapLibre's style has
+      // loaded, so the existing visible Leaflet control owns the exact required
+      // wording below.
+      attributionControl: false,
     });
     layer.addTo(map);
+    map.attributionControl?.addAttribution(OPENFREEMAP_ATTRIBUTION);
     const prev = activeLayerRef.current;
     activeLayerRef.current = layer;
     if (prev) {
-      // The incoming layer mounts FIRST (above — Leaflet stacks by add
-      // order); the outgoing one retires only once the new family has painted
-      // ('load' = all visible tiles done), with a hard fallback so it can
-      // never linger past 2s. dispose() runs NOW: in-flight cache writes must
-      // stop immediately (F31 — a sign-out clears the tile cache; a late
-      // write would resurrect it). The fallback is deliberately NOT cleared
-      // on the next flip: retirement is idempotent, and clearing it could
-      // leak the old layer if the incoming one never loads. Leaflet's
-      // remove() is a safe no-op once detached.
-      prev.dispose();
       let retired = false;
       const retirePrev = () => {
         if (retired) return;
         retired = true;
-        layer.off('load', retirePrev);
+        layer.getMaplibreMap().off('load', retirePrev);
         prev.remove();
+        map.attributionControl?.removeAttribution(OPENFREEMAP_ATTRIBUTION);
       };
-      layer.on('load', retirePrev);
-      setTimeout(retirePrev, TILE_SWAP_FALLBACK_MS);
+      layer.getMaplibreMap().once('load', retirePrev);
+      setTimeout(retirePrev, BASEMAP_SWAP_FALLBACK_MS);
     }
-    // Flip path: the NEXT effect run retires `layer` (as its `prev`). Only a
-    // true unmount tears down the still-live layer — the effect below.
-    // tileUrl in deps: a light/dark flip re-creates the layer with the new family.
-  }, [map, userId, tileUrl]);
+  }, [map, styleUrl]);
 
-  // True unmount: dispose + remove whichever layer is still live.
   useEffect(
     () => () => {
-      activeLayerRef.current?.dispose(); // F31
       activeLayerRef.current?.remove();
+      map.attributionControl?.removeAttribution(OPENFREEMAP_ATTRIBUTION);
       activeLayerRef.current = null;
     },
-    [],
+    [map],
   );
 
   return null;
@@ -834,7 +698,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
   ref,
 ) {
   const themeColor = useColor();
-  const tileUrl = themeColor.scheme === 'dark' ? OSM_DARK : OSM_LIGHT;
+  const styleUrl = themeColor.scheme === 'dark' ? OPENFREEMAP_DARK_STYLE : OPENFREEMAP_LIGHT_STYLE;
   const mapInstance = useRef<LeafletMap | null>(null);
   // F7: react-leaflet's MapContainer ref resolves to null on the first commit
   // (its internal context isn't ready yet) and to the real map only after a
@@ -849,8 +713,6 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
     mapInstance.current = m;
     setMapReady(m != null);
   }, []);
-  const { user } = useAuth();
-  const userId = user?.id ?? null;
   const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
 
   // See PlatformMap.tsx for why we prune: ref callbacks leave null entries
@@ -1072,7 +934,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         // overlay's bottom zone drive zoom via the imperative handle instead.
         zoomControl={false}
         // S17: on the decorative Home peek (suppressAttribution), drop the live
-        // "Leaflet / OpenStreetMap / CARTO" attribution links so they can't
+        // provider attribution links so they can't
         // navigate the browser away from inside a button. The full Map omits
         // this prop → attribution stays (legally required).
         attributionControl={!suppressAttribution}
@@ -1081,7 +943,7 @@ const PlatformMap = forwardRef<PlatformMapHandle, PlatformMapProps>(function Pla
         zoomAnimation={!reducedMotion}
         fadeAnimation={!reducedMotion}
       >
-        <CachedTileLayerWrapper userId={userId} tileUrl={tileUrl} />
+        <OpenFreeMapLayerWrapper styleUrl={styleUrl} />
         {/* Heat-map: Rectangle for each cell footprint + a divIcon Marker
               at the centroid showing the rounded mean severity. Leaflet
               paints Rectangles on `overlayPane` (SVG default) which sits

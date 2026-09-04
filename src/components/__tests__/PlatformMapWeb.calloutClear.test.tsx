@@ -31,6 +31,14 @@ import PlatformMap, { clampChromeInset, type PlatformMapHandle } from '../Platfo
 import type { FlagRow } from '@/types/database';
 
 jest.mock('leaflet/dist/leaflet.css', () => ({}), { virtual: true });
+jest.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}), { virtual: true });
+jest.mock('@maplibre/maplibre-gl-leaflet', () => ({
+  maplibreGL: jest.fn(() => ({
+    addTo() {},
+    remove() {},
+    getMaplibreMap: () => ({ once() {}, off() {} }),
+  })),
+}));
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
