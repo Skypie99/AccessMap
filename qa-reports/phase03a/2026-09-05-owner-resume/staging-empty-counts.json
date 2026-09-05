@@ -1,0 +1,72 @@
+{
+  "capturedAtUtc": "2026-09-05T07:58:31.810Z",
+  "projectRef": "ctshxbykuemeqnofqcdh",
+  "query": "SELECT 'public.comment_votes' AS object, count(*)::bigint AS row_count FROM public.\"comment_votes\"\nUNION ALL\nSELECT 'public.feedback' AS object, count(*)::bigint AS row_count FROM public.\"feedback\"\nUNION ALL\nSELECT 'public.flag_comments' AS object, count(*)::bigint AS row_count FROM public.\"flag_comments\"\nUNION ALL\nSELECT 'public.flag_edit_history' AS object, count(*)::bigint AS row_count FROM public.\"flag_edit_history\"\nUNION ALL\nSELECT 'public.flag_photos' AS object, count(*)::bigint AS row_count FROM public.\"flag_photos\"\nUNION ALL\nSELECT 'public.flag_status_history' AS object, count(*)::bigint AS row_count FROM public.\"flag_status_history\"\nUNION ALL\nSELECT 'public.flag_verifications' AS object, count(*)::bigint AS row_count FROM public.\"flag_verifications\"\nUNION ALL\nSELECT 'public.flags' AS object, count(*)::bigint AS row_count FROM public.\"flags\"\nUNION ALL\nSELECT 'public.notification_preferences' AS object, count(*)::bigint AS row_count FROM public.\"notification_preferences\"\nUNION ALL\nSELECT 'public.point_events' AS object, count(*)::bigint AS row_count FROM public.\"point_events\"\nUNION ALL\nSELECT 'public.push_tokens' AS object, count(*)::bigint AS row_count FROM public.\"push_tokens\"\nUNION ALL\nSELECT 'public.realtime_subscribe_log' AS object, count(*)::bigint AS row_count FROM public.\"realtime_subscribe_log\"\nUNION ALL\nSELECT 'public.users' AS object, count(*)::bigint AS row_count FROM public.\"users\"\nUNION ALL\nSELECT 'auth.users' AS object, count(*)::bigint AS row_count FROM auth.users\nUNION ALL\nSELECT 'storage.objects' AS object, count(*)::bigint AS row_count FROM storage.objects\nUNION ALL\nSELECT 'vault.secrets' AS object, count(*)::bigint AS row_count FROM vault.secrets;",
+  "onlyCountsRead": true,
+  "rows": [
+    {
+      "object": "public.comment_votes",
+      "row_count": 0
+    },
+    {
+      "object": "public.feedback",
+      "row_count": 0
+    },
+    {
+      "object": "public.flag_comments",
+      "row_count": 0
+    },
+    {
+      "object": "public.flag_edit_history",
+      "row_count": 0
+    },
+    {
+      "object": "public.flag_photos",
+      "row_count": 0
+    },
+    {
+      "object": "public.flag_status_history",
+      "row_count": 0
+    },
+    {
+      "object": "public.flag_verifications",
+      "row_count": 0
+    },
+    {
+      "object": "public.flags",
+      "row_count": 0
+    },
+    {
+      "object": "public.notification_preferences",
+      "row_count": 0
+    },
+    {
+      "object": "public.point_events",
+      "row_count": 0
+    },
+    {
+      "object": "public.push_tokens",
+      "row_count": 0
+    },
+    {
+      "object": "public.realtime_subscribe_log",
+      "row_count": 0
+    },
+    {
+      "object": "public.users",
+      "row_count": 0
+    },
+    {
+      "object": "auth.users",
+      "row_count": 0
+    },
+    {
+      "object": "storage.objects",
+      "row_count": 0
+    },
+    {
+      "object": "vault.secrets",
+      "row_count": 0
+    }
+  ]
+}

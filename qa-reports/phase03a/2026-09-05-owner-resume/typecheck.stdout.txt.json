@@ -1,0 +1,7 @@
+{
+  "originalFile": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/typecheck.stdout.txt",
+  "originalBytes": 45,
+  "originalSha256": "d12aee5139a2fecb70054d7e23fa10972d9f2d91f79aacee1f7eb79935e9c1f8",
+  "encoding": "utf-8",
+  "text": "\n> accessmap@4.1.1 typecheck\n> tsc --noEmit\n\n"
+}

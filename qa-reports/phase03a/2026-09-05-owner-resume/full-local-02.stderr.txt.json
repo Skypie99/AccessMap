@@ -1,0 +1,7 @@
+{
+  "originalFile": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-local-02.stderr.txt",
+  "originalBytes": 563,
+  "originalSha256": "4f9b5128c2f8fb15e31916c52229e4cef52c50076083c933cbce194e13150a55",
+  "encoding": "utf-8",
+  "text": "psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/phase03a-foundation.test.sql:173: WARNING:  [notify_flag_status_webhook] vault secret missing - skipping\npsql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/phase03a-privileges.test.sql:28: WARNING:  [notify_flag_status_webhook] vault secret missing - skipping\npsql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/phase03a-privileges.test.sql:128: WARNING:  [notify_flag_status_webhook] vault secret missing - skipping\n"
+}

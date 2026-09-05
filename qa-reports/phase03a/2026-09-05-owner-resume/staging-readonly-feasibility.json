@@ -1,0 +1,74 @@
+{
+  "capturedAtUtc": "2026-09-05T07:58:32.301Z",
+  "readOnly": true,
+  "branch": {
+    "id": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+    "name": "flagstone-p03a-staging-20260905",
+    "project_ref": "ctshxbykuemeqnofqcdh",
+    "is_default": false,
+    "persistent": false,
+    "status": "FUNCTIONS_DEPLOYED",
+    "created_at": "2026-09-05T07:11:13.650107+00:00",
+    "updated_at": "2026-09-05T07:11:13.650107+00:00",
+    "parent_project_ref": "kldlwszpfkdmsjrjhjym",
+    "with_data": false,
+    "preview_project_status": "ACTIVE_HEALTHY"
+  },
+  "getProjectResponse": {
+    "error": {
+      "name": "NotFoundException",
+      "message": "Project not found"
+    }
+  },
+  "edgeFunctions": {
+    "functions": [
+      {
+        "id": "eb061a5c-e4e7-4e4a-8a89-76dcca23b245",
+        "slug": "send-push-notification",
+        "name": "send-push-notification",
+        "status": "ACTIVE",
+        "version": 6,
+        "created_at": 1779994758786,
+        "updated_at": 1788006178364,
+        "verify_jwt": false,
+        "import_map": false,
+        "entrypoint_path": "file:///tmp/user_fn_ctshxbykuemeqnofqcdh_eb061a5c-e4e7-4e4a-8a89-76dcca23b245_6/source/index.ts",
+        "ezbr_sha256": "0434671ed6ad9f62e8e5a94a200f8caad3d2771e8cbb3a0053229874a1595be8"
+      },
+      {
+        "id": "9f774901-f397-428c-a3a4-17a5e2421828",
+        "slug": "notify-flag-status",
+        "name": "notify-flag-status",
+        "status": "ACTIVE",
+        "version": 8,
+        "created_at": 1780007669310,
+        "updated_at": 1780446106002,
+        "verify_jwt": false,
+        "import_map": false,
+        "entrypoint_path": "file:///tmp/user_fn_kldlwszpfkdmsjrjhjym_9f774901-f397-428c-a3a4-17a5e2421828_7/source/index.ts",
+        "ezbr_sha256": "633db2d2ae659ffc03d4758be2538253413c65c54a4f9b66ca8d3057c0ba7a0e"
+      },
+      {
+        "id": "9343d95a-6560-4a64-9a32-e6e89aaf8ee7",
+        "slug": "delete-account",
+        "name": "delete-account",
+        "status": "ACTIVE",
+        "version": 4,
+        "created_at": 1780111642936,
+        "updated_at": 1780164326432,
+        "verify_jwt": true,
+        "import_map": false,
+        "entrypoint_path": "file:///tmp/user_fn_kldlwszpfkdmsjrjhjym_9343d95a-6560-4a64-9a32-e6e89aaf8ee7_2/source/index.ts",
+        "ezbr_sha256": "9edfdaf21ee036632b47a10438f0d7e0d6b97f19c62b3f6cb57884dd68abdb34"
+      }
+    ]
+  },
+  "identityGate": "NOT_PASSED_CANONICAL_RECONCILIATION_AND_PRIOR_GATES_INCOMPLETE",
+  "mutations": "NONE",
+  "cleanup": {
+    "safe": false,
+    "deleted": false,
+    "required": true,
+    "reason": "Complete CODE/INT/STAGE acceptance and evidence conditions are not met; exact owner cleanup conditions prohibit early deletion."
+  }
+}

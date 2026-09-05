@@ -1,0 +1,132 @@
+{
+  "capturedAtUtc": "2026-09-05T08:19:44.167566+00:00",
+  "candidateSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "candidateTree": "857411dc733b93686d789a72e461856698bec814",
+  "afterHead": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "afterTree": "857411dc733b93686d789a72e461856698bec814",
+  "afterStatus": "",
+  "pinnedSourceDrift": [],
+  "appliedCount": 71,
+  "appliedChangedAgainstAcceptedPhase02": [],
+  "sevenPairs": [
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905073925_phase03a_effective_privileges.sql",
+      "sha256": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928",
+      "matchesManifest": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+      "sha256": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f",
+      "matchesManifest": true
+    }
+  ],
+  "sourceCallersAndTests": {
+    "src/lib/__tests__/admin.test.tsx": "58da4fa676c9998cc63908b0fdc0076e6e9e402fc320b1eab34548b0260504bb",
+    "src/lib/__tests__/comments.test.ts": "be30eec9a1ef55fc7880f9cf31acfd8ae565116d989da40a50cb086154fdbd6d",
+    "src/lib/__tests__/flags.supabase.test.ts": "6aadb585448e7b8874501874017438a5ac516f3464d4b3ddc0db11b456106c6f",
+    "src/lib/admin.ts": "06c6aab54324ab6eabb3a922aad738c4e85e2413b2c1c0a7f7dedf0f03724025",
+    "src/lib/comments.ts": "c3954c25b992b55a90890e140d29614c279c15b3618ffb21a7ca6715503de26f",
+    "src/lib/flags.ts": "1068ac17542cc9db7671a21af50b9e8b9c64e1e068cd0af3dfa5cc63e0bec39a",
+    "src/screens/LeaderboardScreen.tsx": "e63cc4fc6c9b550acf411fd4e0a0623b2ea83cd4aeec427be879a26e17e8a93c",
+    "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx": "7c2d8c35e8010753b8c00a018ef02bd0c1e4562246c6b11a04d0b5bfb7924e5e",
+    "src/types/database.ts": "4dd807e0f38b2166f27ee9166dc174d937b003ebba5925b4310583cbb2537683"
+  },
+  "managedDefaults": {
+    "liveRecordedCount": 48,
+    "localModeledCount": 36,
+    "liveOwnerGranteeEntriesExcludedLocally": 12,
+    "localClientServiceExactlyMatchesCapturedSubset": true,
+    "localManagedDefaultsUnchangedBeforeAfter": true,
+    "liveDefaultCountAllOwners": 144,
+    "executionRole": "postgres",
+    "executionRoleSuperuser": false,
+    "platformRoleMembership": false
+  },
+  "historicalBackups": {
+    "modeledCount": 7,
+    "allZeroExternalEffectiveGrants": true,
+    "sourceFixtureHasNoInsertStatements": true
+  },
+  "pgTapArchive": {
+    "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-1.3.4.tar.gz",
+    "sha256": "78822aa24ab5119f6b1f57de1a25223e6c4a31f4df6d3ab16ca2aadd1dbdea6c",
+    "matchesManifest": true
+  },
+  "receiptHashes": {
+    "qa-reports/phase03a/2026-09-05-owner-resume/deployed-server-dependencies.json": "0271cb80a9a47517cb2b2dd51dbbe13231b5ecbd6e9790fbedad43675a69883c",
+    "qa-reports/phase03a/2026-09-05-owner-resume/production-defaults-readonly.json": "eaab0242481a09c4d93acc2bc19ebc3375d740f5e5c58745e86070d8e5674e00",
+    "qa-reports/phase03a/2026-09-05-owner-resume/production-schema-roles.json": "f5cd8b2dd8d372a051a2a2c9aa61466e93110234d12d86b4f4b3e5223caa8913"
+  }
+}

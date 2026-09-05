@@ -1,0 +1,80 @@
+1..79
+ok 1 - owner content and legacy media/tag payload is writable
+ok 2 - authenticated cannot overwrite flags.id
+ok 3 - authenticated cannot overwrite flags.user_id
+ok 4 - authenticated cannot overwrite flags.lat
+ok 5 - authenticated cannot overwrite flags.lng
+ok 6 - authenticated cannot overwrite flags.created_at
+ok 7 - authenticated cannot overwrite flags.updated_at
+ok 8 - authenticated cannot overwrite flags.reopen_requests
+ok 9 - authenticated cannot overwrite flags.dispute_requests
+ok 10 - authenticated cannot overwrite flags.photo_object_key
+ok 11 - client cannot choose server flag ID
+ok 12 - client cannot backdate rate-limit input
+ok 13 - legacy owner photo insertion and returning succeeds
+ok 14 - legacy owner photo update survives narrowed columns
+ok 15 - legacy photo update persists
+ok 16 - client cannot reassign photo parent
+ok 17 - own vote payload and reward trigger succeed
+ok 18 - own vote is readable
+ok 19 - forged voter is refused by RLS
+ok 20 - own vote delete remains available
+ok 21 - verification payload uses server weight default
+ok 22 - verification weight remains server default
+ok 23 - client cannot forge verification weight
+ok 24 - unneeded verification DELETE is denied
+ok 25 - preference upsert preserves its own-row contract
+ok 26 - preference payload persists
+ok 27 - preference timestamp is not client writable
+ok 28 - push-token upsert submits the actual client conflict-key payload
+ok 29 - push-token conflict update succeeds after trigger EXECUTE revoke
+ok 30 - push-token conflict update persists
+ok 31 - another token owner cannot be selected
+ok 32 - authenticated feedback insertion and returning succeeds
+ok 33 - own feedback deletion remains available
+ok 34 - owner append-only edit history payload succeeds
+ok 35 - invoker edit-history view retains underlying safe columns
+ok 36 - invoker status-history view retains underlying safe columns
+ok 37 - edit-history byline column stays private
+ok 38 - status history is trigger-owned
+ok 39 - reward ledger is trigger-owned
+ok 40 - realtime writes must use the bounded RPC
+ok 41 - public user rows are Auth-trigger-owned
+ok 42 - direct application user DELETE is not a client route
+ok 43 - realtime RPC retains its owner-held sequence and write rights
+ok 44 - other client cannot enumerate token owner
+ok 45 - other token delete exposes no row
+ok 46 - preference RLS remains own-row
+ok 47 - deployed notification lookup works with column SELECT only
+ok 48 - notification service cannot read unneeded token fields
+ok 49 - deployed v4 account deletion can deattribute flags using its exact filter
+ok 50 - deployed deletion actually clears attribution
+ok 51 - trusted webhook verifier remains callable without exposing a secret
+ok 52 - service cannot enumerate flag content
+ok 53 - service cannot enumerate private profiles
+ok 54 - service cannot broadly delete flags
+ok 55 - service cannot inject feedback
+ok 56 - service cannot use client admin wrapper
+ok 57 - service cannot invoke Auth trigger directly
+ok 58 - anon cannot bypass RLS using TRUNCATE
+ok 59 - anon cannot create REFERENCES to application data
+ok 60 - anon cannot allocate reward IDs directly
+ok 61 - anon cannot overwrite log sequence
+ok 62 - authenticated cannot bypass RLS using TRUNCATE
+ok 63 - authenticated cannot create REFERENCES to application data
+ok 64 - authenticated cannot allocate reward IDs directly
+ok 65 - authenticated cannot overwrite log sequence
+ok 66 - service_role cannot bypass RLS using TRUNCATE
+ok 67 - service_role cannot create REFERENCES to application data
+ok 68 - service_role cannot allocate reward IDs directly
+ok 69 - service_role cannot overwrite log sequence
+ok 70 - guest cannot backdate report input to defeat emergency cap
+ok 71 - guest feedback remains write-only
+ok 72 - guest feedback UPDATE is unavailable
+ok 73 - unrelated token deletion had no effect
+ok 74 - local Auth-parent deletion executes FK actions without service child DELETE grants
+ok 75 - Auth cascade removes its public profile
+ok 76 - Auth cascade removes tokens without service child rights
+ok 77 - Auth cascade removes preferences without service child rights
+ok 78 - Auth cascade removes reward events without service child rights
+ok 79 - deattributed contribution survives account cascade

@@ -1,0 +1,12 @@
+{
+  "finding": "FDA-028",
+  "question": "Must an anonymous client keep its exhausted budget after clearing or replacing its session?",
+  "ownerAnswer": "Keep the budget across session resets; retain the architecture hold until a trusted mechanism is approved.",
+  "status": "ARCHITECTURE_HOLD_CONFIRMED_BY_OWNER",
+  "resettableSessionSubstitutionAuthorized": false,
+  "newTrustedIdentityMechanismApproved": false,
+  "limiterImplemented": false,
+  "stagingMutations": "NONE",
+  "productionAuthority": "NONE",
+  "phaseGate": "BLOCKED"
+}

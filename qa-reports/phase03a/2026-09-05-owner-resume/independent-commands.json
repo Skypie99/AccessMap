@@ -1,0 +1,29 @@
+[
+  {
+    "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "command": "/usr/bin/env -i PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin /usr/local/bin/node scripts/replay-migrations.mjs --with-next --local-only --phase03a --phase03a-pgtap-sql=/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-968eb53a33114e83042b3bdb0c664b5b80cf8bdf/sql/pgtap.sql --json > /Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-replay.stdout.json 2> /Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-replay.stderr.txt",
+    "exitCode": 0,
+    "stdoutRegularFile": true,
+    "sandboxMode": "scoped approved disposable Unix-socket-only PostgreSQL"
+  },
+  {
+    "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "command": "/usr/local/bin/node node_modules/jest/bin/jest.js --runTestsByPath scripts/__tests__/phase03aReplay.test.ts --runInBand --watchman=false --no-cache --ci --json --outputFile=/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser-jest.json > /Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser.stdout.txt 2> /Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser.stderr.txt",
+    "exitCode": 0
+  },
+  {
+    "cwd": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume",
+    "command": "/usr/local/bin/node /Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-inventory-check.mjs",
+    "exitCode": 0
+  },
+  {
+    "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "command": "/usr/local/bin/node scripts/check-schema-snapshot.mjs > /Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-schema-snapshot.stdout.txt 2> /Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-schema-snapshot.stderr.txt",
+    "exitCode": 0
+  },
+  {
+    "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "command": "git diff --check c794ba8544df2f128269eabf6d87c9ed07a8fd68..0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+    "exitCode": 0
+  }
+]
