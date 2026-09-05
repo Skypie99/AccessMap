@@ -77,7 +77,7 @@
     },
     {
       "file": "supabase/tests/phase03a-foundation.test.sql",
-      "sha256": "90312cabf153efa2a23e424cbeaa9110a9665dc9f92dbc3d222e4d6bc7f6b433",
+      "sha256": "b8c103de3394a9c59d93f56a9e742ac94e0eb4ce9b69e991db262dda6884be53",
       "plan": 113
     }
   ],

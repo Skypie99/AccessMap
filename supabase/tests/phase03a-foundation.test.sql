@@ -24,7 +24,13 @@ INSERT INTO public.flag_comments(id,flag_id,user_id,content) VALUES
 UPDATE public.flag_comments SET user_id=NULL WHERE id='50000000-0000-4000-8000-000000000002';
 UPDATE public.users SET display_name=CASE WHEN id='30000000-0000-4000-8000-000000000002' THEN 'Other' WHEN id='30000000-0000-4000-8000-000000000001' THEN 'Owner' ELSE 'Fixture' END,
  points=CASE WHEN id='30000000-0000-4000-8000-000000000002' THEN 200 WHEN id='30000000-0000-4000-8000-000000000001' THEN 100 ELSE 0 END,
- is_admin=(id='30000000-0000-4000-8000-000000000003');
+ is_admin=(id='30000000-0000-4000-8000-000000000003')
+-- Restrict setup to the exact synthetic accounts inserted above.
+WHERE id IN ('30000000-0000-4000-8000-000000000001',
+             '30000000-0000-4000-8000-000000000002',
+             '30000000-0000-4000-8000-000000000003')
+   OR id IN (SELECT ('30000000-0000-4000-8000-' || lpad(n::text,12,'0'))::uuid
+             FROM generate_series(10,34) n);
 
 SELECT ok((NOT EXISTS(SELECT 1 FROM pg_policy WHERE polrelid='public.flags'::regclass AND polcmd='*')), 'FDA009 no overlapping ALL flag policy');
 
