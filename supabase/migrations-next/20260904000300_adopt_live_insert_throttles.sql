@@ -119,9 +119,15 @@ SET search_path = public
 AS $$
 DECLARE
   flag_count INTEGER;
-  rate_limit INTEGER := 20; -- max flags per 24 hours
+  rate_limit INTEGER := 20;
 BEGIN
-  -- Count flags created by this user in the last 24 hours
+  -- Anon inserts (auth.uid() IS NULL) are rate-limited client-side via
+  -- AsyncStorage (src/lib/anonRateLimit.ts). No server-side per-user
+  -- limit is possible without IP or device ID (Jordan hard constraints).
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
   SELECT COUNT(*)
   INTO flag_count
   FROM public.flags

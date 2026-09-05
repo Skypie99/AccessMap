@@ -1,0 +1,47 @@
+{
+  "manifestVersion": 1,
+  "scope": "PHASE-02B rev2 disposable rollback rehearsal only",
+  "entries": [
+    {
+      "candidate": "20260904000000_adopt_private_admin_helper.sql",
+      "mode": "UNSAFE_BASELINE_RESTORE",
+      "expectedForwardChangedSections": ["schemas", "policies", "functions", "functionGrants"],
+      "expectedForwardCatalogSha256": "05b6389478403a216d8b85c4e24485f600505fb21617b54d216abdc44cbc5bb6",
+      "expectedCatalogRestored": true,
+      "reason": "Removes a production authorization helper and restores the older inline policy shape."
+    },
+    {
+      "candidate": "20260904000100_drop_duplicate_status_triggers.sql",
+      "mode": "UNSAFE_BASELINE_RESTORE",
+      "expectedForwardChangedSections": ["triggers"],
+      "expectedForwardCatalogSha256": "1479a2ebf05368fb3d051cfa7f726ebd6bca11fa7ba035a3f7f30e40855a6c48",
+      "expectedCatalogRestored": true,
+      "reason": "Recreates the double-points trigger defect."
+    },
+    {
+      "candidate": "20260904000200_adopt_d1sa_containment.sql",
+      "mode": "UNSAFE_BASELINE_RESTORE",
+      "expectedForwardChangedSections": ["policies", "functions", "functionGrants"],
+      "expectedForwardCatalogSha256": "3f973ad9de11a0899ee69fa68589edbfd77ab961b41e0cb3a12ae18b0b8eec26",
+      "expectedCatalogRestored": true,
+      "reason": "Reopens the stale-account and direct-call authorization boundaries."
+    },
+    {
+      "candidate": "20260904000300_adopt_live_insert_throttles.sql",
+      "mode": "UNSAFE_BASELINE_RESTORE",
+      "expectedForwardChangedSections": ["triggers", "functions", "functionGrants"],
+      "expectedForwardCatalogSha256": "783d585619e0477b5cfc68977f7958d2eb46bf995ae30f359e8d56a7b8fc4fde",
+      "expectedCatalogRestored": true,
+      "reason": "Removes every adopted server-side insert throttle."
+    },
+    {
+      "candidate": "20260904000400_adopt_execute_revokes.sql",
+      "mode": "NON_REVERSIBLE_SECURITY_REPAIR",
+      "expectedForwardChangedSections": ["functions", "functionGrants"],
+      "expectedForwardCatalogSha256": "890c21f044cea8da065c1d54d84283457937c32c79b6121650b496e79924a59a",
+      "expectedCatalogRestored": false,
+      "expectedRollbackRefusal": "ROLLBACK REFUSED: 20260904000400",
+      "reason": "Baseline restoration would republish a retired credential literal and re-open trigger-only SECURITY DEFINER functions."
+    }
+  ]
+}

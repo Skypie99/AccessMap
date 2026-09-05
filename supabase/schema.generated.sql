@@ -1,19 +1,10 @@
 -- GENERATED FILE — DO NOT EDIT BY HAND.
 --
--- Produced by: node scripts/replay-migrations.mjs --with-next --dump
--- Source: the 71 applied migrations plus supabase/migrations-next/,
---         replayed from zero onto a disposable Postgres.
---
--- This is a REFERENCE SNAPSHOT, not an apply script and not the
--- migration lineage. supabase/migrations/ remains the only authority on
--- what production ran; this file just shows where that lineage lands.
--- Privileges and owners are intentionally excluded (--no-privileges
--- --no-owner): grants are asserted by the contract manifests and the
--- replay comparison, not by a dump that would go stale silently.
---
--- Regenerate whenever supabase/migrations/ or supabase/migrations-next/
--- changes; scripts/check-schema-snapshot.mjs enforces that.
-
+-- Produced by: node scripts/replay-migrations.mjs --with-next --local-only --dump
+-- Source: 71 immutable applied migrations plus five forward candidates.
+-- This is a deterministic REFERENCE SNAPSHOT, not an apply script,
+-- migration history, or proof of current production state.
+-- Privileges and owners are excluded; compare.sql covers grants.
 --
 -- PostgreSQL database dump
 --
@@ -68,9 +59,9 @@ CREATE FUNCTION private.current_user_is_admin() RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO ''
     AS $$
-  select account.is_admin
-  from public.users as account
-  where account.id = (select auth.uid())
+select account.is_admin
+from public.users as account
+where account.id = (select auth.uid())
 $$;
 
 
@@ -147,9 +138,15 @@ CREATE FUNCTION public.check_flag_rate_limit() RETURNS trigger
     AS $$
 DECLARE
   flag_count INTEGER;
-  rate_limit INTEGER := 20; -- max flags per 24 hours
+  rate_limit INTEGER := 20;
 BEGIN
-  -- Count flags created by this user in the last 24 hours
+  -- Anon inserts (auth.uid() IS NULL) are rate-limited client-side via
+  -- AsyncStorage (src/lib/anonRateLimit.ts). No server-side per-user
+  -- limit is possible without IP or device ID (Jordan hard constraints).
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
   SELECT COUNT(*)
   INTO flag_count
   FROM public.flags
@@ -670,11 +667,22 @@ CREATE FUNCTION public.increment_dispute_request(p_flag_id uuid) RETURNS integer
 declare
   v_new_count integer;
 begin
+  if (select auth.uid()) is null
+     or not exists (
+       select 1
+       from public.users as account
+       where account.id = (select auth.uid())
+     )
+  then
+    raise exception 'Account is no longer active.' using errcode = 'P0001';
+  end if;
+
   update public.flags
     set dispute_requests = dispute_requests + 1
     where id = p_flag_id
-      and status in ('open', 'verified')   -- doubt targets live reports only
+      and status in ('open', 'verified')
     returning dispute_requests into v_new_count;
+
   return coalesce(v_new_count, 0);
 end;
 $$;
@@ -688,17 +696,27 @@ CREATE FUNCTION public.increment_reopen_request(p_flag_id uuid) RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-DECLARE
+declare
   v_new_count integer;
-BEGIN
-  UPDATE public.flags
-    SET reopen_requests = reopen_requests + 1
-    WHERE id = p_flag_id
-      AND status = 'resolved'
-    RETURNING reopen_requests INTO v_new_count;
+begin
+  if (select auth.uid()) is null
+     or not exists (
+       select 1
+       from public.users as account
+       where account.id = (select auth.uid())
+     )
+  then
+    raise exception 'Account is no longer active.' using errcode = 'P0001';
+  end if;
 
-  RETURN COALESCE(v_new_count, 0);
-END;
+  update public.flags
+    set reopen_requests = reopen_requests + 1
+    where id = p_flag_id
+      and status = 'resolved'
+    returning reopen_requests into v_new_count;
+
+  return coalesce(v_new_count, 0);
+end;
 $$;
 
 
@@ -731,30 +749,25 @@ $$;
 
 CREATE FUNCTION public.notify_flag_status_webhook() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'vault', 'net'
     AS $$
+DECLARE v_secret text; v_payload jsonb;
 BEGIN
-  -- Only fire when status actually changes
-  IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
+  SELECT decrypted_secret INTO v_secret FROM vault.decrypted_secrets
+    WHERE name = 'webhook_secret' LIMIT 1;
+  IF v_secret IS NULL THEN
+    RAISE WARNING '[notify_flag_status_webhook] vault secret missing - skipping';
     RETURN NEW;
   END IF;
-
+  v_payload := jsonb_build_object('type','UPDATE','table','flags','schema','public',
+    'record', row_to_json(NEW), 'old_record', row_to_json(OLD));
   PERFORM net.http_post(
-    url     := 'https://kldlwszpfkdmsjrjhjym.supabase.co/functions/v1/notify-flag-status',
-    headers := jsonb_build_object(
-      'Content-Type',     'application/json',
-      'X-Webhook-Secret', '5c7b5da066f1da8f6201c83efdcfa2a61f3c38d5327c81fc8b293bad713b4912'
-    ),
-    body := jsonb_build_object(
-      'type',       'UPDATE',
-      'table',      'flags',
-      'record',     to_jsonb(NEW),
-      'old_record', to_jsonb(OLD)
-    )::text
-  );
-
+    url := 'https://kldlwszpfkdmsjrjhjym.supabase.co/functions/v1/notify-flag-status',
+    body := v_payload, params := '{}'::jsonb,
+    headers := jsonb_build_object('Content-Type','application/json','X-Webhook-Secret', v_secret),
+    timeout_milliseconds := 5000);
   RETURN NEW;
-END;
-$$;
+END; $$;
 
 
 --
@@ -795,9 +808,9 @@ CREATE FUNCTION public.verify_webhook_secret(incoming text) RETURNS boolean
     LANGUAGE sql SECURITY DEFINER
     SET search_path TO 'public', 'vault'
     AS $$
-  select exists (
-    select 1 from vault.decrypted_secrets
-    where name = 'webhook_secret' and decrypted_secret = incoming
+  SELECT EXISTS (
+    SELECT 1 FROM vault.decrypted_secrets
+    WHERE name = 'webhook_secret' AND decrypted_secret = incoming
   );
 $$;
 
@@ -2098,5 +2111,3 @@ CREATE POLICY "users update own row" ON public.users FOR UPDATE TO authenticated
 --
 -- PostgreSQL database dump complete
 --
-
-

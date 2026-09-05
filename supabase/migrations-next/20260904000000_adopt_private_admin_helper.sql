@@ -31,9 +31,9 @@ stable
 security definer
 set search_path to ''
 as $function$
-  select account.is_admin
-  from public.users as account
-  where account.id = (select auth.uid())
+select account.is_admin
+from public.users as account
+where account.id = (select auth.uid())
 $function$;
 
 -- Least privilege: the helper reads another user's admin flag under definer

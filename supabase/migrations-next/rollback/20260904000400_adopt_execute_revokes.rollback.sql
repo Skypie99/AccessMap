@@ -1,8 +1,14 @@
--- Forward restoration for 20260904000400.
+-- INTENTIONALLY UNSUPPORTED ROLLBACK for 20260904000400.
 --
--- WARNING: this re-opens direct EXECUTE on two trigger-only SECURITY DEFINER
--- functions to PUBLIC and anon — the FDA-010 shape. There is no legitimate
--- reason to run it; it exists only so the rollback set is complete.
+-- A baseline-restoring rollback would have to republish a retired credential
+-- literal and re-open direct EXECUTE on trigger-only SECURITY DEFINER
+-- functions. Both outcomes are security regressions. This artifact fails
+-- closed. The rollback rehearsal expects this refusal and records the candidate
+-- as NON_REVERSIBLE_SECURITY_REPAIR, never as successfully rolled back.
+-- Recovery requires a separately reviewed compensating-forward migration.
 
-grant execute on function public.check_flag_rate_limit() to public, anon;
-grant execute on function public.notify_flag_status_webhook() to public, anon;
+do $$
+begin
+  raise exception 'ROLLBACK REFUSED: 20260904000400 is a non-reversible security repair';
+end
+$$;

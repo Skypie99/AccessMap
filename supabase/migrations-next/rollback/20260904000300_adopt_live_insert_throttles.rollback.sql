@@ -7,8 +7,8 @@
 -- authorization.
 
 drop trigger if exists enforce_global_anon_rate_limit on public.flags;
-drop trigger if exists enforce_flag_creation_rate_limit on public.flags;
 drop trigger if exists enforce_flag_rate_limit on public.flags;
 drop function if exists public.check_global_anon_rate_limit();
-drop function if exists public.check_flag_creation_rate_limit();
 drop function if exists public.check_flag_rate_limit();
+grant execute on function public.check_flag_creation_rate_limit()
+  to public, anon, authenticated;

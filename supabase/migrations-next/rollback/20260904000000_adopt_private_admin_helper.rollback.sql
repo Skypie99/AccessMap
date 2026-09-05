@@ -12,10 +12,10 @@ create policy "users update own row"
   to authenticated
   using ((select auth.uid()) = id)
   with check (
-    ((select auth.uid()) = id)
-    and (not (is_admin is distinct from
-      (select account.is_admin from public.users as account where account.id = (select auth.uid()))))
+    (select auth.uid()) = id
+    and is_admin is not distinct from
+      (select is_admin from public.users where id = (select auth.uid()))
   );
 
 drop function if exists private.current_user_is_admin();
--- The schema is left in place: dropping it could orphan objects added later.
+drop schema if exists private;

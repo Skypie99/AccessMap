@@ -95,8 +95,68 @@ create policy "flags status update by any authenticated"
     )
   );
 
--- D1S-A also revoked direct EXECUTE on trigger-only functions. Without these,
--- a database rebuilt from source is MORE permissive than production.
+-- D1S-A also replaced both account counters with the live-account boundary.
+-- Rev1 omitted these bodies and compared only policy/trigger aggregates.
+create or replace function public.increment_reopen_request(p_flag_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_new_count integer;
+begin
+  if (select auth.uid()) is null
+     or not exists (
+       select 1
+       from public.users as account
+       where account.id = (select auth.uid())
+     )
+  then
+    raise exception 'Account is no longer active.' using errcode = 'P0001';
+  end if;
+
+  update public.flags
+    set reopen_requests = reopen_requests + 1
+    where id = p_flag_id
+      and status = 'resolved'
+    returning reopen_requests into v_new_count;
+
+  return coalesce(v_new_count, 0);
+end;
+$$;
+
+create or replace function public.increment_dispute_request(p_flag_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_new_count integer;
+begin
+  if (select auth.uid()) is null
+     or not exists (
+       select 1
+       from public.users as account
+       where account.id = (select auth.uid())
+     )
+  then
+    raise exception 'Account is no longer active.' using errcode = 'P0001';
+  end if;
+
+  update public.flags
+    set dispute_requests = dispute_requests + 1
+    where id = p_flag_id
+      and status in ('open', 'verified')
+    returning dispute_requests into v_new_count;
+
+  return coalesce(v_new_count, 0);
+end;
+$$;
+
+-- D1S-A revoked direct EXECUTE on trigger-only and counter functions. Without
+-- these, a database rebuilt from source can be more permissive than production.
 revoke execute on function public.increment_reopen_request(uuid) from public, anon;
 revoke execute on function public.increment_dispute_request(uuid) from public, anon;
 revoke execute on function public.enforce_flag_status_transition()

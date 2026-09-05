@@ -1,3 +1,5 @@
+-- PGTAP_KIND: pgtap
+-- PGTAP_EXECUTION: authorized-staging-only
 -- Staging-only pgTAP proof for D1F4R3-FIX3. Run after an authorized migration
 -- apply against the real catalog. It proves on the persisted resolver that a
 -- two-item review writes exactly one privacy-audit row per FIRST resolution

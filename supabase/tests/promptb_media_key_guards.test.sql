@@ -1,3 +1,5 @@
+-- PGTAP_KIND: pgtap
+-- PGTAP_EXECUTION: canonical-replay-with-next
 -- Staging-only pgTAP proof for Prompt B's B2 minimum backend contract
 -- (20260830130000_promptb_media_key_read_contract.sql). Run after an
 -- authorized migration apply against the real catalog. Jest cannot establish

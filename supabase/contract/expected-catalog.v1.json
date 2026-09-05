@@ -1,10 +1,11 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
+  "status": "SUPERSEDED_BY_PHASE_02B_REV2",
   "capturedAtUtc": "2026-09-04T06:01:12Z",
-  "comparedAtUtc": "2026-09-05T02:40:00Z",
+  "comparedAtUtc": null,
   "project": "kldlwszpfkdmsjrjhjym",
-  "note": "Targets for scripts/replay-migrations.mjs. Both md5s are produced by supabase/replay/compare.sql, which is run VERBATIM against production (read-only) and against the disposable replay, so the two are comparable by construction rather than by transcription.",
+  "note": "Historical rev1 two-hash target retained for provenance only. Independent acceptance found it too narrow and its comparison timestamp unsupported. It must not be used as production-parity evidence; rev2 uses production-catalog-capture.v2.json plus the expanded comparator.",
   "appliedLineageOnly": {
     "description": "Replaying only the 71 applied migrations. Does NOT match production: the repository lineage is missing every out-of-band change and carries a duplicate status trigger the lineage never drops.",
     "policyCount": 47,
@@ -21,19 +22,20 @@
     ]
   },
   "withForwardCandidates": {
-    "description": "Replaying the 71 applied migrations plus the 5 inert forward-only candidates in supabase/migrations-next/. Reproduces production's authorization and trigger surface exactly.",
+    "description": "Rev1 historical claim, superseded and not accepted as proof.",
     "policyCount": 47,
     "policyPredicateMd5": "2cd803fa731ab9ef84c7f751222b9d10",
     "triggerCount": 25,
     "triggerMd5": "cefac00f38ec8ca9e63f0569b64d6272",
-    "matchesProduction": true
+    "matchesProduction": null
   },
   "production": {
     "policyCount": 47,
     "policyPredicateMd5": "2cd803fa731ab9ef84c7f751222b9d10",
     "triggerCount": 25,
     "triggerMd5": "cefac00f38ec8ca9e63f0569b64d6272",
-    "capturedReadOnly": true
+    "capturedReadOnly": true,
+    "captureProvenanceValidated": false
   },
   "acceptedResidualDeltas": [
     {

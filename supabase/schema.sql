@@ -1,7 +1,8 @@
 -- ============================================================================
 -- STATUS (PHASE-02B, 2026-09-04): REFERENCE ONLY — NOT THE GENERATED SNAPSHOT.
 --
--- The authoritative generated snapshot is now supabase/schema.generated.sql,
+-- The deterministic generated reference snapshot is
+-- supabase/schema.generated.sql,
 -- produced by replaying the 71 applied migrations plus supabase/migrations-next/
 -- onto a disposable Postgres and dumping the result:
 --     npm run db:snapshot
@@ -13,29 +14,34 @@
 -- src/lib/__tests__/pointsSqlParity.test.ts asserts on). It is NOT regenerated,
 -- is NOT the migration lineage, and must NOT be applied to anything.
 --
--- Authority order: supabase/migrations/ (what production ran)
---                  > supabase/schema.generated.sql (where that lineage lands)
---                  > this file (commentary and bootstrap reference).
+-- Authority is purpose-specific:
+--   * supabase/contract/migration-crosswalk.v1.json records the production
+--     ledger and pins all 71 applied migration files byte-for-byte.
+--   * supabase/migrations/ is that immutable applied source lineage.
+--   * supabase/migrations-next/ contains unapplied forward candidates only.
+--   * supabase/schema.generated.sql is the deterministic replay-plus-candidates
+--     reference snapshot. It is not proof of current production state.
+--   * a timestamped, read-only production catalog capture is the production
+--     comparison source; this hand-written file is commentary only.
 -- ============================================================================
 
--- AccessMap database schema.
--- Run in the Supabase SQL editor (or via `supabase db push`).
+-- AccessMap historical database schema commentary.
+-- NEVER run this file in the Supabase SQL editor or via `supabase db push`.
 --
 -- ⚠️  DO NOT RE-RUN THIS FILE WHOLESALE AGAINST THE LIVE PROJECT (QA 2026-08-19).
 --   Live has been hardened past this file by later migrations: re-running it
 --   would RESURRECT the broad `flags update own` policy (live uses the tighter
 --   owner-edit-while-open policy) and would bootstrap without the users.email
---   column-grant privacy hardening. It remains useful as reference and for
---   fresh-DB bootstrap FOLLOWED BY the migrations below — but "idempotent, safe
---   to re-run" is no longer true in effect against live. For the full live
---   schema, pg_dump is the source of truth.
+--   column-grant privacy hardening. It remains commentary only; it is not a
+--   fresh-database bootstrap. For current production truth, use a fresh,
+--   catalog-only rev2 comparator capture.
 --
 -- RECONCILIATION STATUS (2026-06-07):
 --   This file covers the original tables (users, flags, push_tokens) + the
 --   2026-06-03 security gate functions + the F8 reopen RPC.  Ten additional
 --   tables and several supporting functions are NOT yet represented here —
 --   they were applied via the migration files in supabase/migrations/.
---   For the full live schema, run pg_dump or consult:
+--   For historical source, consult:
 --     supabase/migrations/2026-05-23_data_layer_hardening.sql
 --     supabase/migrations/2026-05-23_feedback_table.sql
 --     supabase/migrations/2026-05-24_flag_context_tags.sql
@@ -51,7 +57,7 @@
 --     supabase/migrations/2026-05-30_admin_role.sql
 --     supabase/migrations/2026-05-30_flag_reopen_requests.sql
 --     supabase/migrations/2026-06-03_verify_webhook_secret.sql
---   Tables in live DB not yet in this file (use migrations as source of truth):
+--   Tables not represented in this commentary file (see migration lineage):
 --     comment_votes, feedback, flag_comments, flag_edit_history, flag_photos,
 --     flag_status_history, flag_verifications, notification_preferences,
 --     point_events, realtime_subscribe_log

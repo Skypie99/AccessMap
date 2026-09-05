@@ -100,6 +100,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Capture provenance is bound to the implementation parent commit.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -122,9 +125,11 @@ jobs:
       - name: Schema snapshot is current
         run: node scripts/check-schema-snapshot.mjs
 
-      # Applied lineage alone must still reproduce its RECORDED fingerprint. If
-      # someone edits an applied migration, this fails here rather than in a
-      # staging apply.
+      - name: Schema snapshot negative tamper rehearsal
+        run: node scripts/rehearse-schema-snapshot-guard.mjs
+
+      # Applied lineage must replay from zero. The crosswalk/Build-33 guard and
+      # snapshot stamp separately pin the exact immutable inputs.
       - name: Replay applied lineage from zero
         env:
           PG_BINDIR: /usr/lib/postgresql/17/bin
@@ -136,6 +141,16 @@ jobs:
         env:
           PG_BINDIR: /usr/lib/postgresql/17/bin
         run: node scripts/replay-migrations.mjs --with-next
+
+      - name: Rehearse declared rollback contracts
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/replay-migrations.mjs --with-next --local-only --verify-rollbacks
+
+      - name: Run MOD1R raising proof (19 cases)
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/run-mod1r-proof.mjs
 
   perf-budget:
     name: Performance Budget

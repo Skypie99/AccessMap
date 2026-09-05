@@ -1,3 +1,4 @@
+-- PGTAP_KIND: raising-proof
 -- ============================================================================
 -- MOD1R FIX1 Checkpoint A — executable proof against the FINAL effective
 -- policy set (00_baseline.sql must already have been run in this database).

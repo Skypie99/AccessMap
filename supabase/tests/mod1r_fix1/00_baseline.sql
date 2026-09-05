@@ -1,5 +1,6 @@
 -- ============================================================================
 -- MOD1R FIX1 — disposable PostgreSQL test harness (Checkpoint A proof).
+-- PGTAP_KIND: fixture
 -- TEST INFRASTRUCTURE ONLY. Never applied to any hosted project. Runs only
 -- inside the ephemeral postgres:16 service container started by
 -- .github/workflows/mod1r-fix1-rls-proof.yml.
@@ -187,15 +188,15 @@ create policy "flags insert own" on public.flags for insert to authenticated
 -- 4. The real migrations, applied verbatim, in shipped order.
 -- ---------------------------------------------------------------------------
 \i supabase/migrations/20260524211752_feedback_table.sql
-\i supabase/migrations/20260828040000_mod1_moderation_release_safety.sql
-\i supabase/migrations/20260828050000_mod1_admin_report_queue.sql
-\i supabase/migrations/20260828060000_mod1r_fix1_report_and_insert_authz.sql
+\i supabase/nonmanaged/proposed/20260828040000_mod1_moderation_release_safety.sql
+\i supabase/nonmanaged/proposed/20260828050000_mod1_admin_report_queue.sql
+\i supabase/nonmanaged/proposed/20260828060000_mod1r_fix1_report_and_insert_authz.sql
 -- MOD1R FIX2 (this proof was originally scoped to Checkpoint A only; these
 -- two extend it rather than stand up a second harness, per the FIX2 task's
 -- own instruction) — pending-close-state constraint, then the pre-action
 -- intent column + vocabulary + grant it depends on being able to close.
-\i supabase/migrations/20260828070000_mod1r_fix1_pending_close_state.sql
-\i supabase/migrations/20260828080000_mod1r_fix2_action_intent.sql
+\i supabase/nonmanaged/proposed/20260828070000_mod1r_fix1_pending_close_state.sql
+\i supabase/nonmanaged/proposed/20260828080000_mod1r_fix2_action_intent.sql
 
 -- Sanity: nothing above should have left RLS disabled.
 do $$

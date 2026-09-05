@@ -1,8 +1,0 @@
-# PHASE-02B replay stub. NOT the real pg_net.
-# Supabase hosts pg_net; there is no local build for it. The lineage calls
-# net.http_post(...) from one trigger, so this stub provides that signature and
-# performs no network I/O — which is what a disposable replay wants.
-comment = 'Flagstone replay stub for pg_net (no network I/O)'
-default_version = '1.0'
-relocatable = false
-schema = 'net'

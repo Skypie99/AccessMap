@@ -30,13 +30,13 @@
 do $$
 begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then
-    create role anon nologin noinherit;
+    create role anon nologin inherit;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'authenticated') then
-    create role authenticated nologin noinherit;
+    create role authenticated nologin inherit;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'service_role') then
-    create role service_role nologin noinherit bypassrls;
+    create role service_role nologin inherit bypassrls;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
     create role supabase_auth_admin nologin noinherit;
@@ -68,11 +68,25 @@ alter database flagstone_replay set search_path to "$user", public, extensions;
 create extension if not exists "uuid-ossp" with schema extensions;
 create extension if not exists pgcrypto with schema extensions;
 
--- [STUB] pg_net is Supabase-hosted with no local build. Rather than skip the
--- `create extension pg_net` line (which would mean the lineage no longer
--- replays verbatim), the harness installs a signature-compatible stub
--- extension from supabase/replay/stub-extensions/ and the migration runs
--- unmodified. The stub performs NO network I/O.
+-- [STUB] pg_net is Supabase-hosted with no local build. The harness replaces
+-- the lineage's single `CREATE EXTENSION IF NOT EXISTS pg_net` statement in a
+-- temp-only replay copy with a no-op, and provides the signatures here. This
+-- avoids writing into PostgreSQL's global extension directory. These functions
+-- perform NO network I/O; runtime pg_net behavior is out of scope.
+create or replace function net.http_post(
+  url text,
+  body jsonb default '{}'::jsonb,
+  params jsonb default '{}'::jsonb,
+  headers jsonb default '{}'::jsonb,
+  timeout_milliseconds integer default 5000
+) returns bigint language sql immutable as $$ select 0::bigint $$;
+
+create or replace function net.http_get(
+  url text,
+  params jsonb default '{}'::jsonb,
+  headers jsonb default '{}'::jsonb,
+  timeout_milliseconds integer default 5000
+) returns bigint language sql immutable as $$ select 0::bigint $$;
 
 -- [STUB] Supabase's webhook bridge. Same reasoning as above.
 create or replace function supabase_functions.http_request()
@@ -152,6 +166,12 @@ create or replace view vault.decrypted_secrets as
 -- ------------------------------------------------------------ realtime -------
 -- Supabase ships this publication; the D4 realtime migrations ALTER it.
 create schema if not exists realtime;
+create schema if not exists supabase_migrations;
+create table if not exists supabase_migrations.schema_migrations (
+  version text primary key,
+  statements text[],
+  name text
+);
 do $$
 begin
   if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
