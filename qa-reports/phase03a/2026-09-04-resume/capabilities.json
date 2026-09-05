@@ -1,0 +1,17 @@
+{
+  "phase": "03A",
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "target": "production-read-only",
+  "applicationRowsRead": false,
+  "mutationsPerformed": false,
+  "query": "select current_timestamp as captured_at_utc,\n current_user as execution_role,\n pg_has_role(current_user, 'supabase_admin', 'MEMBER') as may_manage_supabase_admin_defaults,\n (select rolsuper from pg_roles where rolname = current_user) as execution_role_superuser,\n coalesce((select jsonb_agg(jsonb_build_object('role',coalesce(r.rolname,'ALL'),'database',case when s.setdatabase=0 then 'ALL' else 'CURRENT_DATABASE' end,'setting_name',split_part(v,'=',1),'configured',true)) from pg_db_role_setting s left join pg_roles r on r.oid=s.setrole cross join lateral unnest(s.setconfig) v where (s.setdatabase=0 or s.setdatabase=(select oid from pg_database where datname=current_database())) and (s.setrole=0 or r.rolname='authenticator') and split_part(v,'=',1) in ('pgrst.db_pre_request','pgrst.db_schemas')), '[]'::jsonb) as postgrest_role_database_setting_presence;",
+  "result": [
+    {
+      "captured_at_utc": "2026-09-05 05:51:14.104358+00",
+      "execution_role": "postgres",
+      "may_manage_supabase_admin_defaults": false,
+      "execution_role_superuser": false,
+      "postgrest_role_database_setting_presence": []
+    }
+  ]
+}

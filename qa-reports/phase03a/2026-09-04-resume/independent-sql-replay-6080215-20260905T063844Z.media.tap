@@ -1,0 +1,26 @@
+1..25
+ok 1 - flags.photo_object_key is text
+ok 2 - flags.photo_object_key is nullable
+ok 3 - flags.photo_object_key has no default
+ok 4 - users.avatar_object_key is nullable
+ok 5 - flag_photos.object_key is nullable
+ok 6 - flag_photos.url keeps its existing NOT NULL constraint (DS-04)
+ok 7 - authenticated can SELECT users.avatar_object_key
+ok 8 - anon has no avatar_object_key column privilege
+ok 9 - authenticated still has no table-wide users SELECT (unchanged fence)
+ok 10 - authenticated still has no users.email column privilege (unchanged fence)
+ok 11 - flags guard: INSERT with a non-null photo_object_key is denied
+ok 12 - flags guard: key-omitted INSERT succeeds
+ok 13 - flags guard: UPDATE that sets photo_object_key is denied
+ok 14 - flags guard: the denied UPDATE left photo_object_key at zero row change
+ok 15 - flags guard: an ordinary non-key UPDATE still succeeds
+ok 16 - users guard: INSERT with a non-null avatar_object_key is denied
+ok 17 - users guard: key-omitted INSERT succeeds
+ok 18 - users guard: UPDATE that sets avatar_object_key is denied
+ok 19 - users guard: the denied UPDATE left avatar_object_key at zero row change
+ok 20 - users guard: an ordinary non-key UPDATE (e.g. display-name save) still succeeds
+ok 21 - flag_photos guard: INSERT with a non-null object_key is denied
+ok 22 - flag_photos guard: key-omitted legacy-URL INSERT succeeds
+ok 23 - flag_photos guard: UPDATE that sets object_key is denied
+ok 24 - flag_photos guard: the denied UPDATE left object_key at zero row change
+ok 25 - flag_photos guard: an ordinary non-key UPDATE still succeeds

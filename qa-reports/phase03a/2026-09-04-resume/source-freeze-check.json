@@ -1,0 +1,434 @@
+{
+  "capturedAtUtc": "2026-09-05T06:35:21.975Z",
+  "preCommitSha": "9469c43ee68360dc28a74f8d0dd9a6930a602d33",
+  "sourcePaths": [
+    "scripts/__tests__/phase03aReplay.test.ts",
+    "scripts/replay-migrations.mjs",
+    "scripts/replay-phase03a.mjs",
+    "src/lib/__tests__/admin.test.tsx",
+    "src/lib/__tests__/comments.test.ts",
+    "src/lib/__tests__/flags.supabase.test.ts",
+    "src/lib/admin.ts",
+    "src/lib/comments.ts",
+    "src/lib/flags.ts",
+    "src/screens/LeaderboardScreen.tsx",
+    "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+    "src/types/database.ts",
+    "supabase/contract/client-expectations.v1.json",
+    "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+    "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+    "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+    "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+    "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+    "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+    "supabase/migrations-next/phase03a/README.md",
+    "supabase/migrations-next/phase03a/candidate-contract.json",
+    "supabase/migrations-next/phase03a/catalog.sql",
+    "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+    "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+    "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+    "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+    "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+    "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+    "supabase/schema.generated.stamp.json",
+    "supabase/tests/phase03a-fixtures/baseline-extra.sql",
+    "supabase/tests/phase03a-foundation.test.sql"
+  ],
+  "sourceFiles": [
+    {
+      "file": "scripts/__tests__/phase03aReplay.test.ts",
+      "sha256": "c50b96c44a7e1eb5345c3b72fcd6ace2d2af177812deb8281110b64862e4eecf"
+    },
+    {
+      "file": "scripts/replay-migrations.mjs",
+      "sha256": "d6977ef26362c40d77922aebb6c45a0fe870c276e5b18746a4d3ada904728128"
+    },
+    {
+      "file": "scripts/replay-phase03a.mjs",
+      "sha256": "10248a11ebf9d2823290a5e6f38d86ed97e8de3a3999ec934ca70f73702a922b"
+    },
+    {
+      "file": "src/lib/__tests__/admin.test.tsx",
+      "sha256": "58da4fa676c9998cc63908b0fdc0076e6e9e402fc320b1eab34548b0260504bb"
+    },
+    {
+      "file": "src/lib/__tests__/comments.test.ts",
+      "sha256": "be30eec9a1ef55fc7880f9cf31acfd8ae565116d989da40a50cb086154fdbd6d"
+    },
+    {
+      "file": "src/lib/__tests__/flags.supabase.test.ts",
+      "sha256": "6aadb585448e7b8874501874017438a5ac516f3464d4b3ddc0db11b456106c6f"
+    },
+    {
+      "file": "src/lib/admin.ts",
+      "sha256": "06c6aab54324ab6eabb3a922aad738c4e85e2413b2c1c0a7f7dedf0f03724025"
+    },
+    {
+      "file": "src/lib/comments.ts",
+      "sha256": "c3954c25b992b55a90890e140d29614c279c15b3618ffb21a7ca6715503de26f"
+    },
+    {
+      "file": "src/lib/flags.ts",
+      "sha256": "1068ac17542cc9db7671a21af50b9e8b9c64e1e068cd0af3dfa5cc63e0bec39a"
+    },
+    {
+      "file": "src/screens/LeaderboardScreen.tsx",
+      "sha256": "e63cc4fc6c9b550acf411fd4e0a0623b2ea83cd4aeec427be879a26e17e8a93c"
+    },
+    {
+      "file": "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+      "sha256": "7c2d8c35e8010753b8c00a018ef02bd0c1e4562246c6b11a04d0b5bfb7924e5e"
+    },
+    {
+      "file": "src/types/database.ts",
+      "sha256": "4dd807e0f38b2166f27ee9166dc174d937b003ebba5925b4310583cbb2537683"
+    },
+    {
+      "file": "supabase/contract/client-expectations.v1.json",
+      "sha256": "1f8a91ae216f86e543f68907e09a951a118f8c21b4fab5769f6a581bd6b1c60e"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/README.md",
+      "sha256": "4dea4bf149bb6441a180e423b64ec1c72ab20c320feeb7eb665551d0761c6305"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/candidate-contract.json",
+      "sha256": "227a0cd7af48c64468fdf391c67ea1b973ace47d28f0039fa8b2c7caa0ba04c0"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/catalog.sql",
+      "sha256": "6a755828dff8f85da18255c514b8e8c8cf7efe8c6b030e45a3108c4a8f23b5fc"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9"
+    },
+    {
+      "file": "supabase/schema.generated.stamp.json",
+      "sha256": "d21889516f3fc72e6f587f01d681105cbcf8c85ec41f73591295b973e804b511"
+    },
+    {
+      "file": "supabase/tests/phase03a-fixtures/baseline-extra.sql",
+      "sha256": "da2ec08470d4236458e4aaf76a4b17e242baf5d278e980c8fa9e4559e51bebc0"
+    },
+    {
+      "file": "supabase/tests/phase03a-foundation.test.sql",
+      "sha256": "90312cabf153efa2a23e424cbeaa9110a9665dc9f92dbc3d222e4d6bc7f6b433"
+    }
+  ],
+  "migrationPairs": [
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
+      "bytes": 375
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
+      "bytes": 521
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
+      "bytes": 456
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
+      "bytes": 472
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
+      "bytes": 781
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
+      "bytes": 614
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b",
+      "bytes": 4622
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21",
+      "bytes": 1337
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
+      "bytes": 647
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
+      "bytes": 1882
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
+      "bytes": 2075
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
+      "bytes": 14359
+    }
+  ],
+  "packageHashes": {
+    "package.json": "c14abcbfd9d53a8c603d63e1b1525323fed2e8d355864517c2c6be3f7827db04",
+    "package-lock.json": "458e6ced614196daa7e4d30220a3e508570d4a479899f70cdd5bbbc3124cb24a"
+  },
+  "tests": {
+    "baseline": {
+      "numFailedTestSuites": 13,
+      "numFailedTests": 22,
+      "numPassedTestSuites": 271,
+      "numPassedTests": 4166,
+      "numPendingTestSuites": 0,
+      "numPendingTests": 0,
+      "numRuntimeErrorTestSuites": 0,
+      "numTodoTests": 32,
+      "numTotalTestSuites": 284,
+      "numTotalTests": 4220
+    },
+    "final": {
+      "numFailedTestSuites": 12,
+      "numFailedTests": 14,
+      "numPassedTestSuites": 273,
+      "numPassedTests": 4204,
+      "numPendingTestSuites": 0,
+      "numPendingTests": 0,
+      "numRuntimeErrorTestSuites": 0,
+      "numTodoTests": 32,
+      "numTotalTestSuites": 285,
+      "numTotalTests": 4250
+    },
+    "introducedFailures": [],
+    "noLongerFailing": [
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live checks every URL and fails if any domain serves the wrong source",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:882:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      },
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live FAILs on a malformed live artifact",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:856:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      },
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live FAILs on a mismatched tree or version even when the commit matches",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:846:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      },
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live FAILs with EXPECTED/OBSERVED when the live SHA is stale",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:834:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      },
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live legacy + --require-release-meta fails clearly when the endpoint does not exist",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:795:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      },
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live legacy Build 33: makes NO network request and reports the immutable receipt honestly",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:781:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      },
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live PASSes when the live artifact matches, using cache-busting and no-cache headers",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:815:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      },
+      {
+        "file": "scripts/__tests__/releaseTools.test.ts",
+        "name": "release:web:verify-live times out clearly instead of hanging",
+        "output": [
+          "Error: listen EPERM: operation not permitted 127.0.0.1\n    at Server.setupListenHandle [as _listen2] (node:net:1986:21)\n    at listenInCluster (node:net:2065:12)\n    at node:net:2274:7\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)",
+          "Error: thrown: \"Exceeded timeout of 15000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at it (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:871:3)\n    at _dispatchDescribe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:91:26)\n    at describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/index.js:55:5)\n    at Object.describe (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/scripts/__tests__/releaseTools.test.ts:772:1)\n    at Runtime._execModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1439:24)\n    at Runtime._loadModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:1022:12)\n    at Runtime.requireModule (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-runtime/build/index.js:882:12)"
+        ]
+      }
+    ],
+    "remainingFailures": [
+      {
+        "file": "src/__tests__/dismissalStandard.guard.test.ts",
+        "name": "the dismissal standard C · every surface is still reduced-motion gated",
+        "output": [
+          "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 6\n\n- Array []\n+ Array [\n+   \"components/FlagDetailModal.tsx:1436 → animationType=modalAnimationType\",\n+   \"components/ui/Sheet.tsx:396 → animationType=modalAnimationType\","
+        ]
+      },
+      {
+        "file": "src/__tests__/dismissalStandard.guard.test.ts",
+        "name": "the dismissal standard J · focus return is wired end to end, and nothing else claims onDismiss",
+        "output": [
+          "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 6\n\n- Array []\n+ Array [\n+   \"screens/ReportFlagModal.tsx:901 → Modal onDismiss=() => { pullRef.current?.resetAfterDismiss(); onDismiss?.(); }, expected the forwarded prop\",\n+   \"screens/LegendModal.tsx:77 → Modal onDismiss=() => { pullRef.current?.resetAfterDismiss(); onDismiss?.(); }, expected the forwarded prop\","
+        ]
+      },
+      {
+        "file": "src/__tests__/focusOnOpen.guard.test.ts",
+        "name": "focus-in standard — every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface",
+        "output": [
+          "Error: ALLOWED entry for components/AddressSearchModal.tsx (marker aria-label=\"Search by address\") matched 0 live surfaces — the exemption is stale. Fix or remove it.\nReason it existed: The autoFocus search input takes first responder on present — the OS moves SR focus with the keyboard. A title-yank 150ms later would FIGHT the input focus this surface exists for.\n    at _loop (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/src/__tests__/focusOnOpen.guard.test.ts:176:15)\n    at Object._loop (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/src/__tests__/focusOnOpen.guard.test.ts:172:28)\n    at Promise.then.completed (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)"
+        ]
+      },
+      {
+        "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+        "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets",
+        "output": [
+          "Error: expect(received).toMatch(expected)\n\nExpected pattern: /accessibilityLabel=\"Dismiss empty heat map notice\"/\nReceived string:  \"import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';\nimport {\n  AccessibilityInfo,\n  ActivityIndicator,\n  Alert,\n  InteractionManager,"
+        ]
+      },
+      {
+        "file": "src/__tests__/keyboardClass.guard.test.ts",
+        "name": "THE KEYBOARD CLASS — every input-hosting surface carries a mechanism Recipe D — every delegate is a real, live consumer (the list drains)",
+        "output": [
+          "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 0\n+ Received  + 3\n\n  Array [\n+   \"components/AddressSearchModal.tsx\",\n    \"components/FeedbackModal.tsx\",\n    \"components/FilterPresetsModal.tsx\","
+        ]
+      },
+      {
+        "file": "src/__tests__/privacy.guard.test.ts",
+        "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim",
+        "output": [
+          "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -27,11 +27,11 @@\n      \"Notifications.\",\n      \"If you turn them on, I store a push token so the app can notify you about your reports. Turn them off and it stops.\",\n    ],"
+        ]
+      },
+      {
+        "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+        "name": "FV-1 — focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input",
+        "output": [
+          "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"marginTop: insets.top + spacing.sm\"\nReceived string:    \"import React, { useEffect, useRef, useState } from 'react';\nimport {\n  ActivityIndicator,\n  Platform,\n  Pressable,\n  ScrollView,"
+        ]
+      },
+      {
+        "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+        "name": "BP11 / T3 — tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim",
+        "output": [
+          "Error: expect(received).not.toMatch(expected)\n\nExpected pattern: not /backgroundColor/\nReceived string:      \"import React from 'react';\nimport { StyleSheet, View } from 'react-native';\nimport { PlatformPressable } from '@react-navigation/elements';\nimport { type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';\nimport { hapticSelection } from '@/lib/haptics';\nimport { decorativeProps } from '@/lib/accessibility';"
+        ]
+      },
+      {
+        "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+        "name": "T8 — one spoken voice (source contract) each triage action names its flag (category + conditional distance)",
+        "output": [
+          "Error: expect(received).toMatch(expected)\n\nExpected pattern: /Verify this flag — \\$\\{actionSubject\\}/\nReceived string:  \"import React, { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';\nimport {\n  AccessibilityInfo,\n  ActivityIndicator,\n  Animated,\n  Image,"
+        ]
+      },
+      {
+        "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+        "name": "map-chrome budget — the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8",
+        "output": [
+          "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + CALLOUT_CHROME_MARGIN}\"\nReceived string:    \"import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';\nimport {\n  AccessibilityInfo,\n  ActivityIndicator,\n  Alert,\n  InteractionManager,"
+        ]
+      },
+      {
+        "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+        "name": "the control now lives in the ⋯ tool sheet VoiceOver order: search, then the circles, then the sheet rows",
+        "output": [
+          "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 52688\nReceived:   -1\n    at Object.toBeGreaterThan (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/src/screens/__tests__/tasksHeaderReclaim.guard.test.ts:110:18)\n    at Promise.then.completed (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/run.js:316:40)"
+        ]
+      },
+      {
+        "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+        "name": "TaskCard — T8: each action names its flag with a location, the label carries category THEN distance",
+        "output": [
+          "Error: Unable to find an element with accessibility label: /^Verify this flag — Blocked path, .+/\n\n<View\n  accessible={false}\n>\n  <View>\n    <View\n      pointerEvents=\"none\"\n    >"
+        ]
+      },
+      {
+        "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+        "name": "TaskCard — T8: each action names its flag with no location, action labels are category-only (no distance)",
+        "output": [
+          "Error: Unable to find an element with accessibility label: Verify this flag — Blocked path\n\n<View\n  accessible={false}\n>\n  <View>\n    <View\n      pointerEvents=\"none\"\n    >"
+        ]
+      },
+      {
+        "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+        "name": "Wave 2 — expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry",
+        "output": [
+          "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"<Modal aria-label={`Flag details:\"\nReceived string:    \"import React, { useEffect, useRef, useState } from 'react';\nimport {\n  Animated,\n  AccessibilityInfo,\n  ActivityIndicator,\n  Alert,"
+        ]
+      }
+    ],
+    "fullSuitePass": false,
+    "baselineReconciled": true,
+    "baselineEnvironmentNote": "Eight releaseTools failures in the initial sandbox run were loopback EPERM; an elevated focused rerun passed 52/52. Final full run uses that approved local socket permission."
+  },
+  "protectedPathsUnchanged": [
+    "supabase/migrations",
+    "supabase/migrations-applied",
+    "supabase/schema.generated.sql",
+    "supabase/replay",
+    "package.json",
+    "package-lock.json",
+    "qa-reports"
+  ]
+}

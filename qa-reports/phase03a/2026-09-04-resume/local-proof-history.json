@@ -1,0 +1,134 @@
+{
+  "attempts": [
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/local-replay-attempt1.json",
+      "sha256": "5071fb406e0ecdd70ccff747394640db07cdd938f020fe8751dcdfafd680a89d",
+      "status": "ERROR",
+      "failed": [
+        "psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/phase03a-foundation.test.sql:22: ERROR:  null value in column \"user_id\" of relation \"point_events\" violates not-null constraint",
+        "DETAIL:  Failing row contains (5, null, comment_added, 1, 40000000-0000-4000-8000-000000000001, 2026-09-05 06:13:12.316857+00).",
+        "CONTEXT:  SQL statement \"INSERT INTO public.point_events (user_id, event_type, delta, flag_id)",
+        "    VALUES (NEW.user_id, 'comment_added', 1, NEW.flag_id)\"",
+        "PL/pgSQL function handle_comment_added() line 7 at SQL statement"
+      ]
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/local-replay-attempt2.json",
+      "sha256": "9ae207955b1fd40cd80fa1b251da80432c2d5f8bda6912099141667bb4276554",
+      "status": "ERROR",
+      "failed": [
+        "Phase03A local proof failed; see phase03a evidence"
+      ],
+      "suites": [
+        {
+          "file": "supabase/tests/promptb_media_key_guards.test.sql",
+          "sha256": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009",
+          "bailout": 0,
+          "executed": 25,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 25,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        },
+        {
+          "file": "supabase/tests/phase03a-foundation.test.sql",
+          "sha256": "4505b67287e87e38eafe19af0a42fcc0f59a8e256b484ea4d2b5e25cc1c43e8d",
+          "bailout": 0,
+          "executed": 108,
+          "failed": 3,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 108,
+          "skipped": 0,
+          "todo": 0,
+          "passed": false
+        }
+      ],
+      "restorationExact": false,
+      "reapplyDeterministic": true
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/local-replay-attempt3.json",
+      "sha256": "a976fd721afa40845d3f4a9fc8e15d542b7e5205b3e6dbdcaa9330d4e1c820a1",
+      "status": "LOCAL_REPLAY_ONLY",
+      "failed": null,
+      "suites": [
+        {
+          "file": "supabase/tests/promptb_media_key_guards.test.sql",
+          "sha256": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009",
+          "bailout": 0,
+          "executed": 25,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 25,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        },
+        {
+          "file": "supabase/tests/phase03a-foundation.test.sql",
+          "sha256": "0637974aa7e6a4fa0b5c2ebd69e0be06a7f6ac72d47e1a64f4f57d52fed9aa73",
+          "bailout": 0,
+          "executed": 108,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 108,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        }
+      ],
+      "restorationExact": true,
+      "reapplyDeterministic": true
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/local-replay-final.json",
+      "sha256": "b2adfb8bd31b0794f0b77536f428c709e960f5441a7e3d1614fb6f57cee8d801",
+      "status": "LOCAL_REPLAY_ONLY",
+      "failed": null,
+      "suites": [
+        {
+          "file": "supabase/tests/promptb_media_key_guards.test.sql",
+          "sha256": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009",
+          "bailout": 0,
+          "executed": 25,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 25,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        },
+        {
+          "file": "supabase/tests/phase03a-foundation.test.sql",
+          "sha256": "90312cabf153efa2a23e424cbeaa9110a9665dc9f92dbc3d222e4d6bc7f6b433",
+          "bailout": 0,
+          "executed": 113,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 113,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        }
+      ],
+      "restorationExact": true,
+      "reapplyDeterministic": true
+    }
+  ],
+  "corrections": [
+    "Attempt 1 stopped at a synthetic null-author comment fixture because its points event required user_id. Insert the synthetic comment with its valid author first, then model deattribution.",
+    "Attempt 2 executed 25 media and 108 Phase03A assertions; three fixture failures came from absent synthetic display names and an invalid owner-folder photo URL. Corrected fixture data only.",
+    "Attempt 2 restoration exposed local baseline ACL/default omissions outside comparator-v3 scope. Added the hashed local-only baseline supplement and exact equality checks against all captured missing grants, including service defaults. Historical/accepted SQL and receipts unchanged.",
+    "Attempt 3 passed 25+108 and exact restoration/reapply. Five extra preservation assertions produced final 25+113 passing assertions. Earlier failures remain recorded.",
+    "Independent review of 6080215 found a users seed UPDATE needed restriction to synthetic IDs before reuse on populated staging. Final candidate scopes it and repins the suite hash; app and migration SQL unchanged."
+  ],
+  "expectedWarning": "[notify_flag_status_webhook] vault secret missing - skipping: expected local stub, no real secret read and no webhook sent."
+}

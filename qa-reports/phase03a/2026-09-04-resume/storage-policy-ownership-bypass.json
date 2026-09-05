@@ -1,0 +1,16 @@
+{
+  "phase": "03A",
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "target": "production-read-only",
+  "applicationRowsRead": false,
+  "mutationsPerformed": false,
+  "query": "WITH cfg AS (SELECT nullif(current_setting('supautils.policy_grants', true), '')::jsonb AS grants), entries AS (SELECT jsonb_array_elements_text(coalesce(grants -> current_user, '[]'::jsonb)) AS relation_name FROM cfg) SELECT current_timestamp as captured_at_utc, current_user AS execution_role, EXISTS (SELECT 1 FROM pg_settings WHERE name='supautils.policy_grants' AND context='sighup' AND vartype='string') AS policy_grants_registered, EXISTS (SELECT 1 FROM entries WHERE to_regclass(relation_name)=to_regclass('storage.objects')) AS current_role_storage_objects_policy_grant;",
+  "result": [
+    {
+      "captured_at_utc": "2026-09-05 06:08:21.704429+00",
+      "execution_role": "postgres",
+      "policy_grants_registered": true,
+      "current_role_storage_objects_policy_grant": true
+    }
+  ]
+}

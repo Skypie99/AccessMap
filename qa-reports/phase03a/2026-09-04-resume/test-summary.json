@@ -1,0 +1,674 @@
+{
+  "source": {
+    "sha": "6a82b8212a2d0d3de96525d98b5824b4eb7121fb",
+    "tree": "d3b750fce6ae489f793b88867f1edeca23f5c9d4",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "clean": true,
+    "capturedAtUtc": "2026-09-05T06:51:31.354Z",
+    "acceptance": "LOCAL_PARTIAL_CANDIDATE_NOT_ACCEPTED",
+    "priorSource": "6080215c409de9be67cc0c6f066f8567a2722fed",
+    "deltaFiles": [
+      "supabase/migrations-next/phase03a/candidate-contract.json",
+      "supabase/tests/phase03a-foundation.test.sql"
+    ]
+  },
+  "sourceAtExecution": "Jest ran on the composed files that became source commit 6080215; source-freeze-check.json binds those bytes. Later fixture scoping affects only SQL test and its manifest hash. The independent final SQL replay has its own clean source binding.",
+  "command": {
+    "program": "node",
+    "args": [
+      "node_modules/jest/bin/jest.js",
+      "--ci",
+      "--maxWorkers=3",
+      "--watchman=false",
+      "--json",
+      "--outputFile=/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest-results.json"
+    ],
+    "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "startedAtUtc": "2026-09-05T06:29:16.927Z",
+    "finishedAtUtc": "2026-09-05T06:29:41.961Z",
+    "exitCode": 1
+  },
+  "counts": {
+    "numFailedTestSuites": 12,
+    "numFailedTests": 14,
+    "numPassedTestSuites": 273,
+    "numPassedTests": 4204,
+    "numPendingTestSuites": 0,
+    "numPendingTests": 0,
+    "numRuntimeErrorTestSuites": 0,
+    "numTodoTests": 32,
+    "numTotalTestSuites": 285,
+    "numTotalTests": 4250
+  },
+  "changedSuites": [
+    {
+      "file": "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+      "total": 7,
+      "failed": 0,
+      "assertions": [
+        {
+          "name": "keeps the loaded leaderboard visible when the caller-rank request fails",
+          "status": "passed"
+        },
+        {
+          "name": "SW-44 — anonymized contributors never render the monogram \"ME\"",
+          "status": "passed"
+        },
+        {
+          "name": "SW-44 — anonymized contributors still carry the \"Member\" label, which was correct all along",
+          "status": "passed"
+        },
+        {
+          "name": "SW-44 — anonymized contributors are still announced correctly to a screen reader",
+          "status": "passed"
+        },
+        {
+          "name": "SW-44 — named contributors get real initials from their own name",
+          "status": "passed"
+        },
+        {
+          "name": "SW-44 — named contributors go through getInitials(), so an emoji name is not cut in half",
+          "status": "passed"
+        },
+        {
+          "name": "SW-44 — named contributors the signed-in user is still marked as themselves",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "file": "src/lib/__tests__/admin.test.tsx",
+      "total": 13,
+      "failed": 0,
+      "assertions": [
+        {
+          "name": "useIsAdmin is true only when the caller-scoped RPC authorizes admin actions",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin is false for a caller without admin authority",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin degrades to false and warns without backend error text when the RPC is refused",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin is false when nobody is signed in, without querying",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin fails closed for a non-boolean RPC result: null",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin fails closed for a non-boolean RPC result: undefined",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin fails closed for a non-boolean RPC result: \"true\"",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin fails closed for a non-boolean RPC result: 1",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin fails closed for a non-boolean RPC result: {\"is_admin\": true}",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin warns and fails closed when the RPC is absent, without a users fallback",
+          "status": "passed"
+        },
+        {
+          "name": "useIsAdmin warns and fails closed when the authorization request throws",
+          "status": "passed"
+        },
+        {
+          "name": "the Admin tab registration registers the Admin screen ONLY under a strict isAdmin === true",
+          "status": "passed"
+        },
+        {
+          "name": "the Admin tab registration has exactly one registration site for the Admin screen",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "file": "scripts/__tests__/phase03aReplay.test.ts",
+      "total": 9,
+      "failed": 0,
+      "assertions": [
+        {
+          "name": "Phase03A genuine TAP acceptance accepts an executed exact nonzero plan",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects failed assertion rather than claiming database proof",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects missing plan rather than claiming database proof",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects count mismatch rather than claiming database proof",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects wrong expected plan rather than claiming database proof",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects bailout after complete count rather than claiming database proof",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects skip all rather than claiming database proof",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects skipped assertion rather than claiming database proof",
+          "status": "passed"
+        },
+        {
+          "name": "Phase03A genuine TAP acceptance rejects TODO assertion rather than claiming database proof",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "file": "src/lib/__tests__/comments.test.ts",
+      "total": 37,
+      "failed": 0,
+      "assertions": [
+        {
+          "name": "MAX_COMMENT_LENGTH is 500",
+          "status": "passed"
+        },
+        {
+          "name": "MAX_COMMENTS is 200",
+          "status": "passed"
+        },
+        {
+          "name": "listComments returns an empty array when there are no comments",
+          "status": "passed"
+        },
+        {
+          "name": "listComments filters by flag_id and orders by created_at (newest first)",
+          "status": "passed"
+        },
+        {
+          "name": "listComments caps the fetch at MAX_COMMENTS (200) rows",
+          "status": "passed"
+        },
+        {
+          "name": "listComments hydrates another author through the comment-scoped public projection",
+          "status": "passed"
+        },
+        {
+          "name": "listComments preserves a null display name for a deleted author",
+          "status": "passed"
+        },
+        {
+          "name": "listComments throws CommentsTableNotReadyError on 42P01 error code",
+          "status": "passed"
+        },
+        {
+          "name": "listComments throws a plain Error on other Supabase errors",
+          "status": "passed"
+        },
+        {
+          "name": "addComment rejects with an error when content is empty",
+          "status": "passed"
+        },
+        {
+          "name": "addComment rejects when content exceeds MAX_COMMENT_LENGTH",
+          "status": "passed"
+        },
+        {
+          "name": "addComment inserts and returns the flattened comment on success",
+          "status": "passed"
+        },
+        {
+          "name": "addComment trims whitespace before inserting",
+          "status": "passed"
+        },
+        {
+          "name": "addComment accepts content exactly at MAX_COMMENT_LENGTH",
+          "status": "passed"
+        },
+        {
+          "name": "deleteComment calls delete().eq(id) and resolves on success",
+          "status": "passed"
+        },
+        {
+          "name": "deleteComment throws on Supabase error",
+          "status": "passed"
+        },
+        {
+          "name": "B-7 — PGRST201 embed guard COMMENT_SELECT names the direct FK, never a bare users( embed",
+          "status": "passed"
+        },
+        {
+          "name": "B-7 — PGRST201 embed guard listComments reads only comment columns, without a users embed",
+          "status": "passed"
+        },
+        {
+          "name": "B-7 — PGRST201 embed guard addComment's own-author returning-clause retains the disambiguated embed",
+          "status": "passed"
+        },
+        {
+          "name": "B-7 — PGRST201 embed guard a PGRST201 embed failure is NOT misread as a missing table",
+          "status": "passed"
+        },
+        {
+          "name": "B-7 — PGRST201 embed guard a PGRST200 body containing \"does not exist\" is still not a missing table",
+          "status": "passed"
+        },
+        {
+          "name": "B-7 — PGRST201 embed guard a genuine 42P01 is still reported as a missing table",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds returns [] and never touches the network for an empty id list",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds hydrates display_name through the comment-scoped projection",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds a comment whose author account is gone flattens to a null display_name",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds ids with no surviving row are simply absent — not an error",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds asks about EVERY id when the list exceeds one chunk",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds concatenates rows across chunks",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds surfaces a missing table as CommentsTableNotReadyError",
+          "status": "passed"
+        },
+        {
+          "name": "fetchCommentsByIds surfaces any other error as a thrown Error",
+          "status": "passed"
+        },
+        {
+          "name": "comment author projection failures and bounds surfaces profile RPC 42501 without querying users or calling the author anonymous",
+          "status": "passed"
+        },
+        {
+          "name": "comment author projection failures and bounds surfaces profile RPC PGRST202 without querying users or calling the author anonymous",
+          "status": "passed"
+        },
+        {
+          "name": "comment author projection failures and bounds rejects an incomplete comment projection: null",
+          "status": "passed"
+        },
+        {
+          "name": "comment author projection failures and bounds rejects an incomplete comment projection: []",
+          "status": "passed"
+        },
+        {
+          "name": "comment author projection failures and bounds rejects an incomplete comment projection: [[Object]]",
+          "status": "passed"
+        },
+        {
+          "name": "comment author projection failures and bounds keeps Unhide fetch failures distinct from missing comments",
+          "status": "passed"
+        },
+        {
+          "name": "comment author projection failures and bounds hydrates the complete 200-comment page using comment IDs only",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "file": "src/lib/__tests__/flags.supabase.test.ts",
+      "total": 40,
+      "failed": 0,
+      "assertions": [
+        {
+          "name": "listFlags returns rows from the DB on success",
+          "status": "passed"
+        },
+        {
+          "name": "listFlags returns [] when data is null (Supabase null-data edge case)",
+          "status": "passed"
+        },
+        {
+          "name": "listFlags throws when Supabase returns an error",
+          "status": "passed"
+        },
+        {
+          "name": "listFlags accepts a custom statuses array",
+          "status": "passed"
+        },
+        {
+          "name": "listFlagsByUser returns all rows belonging to the user",
+          "status": "passed"
+        },
+        {
+          "name": "listFlagsByUser returns [] when the user has no flags",
+          "status": "passed"
+        },
+        {
+          "name": "listFlagsByUser returns [] when data is null",
+          "status": "passed"
+        },
+        {
+          "name": "listFlagsByUser throws on Supabase error",
+          "status": "passed"
+        },
+        {
+          "name": "updateFlagStatus returns the updated row on success",
+          "status": "passed"
+        },
+        {
+          "name": "updateFlagStatus throws when Supabase returns an error",
+          "status": "passed"
+        },
+        {
+          "name": "updateFlagStatus LOCKING (F53): throws FlagStatusConflictError when the CAS matches no row",
+          "status": "passed"
+        },
+        {
+          "name": "updateFlagStatus LOCKING (F53): the update is actually filtered by the expected current status",
+          "status": "passed"
+        },
+        {
+          "name": "updateFlagStatus LOCKING (F53): throws the conflict for a deleted flag (no raw PGRST116)",
+          "status": "passed"
+        },
+        {
+          "name": "deleteFlag resolves without throwing on success",
+          "status": "passed"
+        },
+        {
+          "name": "deleteFlag throws when Supabase returns an error",
+          "status": "passed"
+        },
+        {
+          "name": "fetchFlagById returns the flag row when found",
+          "status": "passed"
+        },
+        {
+          "name": "fetchFlagById returns null when the flag does not exist (maybeSingle returns null data)",
+          "status": "passed"
+        },
+        {
+          "name": "fetchFlagById throws on a Supabase error",
+          "status": "passed"
+        },
+        {
+          "name": "fetchFlagsByIds returns [] immediately for an empty ids array (no round-trip)",
+          "status": "passed"
+        },
+        {
+          "name": "fetchFlagsByIds returns matching rows for a non-empty ids array",
+          "status": "passed"
+        },
+        {
+          "name": "fetchFlagsByIds returns [] when data is null",
+          "status": "passed"
+        },
+        {
+          "name": "fetchFlagsByIds throws on Supabase error",
+          "status": "passed"
+        },
+        {
+          "name": "listRecentFlags returns rows newest-first",
+          "status": "passed"
+        },
+        {
+          "name": "listRecentFlags returns [] when data is null",
+          "status": "passed"
+        },
+        {
+          "name": "listRecentFlags throws on Supabase error",
+          "status": "passed"
+        },
+        {
+          "name": "listRecentFlags accepts a custom limit argument",
+          "status": "passed"
+        },
+        {
+          "name": "listLeaderboard returns the top users sorted by points descending",
+          "status": "passed"
+        },
+        {
+          "name": "listLeaderboard returns [] when data is null",
+          "status": "passed"
+        },
+        {
+          "name": "listLeaderboard throws on Supabase error",
+          "status": "passed"
+        },
+        {
+          "name": "listLeaderboard accepts a custom limit",
+          "status": "passed"
+        },
+        {
+          "name": "listLeaderboard keeps only the four public fields in its result",
+          "status": "passed"
+        },
+        {
+          "name": "listLeaderboard does not fall back to users when the public projection is absent",
+          "status": "passed"
+        },
+        {
+          "name": "getUserLeaderboardRank returns only the caller rank and points without sending a user identifier",
+          "status": "passed"
+        },
+        {
+          "name": "getUserLeaderboardRank surfaces 42501 without fabricating a rank or querying users",
+          "status": "passed"
+        },
+        {
+          "name": "getUserLeaderboardRank surfaces PGRST202 without fabricating a rank or querying users",
+          "status": "passed"
+        },
+        {
+          "name": "getUserLeaderboardRank refuses a missing caller result instead of claiming first place",
+          "status": "passed"
+        },
+        {
+          "name": "requestFlagReopen returns the new count on success",
+          "status": "passed"
+        },
+        {
+          "name": "requestFlagReopen returns 0 when the server discarded the vote (flag no longer resolved)",
+          "status": "passed"
+        },
+        {
+          "name": "requestFlagReopen returns null ONLY for function-missing errors (migration absent)",
+          "status": "passed"
+        },
+        {
+          "name": "requestFlagReopen LOCKING (F38): throws on network/RLS/any other RPC error",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "changedSuitesPassed": true,
+  "changedSuiteAssertions": 106,
+  "fullSuitePass": false,
+  "baselineReconciled": true,
+  "introducedFailures": [],
+  "remainingFailures": [
+    {
+      "file": "src/__tests__/dismissalStandard.guard.test.ts",
+      "name": "the dismissal standard C · every surface is still reduced-motion gated",
+      "output": [
+        "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 6\n\n- Array []\n+ Array [\n+   \"components/FlagDetailModal.tsx:1436 → animationType=modalAnimationType\",\n+   \"components/ui/Sheet.tsx:396 → animationType=modalAnimationType\","
+      ]
+    },
+    {
+      "file": "src/__tests__/dismissalStandard.guard.test.ts",
+      "name": "the dismissal standard J · focus return is wired end to end, and nothing else claims onDismiss",
+      "output": [
+        "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 6\n\n- Array []\n+ Array [\n+   \"screens/ReportFlagModal.tsx:901 → Modal onDismiss=() => { pullRef.current?.resetAfterDismiss(); onDismiss?.(); }, expected the forwarded prop\",\n+   \"screens/LegendModal.tsx:77 → Modal onDismiss=() => { pullRef.current?.resetAfterDismiss(); onDismiss?.(); }, expected the forwarded prop\","
+      ]
+    },
+    {
+      "file": "src/__tests__/focusOnOpen.guard.test.ts",
+      "name": "focus-in standard — every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface",
+      "output": [
+        "Error: ALLOWED entry for components/AddressSearchModal.tsx (marker aria-label=\"Search by address\") matched 0 live surfaces — the exemption is stale. Fix or remove it.\nReason it existed: The autoFocus search input takes first responder on present — the OS moves SR focus with the keyboard. A title-yank 150ms later would FIGHT the input focus this surface exists for.\n    at _loop (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/src/__tests__/focusOnOpen.guard.test.ts:176:15)\n    at Object._loop (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/src/__tests__/focusOnOpen.guard.test.ts:172:28)\n    at Promise.then.completed (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)"
+      ]
+    },
+    {
+      "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+      "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets",
+      "output": [
+        "Error: expect(received).toMatch(expected)\n\nExpected pattern: /accessibilityLabel=\"Dismiss empty heat map notice\"/\nReceived string:  \"import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';\nimport {\n  AccessibilityInfo,\n  ActivityIndicator,\n  Alert,\n  InteractionManager,"
+      ]
+    },
+    {
+      "file": "src/__tests__/keyboardClass.guard.test.ts",
+      "name": "THE KEYBOARD CLASS — every input-hosting surface carries a mechanism Recipe D — every delegate is a real, live consumer (the list drains)",
+      "output": [
+        "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 0\n+ Received  + 3\n\n  Array [\n+   \"components/AddressSearchModal.tsx\",\n    \"components/FeedbackModal.tsx\",\n    \"components/FilterPresetsModal.tsx\","
+      ]
+    },
+    {
+      "file": "src/__tests__/privacy.guard.test.ts",
+      "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim",
+      "output": [
+        "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 1\n\n@@ -27,11 +27,11 @@\n      \"Notifications.\",\n      \"If you turn them on, I store a push token so the app can notify you about your reports. Turn them off and it stops.\",\n    ],"
+      ]
+    },
+    {
+      "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+      "name": "FV-1 — focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input",
+      "output": [
+        "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"marginTop: insets.top + spacing.sm\"\nReceived string:    \"import React, { useEffect, useRef, useState } from 'react';\nimport {\n  ActivityIndicator,\n  Platform,\n  Pressable,\n  ScrollView,"
+      ]
+    },
+    {
+      "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+      "name": "BP11 / T3 — tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim",
+      "output": [
+        "Error: expect(received).not.toMatch(expected)\n\nExpected pattern: not /backgroundColor/\nReceived string:      \"import React from 'react';\nimport { StyleSheet, View } from 'react-native';\nimport { PlatformPressable } from '@react-navigation/elements';\nimport { type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';\nimport { hapticSelection } from '@/lib/haptics';\nimport { decorativeProps } from '@/lib/accessibility';"
+      ]
+    },
+    {
+      "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+      "name": "T8 — one spoken voice (source contract) each triage action names its flag (category + conditional distance)",
+      "output": [
+        "Error: expect(received).toMatch(expected)\n\nExpected pattern: /Verify this flag — \\$\\{actionSubject\\}/\nReceived string:  \"import React, { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';\nimport {\n  AccessibilityInfo,\n  ActivityIndicator,\n  Animated,\n  Image,"
+      ]
+    },
+    {
+      "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+      "name": "map-chrome budget — the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8",
+      "output": [
+        "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + CALLOUT_CHROME_MARGIN}\"\nReceived string:    \"import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';\nimport {\n  AccessibilityInfo,\n  ActivityIndicator,\n  Alert,\n  InteractionManager,"
+      ]
+    },
+    {
+      "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+      "name": "the control now lives in the ⋯ tool sheet VoiceOver order: search, then the circles, then the sheet rows",
+      "output": [
+        "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 52688\nReceived:   -1\n    at Object.toBeGreaterThan (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/src/screens/__tests__/tasksHeaderReclaim.guard.test.ts:110:18)\n    at Promise.then.completed (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/node_modules/jest-circus/build/run.js:316:40)"
+      ]
+    },
+    {
+      "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+      "name": "TaskCard — T8: each action names its flag with a location, the label carries category THEN distance",
+      "output": [
+        "Error: Unable to find an element with accessibility label: /^Verify this flag — Blocked path, .+/\n\n<View\n  accessible={false}\n>\n  <View>\n    <View\n      pointerEvents=\"none\"\n    >"
+      ]
+    },
+    {
+      "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+      "name": "TaskCard — T8: each action names its flag with no location, action labels are category-only (no distance)",
+      "output": [
+        "Error: Unable to find an element with accessibility label: Verify this flag — Blocked path\n\n<View\n  accessible={false}\n>\n  <View>\n    <View\n      pointerEvents=\"none\"\n    >"
+      ]
+    },
+    {
+      "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+      "name": "Wave 2 — expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry",
+      "output": [
+        "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"<Modal aria-label={`Flag details:\"\nReceived string:    \"import React, { useEffect, useRef, useState } from 'react';\nimport {\n  Animated,\n  AccessibilityInfo,\n  ActivityIndicator,\n  Alert,"
+      ]
+    }
+  ],
+  "baseline": {
+    "counts": {
+      "numFailedTestSuites": 13,
+      "numFailedTests": 22,
+      "numPassedTestSuites": 271,
+      "numPassedTests": 4166,
+      "numPendingTestSuites": 0,
+      "numPendingTests": 0,
+      "numRuntimeErrorTestSuites": 0,
+      "numTodoTests": 32,
+      "numTotalTestSuites": 284,
+      "numTotalTests": 4220
+    },
+    "environmentReconciliation": "Eight releaseTools failures in the initial sandbox run were loopback EPERM; an elevated focused rerun passed 52/52. Final full run uses that approved local socket permission."
+  },
+  "firstComposedRun": {
+    "counts": {
+      "numFailedTestSuites": 13,
+      "numFailedTests": 15,
+      "numPassedTestSuites": 272,
+      "numPassedTests": 4203,
+      "numPendingTestSuites": 0,
+      "numPendingTests": 0,
+      "numRuntimeErrorTestSuites": 0,
+      "numTodoTests": 32,
+      "numTotalTestSuites": 285,
+      "numTotalTests": 4250
+    },
+    "newFailure": "Asynchronous leaderboard test queried before the row rendered; test-only await findByText corrected it. Focused 7/7 and final full run pass that suite."
+  },
+  "exactFinalSummary": "Test Suites: 12 failed, 273 passed, 285 total\nTests:       14 failed, 32 todo, 4204 passed, 4250 total\nSnapshots:   0 total\nTime:        23.005 s, estimated 30 s\nRan all test suites.\nTest results written to: ../../Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest-results.json\n",
+  "failureExcerptLimit": "Exact failed names and first nine lines of each failure message. All tests use synthetic fixtures. Full logs retained at the hashed local paths below.",
+  "rawArtifacts": [
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/jest-results.json",
+      "sha256": "6af9ecc18d06ddfd532758c82718038a6817ef3299580572de77f515923437e3",
+      "bytes": 4142430
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/jest.json",
+      "sha256": "5254e3dd23a311335c1f4f2d05e45afdb2b28bd657a88ded06ffd403086d14e5",
+      "bytes": 2109440
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/final-jest-results.json",
+      "sha256": "c0b9914a737d4b0706bc76b499b200c29408e736c4d7722dc9912cc68388f4f0",
+      "bytes": 4156224
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/final-jest.json",
+      "sha256": "fb1b3fd3c45d71b625bd1ed6f44e4048f009bc15cd151fc9b3c339fadcd467b4",
+      "bytes": 2091594
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest-results.json",
+      "sha256": "a65b44580f4230338f8b593b254af0504a0fcc8087ede63dc65b50e5de77f24d",
+      "bytes": 4126893
+    },
+    {
+      "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest.json",
+      "sha256": "6c55335edd25a7e54f6ee930a22d3c6f9954580c6ce06fbe99880defbccfb625",
+      "bytes": 2093654
+    }
+  ]
+}

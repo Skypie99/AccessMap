@@ -1,0 +1,17 @@
+{
+  "command": [
+    "node",
+    "scripts/replay-migrations.mjs",
+    "--with-next",
+    "--local-only",
+    "--phase03a",
+    "--phase03a-pgtap-sql=/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-968eb53a33114e83042b3bdb0c664b5b80cf8bdf/sql/pgtap.sql",
+    "--json"
+  ],
+  "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "startedAtUtc": "2026-09-05T06:50:49.756Z",
+  "finishedAtUtc": "2026-09-05T06:50:53.988Z",
+  "exitCode": 0,
+  "stderr": "psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/phase03a-foundation.test.sql:173: WARNING:  [notify_flag_status_webhook] vault secret missing - skipping\n",
+  "capture": "Regular-file descriptors; previous pipe capture was truncated at 65536 bytes and was not credited as proof."
+}

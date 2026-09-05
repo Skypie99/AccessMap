@@ -1,0 +1,41 @@
+{
+  "commandArgv": [
+    "/usr/local/bin/node",
+    "node_modules/jest/bin/jest.js",
+    "--runInBand",
+    "--watchman=false",
+    "--runTestsByPath",
+    "scripts/__tests__/phase03aReplay.test.ts",
+    "src/lib/__tests__/admin.test.tsx",
+    "src/lib/__tests__/comments.test.ts",
+    "src/lib/__tests__/flags.supabase.test.ts",
+    "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+    "--json"
+  ],
+  "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "startedAtUtc": "2026-09-05T06:41:11.979626+00:00",
+  "finishedAtUtc": "2026-09-05T06:41:18.157327+00:00",
+  "elapsedSeconds": 5.988956459012115,
+  "exitCode": 0,
+  "sourceBefore": {
+    "sha": "6080215c409de9be67cc0c6f066f8567a2722fed",
+    "tree": "23cf68c37574499d153e7e12dccf3031faf0f02d",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "statusPorcelain": ""
+  },
+  "sourceAfter": {
+    "sha": "6080215c409de9be67cc0c6f066f8567a2722fed",
+    "tree": "23cf68c37574499d153e7e12dccf3031faf0f02d",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "statusPorcelain": ""
+  },
+  "sourceUnchanged": true,
+  "artifactPaths": {
+    "stdout": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.stdout.json",
+    "stderr": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.stderr.txt"
+  },
+  "artifactSha256": {
+    "stdout": "b5d9e0bb7a7bfe28dee740e8ba798619e1cef25a67f545b26d1838f68b27032f",
+    "stderr": "15a0871aaf84b395609a21d6bfcbb73cf9e2e7a862dac119a85e73d34914f8d6"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "capturedAtUtc": "2026-09-05T06:39:55.960Z",
+  "gates": [
+    {
+      "command": [
+        "node",
+        "scripts/check-schema-snapshot.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "schema.generated.sql is current (87 ordered inputs, stamp v2).\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/generate-migration-crosswalk.mjs",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "migration-crosswalk.v1.json is current.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/run-pgtap.mjs",
+        "--discover"
+      ],
+      "exitCode": 0,
+      "stdout": "{\n  \"status\": \"DISCOVERED\",\n  \"suites\": [\n    {\n      \"suite\": \"d1f4r3_fix2_flags_delete_rls.test.sql\",\n      \"kind\": \"pgtap\",\n      \"execution\": \"authorized-staging-only\",\n      \"planned\": 7\n    },\n    {\n      \"suite\": \"d1f4r3_fix3_review_audit.test.sql\",\n      \"kind\": \"pgtap\",\n      \"execution\": \"authorized-staging-only\",\n      \"planned\": 26\n    },\n    {\n      \"suite\": \"mod1r_fix1/00_baseline.sql\",\n      \"kind\": \"fixture\",\n      \"execution\": null,\n      \"planned\": 0\n    },\n    {\n      \"suite\": \"mod1r_fix1/10_proof.sql\",\n      \"kind\": \"raising-proof\",\n      \"execution\": null,\n      \"planned\": 0\n    },\n    {\n      \"suite\": \"phase03a-fixtures/baseline-extra.sql\",\n      \"kind\": \"fixture\",\n      \"execution\": null,\n      \"planned\": 0\n    },\n    {\n      \"suite\": \"phase03a-foundation.test.sql\",\n      \"kind\": \"pgtap\",\n      \"execution\": \"phase-three-disposable\",\n      \"planned\": 113\n    },\n    {\n      \"suite\": \"promptb_media_key_guards.test.sql\",\n      \"kind\": \"pgtap\",\n      \"execution\": \"canonical-replay-with-next\",\n      \"planned\": 25\n    }\n  ],\n  \"problems\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "9469c43",
+        "6080215"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/check-migration-crosswalk.mjs"
+      ],
+      "exitCode": 1,
+      "classification": "CORRECTED_COMMAND_NAME_ERROR",
+      "stderr": "MODULE_NOT_FOUND: scripts/check-migration-crosswalk.mjs does not exist; discovered and ran scripts/generate-migration-crosswalk.mjs --check successfully. An earlier combined shell invocation returned the last command exit 0; this subcommand did fail."
+    }
+  ]
+}

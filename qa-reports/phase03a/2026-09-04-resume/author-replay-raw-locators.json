@@ -1,0 +1,30 @@
+[
+  {
+    "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/local-replay-final.json",
+    "sha256": "b2adfb8bd31b0794f0b77536f428c709e960f5441a7e3d1614fb6f57cee8d801",
+    "bytes": 1310769,
+    "acceptedAsProof": true,
+    "note": "Preserved author run; authoritative final independent replay is copied into the repository evidence."
+  },
+  {
+    "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/fixture-correction-replay.json",
+    "sha256": "234d1d274a9688b1f6b85932a4ded551b6998fd694ae702b831bd37c04c7b620",
+    "bytes": 1311057,
+    "acceptedAsProof": true,
+    "note": "Preserved author run; authoritative final independent replay is copied into the repository evidence."
+  },
+  {
+    "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/fixture-correction-replay-truncated-attempt.json",
+    "sha256": "05944dce9ba8972e421728ae4880c69a2d781c22e3ffe05a08ebd6f4aeb34f79",
+    "bytes": 65536,
+    "acceptedAsProof": false,
+    "note": "Pipe capture truncated at 65536 bytes; wrapper JSON parse failed; no proof credited."
+  },
+  {
+    "file": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/fixture-correction-run-truncated-attempt.json",
+    "sha256": "db9383b7874bb9734938cf7e39b8132d668c6539ea8e2868424844e571986dd4",
+    "bytes": 704,
+    "acceptedAsProof": false,
+    "note": "Pipe capture truncated at 65536 bytes; wrapper JSON parse failed; no proof credited."
+  }
+]

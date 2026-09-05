@@ -348,3 +348,42 @@ NEXT_PERMITTED_PHASE:
 RESUME PHASE 03A after named decisions and preconditions.
 PHASE-03B HANDOFF NOT ISSUED.
 ```
+
+
+## Resume addendum — authoritative current state after owner decisions
+
+This appended section supersedes the earlier current-state statements while preserving the full preflight receipt above as historical evidence. The original 25918 bytes have SHA-256 35d0f4959cff8949b4d608b4d3e481aeffdbde74c2a914969e6e3d25502cc64d.
+
+**BACKEND_FOUNDATION_GATE: BLOCKED. PHASE_GATE: BLOCKED. MAIN_MERGE_AUTHORIZED: NO. SAFE_TO_INTEGRATE: NO.**
+
+Local candidate: 6a82b8212a2d0d3de96525d98b5824b4eb7121fb. Tree: d3b750fce6ae489f793b88867f1edeca23f5c9d4. Branch: repair/flagstone-p03a-backend-foundation-20260903. Worktree: /Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903. Clean at final independent source verification.
+
+The exact accepted Phase02 predecessor remains c2e36800b269ee22f29d0be35cfb88dace7c2afc / 7a68541462f0a9e1d55f48d98ea54df0fc0b01b7. Preflight commit 9469c43 and first local implementation 6080215 are preserved. Final source 6a82b82 includes the independent reviewer-requested synthetic fixture restriction.
+
+Owner decisions now authorize bounded admin/leaderboard/comment-author caller changes, exact locked local tooling, and direct owner/admin database-role delete proof. Former B03A-02 and B03A-04 are resolved. The supplied privacy policy is adopted; the literal staging placeholder and unverified gateway implementation remain blockers.
+
+Six forward candidates, six exact restoration files, bounded callers and real local tests exist. Independent reviewer 03a_predecessor_review verified the final clean source and issued PARTIAL LOCAL SUBSET PASS, with complete 03A-CODE HOLD. Actual local pgTAP: 25 media plus 113 Phase03A assertions, no failed/skipped/TODO/bailout/parse errors. Baseline ACL equality, exact restoration and deterministic reapply pass. Independent caller/parser suites: 106/106 PASS, carried forward by exact unchanged hashes.
+
+Typecheck passes. Full lint passes with 0 errors and 91 inherited warnings. Full Jest remains red: 273 passed / 12 failed suites; 4,204 passed / 14 inherited failed / 32 TODO tests. No new failed names. No runtime, hosted pgTAP, REST/RPC/Storage, two-client limiter or hosted rollback result exists.
+
+All findings FDA-009, FDA-010, FDA-012, FDA-021, FDA-023, FDA-026 and FDA-028 remain OPEN. FDA-012 is partial because postgres cannot alter supabase_admin-owned defaults. FDA-028 is unimplemented pending the gateway dependency/scope decision. The full app deletion pipeline remains Phase04-owned.
+
+## DECISIONS FOR SKY — resume
+
+| ID | Decision | Recommendation and reason | Alternative and impact |
+|---|---|---|---|
+| B03A-R01 | Actual separate staging project ref. | Name the intended disposable non-production project so existing conditional authority can be verified against a concrete target. | Leave unset; STAGE and later lanes remain blocked. No production or unrelated project substitution. |
+| B03A-R02 | Gateway dependency / guest-ingestion scope. | Permit bounded gateway design and needed guest flag/feedback routing plus bypass prevention; require exact trusted short-lived key, issuance-abuse, retention, thresholds and two-client proof before remote approval. Current direct API capability is insufficiently verified. | Preserve current paths/caps; FDA-028 and complete code acceptance stay blocked. No purchase, deployment or changed privacy tradeoff is implied. |
+| B03A-R03 | Managed-role default grants. | Obtain a supported platform/owner mechanism or explicit residual disposition; current postgres is not supabase_admin. | Keep FDA-012 OPEN and this local candidate partial. No role escalation or technical closure by waiver. |
+
+03A-CODE remains PARTIAL/HOLD. INT is NOT RUN. 03A-STAGE is NOT RUN. 03A-PROD performed read-only preflight only; no apply or token. Phase03B is NOT STARTED. Do not request a production token before complete code, integration and staging acceptance.
+
+The read-only production catalog at 2026-09-05T06:26:04.808Z matches earlier preflight within comparator-v3 scope. Expanded metadata verifies the platform default-grant limitation, Storage policy ownership bypass capability and exact global PUBLIC-function restoration precondition. No application rows or credentials collected. No hosted mutation occurred.
+
+The Phase03A local-only supplemental fixture covers ACL/default fields omitted from the historical local model. It checks the saved 18 column, 108 default and 18 sequence entries before candidates. This is local fixture setup, not a rewrite or expanded historical acceptance claim. Local platform stubs remain separate from hosted truth.
+
+All 40 pre-existing worktree HEAD/branch/status records and original QA/inherited artifacts remain unchanged. No applied migration, five accepted Phase02 candidates, package/lock or generated schema SQL changed. The screen delta is one rank-call argument removal; no visual/accessibility/runtime acceptance is claimed. App Store review is protected by no action; live status unverified.
+
+The six restorations are UNSAFE_BASELINE_RESTORE and reopen captured weaknesses; only disposable local rehearsal is proven. Exact ordered migration, rollback, source and test hashes are recorded in the evidence. There were no pushes, merges, deployments, paid builds, production changes, external sends or Phase03B actions.
+
+Full receipt: [2026-09-05_Codex_Phase03AResume.md](2026-09-05_Codex_Phase03AResume.md). Evidence: [artifact-hashes.json](phase03a/2026-09-04-resume/artifact-hashes.json), [independent final review](phase03a/2026-09-04-resume/independent-final-review-6a82b82.json), [test summary](phase03a/2026-09-04-resume/test-summary.json). The documentation-only final commit SHA/tree and final clean state are resolved after commit in the exported resume finalization receipt.

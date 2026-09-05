@@ -1,0 +1,40 @@
+{
+  "kind": "independent read-only source review with explicitly authorized disposable local PostgreSQL execution",
+  "commandArgv": [
+    "/usr/local/bin/node",
+    "scripts/replay-migrations.mjs",
+    "--with-next",
+    "--local-only",
+    "--phase03a",
+    "--phase03a-pgtap-sql=/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-968eb53a33114e83042b3bdb0c664b5b80cf8bdf/sql/pgtap.sql",
+    "--json"
+  ],
+  "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "startedAtUtc": "2026-09-05T06:52:42.404059+00:00",
+  "finishedAtUtc": "2026-09-05T06:52:46.780423+00:00",
+  "elapsedSeconds": 4.480097791994922,
+  "exitCode": 0,
+  "sourceBefore": {
+    "sha": "6a82b8212a2d0d3de96525d98b5824b4eb7121fb",
+    "tree": "d3b750fce6ae489f793b88867f1edeca23f5c9d4",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "statusPorcelain": ""
+  },
+  "sourceAfter": {
+    "sha": "6a82b8212a2d0d3de96525d98b5824b4eb7121fb",
+    "tree": "d3b750fce6ae489f793b88867f1edeca23f5c9d4",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "statusPorcelain": ""
+  },
+  "sourceUnchanged": true,
+  "productionMutation": false,
+  "captureMethod": "direct regular-file stdout and stderr descriptors; no pipe",
+  "artifactPaths": {
+    "stdout": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6a82b82-20260905T065242Z.stdout.json",
+    "stderr": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6a82b82-20260905T065242Z.stderr.txt"
+  },
+  "artifactSha256": {
+    "stdout": "29ea2a7c36d27b7d9bab9459a3544b8e887d9194ae466735bc59ecde31421cb0",
+    "stderr": "3328d12d433166ce33a141556f7643d8658a88f5aa301e4a22ccd297d9d87b3b"
+  }
+}

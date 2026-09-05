@@ -1,0 +1,103 @@
+{
+  "note": "Exact file copies retain original bytes. Text logs with trailing whitespace use JSON UTF-8 content preserving the complete original text and its hash; no log content is discarded. The earlier full 6080215 SQL stdout stays in Documents/work at its original hashed locator; final complete 6a82b82 stdout is included here.",
+  "artifacts": [
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.metadata.json",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-caller-jest-6080215-20260905T064111Z.metadata.json",
+      "originalSha256": "792d20845f7c31fcac92a204765d209913baf7c3bad2928e0046d9cfa1b44bde",
+      "storedSha256": "792d20845f7c31fcac92a204765d209913baf7c3bad2928e0046d9cfa1b44bde",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.stderr.txt",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-caller-jest-6080215-20260905T064111Z.stderr.txt.json",
+      "originalSha256": "15a0871aaf84b395609a21d6bfcbb73cf9e2e7a862dac119a85e73d34914f8d6",
+      "storedSha256": "9674a2b443512e3e480eb26a2584b83a38de17597c56f7f84d41b91719a9af3b",
+      "encoding": "JSON UTF-8 content; decode to recover exact original bytes"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.stdout.json",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-caller-jest-6080215-20260905T064111Z.stdout.json",
+      "originalSha256": "b5d9e0bb7a7bfe28dee740e8ba798619e1cef25a67f545b26d1838f68b27032f",
+      "storedSha256": "b5d9e0bb7a7bfe28dee740e8ba798619e1cef25a67f545b26d1838f68b27032f",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-final-review-6a82b82.json",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-final-review-6a82b82.json",
+      "originalSha256": "993d4759a7731f8090729b7d91d6aec41089d8b76e82ec4225d86dc6ca0381f1",
+      "storedSha256": "993d4759a7731f8090729b7d91d6aec41089d8b76e82ec4225d86dc6ca0381f1",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-review-6080215.json",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-review-6080215.json",
+      "originalSha256": "9a2e66d2e546e5e6c9ead36d09e56edf13cbf4ef5e63c5849387bda49e798a50",
+      "storedSha256": "9a2e66d2e546e5e6c9ead36d09e56edf13cbf4ef5e63c5849387bda49e798a50",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.media.tap",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6080215-20260905T063844Z.media.tap",
+      "originalSha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e",
+      "storedSha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.metadata.json",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6080215-20260905T063844Z.metadata.json",
+      "originalSha256": "dceb8f505894cd899c11013cdeda5d6a699017d596af22fabd0f2b244edaf98a",
+      "storedSha256": "dceb8f505894cd899c11013cdeda5d6a699017d596af22fabd0f2b244edaf98a",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.phase03a.tap",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6080215-20260905T063844Z.phase03a.tap",
+      "originalSha256": "b6b6bb56db623649fa95d2ec364aef3eb95f9c1aebc9fecc0efae956ccb58cc1",
+      "storedSha256": "b6b6bb56db623649fa95d2ec364aef3eb95f9c1aebc9fecc0efae956ccb58cc1",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.stderr.txt",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6080215-20260905T063844Z.stderr.txt",
+      "originalSha256": "c34f762ded2ea572459ecfe4309a665486b044316711c6221232e3da57adee6c",
+      "storedSha256": "c34f762ded2ea572459ecfe4309a665486b044316711c6221232e3da57adee6c",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6a82b82-20260905T065242Z.media.tap",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6a82b82-20260905T065242Z.media.tap",
+      "originalSha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e",
+      "storedSha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6a82b82-20260905T065242Z.metadata.json",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6a82b82-20260905T065242Z.metadata.json",
+      "originalSha256": "1c4a0841aa0d571d9f230d9684a0a291c2071f8c467cb731104fa1e84db658af",
+      "storedSha256": "1c4a0841aa0d571d9f230d9684a0a291c2071f8c467cb731104fa1e84db658af",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6a82b82-20260905T065242Z.phase03a.tap",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6a82b82-20260905T065242Z.phase03a.tap",
+      "originalSha256": "b6b6bb56db623649fa95d2ec364aef3eb95f9c1aebc9fecc0efae956ccb58cc1",
+      "storedSha256": "b6b6bb56db623649fa95d2ec364aef3eb95f9c1aebc9fecc0efae956ccb58cc1",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6a82b82-20260905T065242Z.stderr.txt",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6a82b82-20260905T065242Z.stderr.txt",
+      "originalSha256": "3328d12d433166ce33a141556f7643d8658a88f5aa301e4a22ccd297d9d87b3b",
+      "storedSha256": "3328d12d433166ce33a141556f7643d8658a88f5aa301e4a22ccd297d9d87b3b",
+      "encoding": "exact file copy"
+    },
+    {
+      "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6a82b82-20260905T065242Z.stdout.json",
+      "file": "qa-reports/phase03a/2026-09-04-resume/independent-sql-replay-6a82b82-20260905T065242Z.stdout.json",
+      "originalSha256": "29ea2a7c36d27b7d9bab9459a3544b8e887d9194ae466735bc59ecde31421cb0",
+      "storedSha256": "29ea2a7c36d27b7d9bab9459a3544b8e887d9194ae466735bc59ecde31421cb0",
+      "encoding": "exact file copy"
+    }
+  ]
+}
