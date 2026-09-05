@@ -1,7 +1,8 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
-  "revision": 3,
+  "revision": 4,
+  "phase03aPrivilegeRevisionNote": "FDA012 source review narrows the local application/service grant proposal. Notification provenance is corrected below: current push-token callers use pushNotifications.ts; preference writes are a preserved RLS contract with no current direct TypeScript caller. All deployment classifications refer to the captured baseline; the Phase03A privilege changes are not deployed.",
   "phase03aRevisionNote": "Local candidate adds caller-scoped admin/rank, bounded leaderboard, and comment-context author RPC requirements. This revision does not mark any candidate RPC deployed. Prior revision notes and historical production capture remain unchanged.",
   "revisionNote": "Rev 2 corrects rev 1 after independent review. Rev 1 was accurate at NAME granularity but wrong at CALL-SITE granularity: it omitted a call site, misattributed two files, classified four sites by the throw at the call rather than by what the caller does with it, and did not record the moderation-column WRITE sites at all. Classifications below are per call site and were each read at the cited line.",
   "sourceLineage": {
@@ -333,18 +334,20 @@
       "finding": "FDA-041",
       "callSites": [
         {
-          "file": "src/lib/notifications.ts",
-          "kind": "table",
-          "name": "notification_preferences",
-          "onAbsent": "n/a",
-          "deployed": true
-        },
-        {
-          "file": "src/lib/notifications.ts",
+          "file": "src/lib/pushNotifications.ts",
+          "line": 172,
           "kind": "table",
           "name": "push_tokens",
           "onAbsent": "n/a",
           "deployed": true
+        }
+      ],
+      "preservedPolicyContracts": [
+        {
+          "name": "notification_preferences",
+          "deployed": true,
+          "currentDirectTypescriptCaller": "NONE_FOUND",
+          "historicalLocatorCorrection": "The earlier src/lib/notifications.ts call-site entries named a nonexistent file. The preference table and own-row upsert policies exist; no current app preference call is claimed."
         }
       ],
       "productionImpact": "TABLE CONTRACT SATISFIED \u2014 the defect is that send-push-notification v6 does not filter recipients by these preferences. Behavioural, not contract-shaped. Phase 07A."

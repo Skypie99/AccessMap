@@ -166,31 +166,31 @@ SELECT throws_ok($test$SELECT * FROM public.get_comment_author_profiles(array_fi
 
 SELECT throws_ok($test$SELECT * FROM public.get_comment_author_profiles(NULL)$test$, '22023', NULL, 'null author request refused');
 
-SELECT lives_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000004','30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open')$test$, 'owner open flag INSERT succeeds');
+SELECT lives_ok($test$WITH inserted AS (INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES('30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open') RETURNING id) SELECT set_config('phase03a.owner_flag',id::text,true) FROM inserted$test$, 'owner open flag INSERT succeeds');
 
 SELECT is((SELECT points FROM public.users WHERE id='30000000-0000-4000-8000-000000000001'),105,'trusted flag trigger still awards exactly five points');
 
-SELECT lives_ok($test$UPDATE public.flags SET description='Synthetic owner edit' WHERE id='40000000-0000-4000-8000-000000000004'$test$, 'normal flag edit and timestamp triggers survive ALL-policy removal');
+SELECT lives_ok($test$UPDATE public.flags SET description='Synthetic owner edit' WHERE id=current_setting('phase03a.owner_flag')::uuid$test$, 'normal flag edit and timestamp triggers survive ALL-policy removal');
 
-SELECT throws_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000010','30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'verified')$test$, '42501', NULL, 'authenticated verified INSERT refused');
+SELECT throws_ok($test$INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES('30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'verified')$test$, '42501', NULL, 'authenticated verified INSERT refused');
 
-SELECT throws_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000011','30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'resolved')$test$, '42501', NULL, 'authenticated resolved INSERT refused');
+SELECT throws_ok($test$INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES('30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'resolved')$test$, '42501', NULL, 'authenticated resolved INSERT refused');
 
-SELECT throws_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000012','30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'rejected')$test$, '42501', NULL, 'authenticated rejected INSERT refused');
+SELECT throws_ok($test$INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES('30000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'rejected')$test$, '42501', NULL, 'authenticated rejected INSERT refused');
 
-SELECT throws_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000015','30000000-0000-4000-8000-000000000002',0,0,'no_ramp',1,'open')$test$, '42501', NULL, 'another account cannot be selected as new flag owner');
+SELECT throws_ok($test$INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES('30000000-0000-4000-8000-000000000002',0,0,'no_ramp',1,'open')$test$, '42501', NULL, 'another account cannot be selected as new flag owner');
 
-SELECT lives_ok($test$INSERT INTO public.flag_comments(id,flag_id,content) VALUES('50000000-0000-4000-8000-000000000010','40000000-0000-4000-8000-000000000004','Synthetic new comment')$test$, 'own comment INSERT still succeeds');
+SELECT lives_ok($test$INSERT INTO public.flag_comments(flag_id,content) VALUES(current_setting('phase03a.owner_flag')::uuid,'Synthetic new comment')$test$, 'own comment INSERT still succeeds');
 
 SELECT is((SELECT points FROM public.users WHERE id='30000000-0000-4000-8000-000000000001'),106,'comment trigger awards exactly once');
 
-SELECT is((SELECT u.display_name FROM public.flag_comments c LEFT JOIN public.users u ON u.id=c.user_id WHERE c.id='50000000-0000-4000-8000-000000000010'), 'Owner Edited', 'own comment returning embed can still resolve own name');
+SELECT is((SELECT u.display_name FROM public.flag_comments c LEFT JOIN public.users u ON u.id=c.user_id WHERE c.flag_id=current_setting('phase03a.owner_flag')::uuid AND c.content='Synthetic new comment'), 'Owner Edited', 'own comment returning embed can still resolve own name');
 
-SELECT lives_ok($test$INSERT INTO public.flag_photos(flag_id,url) VALUES('40000000-0000-4000-8000-000000000004','https://example.invalid/flag-photos/30000000-0000-4000-8000-000000000001/photo.jpg')$test$, 'trusted media trigger still accepts ordinary photo');
+SELECT lives_ok($test$INSERT INTO public.flag_photos(flag_id,url) VALUES(current_setting('phase03a.owner_flag')::uuid,'https://example.invalid/flag-photos/30000000-0000-4000-8000-000000000001/photo.jpg')$test$, 'trusted media trigger still accepts ordinary photo');
 
 SELECT is((SELECT points FROM public.users WHERE id='30000000-0000-4000-8000-000000000001'),109,'trusted photo trigger still awards three points');
 
-SELECT throws_ok($test$INSERT INTO public.flag_photos(flag_id,url,object_key) VALUES('40000000-0000-4000-8000-000000000004','https://example.invalid/photo.jpg','forged/key')$test$, '42501', NULL, 'photo object-key forgery refused');
+SELECT throws_ok($test$INSERT INTO public.flag_photos(flag_id,url,object_key) VALUES(current_setting('phase03a.owner_flag')::uuid,'https://example.invalid/photo.jpg','forged/key')$test$, '42501', NULL, 'photo object-key forgery refused');
 
 SELECT lives_ok($test$SELECT public.log_realtime_event('subscribe','phase03a-fixture')$test$, 'realtime RPC and its sequence still work');
 
@@ -232,9 +232,9 @@ SELECT throws_ok($test$SELECT * FROM public.get_comment_author_profiles(ARRAY['5
 
 RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.role = 'anon'; SET LOCAL ROLE anon;
 
-SELECT lives_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000020',NULL,0,0,'no_ramp',1,'open')$test$, 'anonymous open guest report remains allowed');
+SELECT lives_ok($test$INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES(NULL,0,0,'no_ramp',1,'open')$test$, 'anonymous open guest report remains allowed');
 
-SELECT throws_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000021',NULL,0,0,'no_ramp',1,'verified')$test$, '42501', NULL, 'anonymous preverified report refused');
+SELECT throws_ok($test$INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES(NULL,0,0,'no_ramp',1,'verified')$test$, '42501', NULL, 'anonymous preverified report refused');
 
 SELECT lives_ok($test$INSERT INTO public.feedback(body) VALUES('Synthetic anonymous feedback')$test$, 'anonymous feedback insertion remains allowed');
 
@@ -248,17 +248,19 @@ SELECT throws_ok($test$SELECT public.get_comment_author_profiles(ARRAY[]::uuid[]
 
 SELECT throws_ok($test$SELECT id FROM public.users$test$, '42501', NULL, 'anonymous has no users enumeration');
 
-RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.role = 'service_role'; SET LOCAL ROLE service_role;
+RESET ROLE; -- Object-owner inspection of synthetic trigger output; no service table grant required.
 
 SELECT is((SELECT last_active_date FROM public.users WHERE id='30000000-0000-4000-8000-000000000001'),current_date,'trusted reward trigger updated activity date');
 
 SELECT ok(((SELECT streak_days >= 1 FROM public.users WHERE id='30000000-0000-4000-8000-000000000001')), 'trusted reward trigger maintained the streak');
 
-SELECT lives_ok($test$UPDATE public.users SET points=321,streak_days=8,longest_streak_days=8 WHERE id='30000000-0000-4000-8000-000000000001'$test$, 'trusted service reputation writes remain allowed');
+RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.role = 'service_role'; SET LOCAL ROLE service_role;
 
-SELECT is((SELECT points FROM public.users WHERE id='30000000-0000-4000-8000-000000000001'),321,'service update actually persists');
+SELECT throws_ok($test$UPDATE public.users SET points=321,streak_days=8,longest_streak_days=8 WHERE id='30000000-0000-4000-8000-000000000001'$test$, '42501', NULL, 'service has no unneeded reputation write capability');
 
-SELECT lives_ok($test$INSERT INTO public.flags(id,user_id,lat,lng,category,severity,status) VALUES('40000000-0000-4000-8000-000000000022',NULL,0,0,'no_ramp',1,'verified')$test$, 'service insert behavior remains unchanged');
+SELECT throws_ok($test$SELECT points FROM public.users WHERE id='30000000-0000-4000-8000-000000000001'$test$, '42501', NULL, 'service cannot enumerate reputation');
+
+SELECT throws_ok($test$INSERT INTO public.flags(user_id,lat,lng,category,severity,status) VALUES(NULL,0,0,'no_ramp',1,'verified')$test$, '42501', NULL, 'service has no unneeded direct flag INSERT');
 
 RESET ROLE;
 
@@ -273,7 +275,7 @@ SELECT ok((NOT has_sequence_privilege('authenticated','public.phase03a_default_s
 
 SELECT ok((NOT has_function_privilege('anon','public.phase03a_default_function()','EXECUTE') AND NOT has_function_privilege('authenticated','public.phase03a_default_function()','EXECUTE')), 'postgres future functions are not public by default');
 
-SELECT ok((has_table_privilege('service_role','public.phase03a_default_probe','SELECT') AND has_function_privilege('service_role','public.phase03a_default_function()','EXECUTE')), 'service defaults are preserved');
+SELECT ok((NOT has_table_privilege('service_role','public.phase03a_default_probe','SELECT') AND NOT has_function_privilege('service_role','public.phase03a_default_function()','EXECUTE')), 'future service grants require explicit review');
 
 SELECT * FROM finish();
 ROLLBACK;

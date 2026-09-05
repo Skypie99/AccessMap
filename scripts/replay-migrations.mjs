@@ -25,8 +25,12 @@ const JSON_OUT = process.argv.includes('--json');
 const VERIFY_ROLLBACKS = process.argv.includes('--verify-rollbacks');
 const LOCAL_ONLY = process.argv.includes('--local-only');
 const RUN_PGTAP = process.argv.includes('--run-pgtap');
-const PHASE03A = process.argv.includes('--phase03a');
+const PHASE03A_PRIVILEGES_ONLY = process.argv.includes('--phase03a-privileges-only');
+const PHASE03A = process.argv.includes('--phase03a') || PHASE03A_PRIVILEGES_ONLY;
 const phase03aPgTapArg = process.argv.find(arg => arg.startsWith('--phase03a-pgtap-sql='));
+if (PHASE03A_PRIVILEGES_ONLY && (process.argv.includes('--phase03a') || phase03aPgTapArg)) {
+  throw new Error('Choose full Phase03A proof or privilege guard only, never both');
+}
 if (PHASE03A && (!WITH_NEXT || !LOCAL_ONLY || DUMP || VERIFY_ROLLBACKS || RUN_PGTAP)) {
   throw new Error('Phase03A requires --with-next --local-only and its separate proof mode');
 }
@@ -417,8 +421,11 @@ try {
     const { replayPhase03a } = await import('./replay-phase03a.mjs');
     result.phase03a = replayPhase03a({ root: ROOT, psql, applySqlFile, comparator,
       adaptations: result.replayAdaptations,
+      privilegesOnly: PHASE03A_PRIVILEGES_ONLY,
       pgTapSql: phase03aPgTapArg?.slice('--phase03a-pgtap-sql='.length) });
-    if (!result.phase03a.localProofPassed) throw new Error('Phase03A local proof failed; see phase03a evidence');
+    if (!(PHASE03A_PRIVILEGES_ONLY ? result.phase03a.privilegeProofPassed : result.phase03a.localProofPassed)) {
+      throw new Error('Phase03A local proof failed; see phase03a evidence');
+    }
   }
 
   result.catalog = comparator();

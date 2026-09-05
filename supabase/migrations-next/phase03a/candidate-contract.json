@@ -6,7 +6,7 @@
   "acceptedPredecessorTree": "7a68541462f0a9e1d55f48d98ea54df0fc0b01b7",
   "applyAuthorized": false,
   "productionAuthorized": false,
-  "stagingProjectRef": null,
+  "stagingProjectRef": "ctshxbykuemeqnofqcdh",
   "baseline": "71 immutable applied sources plus five exact accepted Phase02 adoption candidates, then the explicitly local-only supplemental ACL/default fixture derived from the fresh hosted capture",
   "localBaselineSupplement": {
     "file": "supabase/tests/phase03a-fixtures/baseline-extra.sql",
@@ -57,6 +57,13 @@
       "rollback": "rollback/20260905055636_phase03a_client_privileges.rollback.sql",
       "rollbackSha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
       "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260905073925_phase03a_effective_privileges.sql",
+      "sha256": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928",
+      "rollback": "rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+      "rollbackSha256": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
     }
   ],
   "catalogSqlSha256": "6a755828dff8f85da18255c514b8e8c8cf7efe8c6b030e45a3108c4a8f23b5fc",
@@ -77,8 +84,13 @@
     },
     {
       "file": "supabase/tests/phase03a-foundation.test.sql",
-      "sha256": "b8c103de3394a9c59d93f56a9e742ac94e0eb4ce9b69e991db262dda6884be53",
+      "sha256": "b341500a5e3c782fdc346dd0d9a089bbcb0a58e42059a445ef22f68b5c5fce3a",
       "plan": 113
+    },
+    {
+      "file": "supabase/tests/phase03a-privileges.test.sql",
+      "sha256": "5c9171b3991c98eadd1bf939314dcf0694242d695f317026d8b40820249fe313",
+      "plan": 79
     }
   ],
   "clientRpcRequirements": [
@@ -88,14 +100,27 @@
     "get_comment_author_profiles(uuid[])"
   ],
   "openRequirements": [
-    "FDA012: supabase_admin-owned public defaults require a supported platform/owner resolution; this patch changes only postgres-owned defaults.",
-    "FDA028: trusted independent anonymous gateway budgets need an additional scope/configuration decision. No limiter or guest caller changed.",
-    "Explicit separate staging project identity; actual hosted pgTAP, role/RLS/REST/RPC and rollback/reapply acceptance.",
+    "FDA012: final effective guard and behavior verification plus hosted role/Auth/REST proof remain required. Managed supabase_admin defaults are an explicitly adjudicated residual, never a waiver for app grants.",
+    "FDA028: verify actual trusted gateway metadata and complete independent anonymous budgets without direct bypass; local and bounded staging work authorized.",
+    "Approved staging identity, canonical reconciliation, real hosted pgTAP and role/API/restoration/reapply proof.",
     "Independent complete 03A-CODE acceptance, INT, then STAGE; no production authorization."
   ],
   "limitations": [
     "Local platform Auth/Storage/pg_net bootstrap stubs are not hosted behavior.",
-    "Existing DML and column grants are preserved except the reviewed users profile/admin changes; table maintenance and sequence UPDATE privileges are removed.",
+    "Seventh migration narrows every application object including service-role DML and optional historical backups. Actual hosted Auth cascades, column-grant REST behavior and gateway isolation remain separate acceptance.",
     "Full application delete-flag Edge flow is Phase04-owned; direct flag authorization is tested here."
-  ]
+  ],
+  "localBaselineBackups": {
+    "file": "supabase/tests/phase03a-fixtures/baseline-backups.sql",
+    "sha256": "1ccfe89ba366d3b12a38b18c365f075f84d295fe184d0fa7e10bad81cf576e83",
+    "scope": "Local schema/ACL-only model of seven known production backup tables; no rows. Optional exact known objects in clean hosted branches; never create them with this fixture hosted."
+  },
+  "privilegeGuard": {
+    "allowlist": "application-privileges.v1.json",
+    "allowlistSha256": "5b5b3699c6136ac7e8c7a180adc8b539148f5c8fd76857d9942c6762e2fae836",
+    "query": "effective-privileges.sql",
+    "querySha256": "21ef4203d91547f3afea8fb20f477420f4284a3dc806193af7761a330833b650"
+  },
+  "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+  "stagingAuthority": "Owner-authorized only after complete independent CODE, INT and exact staging identity gates; no mutation has occurred."
 }
