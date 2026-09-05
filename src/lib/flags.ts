@@ -1675,16 +1675,17 @@ export interface LeaderboardEntry {
 // keep them private to the user's own profile — never in a public ranking.
 
 /**
- * Returns the top `limit` users by points, highest first.
+ * Returns up to 20 contributors by points through the bounded public projection.
  */
 export async function listLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, display_name, avatar_url, points')
-    .order('points', { ascending: false })
-    .limit(limit);
+  const { data, error } = await supabase.rpc('list_public_leaderboard', { p_limit: limit });
   if (error) throw error;
-  return (data ?? []) as LeaderboardEntry[];
+  return (data ?? []).map(({ id, display_name, avatar_url, points }) => ({
+    id,
+    display_name,
+    avatar_url,
+    points,
+  }));
 }
 
 /**
@@ -1695,31 +1696,13 @@ export async function listLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
  * Note: deliberately does NOT return a verified flag count — see the
  * SECURITY / PRIVACY note on LeaderboardEntry above (W6-1).
  */
-export async function getUserLeaderboardRank(
-  userId: string,
-): Promise<{ rank: number; points: number }> {
-  const { data: me, error: me_err } = await supabase
-    .from('users')
-    .select('points')
-    .eq('id', userId)
+export async function getUserLeaderboardRank(): Promise<{ rank: number; points: number }> {
+  const { data, error } = await supabase
+    .rpc('get_my_leaderboard_rank')
     .single();
-  if (me_err) throw me_err;
-  const userPoints = (me as { points: number }).points;
-
-  // `select('id')`, NOT `select('*')`. This is a head-count — no row bytes come
-  // back either way — but PostgREST still resolves the column list against the
-  // caller's grants, and the 2026-05-27 email-privacy migration replaced the
-  // bare table grant on public.users with an explicit column list. `*` expands
-  // to columns `authenticated` cannot read, so the whole request failed with
-  // 42501 "permission denied for table users". Verified by executing it against
-  // production, not inferred. A head-count needs exactly one granted column.
-  const { count: above, error: rank_err } = await supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .gt('points', userPoints);
-  if (rank_err) throw rank_err;
-
-  return { rank: (above ?? 0) + 1, points: userPoints };
+  if (error) throw error;
+  if (!data) throw new Error('Leaderboard rank could not be loaded.');
+  return { rank: data.rank, points: data.points };
 }
 
 // ---------------------------------------------------------------------------

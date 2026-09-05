@@ -25,6 +25,11 @@ const JSON_OUT = process.argv.includes('--json');
 const VERIFY_ROLLBACKS = process.argv.includes('--verify-rollbacks');
 const LOCAL_ONLY = process.argv.includes('--local-only');
 const RUN_PGTAP = process.argv.includes('--run-pgtap');
+const PHASE03A = process.argv.includes('--phase03a');
+const phase03aPgTapArg = process.argv.find(arg => arg.startsWith('--phase03a-pgtap-sql='));
+if (PHASE03A && (!WITH_NEXT || !LOCAL_ONLY || DUMP || VERIFY_ROLLBACKS || RUN_PGTAP)) {
+  throw new Error('Phase03A requires --with-next --local-only and its separate proof mode');
+}
 const catalogOutArg = process.argv.find((arg) => arg.startsWith('--catalog-out='));
 const CATALOG_OUT = catalogOutArg ? path.resolve(catalogOutArg.slice('--catalog-out='.length)) : null;
 const comparisonOutArg = process.argv.find((arg) => arg.startsWith('--comparison-out='));
@@ -406,6 +411,14 @@ try {
       applySqlFile('flagstone_replay', path.join(NEXT, file), result.replayAdaptations);
       result.next.push(file);
     }
+  }
+
+  if (PHASE03A) {
+    const { replayPhase03a } = await import('./replay-phase03a.mjs');
+    result.phase03a = replayPhase03a({ root: ROOT, psql, applySqlFile, comparator,
+      adaptations: result.replayAdaptations,
+      pgTapSql: phase03aPgTapArg?.slice('--phase03a-pgtap-sql='.length) });
+    if (!result.phase03a.localProofPassed) throw new Error('Phase03A local proof failed; see phase03a evidence');
   }
 
   result.catalog = comparator();

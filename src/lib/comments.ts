@@ -25,13 +25,13 @@ export class CommentsTableNotReadyError extends Error {
   }
 }
 
-// The one select string both read paths use. Shared deliberately: the list
-// query and the insert's returning-clause carry the same embed, and fixing
-// only one of them leaves the other broken (SR-092 was live on both).
+// INSERT returning reads only the caller's own profile. Keep its disambiguated
+// embed in the same request so an author lookup cannot fail after a saved comment.
 export const COMMENT_SELECT =
   'id, flag_id, user_id, content, created_at, users!flag_comments_user_id_fkey(display_name)';
+export const COMMENT_READ_SELECT = 'id, flag_id, user_id, content, created_at';
 
-// Raw shape returned by the PostgREST join before we flatten display_name.
+// Raw shape returned by INSERT's own-profile embed before we flatten display_name.
 // SR-117: `user_id` is nullable because live is (ON DELETE SET NULL, verified
 // 2026-07-27) -- a comment outlives its author's account with the attribution
 // dropped. `users` was already nullable for the same reason: the embed has
@@ -57,28 +57,42 @@ function flattenComment(row: RawCommentRow): CommentRow {
   };
 }
 
+type BaseCommentRow = Omit<RawCommentRow, 'users'>;
+
+async function withCommentAuthorProfiles(rows: BaseCommentRow[]): Promise<CommentRow[]> {
+  if (rows.length === 0) return [];
+  const { data, error } = await supabase.rpc('get_comment_author_profiles', {
+    p_comment_ids: rows.map((row) => row.id),
+  });
+  if (error) throw new Error(errorMessage(error));
+  const names = new Map((data ?? []).map((row) => [row.comment_id, row.display_name]));
+  // A missing projection is not proof that an author is anonymous. A concurrent
+  // deletion or incomplete response should let the reader retry the whole fetch.
+  if (rows.some((row) => !names.has(row.id))) {
+    throw new Error('Comment author details could not be loaded.');
+  }
+  return rows.map((row) => ({
+    id: row.id,
+    flag_id: row.flag_id,
+    user_id: row.user_id,
+    content: row.content,
+    created_at: row.created_at,
+    display_name: names.get(row.id) ?? null,
+  }));
+}
+
 // This file's isTableMissingError was the house-canonical variant — the only
 // one hardened by a production incident (its SR-092 embed early-out). It moved
 // verbatim to postgrestErrors.ts as isRelationMissing (code-qa 2026-08-06
 // SLOP-3) so photos.ts and friends inherit the hardening.
 
 // Fetch comments for a flag, newest-first (capped at MAX_COMMENTS), with
-// author display_name joined.
+// author display_name supplied by the contextual public projection.
 // Throws CommentsTableNotReadyError if the migration hasn't been applied yet.
 export async function listComments(flagId: string): Promise<CommentRow[]> {
-  // The `!flag_comments_user_id_fkey` hint is load-bearing, not decoration.
-  // A bare `users(display_name)` is AMBIGUOUS: comment_votes has FKs to both
-  // flag_comments and users, so PostgREST sees a second, many-to-many
-  // flag_comments<->users relationship through it and answers PGRST201 /
-  // HTTP 300 — which is how comments died in production the day
-  // 2026-05-30_trust_score_system.sql landed. The hint names the direct FK.
-  // (If that constraint is ever renamed, the column form `users!user_id(...)`
-  // disambiguates without pinning a generated identifier.) The typed client
-  // resolves the hint via the hand-authored Relationships entry in
-  // database.ts (TYPE-3).
   const { data, error } = await supabase
     .from('flag_comments')
-    .select(COMMENT_SELECT)
+    .select(COMMENT_READ_SELECT)
     .eq('flag_id', flagId)
     .order('created_at', { ascending: false })
     .limit(MAX_COMMENTS);
@@ -88,7 +102,7 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
     throw new Error(errorMessage(error));
   }
 
-  return ((data ?? []) as RawCommentRow[]).map(flattenComment);
+  return withCommentAuthorProfiles(data ?? []);
 }
 
 // How many ids one `.in(...)` filter carries. PostgREST puts the filter in the
@@ -104,7 +118,7 @@ export async function listComments(flagId: string): Promise<CommentRow[]> {
 const FETCH_BY_ID_CHUNK = 100;
 
 /**
- * Fetch specific comments by id, with author display_name joined.
+ * Fetch specific comments by id, with author display_name projected.
  *
  * Used by the Unhide surface (Apple 1.2(c)): `hiddenContent.ts` stores bare ids
  * and nothing else, so the only way to show a reader WHICH comment they are
@@ -126,18 +140,16 @@ export async function fetchCommentsByIds(commentIds: string[]): Promise<CommentR
 
   const out: CommentRow[] = [];
   for (const chunk of chunks) {
-    // Same `!flag_comments_user_id_fkey` disambiguation as listComments —
-    // see the note there for why the hint is required.
     const { data, error } = await supabase
       .from('flag_comments')
-      .select(COMMENT_SELECT)
+      .select(COMMENT_READ_SELECT)
       .in('id', chunk);
 
     if (error) {
       if (isRelationMissing(error)) throw new CommentsTableNotReadyError();
       throw new Error(errorMessage(error));
     }
-    out.push(...((data ?? []) as RawCommentRow[]).map(flattenComment));
+    out.push(...(await withCommentAuthorProfiles(data ?? [])));
   }
   return out;
 }

@@ -1,11 +1,13 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
-  "revision": 2,
+  "revision": 3,
+  "phase03aRevisionNote": "Local candidate adds caller-scoped admin/rank, bounded leaderboard, and comment-context author RPC requirements. This revision does not mark any candidate RPC deployed. Prior revision notes and historical production capture remain unchanged.",
   "revisionNote": "Rev 2 corrects rev 1 after independent review. Rev 1 was accurate at NAME granularity but wrong at CALL-SITE granularity: it omitted a call site, misattributed two files, classified four sites by the throw at the call rather than by what the caller does with it, and did not record the moderation-column WRITE sites at all. Classifications below are per call site and were each read at the cited line.",
   "sourceLineage": {
     "build33": "f5594171e75bc5ec92a87d0392c361601ddedfba",
-    "phase01Candidate": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f"
+    "phase01Candidate": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
+    "phase03aCandidateBase": "9469c43ee68360dc28a74f8d0dd9a6930a602d33"
   },
   "onAbsentDefinitions": {
     "hard": "the call throws AND a user-visible action fails",
@@ -14,7 +16,9 @@
     "swallowed": "the error is caught and discarded; no user-visible effect",
     "silent": "no error check at all \u2014 the failure is invisible to code and user alike",
     "unreachable": "cannot be called when its prerequisite contract is absent",
-    "n/a": "the contract is deployed"
+    "n/a": "the contract is deployed",
+    "fail_closed": "the capability is withheld with a warning and no permissive fallback",
+    "optional_omitted": "the call fails but successfully loaded primary content remains visible while optional dependent content is omitted"
   },
   "surfaces": [
     {
@@ -203,8 +207,26 @@
         "mobile",
         "web"
       ],
-      "finding": null,
+      "finding": "FDA-026",
       "callSites": [
+        {
+          "file": "src/lib/flags.ts",
+          "line": 1681,
+          "kind": "rpc",
+          "name": "list_public_leaderboard",
+          "onAbsent": "hard",
+          "deployed": false,
+          "note": "Phase 03A local candidate. At most 20 rows of the four existing public leaderboard fields; no direct users fallback. Requires accepted backend deployment."
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "line": 1701,
+          "kind": "rpc",
+          "name": "get_my_leaderboard_rank",
+          "onAbsent": "optional_omitted",
+          "deployed": false,
+          "note": "Phase 03A local candidate. No user argument; returns the caller's rank/points. LeaderboardScreen catches failure and omits only the optional rank footer."
+        },
         {
           "file": "src/lib/users.ts",
           "line": 188,
@@ -214,9 +236,45 @@
           "note": "isFunctionMissing -> warn once, return []. Reference pattern for the FDA-004 capability gate."
         }
       ],
-      "deployedAlternative": "all-time leaderboard over public.users",
-      "productionImpact": "DEGRADED BY DESIGN \u2014 the monthly view is permanently empty until 2026-06-18_monthly_leaderboard_rpc_PROPOSED.sql is applied.",
+      "deployedAlternative": "Historical all-time leaderboard over public.users; no longer wired in the Phase 03A candidate.",
+      "productionImpact": "LOCAL CANDIDATE NOT APPLIED - all-time leaderboard requires the new Phase 03A RPC. Monthly absence still returns an empty state. Backend deployment and acceptance remain required.",
       "caveat": "isFunctionMissing matches 42883 / PGRST202 / 'could not find the function'. PGRST202 also fires on a SIGNATURE MISMATCH, so a future argument change degrades silently to an empty list rather than erroring. 'Absent' and 'wrong signature' are indistinguishable to this helper."
+    },
+    {
+      "surface": "admin-authorization",
+      "platforms": ["mobile", "web", "admin"],
+      "finding": "FDA-026",
+      "callSites": [
+        {
+          "file": "src/lib/admin.ts",
+          "line": 23,
+          "kind": "rpc",
+          "name": "current_user_can_admin",
+          "onAbsent": "fail_closed",
+          "deployed": false,
+          "note": "Phase 03A local candidate. No target-user argument or users.is_admin read. Only an error-free boolean true enables admin UI; missing/refused RPC warns and withholds access."
+        }
+      ],
+      "deployedAlternative": null,
+      "productionImpact": "LOCAL CANDIDATE NOT APPLIED - admin authorization requires the new Phase 03A RPC; this manifest does not establish deployment."
+    },
+    {
+      "surface": "comment-author-projection",
+      "platforms": ["mobile", "web"],
+      "finding": "FDA-026",
+      "callSites": [
+        {
+          "file": "src/lib/comments.ts",
+          "line": 64,
+          "kind": "rpc",
+          "name": "get_comment_author_profiles",
+          "onAbsent": "hard",
+          "deployed": false,
+          "note": "Phase 03A local candidate. Shared by listComments and fetchCommentsByIds, keyed by up to 200 actual comment IDs. Errors/incomplete projections fail the read; Unhide keeps failure distinct from deletion. addComment retains its own-user returning embed and does not call this RPC."
+        }
+      ],
+      "deployedAlternative": null,
+      "productionImpact": "LOCAL CANDIDATE NOT APPLIED - comment reads require the contextual author RPC. Own-comment INSERT remains a single request with the own-author embed."
     },
     {
       "surface": "reopen-and-dispute",

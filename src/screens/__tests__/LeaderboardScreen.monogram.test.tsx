@@ -36,9 +36,10 @@ import LeaderboardScreen from '../LeaderboardScreen';
 jest.mock('@/lib/auth', () => ({ useAuth: () => ({ user: { id: 'user-me' } }) }));
 
 const mockListLeaderboard = jest.fn();
+const mockGetUserLeaderboardRank = jest.fn();
 jest.mock('@/lib/flags', () => ({
   listLeaderboard: (...args: unknown[]) => mockListLeaderboard(...args),
-  getUserLeaderboardRank: jest.fn(async () => null),
+  getUserLeaderboardRank: (...args: unknown[]) => mockGetUserLeaderboardRank(...args),
 }));
 
 jest.mock('@/lib/users', () => {
@@ -61,9 +62,21 @@ const ENTRIES = [
 beforeEach(() => {
   jest.clearAllMocks();
   mockListLeaderboard.mockResolvedValue(ENTRIES);
+  mockGetUserLeaderboardRank.mockResolvedValue(null);
 });
 
 const open = () => render(<LeaderboardScreen visible onClose={jest.fn()} />);
+
+it('keeps the loaded leaderboard visible when the caller-rank request fails', async () => {
+  mockListLeaderboard.mockResolvedValue([
+    { id: 'other-contributor', display_name: 'Contributor', avatar_url: null, points: 100 },
+  ]);
+  mockGetUserLeaderboardRank.mockRejectedValue(new Error('Rank unavailable'));
+  const { findByText, queryByText } = open();
+  await waitFor(() => expect(mockGetUserLeaderboardRank).toHaveBeenCalledWith());
+  expect(await findByText('Contributor')).toBeTruthy();
+  expect(queryByText('Rank unavailable')).toBeNull();
+});
 
 /**
  * The monogram and the "you" badge both carry `decorativeProps`, which RNTL
