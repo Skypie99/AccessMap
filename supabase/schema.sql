@@ -1,3 +1,23 @@
+-- ============================================================================
+-- STATUS (PHASE-02B, 2026-09-04): REFERENCE ONLY — NOT THE GENERATED SNAPSHOT.
+--
+-- The authoritative generated snapshot is now supabase/schema.generated.sql,
+-- produced by replaying the 71 applied migrations plus supabase/migrations-next/
+-- onto a disposable Postgres and dumping the result:
+--     npm run db:snapshot
+-- Its freshness is enforced by scripts/check-schema-snapshot.mjs (in CI), so it
+-- cannot silently drift the way a hand-maintained file does.
+--
+-- THIS file is kept because it is hand-written, is cited by several tests, and
+-- carries reasoning a pg_dump cannot (notably the points-economy warning that
+-- src/lib/__tests__/pointsSqlParity.test.ts asserts on). It is NOT regenerated,
+-- is NOT the migration lineage, and must NOT be applied to anything.
+--
+-- Authority order: supabase/migrations/ (what production ran)
+--                  > supabase/schema.generated.sql (where that lineage lands)
+--                  > this file (commentary and bootstrap reference).
+-- ============================================================================
+
 -- AccessMap database schema.
 -- Run in the Supabase SQL editor (or via `supabase db push`).
 --

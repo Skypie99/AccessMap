@@ -1,0 +1,67 @@
+-- =============================================================================
+-- ADOPTED HISTORY — private.current_user_is_admin() and the users UPDATE guard
+--
+-- DISCOVERED BY: the PHASE-02B disposable replay, 2026-09-04. Replaying the 71
+-- applied migrations onto bare Postgres produced 47 policies whose NAMES match
+-- production exactly — but one PREDICATE differs, and the difference is the
+-- admin-privilege-escalation guard.
+--
+--   repository lineage produces:
+--     with check (auth.uid() = id and not (is_admin is distinct from
+--       (select users_1.is_admin from users users_1 where users_1.id = auth.uid())))
+--
+--   production actually has:
+--     with check (auth.uid() = id and not (is_admin is distinct from
+--       (select private.current_user_is_admin())))
+--
+-- The `private` schema and its function exist in production and in NO
+-- repository file — not in migrations/, not in nonmanaged/. They were applied
+-- out of band. This is an UNMAPPED, AUTHORIZATION-CRITICAL object, which is a
+-- declared Phase 02 stop condition; it is recorded here rather than silently
+-- absorbed, and a forward-only reconciliation candidate exists at
+-- supabase/migrations-next/20260904000000_adopt_private_admin_helper.sql.
+--
+-- LIVE IN HOSTED CATALOG: yes (read-only capture, 2026-09-04)
+-- RECORDED APPLIED IN LEDGER: no, under any version
+--
+-- Definitions below are transcribed VERBATIM from pg_get_functiondef and
+-- pg_get_expr against production. They are evidence, not an apply script:
+-- nothing in nonmanaged/ is ever executed by the replay harness or the CLI.
+--
+-- WHY THE PRODUCTION SHAPE IS BETTER, for whoever reconciles this:
+--   * SECURITY DEFINER with `SET search_path TO ''` — the check cannot be
+--     subverted by a caller's search_path, and does not depend on the caller
+--     being able to read public.users under RLS.
+--   * The repository's inline-subquery variant reads public.users as the
+--     CALLER. It happens to work only because "users readable by authenticated"
+--     is USING (true). Tighten that policy (FDA-026 proposes exactly that) and
+--     the repository's escalation guard silently changes behaviour.
+--   * So the repository variant is not merely different — it is load-bearing on
+--     a policy that a later phase intends to restrict.
+-- =============================================================================
+
+-- Production state, transcribed 2026-09-04 (read-only):
+
+-- create schema private;
+-- grant usage on schema private to authenticated;   -- plus postgres USAGE, CREATE
+
+-- CREATE OR REPLACE FUNCTION private.current_user_is_admin()
+--  RETURNS boolean
+--  LANGUAGE sql
+--  STABLE SECURITY DEFINER
+--  SET search_path TO ''
+-- AS $function$
+-- select account.is_admin
+-- from public.users as account
+-- where account.id = (select auth.uid())
+-- $function$;
+
+-- revoke execute on function private.current_user_is_admin() from public, anon;
+-- grant execute on function private.current_user_is_admin() to authenticated;
+--   (production EXECUTE grantees, verified: authenticated, postgres)
+
+-- alter policy "users update own row" on public.users
+--   with check (
+--     ((select auth.uid()) = id)
+--     and (not (is_admin is distinct from (select private.current_user_is_admin())))
+--   );

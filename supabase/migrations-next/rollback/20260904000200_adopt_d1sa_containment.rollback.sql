@@ -1,0 +1,15 @@
+-- Forward restoration for 20260904000200.
+--
+-- WARNING: this restores the PRE-D1S-A policy shapes, which are the ones the
+-- D1S-A packet was written to contain (stale-account writes and looser photo
+-- metadata ownership). Against production it would REMOVE live containment.
+-- It exists so the rollback set is complete and rehearsable; running it on any
+-- real database requires Sky's explicit authorization and a fresh capture first.
+--
+-- The pre-D1S-A definitions are recoverable verbatim from the applied lineage:
+--   supabase/migrations/20260602060359_flags_close_nonowner_delete_and_fix_triage.sql
+--   supabase/migrations/20260727075530_sr024_flag_photos_anon_explicit_20260727.sql
+-- Replaying those two files' policy blocks restores the prior state exactly.
+-- They are deliberately NOT duplicated here: an applied migration is immutable
+-- history and must be read from its own file, never re-transcribed into a
+-- rollback that could silently drift from it.

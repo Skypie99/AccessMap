@@ -135,14 +135,12 @@ describe('PHASE-02A — managed migration lineage', () => {
     // Six unapplied files already sit before the head; they are recorded and
     // frozen. A seventh would be a fresh ordering hazard: `supabase db push`
     // resolves by version, so a backdated file applies out of sequence.
-    const KNOWN_BACKDATED = [
-      '20260818211920', // reconcile_oob_grant_select_is_admin_for_replay_20260829
-      '20260828040000', // mod1_moderation_release_safety
-      '20260828050000', // mod1_admin_report_queue
-      '20260828060000', // mod1r_fix1_report_and_insert_authz
-      '20260828070000', // mod1r_fix1_pending_close_state
-      '20260828080000', // mod1r_fix2_action_intent
-    ];
+    // PHASE-02B emptied this. The six backdated unapplied files were moved to
+    // supabase/nonmanaged/proposed/, where unapplied work belongs, so
+    // supabase/migrations/ now holds ONLY the 71 versions production applied.
+    // The ordering hazard is gone rather than merely allowlisted; any
+    // reappearance is a regression.
+    const KNOWN_BACKDATED: string[] = [];
     const backdated = crosswalk.entries
       .filter((e) => e.status === 'UNAPPLIED_BACKDATED')
       .map((e) => e.version);

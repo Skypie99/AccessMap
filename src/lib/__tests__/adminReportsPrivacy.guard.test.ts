@@ -59,7 +59,7 @@ describe('MOD1 — the report row never renders a reporter field', () => {
 });
 
 describe('MOD1 — RLS scopes admin access to report-shaped rows only', () => {
-  const migration = read('supabase/migrations/20260828050000_mod1_admin_report_queue.sql');
+  const migration = read('supabase/nonmanaged/proposed/20260828050000_mod1_admin_report_queue.sql');
 
   it('both the select and update policies require the [REPORT] prefix, not blanket feedback access', () => {
     const selectPolicy = migration.slice(

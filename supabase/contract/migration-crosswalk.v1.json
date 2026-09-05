@@ -10,10 +10,10 @@
   },
   "summary": {
     "appliedInLedger": 71,
-    "repoManagedFiles": 77,
+    "repoManagedFiles": 71,
     "appliedWithSource": 71,
     "appliedWithoutSource": 0,
-    "unappliedBackdated": 6,
+    "unappliedBackdated": 0,
     "unappliedForward": 0,
     "nameDrift": 8
   },
@@ -663,14 +663,6 @@
       "ledgerName": "sr050_admin_delete_flag_photo_20260729"
     },
     {
-      "version": "20260818211920",
-      "status": "UNAPPLIED_BACKDATED",
-      "file": "supabase/migrations/20260818211920_reconcile_oob_grant_select_is_admin_for_replay_20260829.sql",
-      "slug": "reconcile_oob_grant_select_is_admin_for_replay_20260829",
-      "sha256": "5abaa3cd964ecfe4d4a9a5a260dd37a5d0ff64325db181ee67c536cfa74625bc",
-      "bytes": 4862
-    },
-    {
       "version": "20260819204409",
       "status": "APPLIED",
       "file": "supabase/migrations/20260819204409_flag_status_transition_guard.sql",
@@ -687,46 +679,6 @@
       "sha256": "c78b11dd99e785044726307544be37da682d77f310807b2ce61fb7ec9874ab0b",
       "bytes": 1388,
       "ledgerName": "photo_alt_text"
-    },
-    {
-      "version": "20260828040000",
-      "status": "UNAPPLIED_BACKDATED",
-      "file": "supabase/migrations/20260828040000_mod1_moderation_release_safety.sql",
-      "slug": "mod1_moderation_release_safety",
-      "sha256": "65b337707782cf88f3a3afcb4dd37da58ff01e0469dad963433cc69b781c8bb0",
-      "bytes": 3120
-    },
-    {
-      "version": "20260828050000",
-      "status": "UNAPPLIED_BACKDATED",
-      "file": "supabase/migrations/20260828050000_mod1_admin_report_queue.sql",
-      "slug": "mod1_admin_report_queue",
-      "sha256": "480410d06d1e8269b4f151269f847425330f069d390d16bd638732c53ead9db7",
-      "bytes": 5946
-    },
-    {
-      "version": "20260828060000",
-      "status": "UNAPPLIED_BACKDATED",
-      "file": "supabase/migrations/20260828060000_mod1r_fix1_report_and_insert_authz.sql",
-      "slug": "mod1r_fix1_report_and_insert_authz",
-      "sha256": "494d580feeb3b9566879e8ffc1244e17c5e7b772dd0967ce2c624f59970dc12f",
-      "bytes": 4297
-    },
-    {
-      "version": "20260828070000",
-      "status": "UNAPPLIED_BACKDATED",
-      "file": "supabase/migrations/20260828070000_mod1r_fix1_pending_close_state.sql",
-      "slug": "mod1r_fix1_pending_close_state",
-      "sha256": "c783f73d3a2cc561320644ed6d810a44155f1941e55866a4c4d943f25a7babc9",
-      "bytes": 2749
-    },
-    {
-      "version": "20260828080000",
-      "status": "UNAPPLIED_BACKDATED",
-      "file": "supabase/migrations/20260828080000_mod1r_fix2_action_intent.sql",
-      "slug": "mod1r_fix2_action_intent",
-      "sha256": "b38824b60120e543ac3fcb1aca0693a0278656ea2d7206792c307eba97d5c79b",
-      "bytes": 3756
     },
     {
       "version": "20260830130000",

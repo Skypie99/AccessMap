@@ -101,3 +101,32 @@ functions exist at any signature, so none of these has been quietly applied unde
 3. A file here is never promoted by renaming it into an applied-looking version.
 4. `destructive-data/` is excluded from every automated replay.
 5. A receipt is not proof of deployment. Only a fresh catalog capture is.
+
+---
+
+## PHASE-02B update (2026-09-04) — what the disposable replay changed
+
+The 71 applied migrations were replayed from zero onto a throwaway Postgres and
+compared with production. Three things follow for this directory:
+
+1. **`supabase/migrations/` now holds ONLY the 71 applied versions.** The six
+   unapplied files that were sitting there — one reconcile file and the five
+   MOD1/MOD1R files — moved into `proposed/`, where unapplied work belongs. All
+   six were timestamped *before* the ledger head, so `db push` would have applied
+   them out of sequence. The hazard is gone rather than allowlisted.
+
+2. **A new adopted-history record**: `live-out-of-band/2026-09-04_adopted_private_admin_helper.sql`.
+   The replay found that production's `users update own row` policy guards
+   admin escalation with `private.current_user_is_admin()` — a SECURITY DEFINER
+   helper in a schema that exists in production and in **no repository file**.
+   This was an unmapped, authorization-critical object.
+
+3. **`migrations-next/` now holds five inert forward-only candidates** that make
+   a from-source rebuild match production. Replayed together with the lineage
+   they reproduce production's policy and trigger surface **exactly**
+   (`policyPredicateMd5 2cd803fa…`, `triggerMd5 cefac00f…`). None is applied
+   anywhere; each has a rollback in `migrations-next/rollback/`.
+
+The replay harness **refuses** to execute anything under `nonmanaged/`, and
+`destructive-data/` in particular — that directory holds the takedown script
+that created the `bk_2026_08_22_*` tables.

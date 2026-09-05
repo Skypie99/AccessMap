@@ -1,0 +1,6 @@
+{
+  "inputsHash": "3244d6b5584208f606715b40c1efbb9d4b3dfb7b1b4431587a2b333047ae417b",
+  "snapshotHash": "339c73fd87e19210e46a2302dc52fea890a468857645d405302fb3ca95fb3f56",
+  "inputCount": 77,
+  "generatedBy": "node scripts/replay-migrations.mjs --with-next --dump"
+}

@@ -95,6 +95,48 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:ci -- --passWithNoTests --forceExit --watchAll=false
 
+  migration-replay:
+    name: Migration Replay (FDA-027)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # PHASE-02B: the replay needs a real Postgres to be evidence at all. 17
+      # matches production's major version. The harness builds its own throwaway
+      # cluster with initdb, so no service container is used and nothing
+      # persists between steps.
+      - name: Install PostgreSQL 17
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-17
+
+      - name: Discover pgTAP suites
+        run: node scripts/run-pgtap.mjs --discover
+
+      - name: Schema snapshot is current
+        run: node scripts/check-schema-snapshot.mjs
+
+      # Applied lineage alone must still reproduce its RECORDED fingerprint. If
+      # someone edits an applied migration, this fails here rather than in a
+      # staging apply.
+      - name: Replay applied lineage from zero
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/replay-migrations.mjs
+
+      # And the lineage plus the forward-only candidates must still reproduce
+      # PRODUCTION's authorization and trigger surface exactly.
+      - name: Replay with forward-only candidates and compare to production
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/replay-migrations.mjs --with-next
+
   perf-budget:
     name: Performance Budget
     runs-on: ubuntu-latest
