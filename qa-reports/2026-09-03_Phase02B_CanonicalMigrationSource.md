@@ -1,10 +1,9 @@
 # PROMPT-02B — Canonical forward-only migration source preparation
 
-> **FINAL CODEX ACCEPTANCE VERDICT: HOLD.** The implementation narrative in sections 1–11 is
-> retained because it contains useful replay and lineage evidence, but it was Claude's interrupted
-> draft and is not an acceptance record. Every PASS, parity, rollback, CI, credential-isolation,
-> and residual-delta claim in those sections is superseded by the independent acceptance in
-> sections 12–18.
+> **CURRENT FINAL CODEX ACCEPTANCE VERDICT: PASS — REVISION 2.** Sections 1–18 preserve the
+> revision-1 implementation and HOLD/falsification record exactly as historical evidence. Their
+> top-level HOLD disposition remains authoritative for revision 1 only. Sections 19–27 record the
+> separate revision-2 repair and fresh independent acceptance.
 
 | | |
 |---|---|
@@ -556,3 +555,272 @@ SAFE_TO_BEGIN_NEXT_FLAGSTONE_PHASE: NO
 - **Alternative:** keep pgTAP unavailable and block all later apply gates.
 - **Impact:** Prompt 02B can be repaired without applying production migrations, but no migration
   apply should be authorized until the behavioral suite truly runs.
+
+---
+
+# REVISION 2 — Repair and fresh acceptance
+
+## 19. Repair intake and immutable identity
+
+```text
+P02B_REPAIR_INTAKE_GATE:
+
+BASE_SHA: 68aaf711c2023dd4aa1d6b9324f30e2b4e4b3bc1
+BASE_TREE: 1f4ea1c1b2122c5c7e6404e99c407eeb4cc0f003
+
+REPAIR_BRANCH: codex/p02b-repair-rev2-20260904
+REPAIR_WORKTREE: /Users/skypie/AccessMap-codex/p02b-repair-rev2-20260904
+
+WORKTREE_CLEAN: YES at intake
+INTERRUPTED_GIT_STATE: NONE
+CONCURRENT_WRITER_RISK: LOW — new isolated worktree; no existing checkout reused
+
+P02B_REPAIR_INTAKE_GATE: PASS
+```
+
+The branch was created from the exact HOLD receipt tip. The failed implementation
+`2ae55f930494c64f47c06485560e124eaf567811` / tree
+`88d95ade2e3d766b151d4e0e0533c246f3563484`, the HOLD receipt
+`68aaf711c2023dd4aa1d6b9324f30e2b4e4b3bc1` / tree
+`1f4ea1c1b2122c5c7e6404e99c407eeb4cc0f003`, and all sections above remain in ancestry.
+
+| Revision-2 identity | Value |
+|---|---|
+| Accepted 02A predecessor | `e0bb8aaa24cac2fe27318c262c7153be15f31806` / `a651598004313bf55cce44c986b535e17cf0b1a5` |
+| Repair base | `68aaf711c2023dd4aa1d6b9324f30e2b4e4b3bc1` / `1f4ea1c1b2122c5c7e6404e99c407eeb4cc0f003` |
+| Revision-2 implementation | `1682bebdeafedc9b3b0f83a5d24ff07a303ef890` / `2be6ce7fc156b65f7b542558d6884c7c54411546` |
+| Revision-2 acceptance/finalization | The commit containing sections 19–27 and the v2 evidence; intentionally not self-embedded |
+| Production mutation | **NONE** |
+| Remote mutation | **NONE** |
+| Main merge/push | **NOT PERFORMED / NOT AUTHORIZED** |
+
+## 20. HOLD finding closure ledger
+
+| Finding | Revision-2 disposition | Objective evidence |
+|---|---|---|
+| H-01 generated credential-shaped literal | **PASS** | The generated snapshot no longer carries the value. It was proven, without printing it, to be the same 64-byte historical value in the immutable applied migration. The narrowly allowed historical source remains byte-identical; the safe Vault-backed forward candidate replaces its runtime use. Credential guard passes after all evidence files were added. |
+| H-02 incomplete comparator | **PASS** | Comparator v3 covers roles; schemas; public tables/RLS; public structural columns; public/storage policies with command, permissiveness, roles and hashed complete expressions; public triggers with structural fields and hashed complete definitions; public/private functions with hashed complete definitions, result/language/security/config/volatility/parallel metadata; explicit function ACLs; public table grants; and the 71-entry migration ledger. |
+| H-03 invalid provenance | **PASS** | Fresh catalog-only read at `2026-09-05T04:28:03.973Z`, after implementation commit time, bound to implementation SHA/tree, comparator v3/hash, the authoritative project in both accepted manifests, and explicit read-only/no-row/no-mutation flags. Raw machine-readable capture precedes both comparison artifacts. |
+| H-04 global PostgreSQL mutation | **PASS for repaired mechanism** | Rev2 never writes the PostgreSQL shared extension directory. Every replay records before/after hashes, uses a socket-only temp cluster and temp-only source adaptation, destroys temporary state, and reports global state unchanged. Two rev1 stub files remain on the host unchanged; `HOST_POSTGRES_CLEAN: NO`. Removing them is owner-only host hygiene outside this task's no-global-mutation authority. |
+| H-05 rollback truth | **PASS** | Each candidate's exact forward catalog hash and changed sections are pinned. Four declared `UNSAFE_BASELINE_RESTORE` rollbacks restore every compared catalog section exactly. Candidate `00400` is `NON_REVERSIBLE_SECURITY_REPAIR`; its rollback refuses atomically and leaves the forward catalog unchanged. |
+| H-06 MOD1R paths | **PASS** | Fixture includes resolve to one managed migration and five exact nonmanaged proposals. The socket-only runner executes the six-file allowlist and all 19 raising-proof cases pass. Canonical replay still refuses nonmanaged inputs. |
+| H-07 pgTAP classification | **PASS / execution UNAVAILABLE** | Discovery reports exactly 3 pgTAP suites (7 + 26 + 25 planned), 1 fixture and 1 raising proof. Execution exits 2 as `UNAVAILABLE` because pgTAP is absent; no installation was attempted. This is nonblocking for 02B and blocking before any later authorized apply. |
+| H-08 snapshot guard | **PASS** | Stamp v2 pins 87 ordered inputs. The independent inventory check detects added managed migrations even with a stale crosswalk. A temp-only negative matrix rejects nine classes: lineage/candidate/bootstrap/comparator content, snapshot hand edit, managed add/delete, crosswalk ordering, and source movement. |
+| H-09 diff check | **PASS** | `git diff --check 68aaf711..1682beb` exits 0; no broad formatting churn. |
+| H-10 parity claims | **PASS with exact bounds** | Duplicate-trigger source defect, single repaired survivor and matching trigger-definition hash are proven. The private admin helper matches by complete-definition hash plus security/config/ACL metadata. Relevant function ACL rows match exactly after revokes. No claim is made beyond comparator-v3 scope. |
+
+## 21. Replay, evidence, and comparison results
+
+The harness accepts no production URL, credential, service-role value or project reference. It
+starts PostgreSQL 17 in a new temporary directory with TCP disabled, invokes `psql -X` through an
+explicit environment allowlist, and destroys the cluster on normal exit, failure, SIGINT and
+SIGTERM. It executes the 71 crosswalk-selected managed migrations only. The one historical
+`CREATE EXTENSION pg_net` statement is adapted only in a temporary copy; inert signature-compatible
+`net.http_get/http_post` functions live only in the disposable bootstrap.
+
+Approved machine-readable evidence:
+
+- `supabase/contract/production-catalog-capture.v2.json`
+- `supabase/contract/replay-applied-catalog-capture.v2.json`
+- `supabase/contract/catalog-comparison-applied.v2.json`
+- `supabase/contract/replay-catalog-capture.v2.json`
+- `supabase/contract/catalog-comparison.v2.json`
+
+The evidence contains catalog metadata only. Policy predicates, trigger definitions and function
+definitions are represented by hashes. A structural inspection found no application rows, raw
+definitions, credential strings, JWTs, emails, UUID values, URLs or secret-bearing configuration.
+The only 64-character values are named comparator/catalog SHA-256 fields.
+
+| Capture | Roles | Schemas | Tables | Columns | Policies | Triggers | Functions | Function grants | Table grants | Ledger |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Applied-only replay | 3 | 2 | 16 | 104 | 47 | 24 | 25 | 55 | 378 | 71 |
+| Replay + 5 candidates | 3 | 3 | 16 | 104 | 47 | 25 | 28 | 49 | 378 | 71 |
+| Production raw | 3 | 3 | 23 | 152 | 47 | 25 | 28 | 49 | 434 | 71 |
+| Production after accepted backup-table removal | 3 | 3 | 16 | 104 | 47 | 25 | 28 | 49 | 378 | 71 |
+
+Applied-only comparison is intentionally `DRIFT`. It identifies:
+
+- added production schema: `private`;
+- five changed policies;
+- two production trigger additions and the source-only duplicate trigger;
+- three production function additions and four changed function definitions; and
+- three production ACL additions plus nine excessive source ACL rows.
+
+The detailed qualified object names are retained in
+`catalog-comparison-applied.v2.json`. With all five inert candidates, metadata and every one of
+the ten scoped sections match. The only accepted residual is the exact seven
+`bk_2026_08_22_*` nonmanaged backup tables, observed in production and proven absent from replay.
+
+Claim boundary: comparator-v3 parity is not complete database or runtime parity. It excludes
+indexes, constraints, sequences, owners, storage triggers, storage table grants, application data,
+and runtime behavior of hosted-extension/bootstrap stubs.
+
+## 22. Final repair gate matrix
+
+| Command | Exit | Result |
+|---|---:|---|
+| `npm run typecheck` | 0 | PASS |
+| `npm run lint` | 0 | PASS with 91 inherited warnings, 0 errors |
+| `npm run contract:check` | 0 | PASS |
+| focused canonical/lineage/credential Jest | 0 | 3 suites / 46 tests PASS |
+| `npm run db:snapshot:check` | 0 | PASS, 87 ordered inputs |
+| `npm run db:snapshot:negative` | 0 | PASS, 9 tamper classes rejected |
+| `node scripts/run-pgtap.mjs --discover` | 0 | PASS, 3 suites + 1 fixture + 1 raising proof |
+| `node scripts/run-pgtap.mjs --run` | 2 | **UNAVAILABLE**, accurately non-green; pgTAP absent |
+| `npm run db:mod1r-proof` | 0 | PASS, 19/19 cases; temp destroyed |
+| applied replay, local only | 0 | PASS, 71/71; temp destroyed; global unchanged |
+| applied replay vs production | 1 | Expected `DRIFT`; exact machine-readable object deltas retained |
+| with-next replay vs production | 0 | PASS, 71 + 5; 10/10 sections and metadata exact after accepted residual |
+| `npm run db:rollback:verify` | 0 | PASS, 5/5 declared contracts |
+| `git diff --check 68aaf711..1682beb` | 0 | PASS |
+| full Jest | 1 | 272/284 suites pass; 4,174 pass / 14 fail / 32 todo of 4,220 tests |
+
+The 12 failing full-Jest suites are unchanged from accepted 02A/revision-1 reconciliation:
+`dismissalStandard.guard`, `focusOnOpen.guard`, `hitTargetFrame.guard`,
+`keyboardClass.guard`, `privacy.guard`, `visualFreezeFixWave.guard`,
+`TasksScreenFlagCard`, `Wave2ScreenGeometry`, `bp11PressVocabGuards`,
+`bp3TrustEngineGuards`, `mapChromeBudget.guard`, and `tasksHeaderReclaim.guard`.
+They are inherited UI/copy debt outside Prompt 02B. No new revision-2 suite or test is red.
+
+## 23. Independent falsification — round 2
+
+Two independent read-only reviewers attempted to falsify the committed implementation and
+uncommitted evidence. Early findings were treated as real: the snapshot inventory, forward-state
+rollback proof, residual handling, capture metadata binding, cross-collation normalization,
+authoritative project binding and shallow-CI ancestry were repaired before the final review target.
+
+Final target for both reviewers:
+`1682bebdeafedc9b3b0f83a5d24ff07a303ef890` /
+`2be6ce7fc156b65f7b542558d6884c7c54411546`.
+
+| Reviewer lane | Final verdict | Result |
+|---|---|---|
+| Production provenance/comparator | **PASS** | Independently reran the committed comparator read-only, reproduced raw production equality, both replay outcomes, exact residuals, H-10 hash/ACL claims and evidence exclusions. No blocker. |
+| Replay/snapshot/rollback/safety | **PASS** | Independently reran lineage guards, snapshot and nine negatives, five forward/rollback contracts, MOD1R, both comparisons and global-state checks. No blocker. |
+
+Neither reviewer edited the worktree or mutated production/global PostgreSQL state.
+
+## 24. Prompt 02B and FDA-027 final disposition
+
+```text
+PROMPT_02B_REPAIR_REVISION: PASS
+PROMPT_02B_ACCEPTANCE: PASS
+
+NEW_02B_REGRESSIONS: NONE
+
+INHERITED_FAILURES:
+12 UI/copy Jest suites; 14 tests
+91 lint warnings
+repo-wide formatting debt from accepted predecessor
+
+UNAVAILABLE_GATES:
+pgTAP execution — extension absent, no install attempted
+authorized staging apply/db diff — no staging apply authorized
+hosted-extension/runtime behavior — outside catalog replay proof
+
+FDA_027_SOURCE_REPRODUCIBILITY: PASS
+FDA_027_DISPOSABLE_REPLAY_PARITY: PASS
+FDA_027_PRODUCTION_LEDGER_CLOSURE: NOT_CLOSED
+
+REMAINING_02B_BLOCKERS: NONE
+```
+
+Production-ledger closure remains `NOT_CLOSED` by design: the five forward candidates are inert,
+unapplied and absent from the 71-entry production ledger. No production apply is part of Phase 02B.
+
+## 25. Full Phase 02 status
+
+```text
+PROMPT_02A_ACCEPTED: YES
+PROMPT_02B_ACCEPTED: YES
+
+PHASE_02_ACCEPTANCE: PASS
+
+PHASE_02_ACCEPTED_SHA:
+the acceptance/finalization commit containing this receipt; resolve with git log -1 --format=%H
+
+PHASE_02_ACCEPTED_TREE:
+the tree of that same acceptance/finalization commit; resolve with git rev-parse HEAD^{tree}
+
+WORKTREE_CLEAN: re-derived after finalization commit
+REMOTE_MUTATIONS: NONE
+PRODUCTION_MUTATIONS: NONE
+REMAINING_PHASE_02_BLOCKERS: NONE
+```
+
+Ancestry was verified: accepted 02A → revision-1 implementation → revision-1 HOLD receipt →
+revision-2 implementation. No later phase may use `2ae55f93` or `68aaf711` as an accepted
+Phase-02 base.
+
+## 26. Flagstone Claude-to-Codex transition gate
+
+```text
+FLAGSTONE_CLAUDE_TO_CODEX_HANDOFF: PASS
+
+CLAUDE_COMPLETED:
+PHASE 00
+PHASE 01
+PROMPT 02A
+PROMPT 02B REVISION-1 IMPLEMENTATION
+
+CODEX_COMPLETED:
+02B REVISION-1 ACCEPTANCE / HOLD
+02B REVISION-2 REPAIR
+02B REVISION-2 INDEPENDENT ACCEPTANCE
+02B FINALIZATION
+
+CODEX_BASE_SHA:
+the acceptance/finalization commit containing this receipt
+CODEX_BASE_TREE:
+the tree of that same commit
+CODEX_BASE_BRANCH: codex/p02b-repair-rev2-20260904
+CODEX_BASE_WORKTREE: /Users/skypie/AccessMap-codex/p02b-repair-rev2-20260904
+
+WORKTREE_CLEAN: re-derived after finalization commit
+PHASE_02_ACCEPTANCE: PASS
+FDA_027_STATUS: SOURCE PASS; DISPOSABLE REPLAY PASS; PRODUCTION LEDGER NOT_CLOSED
+
+CARRY_FORWARD:
+five inert forward candidates; pgTAP/staging execution before any authorized apply;
+seven production-only backup tables remain owned by the existing privacy/deletion lane
+
+OWNER_ONLY_ACTIONS:
+Sky merges/pushes; separately authorize any candidate apply; separately authorize removal
+of the two verified rev1 pg_net host stubs if host hygiene is desired
+
+NEXT_AUTHORIZED_PHASE:
+Phase 03A under a separate explicit prompt; not started here
+
+NEXT_PHASE_ENTRY_REQUIREMENTS:
+use the exact clean acceptance/finalization commit from this branch; preserve the
+five candidates as inert unless separately authorized
+
+OUTSTANDING_TRANSITION_BLOCKERS: NONE
+SAFE_TO_BEGIN_NEXT_FLAGSTONE_PHASE: YES
+```
+
+## 27. DECISIONS FOR SKY
+
+### Production application remains owner-only
+
+- **Decision:** whether and when to execute the five inert candidates against an authorized
+  environment.
+- **Recommendation:** do not apply them until pgTAP is installed in a pinned disposable/staging
+  environment and all three suites execute.
+- **Why:** source/replay parity is proven, but pgTAP behavior and a real staging apply remain
+  unavailable.
+- **Alternative:** retain the candidates as source closure only.
+- **Impact:** FDA-027 production-ledger closure remains `NOT_CLOSED`; Phase 02 source acceptance
+  is unaffected.
+
+### Host PostgreSQL hygiene
+
+- **Decision:** whether to remove exactly `pg_net.control` and `pg_net--1.0.sql` left by
+  revision 1 in the Homebrew PostgreSQL 17 extension directory.
+- **Recommendation:** remove only under separate explicit host-mutation authority after rechecking
+  their hashes.
+- **Why:** they byte-match the retired revision-1 stubs, but this task explicitly prohibited
+  global PostgreSQL mutation.
+- **Alternative:** leave them in place.
+- **Impact:** leaving them does not affect rev2's no-mutation proof, but
+  `HOST_POSTGRES_CLEAN` remains `NO`.
