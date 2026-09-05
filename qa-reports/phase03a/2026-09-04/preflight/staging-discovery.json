@@ -1,0 +1,26 @@
+{
+  "observedAtUtc": "2026-09-05 05:19:47 UTC",
+  "collectionMethods": [
+    "supabase_list_projects",
+    "supabase_list_branches"
+  ],
+  "production": {
+    "projectRef": "kldlwszpfkdmsjrjhjym",
+    "status": "ACTIVE_HEALTHY",
+    "postgresVersion": "17.6.1.121",
+    "region": "us-west-2"
+  },
+  "visibleProjectCount": 2,
+  "unrelatedProjectDetailsOmitted": true,
+  "flagstoneBranches": [
+    {
+      "name": "main",
+      "projectRef": "kldlwszpfkdmsjrjhjym",
+      "isDefault": true
+    }
+  ],
+  "stagingProjectRef": null,
+  "stagingIdentityStatus": "NOT_IDENTIFIED",
+  "stagingMutationAuthorization": "NOT_GRANTED",
+  "meaning": "No non-production Flagstone branch was returned. An unrelated visible project was not assumed to be staging; unlisted or inaccessible staging is not ruled out."
+}
