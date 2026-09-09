@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "finding": "FDA-028",
+  "unit": "architecture evidence review",
+  "capturedUtc": "2026-09-09",
+  "mode": "READ_ONLY_LOCAL_PLUS_PUBLIC_DOCS",
+  "hostedMutations": false,
+  "hostedRequestsByThisSession": false,
+  "stagingTouched": false,
+  "productionTouched": false,
+  "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "sourceTree": "857411dc733b93686d789a72e461856698bec814",
+
+  "trustedInputEvidence": {
+    "E1": {
+      "claim": "Supabase's own Edge Function example reads x-forwarded-for and selects element [0].",
+      "source": "https://supabase.com/docs/guides/functions/examples/cloudflare-turnstile",
+      "verifiedUtc": "2026-09-09",
+      "quote": "function ips(req: Request) { return req.headers.get('x-forwarded-for')?.split(/\\s*,\\s*/) }",
+      "trustClaimMadeByPage": false,
+      "assessment": "Element [0] is the CALLER-CONTROLLED end of an append-style XFF chain. The example is not a provenance contract and, under the observed append behaviour in E3, reading [0] is affirmatively unsafe."
+    },
+    "E2": {
+      "claim": "use_remote_address:true / Envoy XFF handling is documented ONLY for the SELF-HOSTED gateway.",
+      "source": "https://supabase.com/docs/guides/self-hosting/self-hosted-envoy",
+      "verifiedUtc": "2026-09-09",
+      "quote": "use_remote_address: true | Treats Envoy as an edge proxy: uses the peer connection IP as the trusted client address (rather than trusting client-supplied X-Forwarded-For) and strips untrusted x-envoy-* request headers",
+      "appliesToHostedPlatform": false,
+      "assessment": "Cannot be transplanted onto the hosted platform. Confirms the 2026-09-05 finding F28-A is still open on 2026-09-09."
+    },
+    "E3": {
+      "claim": "Community report demonstrates hosted platform APPENDS the real address after a caller-supplied value.",
+      "source": "https://github.com/orgs/supabase/discussions/34647",
+      "reportedUtc": "2025-04-02",
+      "observed": "x-forwarded-for: spoofed,68.65.164.215",
+      "answeredBySupabase": false,
+      "authoritative": false,
+      "assessment": "Corroborates that (a) a caller CAN inject a leading element, and (b) at that time the trustworthy value was the LAST element. Community observation is not a versioned contract; hop count is not guaranteed stable."
+    },
+    "E4": {
+      "claim": "Supabase's rate-limiting example does not demonstrate anonymous client identity.",
+      "source": "https://supabase.com/docs/guides/functions/examples/rate-limiting",
+      "verifiedUtc": "2026-09-09",
+      "observed": "No client-IP extraction shown. Counter backend is Upstash Redis. Keying described only as 'can even rate limit based on the user ID from Supabase Auth'.",
+      "assessment": "Confirms no first-party anonymous-identity pattern exists. Redis is the example's choice, not a requirement."
+    },
+    "netAssessment": "F28-A REMAINS OPEN on 2026-09-09. No authoritative hosted-platform statement establishes the XFF overwrite/append rule, the trusted proxy chain, or hop count. Any design MUST therefore treat the header as structurally untrusted and be safe under an unknown/changing chain."
+  },
+
+  "localBoundaryEvidence": {
+    "guestFlagPath": {
+      "caller": "src/lib/flags.ts:1735 createAnonFlag -> direct INSERT public.flags",
+      "policy": "CREATE POLICY \"flags anon insert\" ON public.flags FOR INSERT TO anon WITH CHECK ((user_id IS NULL) AND (photo_url IS NULL) AND (status = 'open'))",
+      "serverSidePerClientLimit": "NONE"
+    },
+    "guestFeedbackPath": {
+      "caller": "src/lib/feedbackStore.ts:52 submitFeedback -> direct INSERT public.feedback at :83",
+      "policy": "CREATE POLICY feedback_insert_self_or_anon ON public.feedback FOR INSERT WITH CHECK ((user_id IS NULL) OR (user_id = auth.uid()))",
+      "noToClause": true,
+      "note": "Absence of a TO clause means this permissive policy applies to every role, anon included."
+    },
+    "currentAnonEnforcement": {
+      "perClient": "src/lib/anonRateLimit.ts — AsyncStorage, MAX_PER_WINDOW=5 / 24h, CLIENT SIDE ONLY",
+      "clientSideResetCost": "Deleting one AsyncStorage key, or reinstalling, restores a full budget. Unbounded repetition.",
+      "serverSideFlags": "public.check_global_anon_rate_limit — GLOBAL cap 100 anon rows / 1h across ALL guests",
+      "serverSideFeedback": "public.check_feedback_rate_limit — GLOBAL cap 30 anon rows / 1h across ALL guests",
+      "serverSideAuthenticated": "public.check_flag_creation_rate_limit / check_flag_rate_limit — 20 per user / 24h",
+      "knownDefect": "The global caps are shared denial-of-service levers: one abuser exhausting the global cap silently blocks every legitimate guest. supabase/migrations-next/20260904000300_adopt_live_insert_throttles.sql records this verbatim and assigns the replacement to Phase 03A."
+    },
+    "restrictivePolicyPrecedent": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql already uses AS RESTRICTIVE to defeat permissive OR-composition. The same technique is available to close the guest INSERT boundary.",
+    "clientCutoverConstraint": {
+      "minimumSupportedVersionGate": "ABSENT",
+      "remoteConfig": "ABSENT",
+      "featureFlags": "src/lib/featureFlags.ts is an in-memory compile-time store, single key PUSH_NOTIF_TYPES_ENABLED, not remote",
+      "platforms": ["ios", "android", "web"],
+      "consequence": "Revoking anon INSERT instantly and permanently breaks guest reporting on every already-installed native build, with no server-side way to force an update. Web always loads the current bundle and is unaffected."
+    }
+  },
+
+  "theoremRestated": "Confirmed from 2026-09-05 F28-C and independently re-derived: if a returning client can present exactly the observations of a fresh same-network client, no server can distinguish them. Reset-resistance therefore REQUIRES at least one trusted scarce input. The candidate scarce inputs are: (1) server-observed network address, (2) minting cost (CAPTCHA/proof-of-work), (3) device attestation, (4) anonymous Auth (whose own scarcity is itself (1)).",
+  "nextUnit": "candidate design + adversarial self-attack, then bounded independent review"
+}
