@@ -4,7 +4,9 @@
 
 ## Current generation
 
-`qa-reports/phase03a/2026-09-09-fda028-recommendation/` — task **FDA-028 architecture recommendation**, status **IN_PROGRESS**.
+`qa-reports/phase03a/2026-09-09-fda028-recommendation/` — task **FDA-028 architecture recommendation**, status **COMPLETE — AWAITING_OWNER_APPROVAL**.
+
+**NEXT SAFE ACTION: WAIT FOR SKY'S FDA-028 ARCHITECTURE DECISION.** Nothing may be implemented until Sky approves a mechanism.
 
 ## Frozen identity
 
@@ -14,8 +16,7 @@
 | SOURCE_TREE | `857411dc733b93686d789a72e461856698bec814` |
 | Branch | `repair/flagstone-p03a-backend-foundation-20260903` |
 | Worktree | `/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903` |
-| HEAD at checkpoint | `5d3ed0c8544872756cb99d48c076c0edcad4c529` / tree `3717664ce386850a5fac6a5f2f05ebfa845ef31c` |
-| HEAD vs SOURCE | `qa-reports/` only; **0** non-QA changed files |
+| Non-QA files changed by this generation | **0** — every commit is `qa-reports/` only |
 
 ## Gates (unchanged by this generation)
 
@@ -29,15 +30,26 @@ FDA-012 local subset: 217/217 pgTAP PASS, independently verified (generation `20
 
 > "Keep the budget across session resets; retain the architecture hold until a trusted mechanism is approved."
 
-Not open to reinterpretation. Per-session substitution is NOT authorized. No trusted mechanism approved yet.
+Not open to reinterpretation. Per-session substitution is NOT authorized. **No mechanism is approved yet.**
+
+## FDA-028 recommendation — read in this order
+
+1. **[FDA028_RECOMMENDATION_V2.md](2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION_V2.md)** — the preferred recommendation, `FDA028-GAB-2-20260909`. **This is the live one.**
+2. [INDEPENDENT_REVIEW.md](2026-09-09-fda028-recommendation/INDEPENDENT_REVIEW.md) — verdict ACCEPT_WITH_MANDATORY_CHANGES on v1; two claims FALSIFIED.
+3. [author-verification-postgres.json](2026-09-09-fda028-recommendation/author-verification-postgres.json) — both falsifications reproduced on PostgreSQL 17.11; corrected design verified.
+4. [evidence-platform-and-boundary.json](2026-09-09-fda028-recommendation/evidence-platform-and-boundary.json) — platform trust-input evidence; F28-A still OPEN.
+5. [fda028-gate.json](2026-09-09-fda028-recommendation/fda028-gate.json) — machine-readable gate state.
+6. [FDA028_RECOMMENDATION.md](2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION.md) — **v1, SUPERSEDED. Do not implement.** Kept byte-identical because the review cites its line numbers.
+
+Artifact hashes: [artifact-hashes.txt](2026-09-09-fda028-recommendation/artifact-hashes.txt).
 
 ## Prior FDA-028 evidence (do not re-derive)
 
-- `2026-09-05-owner-resume/FDA028_ARCHITECTURE_REVIEW.md` — platform trust-input evidence table; why IP-HMAC and reissuable session tokens fail.
-- `2026-09-05-owner-resume/FDA028_INGESTION_BOUNDARY.md` — every current guest ingestion path and its required future acceptance.
+- `2026-09-05-owner-resume/FDA028_ARCHITECTURE_REVIEW.md` — platform trust-input evidence; why IP-HMAC and reissuable session tokens fail alone.
+- `2026-09-05-owner-resume/FDA028_INGESTION_BOUNDARY.md` — every current guest ingestion path.
 - `2026-09-05-owner-resume/owner-rate-limit-decision.json` — the owner decision record.
 - `2026-09-05-owner-resume/blocked-handoff.json` — full machine-readable gate state.
 
-## Next safe action
+## If approved, the bounded scope that becomes authorized
 
-Complete the FDA-028 architecture recommendation. **No implementation.** Owner approval required before any limiter code, migration, staging mutation or deployment.
+Local-only implementation of `FDA028-GAB-2-20260909` as forward/restoration migration pairs plus one Edge Function, with the full LOCAL_TEST_PLAN — **no** staging mutation, **no** deployment, **no** integration, **no** T1 bypass closure. Staging and T1 are separate later decisions.

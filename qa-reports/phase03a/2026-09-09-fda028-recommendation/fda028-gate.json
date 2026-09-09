@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "finding": "FDA-028",
+  "recommendationId": "FDA028-GAB-2-20260909",
+  "generatedUtc": "2026-09-09",
+  "FDA_028_ARCHITECTURE_GATE": "AWAITING_OWNER_APPROVAL",
+  "ownerApprovalRequiredBeforeImplementation": true,
+  "implemented": false,
+  "productSourceModified": false,
+  "migrationsModified": false,
+  "integrated": false,
+  "stagingMutations": "NONE",
+  "productionMutations": "NONE",
+  "pushes": "NONE",
+  "merges": "NONE",
+  "deploys": "NONE",
+  "phase03bStarted": false,
+
+  "mechanism": "Gateway admission with a two-tier Postgres ledger: a rotating-HMAC network-window bucket carries the authority (survives session reset); a grant bound to (bucket_key, window_id) carries per-client fairness.",
+  "trustedInput": "Rightmost x-forwarded-for element under a pinned hop count, optional cf-connecting-ip cross-check. Shape-trusted, not value-trusted.",
+  "budgetStateLocation": "limiter.bucket and limiter.grant, private schema, same Postgres as public.flags. No anon or authenticated grants.",
+  "rawIpStored": "NO",
+  "persistentDeviceFingerprint": "NO",
+  "durableCrossSessionTrackingId": "NO (bucket key dies with its window and epoch secret; approximate against PITR/backups)",
+  "newCostRequired": "NONE",
+  "infrastructureRequired": "One Edge Function, two tables + config row, one Vault secret per window, one purge job. pg_cron availability UNVERIFIED for this project; Scheduled Edge Functions is the documented fallback.",
+  "failureBehavior": "FAIL_CLOSED, with a limiter.config.enabled kill switch. Near-zero cost because ledger availability equals target-table availability; contention profile differs and must be load-tested.",
+
+  "independentReview": {
+    "file": "INDEPENDENT_REVIEW.md",
+    "verdictOnV1": "ACCEPT_WITH_MANDATORY_CHANGES",
+    "claimsFalsified": ["concurrency", "bypass_protection"],
+    "claimsWeakened": ["reset_persistence", "independent_client_behaviour", "anti_forgery", "privacy_claims", "deployability"],
+    "mustFix": 3,
+    "shouldFixOrNote": 14,
+    "allMustFixIncorporatedInV2": true,
+    "allShouldFixIncorporatedInV2": true,
+    "authorReproducedFalsifications": true,
+    "authorVerificationReceipt": "author-verification-postgres.json",
+    "v2IndependentlyReviewed": false
+  },
+
+  "verifiedAgainstRealPostgres": {
+    "engine": "PostgreSQL 17.11",
+    "publishedV1CteAdmits": false,
+    "correctedV2FunctionAdmits": true,
+    "concurrency30Way": "exactly the allowance admitted, no overshoot, no lost update",
+    "grantBoundToBucket": true,
+    "resetTerminatesAtBucketAllowance": true
+  },
+
+  "knownLimitations": [
+    "Reset amplification bounded at K per window, not eliminated.",
+    "IPv4 NAT pressure falls first on group homes, disability services centres and community mapping sessions.",
+    "IPv6 /48 mitigates but does not eliminate in-delegation rotation.",
+    "Network rotation grants a fresh budget.",
+    "F28-A still OPEN: EXPECTED_HOPS is unmeasured. v2 makes a wrong pin cost improvement, not service.",
+    "Live-window correlation by an actor with database access who can guess a candidate prefix.",
+    "Unlinkability is approximate against backups and PITR.",
+    "New lock contention on a previously lock-free path.",
+    "Bypass closure is a redesign, not a policy flip, and is not deliverable inside Phase 03A."
+  ],
+
+  "gatesPreserved": {
+    "BACKEND_FOUNDATION_GATE": "BLOCKED",
+    "PHASE_GATE": "BLOCKED",
+    "PHASE03A_CODE": "HOLD",
+    "INT": "NOT_RUN",
+    "STAGE": "NOT_RUN",
+    "PRODUCTION": "UNTOUCHED_NOT_AUTHORIZED",
+    "SAFE_TO_INTEGRATE": false,
+    "MAIN_MERGE_AUTHORIZED": false
+  },
+  "findings": {
+    "FDA-009": "OPEN", "FDA-010": "OPEN", "FDA-012": "OPEN", "FDA-021": "OPEN",
+    "FDA-023": "OPEN", "FDA-026": "OPEN", "FDA-028": "OPEN"
+  },
+  "nextSafeAction": "WAIT FOR SKY'S FDA-028 ARCHITECTURE DECISION."
+}
