@@ -4,9 +4,9 @@
 
 ## Current generation
 
-`qa-reports/phase03a/2026-09-09-final-verification/` — task **FDA-028 final verification wave**, status **COMPLETE — BLOCKED**. Read [WAVE_RESULT.md](2026-09-09-final-verification/WAVE_RESULT.md) first.
+`qa-reports/phase03a/2026-09-09-gab3/` — task **F28-A probe + FDA028-GAB-3**, status **COMPLETE — BLOCKED**. F28-A PASS (narrowed). v3 review HOLD, 3 MUST-FIX. Probe REMOVED_VERIFIED.
 
-**NEXT SAFE ACTION: put the 12-call bounded staging probe authorization request to Sky, and stop.** FDA-028 gate is **HOLD** — both F28-A and the independent v2 review returned HOLD. No implementation, no v3, no staging mutation, no client work. v2 is NOT approved and is superseded pending a v3 that can only be written after F28-A resolves.
+**NEXT SAFE ACTION: put the three v3 MUST-FIX blockers to Sky and await direction.** FDA-028 gate is **HOLD**. F28-A is PASS; the v3 independent review returned HOLD. No implementation, no v4, no staging mutation.
 
 ## Frozen identity
 
