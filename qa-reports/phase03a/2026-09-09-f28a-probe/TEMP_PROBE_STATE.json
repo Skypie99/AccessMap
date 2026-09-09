@@ -1,6 +1,6 @@
 {
-  "TEMP_PROBE_STATE": "DEPLOYED_NOT_YET_COMPLETE",
-  "bankedUtc": "2026-09-09T22:45Z",
+  "TEMP_PROBE_STATE": "EVIDENCE_CAPTURED",
+  "bankedUtc": "2026-09-09T22:47Z",
   "stagingProjectRef": "ctshxbykuemeqnofqcdh",
   "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
   "deployed": {
@@ -19,5 +19,10 @@
   "exactCleanupAction": "supabase functions delete fda028-probe --project-ref ctshxbykuemeqnofqcdh",
   "cleanupVerification": "list_edge_functions on ctshxbykuemeqnofqcdh must return exactly send-push-notification, notify-flag-status, delete-account and MUST NOT contain fda028-probe",
   "expectedPostCleanupFunctionCount": 3,
-  "recoveryIfInterrupted": "Do NOT redeploy. Inspect actual staging state with list_edge_functions FIRST. If fda028-probe is present, continue the existing operation (capture any missing evidence, then delete). If absent, deletion already succeeded - record REMOVED_VERIFIED. Never treat lost output as proof of failure."
+  "recoveryIfInterrupted": "Do NOT redeploy. Inspect actual staging state with list_edge_functions FIRST. If fda028-probe is present, continue the existing operation (capture any missing evidence, then delete). If absent, deletion already succeeded - record REMOVED_VERIFIED. Never treat lost output as proof of failure.",
+  "evidenceFiles": [
+    "PHASE_A_GATEWAY_EVIDENCE.json",
+    "PHASE_B_FUNCTION_EVIDENCE.json",
+    "probeB-case-*.json/.txt"
+  ]
 }

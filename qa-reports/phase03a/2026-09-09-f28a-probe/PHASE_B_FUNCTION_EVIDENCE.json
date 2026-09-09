@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "phase": "B",
+  "name": "Function-view probe (Deno runtime req.headers)",
+  "capturedUtc": "2026-09-09T22:46Z",
+  "probe": {"slug":"fda028-probe","id":"2e3d1102-4e94-4190-a46a-50da9dc6d531","version":1,
+            "ezbr_sha256":"1c49b761ac561d5567fae4e4cc736e5757a5349a9c909a7e8e9e2894f9e27c78"},
+  "callsMade": 12,
+  "databaseAccess": "NONE", "writes": "NONE", "productionContact": "NONE",
+  "piiVerification": "Every captured response file was scanned: ZERO IPv4 literals and ZERO IPv6 literals of any kind, sentinel or real. All findings are enums, booleans and counts, plus a 16-bit salted digest used only transiently to test source stability.",
+
+  "results": {
+    "B_and_D_caller_supplied_cf_connecting_ip": {
+      "http": 403,
+      "body": "error code: 1000",
+      "reachedFunction": false,
+      "conclusion": "Cloudflare refuses the request at the edge. The function never executes. Confirms Phase A at the Edge Function route specifically."
+    },
+    "cf_connecting_ip": {
+      "presentAtFunction": "10/10 successful calls",
+      "valueCount": 1,
+      "echoedSentinel": "OTHER_VALUE_NO_SENTINEL on every call - the caller's value never appears",
+      "family": "IPV4 on every call",
+      "verdict": "TRUSTED. Reaches the Deno runtime, single-valued, and cannot be caller-supplied at all."
+    },
+    "x_real_ip": {
+      "presentAtFunction": "0/10 - ABSENT",
+      "verdict": "NOT AVAILABLE AT THE FUNCTION. It appears in the gateway log attribute map but is NOT in req.headers. The x-real-ip cross-check proposed in FDA028-GAB-2 is therefore IMPOSSIBLE to implement as specified."
+    },
+    "x_forwarded_for": {
+      "presentAtFunction": "10/10, always exactly 3 elements",
+      "presentEvenWhenCallerSendsNone": true,
+      "echoedSentinel": "OTHER_VALUE_NO_SENTINEL in cases G, H and I - the caller's supplied value is STRIPPED before the function",
+      "verdict": "Caller values do not survive to the function, but the 3-element composition is UNDOCUMENTED and UNCHARACTERIZED. Which element is the true client is UNPROVEN. Must not be the primary signal.",
+      "note": "This differs from the gateway log view, where a caller-supplied XFF WAS recorded. The two observation points are not the same; the function's view is what the design would actually read."
+    },
+    "true_client_ip": {
+      "caseE_echoedSentinel": "EXACTLY_SENTINEL",
+      "verdict": "FULLY CALLER-FORGEABLE AT THE FUNCTION. Passes through verbatim. MUST NEVER BE USED."
+    },
+    "forwarded": {
+      "caseF_echoedSentinel": "CONTAINS_SENTINEL",
+      "verdict": "FULLY CALLER-FORGEABLE AT THE FUNCTION. MUST NEVER BE USED."
+    },
+    "cf_connecting_ipv6": {"presentAtFunction": "0/10", "verdict": "ABSENT"},
+    "cf_pseudo_ipv4": {"presentAtFunction": "0/10", "verdict": "ABSENT - no evidence Pseudo IPv4 is in effect for IPv4 clients"},
+    "cf_binding": {
+      "reachable": false,
+      "keys": [],
+      "verdict": "The Cloudflare Worker request.cf object is NOT reachable from the Supabase Edge Function runtime. P7 answered NO - it cannot be used as a non-forgeable structured anchor."
+    },
+    "sourceStability": {
+      "distinctFingerprints": 1,
+      "acrossCalls": 10,
+      "verdict": "STABLE - the trusted signal is consistent for one source across repeated requests, so it is usable as a bucket key."
+    },
+    "totalHeaderCount": "17 baseline, 18 when the caller adds one forgeable header - consistent with pass-through of unknown headers"
+  },
+
+  "gapResolution": {
+    "G1_forgeability": "RESOLVED - cf-connecting-ip cannot be caller-supplied; the attempt is refused with 403 at the Cloudflare edge and the function never runs.",
+    "G2_logAllowlist": "RESOLVED in Phase A.",
+    "G3_functionRuntimeView": "RESOLVED - cf-connecting-ip IS present in the Deno runtime's req.headers on every successful call.",
+    "G4_ipv6": "STILL OPEN - this host has no native IPv6 route to supabase.co (curl -6 resolved to an IPv4-mapped address), so IPv6 transport was never genuinely exercised. Pseudo IPv4 status for real IPv6 clients remains UNDETERMINED."
+  },
+
+  "correctionsToFDA028_GAB_2": [
+    "TRUSTED_INPUT must be cf-connecting-ip alone. The rightmost-x-forwarded-for-under-pinned-hop-count rule is wrong for this platform.",
+    "The x-real-ip corroborating cross-check is IMPOSSIBLE - x-real-ip does not reach the function.",
+    "true-client-ip and forwarded are caller-forgeable at the function and must be explicitly ignored.",
+    "request.cf is unreachable, so it cannot serve as a structured anchor.",
+    "A single-value assertion replaces the hop-count assertion: cf-connecting-ip is always exactly one element."
+  ]
+}
