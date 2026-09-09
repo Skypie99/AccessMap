@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "finding": "FDA-028",
+  "unit": "author re-verification of the independent reviewer's two falsifications",
+  "capturedUtc": "2026-09-09",
+  "engine": "PostgreSQL 17.11 (Homebrew) aarch64-apple-darwin25.6.0",
+  "instance": "disposable local initdb cluster, scratchpad only, TCP 127.0.0.1:55439/55440, destroyed after use",
+  "hostedContact": false,
+  "repoFilesModifiedByThisTest": false,
+
+  "F1_publishedCTE": {
+    "claimUnderTest": "FDA028_RECOMMENDATION.md published multi-CTE admission statement spends correctly.",
+    "method": "Reproduced the published statement verbatim against the published schema; called it three times, each in its own autocommitted transaction.",
+    "observed": [
+      "call 1 RETURNING=[] ; bucket=0 grant=0",
+      "call 2 RETURNING=[] ; bucket=0 grant=0",
+      "call 3 RETURNING=[] ; bucket=0 grant=0"
+    ],
+    "verdict": "FALSIFIED - CONFIRMED BY AUTHOR",
+    "consequence": "Under the design's own semantics (zero rows = refused) the published statement refuses every request unconditionally and never increments either counter.",
+    "cause": "Data-modifying CTE sub-statements execute under one shared snapshot and cannot see one another's effects; the b and spend terms also target the same row in a single statement.",
+    "reviewerDetailCorrection": "The reviewer additionally asserted the row is invisible even when it pre-existed from an earlier committed statement. A pre-existing committed row IS in the snapshot; the failure is that b's ON CONFLICT DO UPDATE has already modified that row within this statement, so spend's update of the same row does not apply. The observed outcome the reviewer reported is correct; only that one causal detail is refined."
+  },
+
+  "F2_transactionLocalGUC": {
+    "claimUnderTest": "A RESTRICTIVE policy on public.flags can read a limiter.admitted GUC set by a separate admission RPC call.",
+    "method": "set_config('limiter.admitted','on',true) in one transaction, then read it in a later transaction and within the same transaction.",
+    "observed": {
+      "sameTransaction": "on",
+      "nextTransaction": "<GONE>"
+    },
+    "verdict": "FALSIFIED - CONFIRMED BY AUTHOR",
+    "consequence": "PostgREST runs each HTTP request in its own transaction, so an admission RPC and a separate client INSERT can never share the GUC. The published T1 closure mechanism cannot admit anything."
+  },
+
+  "F3_grantNotBoundToBucket": {
+    "claimUnderTest": "A grant can be spent against a bucket other than the one that minted it.",
+    "verdict": "UPHELD - the published spend clause has no bucket equality check",
+    "fixVerified": true
+  },
+
+  "correctedDesignVerification": {
+    "shape": "Single SECURITY DEFINER PL/pgSQL function, sequential statements, INSERT ... ON CONFLICT then SELECT ... FOR UPDATE then guarded UPDATEs; grant rows carry bucket_key + window_id and the lookup requires both to match.",
+    "T1_admitsAndRefusesCorrectly": {
+      "observed": "calls 2-5 ADMITTED, call 6 REFUSED_GRANT; bucket=5 grants=1 with NORMAL=5",
+      "pass": true
+    },
+    "T2_resetContract": {
+      "observed": "after exhausting a grant, three successive fresh grants opened at allowance 5 while the bucket climbed 6/50, 7/50, 8/50",
+      "interpretation": "Confirms the design behaves exactly as documented: a reset yields a new envelope but the BUCKET keeps counting, so resets terminate at BUCKET_ALLOWANCE. Amplification is bounded at K, not eliminated.",
+      "pass": true
+    },
+    "T3_grantBucketBinding": {
+      "observed": "a grant minted on bucket AA presented against bucket BB was not matched; a fresh grant was issued for BB instead of charging BB with AA's grant",
+      "pass": true
+    },
+    "T4_concurrency": {
+      "method": "30 parallel psql clients against one bucket with BUCKET_ALLOWANCE=10, sharing one grant with a high grant allowance",
+      "observed": "ADMITTED=9 concurrent (+1 consumed by the minting call) = 10 total; REFUSED=21; final units_consumed=10",
+      "overshoot": false,
+      "lostUpdate": false,
+      "pass": true
+    }
+  },
+
+  "netAssessment": "The reviewer's two FALSIFIED verdicts are correct and independently reproduced. The lock-then-guard strategy is sound; only its expression as a single multi-CTE statement was broken. The corrected sequential form is verified working, atomic under 30-way concurrency, and correctly binds a grant to its bucket."
+}
