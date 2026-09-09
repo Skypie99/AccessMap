@@ -1,0 +1,54 @@
+{
+  "bankVersion": 1,
+  "phase": "03A",
+  "updatedUtc": "2026-09-09T09:18:40Z",
+  "currentGeneration": "2026-09-09-fda028-recommendation",
+  "generations": [
+    "2026-09-04",
+    "2026-09-04-resume",
+    "2026-09-05-owner-resume",
+    "2026-09-09-fda028-recommendation"
+  ],
+  "task": "FDA-028 architecture recommendation",
+  "status": "IN_PROGRESS",
+  "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
+  "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "sourceTree": "857411dc733b93686d789a72e461856698bec814",
+  "headShaAtCheckpoint": "5d3ed0c8544872756cb99d48c076c0edcad4c529",
+  "headTreeAtCheckpoint": "3717664ce386850a5fac6a5f2f05ebfa845ef31c",
+  "headDiffFromSourceIsQaOnly": true,
+  "nonQaChangedFilesSourceToHead": 0,
+  "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+  "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "repositoryRemote": "Skypie99/AccessMap",
+  "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
+  "nextAction": "architecture evidence review",
+  "gatesPreserved": {
+    "BACKEND_FOUNDATION_GATE": "BLOCKED",
+    "PHASE_GATE": "BLOCKED",
+    "PHASE03A_CODE": "HOLD",
+    "INT": "NOT_RUN",
+    "STAGE": "NOT_RUN",
+    "PRODUCTION": "UNTOUCHED_NOT_AUTHORIZED",
+    "SAFE_TO_INTEGRATE": false,
+    "MAIN_MERGE_AUTHORIZED": false,
+    "PHASE03B_STARTED": false
+  },
+  "findings": {
+    "FDA-009": "OPEN",
+    "FDA-010": "OPEN",
+    "FDA-012": "OPEN",
+    "FDA-021": "OPEN",
+    "FDA-023": "OPEN",
+    "FDA-026": "OPEN",
+    "FDA-028": "OPEN"
+  },
+  "fda028": {
+    "ownerContract": "Keep the budget across session resets; retain the architecture hold until a trusted mechanism is approved.",
+    "architectureGate": "IN_PROGRESS",
+    "limiterImplemented": false,
+    "stagingMutations": "NONE",
+    "productionMutations": "NONE"
+  },
+  "nextSafeAction": "Complete FDA-028 architecture recommendation; no implementation."
+}
