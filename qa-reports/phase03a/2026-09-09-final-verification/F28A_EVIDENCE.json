@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "finding": "F28-A",
+  "question": "Does the hosted Supabase Edge Function environment provide a documented or empirically provable network-origin signal that a caller cannot enlarge or refresh by supplying header input?",
+  "capturedUtc": "2026-09-09",
+  "verdict": "HOLD",
+  "verdictReason": "The trusted-input CANDIDATE is now identified and empirically characterised from existing production logs, but its forgeability - the load-bearing property - cannot be established from non-adversarial traffic or from current documentation.",
+
+  "method": {
+    "mutations": "NONE",
+    "hostedRequestsIssued": "NONE",
+    "logAccess": "READ-ONLY aggregate queries only",
+    "piiDiscipline": "Every query returned counts, booleans, equality tallies and distinct-cardinality only. No address, header value, hash, token or secret was selected, returned or recorded at any point.",
+    "windowSource": "Supabase unified log stream, default trailing 24h"
+  },
+
+  "E5_productionLogsEmpirical": {
+    "project": "kldlwszpfkdmsjrjhjym (production)",
+    "sampleSize": 85,
+    "sources": {"edge_logs": 79, "function_edge_logs": 6},
+    "note": "function_edge_logs is the Edge Function route - the exact route the proposed design would use.",
+    "results": {
+      "cf_connecting_ip_present": "85/85 (79/79 REST, 6/6 Edge Function)",
+      "x_real_ip_present": "85/85",
+      "cf_connecting_ip_equals_x_real_ip": "85/85",
+      "cf_connecting_ip_contains_comma": "0/85 - SINGLE-VALUED, never a list",
+      "cf_connecting_ip_empty": "0/85",
+      "cf_connecting_ip_looks_ipv6": "0/85 - NO IPv6 TRAFFIC OBSERVED AT ALL",
+      "x_forwarded_for_present_in_captured_attributes": "0/85",
+      "forwarded_present": "0/85",
+      "true_client_ip_present": "0/85",
+      "cloudflare_request_cf_object_present": "85/85 (colo, country, asOrganization, city, region, postalCode, timezone, httpProtocol, clientTrustScore, botManagement.ja3Hash, botManagement.ja4)",
+      "distinct_source_addresses": 8,
+      "distinct_cloudflare_colos": 2,
+      "sb_gateway_version_values": 1
+    },
+    "conclusions": [
+      "The hosted platform is Cloudflare-fronted. This is now proven, not inferred.",
+      "cf-connecting-ip reaches BOTH the REST route and the Edge Function route on 100% of real requests.",
+      "cf-connecting-ip is single-valued in 100% of real traffic. Hop counting is therefore INAPPLICABLE to it.",
+      "x-real-ip is an exact twin of cf-connecting-ip on 100% of requests and is usable as a corroborating cross-check.",
+      "The Cloudflare request.cf.* object is present on 100% of requests. In a Cloudflare Worker this is a platform-computed binding, not a header, so it is not caller-suppliable - but whether it reaches the Deno function runtime as opposed to only the logging layer is UNVERIFIED."
+    ]
+  },
+
+  "E6_stagingLogs": {
+    "project": "ctshxbykuemeqnofqcdh (Phase 03A disposable branch)",
+    "sources": {"postgres_logs": 10, "pgbouncer_logs": 3},
+    "edge_logs": 0,
+    "function_edge_logs": 0,
+    "conclusion": "The staging branch has received NO HTTP traffic. Existing staging evidence cannot resolve F28-A. This also re-confirms staging mutations remain NONE."
+  },
+
+  "E7_cloudflareDocumentedContract": {
+    "source": "https://developers.cloudflare.com/fundamentals/reference/http-headers/",
+    "verifiedUtc": "2026-09-09",
+    "findings": {
+      "xForwardedFor": "Cloudflare APPENDS to an existing client-supplied X-Forwarded-For rather than overwriting it; with no incoming XFF the value is identical to CF-Connecting-IP. This CONFIRMS the append model and confirms that the rightmost element is the Cloudflare-appended one.",
+      "cfConnectingIp": "Cloudflare sets it to the client IP connecting to Cloudflare. THE PAGE DOES NOT STATE THAT CLOUDFLARE OVERWRITES A CLIENT-SUPPLIED VALUE. This is the exact remaining gap.",
+      "trueClientIp": "Enterprise-only; the page explicitly cautions that in a stacked-CDN configuration its value CAN be spoofed unless you set it yourself. That caution is the reason cf-connecting-ip cannot simply be assumed forge-proof by analogy.",
+      "pseudoIPv4": "A Cloudflare setting can OVERWRITE Cf-Connecting-IP and X-Forwarded-For with a pseudo IPv4 address for IPv6 clients, preserving the real address only in CF-Connecting-IPv6. DESIGN HAZARD: if enabled, many distinct IPv6 subscribers could collapse onto shared pseudo IPv4 addresses, silently destroying client independence. Whether Supabase enables this is UNVERIFIED."
+    }
+  },
+
+  "E8_supabaseStatements": {
+    "communityDiscussion7884": "Supabase indicated an update populating x-forwarded-for with the client IP. UNVERIFIED against the current hosted build and contradicted by nothing here - note that absence from the captured log attributes is not proof of absence from the request.",
+    "communityDiscussion34647": "2025-04, unanswered by Supabase. Demonstrated a caller-supplied value reflected with the real address APPENDED LAST (spoofed,<real>). Consistent with the Cloudflare append contract.",
+    "authoritativeHostedStatement": "STILL NONE. No Supabase document establishes the hosted overwrite/append/strip rule for cf-connecting-ip, x-real-ip or x-forwarded-for.",
+    "cautionOnSearchSummaries": "A web-search synthesis encountered during this work advised extracting the FIRST element of x-forwarded-for. Under the documented Cloudflare append model that is the CALLER-CONTROLLED element and the advice is wrong. Recorded so it is not repeated."
+  },
+
+  "remainingGaps": [
+    {
+      "id": "G1",
+      "gap": "Forgeability of cf-connecting-ip / x-real-ip on this exact path.",
+      "whyNotClosable": "All 85 observed requests are ordinary non-adversarial traffic. No sample attempts injection. Cloudflare does not document an overwrite for cf-connecting-ip, and its True-Client-IP caution shows the concern is real.",
+      "loadBearing": true
+    },
+    {
+      "id": "G2",
+      "gap": "Whether the logged attribute map is a curated allowlist.",
+      "whyNotClosable": "event_message is a short summary line (max 649 chars) and contains no header names, so the raw request headers cannot be inspected. x-forwarded-proto IS captured while x-forwarded-for is not, which is suggestive but not conclusive.",
+      "consequence": "x-forwarded-for may still be present on the request even though it appears in 0/85 captured attribute maps."
+    },
+    {
+      "id": "G3",
+      "gap": "Whether the Deno Edge Function runtime receives these headers in req.headers.",
+      "whyNotClosable": "The log attribute map is the gateway's view. The function's own view is not observable without invoking a function that reports it."
+    },
+    {
+      "id": "G4",
+      "gap": "IPv6 behaviour, including whether Pseudo IPv4 is in effect.",
+      "whyNotClosable": "0/85 observed requests were IPv6. Entirely unobserved."
+    }
+  ],
+
+  "consequenceForV2": {
+    "severity": "MATERIAL - v2 is built on the wrong signal for this platform",
+    "detail": "FDA028-GAB-2 specifies the trusted input as the rightmost x-forwarded-for element admitted under a pinned EXPECTED_HOPS. The evidence shows x-forwarded-for absent from 100% of captured request attributes while cf-connecting-ip is present on 100% and is single-valued. A hop-count model cannot be applied to a single-valued header. v2's TRUSTED_INPUT, TRUST_BOUNDARY and its whole anti-forgery rule must be re-specified against cf-connecting-ip with x-real-ip as the corroborating twin, before any implementation.",
+    "whatSurvives": "v2's underlying instinct - trust the shape, never a caller-chosen position, and fail toward LESS budget - survives intact and is now better supported: Cloudflare's documented append behaviour confirms the rightmost element is the platform's.",
+    "whatMustChange": [
+      "TRUSTED_INPUT: cf-connecting-ip, cross-checked against x-real-ip (proven equal on 85/85), not rightmost-XFF.",
+      "The EXPECTED_HOPS pin becomes a SINGLE-VALUE assertion: reject any cf-connecting-ip containing a comma or whitespace (0/85 real requests contain one).",
+      "Add an explicit Pseudo IPv4 determination before any IPv6 prefix decision.",
+      "Retain rightmost-XFF only as a secondary corroborator IF G2 shows XFF actually reaches the function."
+    ]
+  },
+
+  "netVerdict": "F28-A: HOLD. Substantially advanced - the candidate signal is identified, proven present on both routes for 100% of real requests, proven single-valued, and proven Cloudflare-originated - but the forgeability property that the entire design rests on (G1) cannot be established without one bounded adversarial probe. G2, G3 and G4 also remain open. Existing evidence, existing staging logs and current official documentation have each been exhausted."
+}
