@@ -1,16 +1,17 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-09T09:58:46Z",
-  "currentGeneration": "2026-09-09-fda028-recommendation",
+  "updatedUtc": "2026-09-09T21:42:44Z",
+  "currentGeneration": "2026-09-09-final-verification",
   "generations": [
     "2026-09-04",
     "2026-09-04-resume",
     "2026-09-05-owner-resume",
-    "2026-09-09-fda028-recommendation"
+    "2026-09-09-fda028-recommendation",
+    "2026-09-09-final-verification"
   ],
-  "task": "FDA-028 architecture recommendation",
-  "status": "COMPLETE_AWAITING_OWNER_APPROVAL",
+  "task": "FDA-028 final architecture-verification wave",
+  "status": "IN_PROGRESS",
   "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -22,7 +23,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "WAIT FOR SKY'S FDA-028 ARCHITECTURE DECISION.",
+  "nextAction": "F28-A evidence resolution + bounded independent v2 review",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -45,7 +46,7 @@
   },
   "fda028": {
     "ownerContract": "Keep the budget across session resets; retain the architecture hold until a trusted mechanism is approved.",
-    "architectureGate": "AWAITING_OWNER_APPROVAL",
+    "architectureGate": "HOLD_FOR_FINAL_VERIFICATION",
     "recommendationId": "FDA028-GAB-2-20260909",
     "preferredRecommendation": "qa-reports/phase03a/2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION_V2.md",
     "supersededDraft": "qa-reports/phase03a/2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION.md",
@@ -59,9 +60,18 @@
     "v2IndependentlyReviewed": false,
     "limiterImplemented": false,
     "stagingMutations": "NONE",
-    "productionMutations": "NONE"
+    "productionMutations": "NONE",
+    "ownerApprovedForImplementation": false,
+    "localImplementationAuthorization": "NOT_YET_GRANTED",
+    "productionThresholdDecision": "DEFERRED",
+    "verificationWave": {
+      "F28_A": "IN_PROGRESS",
+      "V2_INDEPENDENT_REVIEW": "IN_PROGRESS",
+      "OLD_CLIENT_ROLLOUT_CONSTRAINT": "IN_PROGRESS",
+      "THRESHOLD_SEPARATION": "IN_PROGRESS"
+    }
   },
-  "nextSafeAction": "WAIT FOR SKY'S FDA-028 ARCHITECTURE DECISION.",
+  "nextSafeAction": "Complete the FDA-028 final verification wave. No implementation, no staging mutation.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
