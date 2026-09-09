@@ -1,7 +1,7 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-09T21:50:40Z",
+  "updatedUtc": "2026-09-09T22:14:24Z",
   "currentGeneration": "2026-09-09-final-verification",
   "generations": [
     "2026-09-04",
@@ -11,7 +11,7 @@
     "2026-09-09-final-verification"
   ],
   "task": "FDA-028 final architecture-verification wave",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE_BLOCKED",
   "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -23,7 +23,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Await bounded independent v2 review, then assemble the wave verdict.",
+  "nextAction": "Put the bounded probe authorization request to Sky.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -46,7 +46,7 @@
   },
   "fda028": {
     "ownerContract": "Keep the budget across session resets; retain the architecture hold until a trusted mechanism is approved.",
-    "architectureGate": "HOLD_FOR_FINAL_VERIFICATION",
+    "architectureGate": "HOLD",
     "recommendationId": "FDA028-GAB-2-20260909",
     "preferredRecommendation": "qa-reports/phase03a/2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION_V2.md",
     "supersededDraft": "qa-reports/phase03a/2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION.md",
@@ -65,16 +65,42 @@
     "localImplementationAuthorization": "NOT_YET_GRANTED",
     "productionThresholdDecision": "DEFERRED",
     "verificationWave": {
-      "F28_A": "HOLD - candidate signal identified and characterised; forgeability (G1) unprovable from existing evidence",
-      "V2_INDEPENDENT_REVIEW": "IN_PROGRESS",
+      "F28_A": "HOLD",
+      "V2_INDEPENDENT_REVIEW": "HOLD",
       "OLD_CLIENT_ROLLOUT_CONSTRAINT": "COMPLETE",
-      "THRESHOLD_SEPARATION": "COMPLETE - production DEFERRED"
+      "THRESHOLD_SEPARATION": "COMPLETE"
     },
     "f28aBlocker": "G1 forgeability of cf-connecting-ip / x-real-ip on this path. Needs the 12-call bounded staging probe; owner authorization NOT granted and NOT covered by existing authority.",
     "v2TrustedInputMisspecified": true,
-    "v2IllustrativeThresholdsWithdrawn": true
+    "v2IllustrativeThresholdsWithdrawn": true,
+    "blockers": [
+      {
+        "id": "BLOCKER-1",
+        "gate": "F28-A",
+        "summary": "Forgeability (G1) of cf-connecting-ip / x-real-ip is unproven. Docs, existing Flagstone evidence and existing staging logs are exhausted; staging holds no HTTP logs.",
+        "unblockedBy": "12-call bounded staging probe - NOT AUTHORIZED, NOT EXECUTED"
+      },
+      {
+        "id": "BLOCKER-2",
+        "gate": "V2_INDEPENDENT_REVIEW",
+        "summary": "HOLD. 2 items FALSIFIED, 7 MUST-FIX. Most serious is a NEW defect: grants_issued is a per-bucket monotonic non-replenishing counter, so one resetting client starves every future guest on that network while >90% of the budget goes unspent.",
+        "unblockedBy": "A v3 written AFTER F28-A resolves, then independently reviewed"
+      }
+    ],
+    "v2Status": "NOT_APPROVED - superseded pending v3",
+    "v3Offered": false,
+    "v3WithheldReason": "Writing v3 now would repeat the defect that produced v1 and v2: specifying against a signal whose behaviour has not been measured.",
+    "artifactHashes": {
+      "WAVE_RESULT.md": "4a9c8a3a511a67a3607a7b6eea1038ebe22481f881a657ad7565fe0b07bf7490",
+      "INDEPENDENT_REVIEW_V2.md": "45aa5ad9c0f042e67d9ae614ec72ccfcf56fd19ce3d84f0973bc4057b13bb159",
+      "F28A_EVIDENCE.json": "14cb09283611f55d3cdc57dbe1709188a69b0c5dcf09ef5098e99fd8d0d4cb3b",
+      "STAGING_DIAGNOSTIC_PROBE_PLAN.md": "9004d6852251e5db481fcc4a66643064667a5c2dff82c954badc4e1609156726",
+      "OLD_CLIENT_ROLLOUT_CONSTRAINT.md": "57283f00a4f12988112a32881da6a8d3c4d4f61d711e1ade0abe22520bfe7e86",
+      "THRESHOLD_SEPARATION.md": "dc4557a6824db5a66528cda9e8480d1b237485ba64a3d1abee6b8bc466913bd8",
+      "author-verification-v2-review.json": "bf6f71ae68580f5d6d4fc451dbd60d55df5c6184ee93afe32bbc2affee40f665"
+    }
   },
-  "nextSafeAction": "WAIT FOR SKY: (a) FDA-028 architecture decision, (b) authorization for the 12-call staging diagnostic probe. No implementation.",
+  "nextSafeAction": "Put the 12-call bounded staging probe authorization request to Sky, and stop. No implementation, no v3, no staging mutation, no client work.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",

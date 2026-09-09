@@ -4,9 +4,9 @@
 
 ## Current generation
 
-`qa-reports/phase03a/2026-09-09-fda028-recommendation/` — task **FDA-028 architecture recommendation**, status **COMPLETE — AWAITING_OWNER_APPROVAL**.
+`qa-reports/phase03a/2026-09-09-final-verification/` — task **FDA-028 final verification wave**, status **COMPLETE — BLOCKED**. Read [WAVE_RESULT.md](2026-09-09-final-verification/WAVE_RESULT.md) first.
 
-**NEXT SAFE ACTION: WAIT FOR SKY'S FDA-028 ARCHITECTURE DECISION.** Nothing may be implemented until Sky approves a mechanism.
+**NEXT SAFE ACTION: put the 12-call bounded staging probe authorization request to Sky, and stop.** FDA-028 gate is **HOLD** — both F28-A and the independent v2 review returned HOLD. No implementation, no v3, no staging mutation, no client work. v2 is NOT approved and is superseded pending a v3 that can only be written after F28-A resolves.
 
 ## Frozen identity
 

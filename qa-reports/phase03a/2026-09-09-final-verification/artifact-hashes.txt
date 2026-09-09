@@ -1,0 +1,7 @@
+45aa5ad9c0f042e67d9ae614ec72ccfcf56fd19ce3d84f0973bc4057b13bb159  qa-reports/phase03a/2026-09-09-final-verification/INDEPENDENT_REVIEW_V2.md
+57283f00a4f12988112a32881da6a8d3c4d4f61d711e1ade0abe22520bfe7e86  qa-reports/phase03a/2026-09-09-final-verification/OLD_CLIENT_ROLLOUT_CONSTRAINT.md
+9004d6852251e5db481fcc4a66643064667a5c2dff82c954badc4e1609156726  qa-reports/phase03a/2026-09-09-final-verification/STAGING_DIAGNOSTIC_PROBE_PLAN.md
+dc4557a6824db5a66528cda9e8480d1b237485ba64a3d1abee6b8bc466913bd8  qa-reports/phase03a/2026-09-09-final-verification/THRESHOLD_SEPARATION.md
+4a9c8a3a511a67a3607a7b6eea1038ebe22481f881a657ad7565fe0b07bf7490  qa-reports/phase03a/2026-09-09-final-verification/WAVE_RESULT.md
+14cb09283611f55d3cdc57dbe1709188a69b0c5dcf09ef5098e99fd8d0d4cb3b  qa-reports/phase03a/2026-09-09-final-verification/F28A_EVIDENCE.json
+bf6f71ae68580f5d6d4fc451dbd60d55df5c6184ee93afe32bbc2affee40f665  qa-reports/phase03a/2026-09-09-final-verification/author-verification-v2-review.json
