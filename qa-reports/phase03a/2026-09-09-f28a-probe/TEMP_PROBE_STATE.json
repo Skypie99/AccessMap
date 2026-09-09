@@ -1,6 +1,6 @@
 {
-  "TEMP_PROBE_STATE": "EVIDENCE_CAPTURED",
-  "bankedUtc": "2026-09-09T22:47Z",
+  "TEMP_PROBE_STATE": "REMOVED_VERIFIED",
+  "bankedUtc": "2026-09-09T22:48Z",
   "stagingProjectRef": "ctshxbykuemeqnofqcdh",
   "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
   "deployed": {
@@ -15,7 +15,7 @@
   "databaseAccess": "NONE",
   "writes": "NONE",
   "credentialsHeld": "NONE",
-  "cleanupPending": true,
+  "cleanupPending": false,
   "exactCleanupAction": "supabase functions delete fda028-probe --project-ref ctshxbykuemeqnofqcdh",
   "cleanupVerification": "list_edge_functions on ctshxbykuemeqnofqcdh must return exactly send-push-notification, notify-flag-status, delete-account and MUST NOT contain fda028-probe",
   "expectedPostCleanupFunctionCount": 3,
@@ -24,5 +24,14 @@
     "PHASE_A_GATEWAY_EVIDENCE.json",
     "PHASE_B_FUNCTION_EVIDENCE.json",
     "probeB-case-*.json/.txt"
-  ]
+  ],
+  "removal": {
+    "command": "supabase functions delete fda028-probe --project-ref ctshxbykuemeqnofqcdh --yes",
+    "commandResult": "{\"function_slug\":\"fda028-probe\",\"project_ref\":\"ctshxbykuemeqnofqcdh\",\"message\":\"Deleted Edge Function.\"}",
+    "independentVerification": "mcp list_edge_functions on ctshxbykuemeqnofqcdh returned exactly send-push-notification, notify-flag-status, delete-account. fda028-probe ABSENT.",
+    "verificationChannelDistinctFromDeletionChannel": true,
+    "secondCheck": "HTTP GET to the probe URL after deletion returned 404",
+    "postStateFunctionCount": 3,
+    "matchesExpectedPreState": true
+  }
 }
