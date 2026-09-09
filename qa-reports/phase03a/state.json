@@ -1,7 +1,7 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-09T21:42:44Z",
+  "updatedUtc": "2026-09-09T21:50:40Z",
   "currentGeneration": "2026-09-09-final-verification",
   "generations": [
     "2026-09-04",
@@ -23,7 +23,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "F28-A evidence resolution + bounded independent v2 review",
+  "nextAction": "Await bounded independent v2 review, then assemble the wave verdict.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -65,13 +65,16 @@
     "localImplementationAuthorization": "NOT_YET_GRANTED",
     "productionThresholdDecision": "DEFERRED",
     "verificationWave": {
-      "F28_A": "IN_PROGRESS",
+      "F28_A": "HOLD - candidate signal identified and characterised; forgeability (G1) unprovable from existing evidence",
       "V2_INDEPENDENT_REVIEW": "IN_PROGRESS",
-      "OLD_CLIENT_ROLLOUT_CONSTRAINT": "IN_PROGRESS",
-      "THRESHOLD_SEPARATION": "IN_PROGRESS"
-    }
+      "OLD_CLIENT_ROLLOUT_CONSTRAINT": "COMPLETE",
+      "THRESHOLD_SEPARATION": "COMPLETE - production DEFERRED"
+    },
+    "f28aBlocker": "G1 forgeability of cf-connecting-ip / x-real-ip on this path. Needs the 12-call bounded staging probe; owner authorization NOT granted and NOT covered by existing authority.",
+    "v2TrustedInputMisspecified": true,
+    "v2IllustrativeThresholdsWithdrawn": true
   },
-  "nextSafeAction": "Complete the FDA-028 final verification wave. No implementation, no staging mutation.",
+  "nextSafeAction": "WAIT FOR SKY: (a) FDA-028 architecture decision, (b) authorization for the 12-call staging diagnostic probe. No implementation.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
