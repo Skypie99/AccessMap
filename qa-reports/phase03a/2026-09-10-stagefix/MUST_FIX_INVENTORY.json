@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "RUN_UNIT": "PHASE03A_STAGE_MANDATORY_FIX_RETURN_TO_CODE",
+  "STATUS": "RUNNING",
+  "preparedUtc": "2026-09-10",
+  "promptId": "FLAGSTONE-P03A-STAGE-MANDATORY-FIX-20260910-R1",
+  "COUNT_DISCREPANCY_RECONCILED": {
+    "instruction": "The prompt states MUST_FIX_COUNT: 8 and requires: 'If the banked reviewer report contains fewer/more than eight, STOP and reconcile the discrepancy.' It does.",
+    "whatTheReviewerActuallyIssued": {
+      "MUST_FIX": 5,
+      "SHOULD_FIX": 6
+    },
+    "whereTheEightComesFrom": "PRODUCTION_AUTHORIZATION_PACKET.md section 6, authored by ME after the review, lists 8 MUST-FIX items. qa-reports/phase03a/state.json echoes openMustFixCount: 8. The number is the AUTHOR'S combined open list, not the independent acceptor's finding count. The prompt's phrase 'the exact eight MUST-FIX findings from the saved independent staging acceptance' is therefore not accurate as written.",
+    "isTheEightStillTheRightWorkingSET": "YES. The union of (reviewer MUST-FIX still open) + (author-originated MUST-FIX) + (one reviewer SHOULD-FIX the author deliberately elevated) is exactly 8 open items. Nothing was invented to reach 8 and nothing was dropped to reach 8.",
+    "oneReviewerMUSTFIXIsAlreadyCLOSED": "Reviewer MUST-FIX 3 (bank a receipt for the hosted concurrency claim or strike it) was closed during the previous run: the test was re-run against hosted staging and banked as OP_HOSTED_CONCURRENCY.json (25 parallel, allowance 8, 8 ADMITTED / 17 REFUSED, 8 real rows, 8 ledger units, 0 orphans). It is therefore NOT among the 8 open items.",
+    "provenanceMap": {
+      "reviewer MUST-FIX 1 (committed link state -> production)": "STAGE-MF-07",
+      "reviewer MUST-FIX 2 (Build 33 breakage as first-class rollout constraint)": "STAGE-MF-06",
+      "reviewer MUST-FIX 3 (concurrency receipt)": "CLOSED before this run \u2014 OP_HOSTED_CONCURRENCY.json",
+      "reviewer MUST-FIX 4 (carry apply-mechanism forward)": "STAGE-MF-01",
+      "reviewer MUST-FIX 5 (retain structural JSON + publish digest recipe)": "STAGE-MF-02",
+      "reviewer SHOULD-FIX 1 (rollback must unwind the ledger)": "STAGE-MF-08 \u2014 deliberately ELEVATED to MUST-FIX by the author",
+      "author-originated (never in the reviewer's list)": [
+        "STAGE-MF-03",
+        "STAGE-MF-04",
+        "STAGE-MF-05"
+      ]
+    },
+    "promptAnchorMap": {
+      "KNOWN MUST-FIX A (Build 33 / FDA-026)": "STAGE-MF-06",
+      "KNOWN MUST-FIX B (migration apply identity)": "STAGE-MF-01",
+      "KNOWN MUST-FIX C (rollback / ledger truth)": "STAGE-MF-08",
+      "KNOWN MUST-FIX D (round-trip structural identity)": "STAGE-MF-02",
+      "KNOWN MUST-FIX E (tracked production link artifact)": "STAGE-MF-07",
+      "notAnchoredInThePrompt": [
+        "STAGE-MF-03",
+        "STAGE-MF-04",
+        "STAGE-MF-05"
+      ]
+    }
+  },
+  "MUST_FIX_INVENTORY": "8 / 8 VERIFIED",
+  "items": [
+    {
+      "id": "STAGE-MF-01",
+      "title": "Migration apply mechanism destroys canonical identity",
+      "origin": "author packet MUST-FIX 1; independently confirmed by reviewer MUST-FIX 4",
+      "reviewerWording": "Carry the author's own packet MUST-FIX 1 forward unchanged - the apply mechanism used on staging is not fit for production. I independently confirmed both halves: 6 candidates are recorded under wall-clock versions (20260910162314...) instead of their canonical filenames, and candidates 7 and 8 have no ledger row at all.",
+      "directEvidence": "Hosted staging ledger rows 20260910161947..20260910162409 carry names adopt_private_admin_helper .. phase03a_client_privileges, i.e. wall-clock versions for canonical 20260904000000 / 20260905055629 etc. 20260905073925_phase03a_effective_privileges and 20260909120000_fda028_v4_limiter have NO ledger row.",
+      "independentlyVerified": true,
+      "category": "TOOLING",
+      "sourceModificationRequired": true,
+      "affects": [
+        "a new canonical apply/verify tool",
+        "the staging-rerun packet's single named mechanism"
+      ],
+      "acceptanceProof": "Local tests proving canonical version extraction, hash binding, ordering, duplicate-version refusal, hash-mismatch refusal, no wall-clock substitution, ledgerless-apply refusal, and read-only post-apply identity verification."
+    },
+    {
+      "id": "STAGE-MF-02",
+      "title": "Round-trip structural identity unlocalisable; original JSON not retained",
+      "origin": "author packet MUST-FIX 2; reviewer MUST-FIX 5",
+      "reviewerWording": "Retain full structural JSON, not just digests, around any production apply, and publish the digest recipe so the round-trip delta can be localised by someone other than its author.",
+      "directEvidence": "First-apply digest 09c42928 vs reapplied c70e119a; deterministic across 3 cycles; 286/286 hosted assertions still pass; the first-apply structural JSON was hashed and discarded.",
+      "independentlyVerified": true,
+      "category": "EVIDENCE",
+      "sourceModificationRequired": true,
+      "affects": [
+        "a committed, runnable capture/diff harness",
+        "the staging-rerun packet's capture plan"
+      ],
+      "acceptanceProof": "A committed capture script that emits versioned sanitized CATALOG_*.json with schema version, capture identity, normalization rules, justified volatile-field exclusions and checksum, plus a structural differ that classifies every residual."
+    },
+    {
+      "id": "STAGE-MF-03",
+      "title": "Production Vault secret must be provisioned separately by the owner",
+      "origin": "author-originated (author packet MUST-FIX 3)",
+      "reviewerWording": "(not raised by the reviewer)",
+      "directEvidence": "20260909120000_fda028_v4_limiter.sql lines 436 and 458 read vault.secrets by the name fda028_limiter_epoch_key. Without that secret in production, limiter.current_epoch_key cannot derive a key.",
+      "independentlyVerified": true,
+      "category": "CONFIG",
+      "sourceModificationRequired": false,
+      "ownerActionRequired": true,
+      "affects": [
+        "production runbook only"
+      ],
+      "acceptanceProof": "The staging-rerun packet states the exact precondition and explicitly forbids copying the staging secret. No agent creates a production secret."
+    },
+    {
+      "id": "STAGE-MF-04",
+      "title": "An apply-set candidate hardcodes the PRODUCTION webhook URL",
+      "origin": "author-originated (author packet MUST-FIX 4)",
+      "reviewerWording": "(not raised by the reviewer)",
+      "directEvidence": "supabase/migrations-next/20260904000400_adopt_execute_revokes.sql:62 sets url := 'https://kldlwszpfkdmsjrjhjym.supabase.co/functions/v1/notify-flag-status'. This candidate is IN the apply set, so applying it to staging points staging's status-change trigger at the PRODUCTION Edge Function. It is inert on staging only because staging has no webhook_secret.",
+      "authorSharpening": "The previous packet described this as a property of the existing production function. It is more than that: it is a line inside a candidate this run proposes to apply, and applying it to a non-production target aims that target at production.",
+      "independentlyVerified": true,
+      "category": "CODE",
+      "sourceModificationRequired": "TO BE DECIDED \u2014 see analysis; the safe options are an environment-derived URL or an explicit staging guard.",
+      "affects": [
+        "supabase/migrations-next/20260904000400_adopt_execute_revokes.sql"
+      ],
+      "acceptanceProof": "A test proving the trigger cannot aim a non-production database at the production Edge Function, or an explicit recorded owner decision to accept it."
+    },
+    {
+      "id": "STAGE-MF-05",
+      "title": "Applying with the guest bypass still open must be a chosen decision",
+      "origin": "author-originated (author packet MUST-FIX 5)",
+      "reviewerWording": "(not raised as MUST-FIX; the reviewer confirmed the S3 classification is correctly stated)",
+      "directEvidence": "ROLLOUT_STAGE S3_LIMITER_PRESENT_BYPASS_OPEN, measured: two guest writes accepted while limiter.bucket and limiter.grant stayed at 0.",
+      "independentlyVerified": true,
+      "category": "ROLLOUT",
+      "sourceModificationRequired": false,
+      "ownerActionRequired": true,
+      "affects": [
+        "the owner decision block in the staging-rerun packet"
+      ],
+      "acceptanceProof": "The packet puts the choice in front of the owner explicitly rather than letting it happen by sequencing."
+    },
+    {
+      "id": "STAGE-MF-06",
+      "title": "Phase 03A silently breaks shipped Build 33 authenticated reads",
+      "origin": "reviewer MUST-FIX 2 / reviewer H1; verified and banked by the author as OP_BUILD33_COMPATIBILITY.json",
+      "reviewerWording": "Record the Build 33 authenticated-read breakage as a first-class rollout constraint (H1). FDA-026 plus the is_admin column revoke break Build 33's admin gate (hard, 42501), leaderboard, rank and comment-author display. Name the four call sites, state that a coordinated client release shipping the four new RPCs is required, and put the sequencing decision in front of the owner alongside 5b - not after it.",
+      "directEvidence": "20260905055633_phase03a_contextual_profiles.sql:80 drops policy 'users readable by authenticated'; :81 revokes SELECT (is_admin). Hosted result: public.users has exactly one SELECT policy (own row) and is_admin has no column grant. Shipped trees f5594171 (iOS) / ebf091c2 (web) contain admin.ts:31 select('is_admin'), flags.ts:1682 listLeaderboard, flags.ts:1702/1717 rank, and ZERO references to the four replacement RPCs.",
+      "independentlyVerified": true,
+      "category": "CODE + ROLLOUT",
+      "sourceModificationRequired": true,
+      "affects": [
+        "20260905055633_phase03a_contextual_profiles.sql",
+        "its rollback",
+        "new Build 33 compatibility tests"
+      ],
+      "acceptanceProof": "Deterministic compatibility contracts exercising the SHIPPED query shapes: admin gate returns true for an admin without 42501; leaderboard returns multiple rows; rank does not collapse to 1; comment authors resolve. Plus the secure end-state proven separately from the compatibility state."
+    },
+    {
+      "id": "STAGE-MF-07",
+      "title": "Tracked CLI link artifact names the PRODUCTION project",
+      "origin": "reviewer MUST-FIX 1",
+      "reviewerWording": "The committed link state points at production. supabase/.temp/linked-project.json is tracked in git with ref: kldlwszpfkdmsjrjhjym. Repoint it to staging, or untrack it and .gitignore supabase/.temp/, and make --project-ref mandatory in the production runbook. Correct the sentence in OP_RESTORE_REAPPLY.json claiming no production target was reachable from the linked ref.",
+      "directEvidence": "git ls-files confirms the file is tracked; its committed ref field is kldlwszpfkdmsjrjhjym.",
+      "authorNote": "The prompt explicitly forbids the reviewer's first option ('repoint it to staging') because that merely swaps one stale dangerous target for another. The untrack-and-ignore option is the one to implement.",
+      "independentlyVerified": true,
+      "category": "CODE",
+      "sourceModificationRequired": true,
+      "affects": [
+        "supabase/.temp/linked-project.json",
+        ".gitignore",
+        "a guard test",
+        "OP_RESTORE_REAPPLY.json (already corrected)"
+      ],
+      "acceptanceProof": "The file is untracked, supabase/.temp/ is ignored, and a guard test fails if any tracked file selects a project target."
+    },
+    {
+      "id": "STAGE-MF-08",
+      "title": "Rollback does not unwind or reconcile the migration ledger",
+      "origin": "reviewer SHOULD-FIX 1, ELEVATED to MUST-FIX by the author (author packet MUST-FIX 8)",
+      "reviewerWording": "Rollback must also unwind the ledger. The 6 phase03a_* ledger rows survived all three rollback cycles, so a rolled-back database still claims those migrations are applied. Add ledger reconciliation to the rollback runbook. (Not raised in any receipt.)",
+      "directEvidence": "Ledger count stayed 82 through three full rollback/reapply cycles; the six phase03a_* rows persisted while their objects were dropped.",
+      "authorPosition": "The prompt requires a FORWARD-ONLY model rather than ledger deletion. Deleting ledger rows in production would be history rewriting. The correct model records a NEW forward restoration migration.",
+      "independentlyVerified": true,
+      "category": "TOOLING",
+      "sourceModificationRequired": true,
+      "affects": [
+        "the rollback artifacts' versioning model",
+        "the forward-restoration procedure in the packet"
+      ],
+      "acceptanceProof": "A proven forward-only restoration model where the ledger's answer to 'what happened?' matches actual historical execution, with no historical row deleted or rewritten."
+    }
+  ],
+  "repairBase": {
+    "PHASE03A_CODE_SHA": "21b2bd7a96cd69a8d8fc3ff8756b88a5fe28d912",
+    "PHASE03A_CODE_TREE": "b47f1221e8be9c57d147a80ee328359b32f66436",
+    "codeShaPresentInObjectDb": true,
+    "ACCEPTED_INTEGRATION_SHA": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
+    "canonicalIntegrationWorktree": "/Users/skypie/AccessMap-worktrees/flagstone-b33-convergence-20260903 (branch integration/flagstone-b33-convergence-20260903, HEAD 7c43c07 \u2014 matches the accepted INT exactly)",
+    "intendedRepairBranch": "repair/flagstone-p03a-stage-mandatory-fixes-20260910",
+    "historicalIdentitiesRewritten": "NONE \u2014 no amend, rebase, reset or force"
+  },
+  "authority": {
+    "STAGING_MUTATION": "NOT AUTHORIZED BY THIS PROMPT",
+    "PRODUCTION_MUTATION": "NOT AUTHORIZED",
+    "PUSH": "NOT AUTHORIZED",
+    "MAIN_MERGE": "NOT AUTHORIZED",
+    "PHASE_03B": "NOT AUTHORIZED",
+    "stagingHeldState": "ledger 82, auth.users 0, flags 0, feedback 0, limiter ledger empty, 1 Vault secret, structural digest c70e119a (the DIVERGED catalog, not the first-apply catalog), branch retained",
+    "PREVIOUS_PRODUCTION_PACKET": "SUPERSEDED_BY_STAGE_MANDATORY_FIXES"
+  },
+  "NEXT_SAFE_ACTION": "STAGE-MF-01 + STAGE-MF-08 together: build and locally test the canonical migration apply/verify tooling and the forward-only ledger restoration model.",
+  "progress": {
+    "repairWorktree": "/Users/skypie/AccessMap-worktrees/flagstone-p03a-stagefix-20260910",
+    "repairBranch": "repair/flagstone-p03a-stage-mandatory-fixes-20260910",
+    "basedOn": "9c843a61ba12bf843d67fef2d514f369ed23a708 (descends from PHASE03A_CODE_SHA 21b2bd7a; 0 non-qa-reports files differ, verified)",
+    "closed": {
+      "STAGE-MF-07": {
+        "commit": "235743a",
+        "proof": "3 guard assertions + negative control (re-tracking the file fails all three)"
+      },
+      "STAGE-MF-06": {
+        "commit": "a0e4050",
+        "proof": "242/242 local pgTAP (was 217), restorationExact True, reapplyDeterministic True, privilege guard passed"
+      }
+    },
+    "open": [
+      "STAGE-MF-01",
+      "STAGE-MF-02",
+      "STAGE-MF-03",
+      "STAGE-MF-04",
+      "STAGE-MF-05",
+      "STAGE-MF-08"
+    ],
+    "incidentalFindingsWhileFixing": [
+      "The FDA-026 split was incomplete as first written: 20260905073925 independently revokes is_admin via REVOKE ALL and re-grants a list omitting it. Only running the suite exposed this.",
+      "Exact restoration silently broke (restorationExact True -> False) because 073925 rollback never restored is_admin; exactness had depended on 055633 rollback compensating. Fixed by making each rollback restore what its own forward migration changed.",
+      "LOCAL round trip is structurally EXACT (afterSha256 == reappliedSha256) and restoration is exact. The hosted c70e119a vs 09c42928 divergence therefore does NOT reproduce locally \u2014 relevant evidence for STAGE-MF-02.",
+      "pgTAP discovery reports phase03a-fixtures/baseline-backups.sql missing a PGTAP_KIND marker. Verified identical in the unmodified worktree: pre-existing, not caused here, and out of scope for the eight MUST-FIX items."
+    ]
+  }
+}
