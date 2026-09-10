@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "topic": "Is a domain reset a global budget reset, and does that matter?",
+  "provenance": "Open lead left by a reviewer terminated mid-run by a usage limit. Recorded as an open question, then investigated by the author. NOT a reviewer finding - that review produced no verdict.",
+  "capturedUtc": "2026-09-10",
+  "engine": "PostgreSQL 17.11 disposable local",
+  "hostedContact": false,
+
+  "mechanism": "A window_seconds change is a new epoch domain, which re-seeds the key. Every bucket_key is derived from the epoch key, so all bucket keys change and every client effectively starts a fresh bucket.",
+
+  "isItAttackerReachable": {
+    "verdict": "NO",
+    "evidence": "Measured has_table_privilege for service_role, anon and authenticated across limiter.config, key_state, bucket, grant and translation_prefix, for SELECT/INSERT/UPDATE/DELETE. Not one privilege is held. The schema grants only USAGE plus EXECUTE on the three clockless entry points.",
+    "consequence": "Triggering a domain reset requires direct database or owner access. It is an operator action, not something the app role or a guest can reach."
+  },
+
+  "canThePeriodicReseedResetBudgetsMidWindow": {
+    "verdict": "NO",
+    "reasoning": "A reseed_interval re-seed only occurs inside the ratchet loop while ADVANCING the epoch. Advancing the epoch also changes window_id, so the bucket is new regardless. A same-window re-seed is not reachable through that path."
+  },
+
+  "residualTradeoff": {
+    "statement": "An operator who changes window_seconds mid-window resets every guest's budget once.",
+    "severity": "Operator footgun, not a security defect. It grants a one-time fresh budget to everyone, including any abuser active at that moment.",
+    "alternativeConsidered": "Preserving the old epoch across a domain change is exactly the r3 wedge: the epoch pins at an unreachable value and guest reporting is denied permanently with no self-healing path.",
+    "chosen": "A bounded one-time reset is strictly preferable to permanent denial of service, particularly for an accessibility app where refusing a legitimate reporter is the worse failure.",
+    "ownerVisible": true,
+    "recommendation": "window_seconds should be treated as a rare, deliberate operational change, not a routine tuning knob. Production thresholds remain DEFERRED, so no value is being fixed here."
+  },
+
+  "notAVerdict": "This analysis does not substitute for the fourth independent review, which must still run against the unchanged artifact."
+}
