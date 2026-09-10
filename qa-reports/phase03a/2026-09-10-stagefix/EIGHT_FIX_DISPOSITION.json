@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "unit": "Eight-fix disposition matrix",
+  "capturedUtc": "2026-09-10",
+  "repairBranch": "repair/flagstone-p03a-stage-mandatory-fixes-20260910",
+
+  "items": [
+    {
+      "id": "STAGE-MF-01",
+      "title": "Migration apply mechanism destroys canonical identity",
+      "category": "TOOLING",
+      "disposition": "CLOSED",
+      "howClosed": "scripts/canonical-migration-identity.mjs + 19 tests. planApply() refuses non-canonical filenames, undeclared applyStage, duplicate versions, hash mismatch, missing files and a version held under a different name; it skips genuinely-applied candidates and orders the plan canonically. verifyLedgerIdentity() is the read-only post-apply check. supportedApplyCommand() names `supabase db push --linked --project-ref <ref>` as the ONE mechanism and refuses to build a command without an explicit target.",
+      "proof": "Run against the ACTUAL staging ledger rows the tool returns 14 problems — six ledgerless applies plus wall-clock substitutions — and against a correct ledger it passes. Run against the real manifest it produces a clean, ordered 8-candidate Stage A plan.",
+      "commit": "4c093fd"
+    },
+    {
+      "id": "STAGE-MF-02",
+      "title": "Round-trip structural identity unlocalisable; original JSON not retained",
+      "category": "EVIDENCE",
+      "disposition": "CLOSED",
+      "howClosed": "scripts/structural-catalog.mjs + 11 tests. The capture query is published in the file, so the recipe is reproducible by any reviewer. writeCapture() writes the full normalized catalog BEFORE reporting a checksum. diffCaptures() reports every residual and flags security-relevant sections.",
+      "normalizationDiscipline": "Ordering only. aclitem[] is compared as a sorted set, which neutralises the acceptor's leading hypothesis that REVOKE ALL + re-GRANT reorders entries without changing authorization. Nothing structural is excluded; only oid and planner statistics are, each with a written justification a test enforces.",
+      "newEvidenceFound": "The LOCAL round trip is exact (reapplyDeterministic true, restorationExact true) both before and after this repair. The hosted 09c42928 vs c70e119a divergence therefore does NOT reproduce locally, which narrows it to something about the hosted environment or the hosted apply mechanism rather than the SQL. Stated as a narrowing, not as a diagnosis.",
+      "commit": "9af0744"
+    },
+    {
+      "id": "STAGE-MF-03",
+      "title": "Production Vault secret must be provisioned separately by the owner",
+      "category": "CONFIG / OWNER DECISION",
+      "disposition": "OPEN — BY DESIGN, OWNER ACTION",
+      "whyNotClosedInCode": "There is nothing to fix in source. limiter.current_epoch_key reads vault.secrets by the name fda028_limiter_epoch_key; production needs that secret to exist before the limiter can derive a key. Creating it is a production Vault change, which this run is explicitly not authorized to make and which should not be delegated to an agent.",
+      "carriedInto": "STAGING_RERUN_AUTHORIZATION_PACKET as a precondition, with the standing prohibition on copying the staging secret.",
+      "sourceModificationRequired": false
+    },
+    {
+      "id": "STAGE-MF-04",
+      "title": "An apply-set candidate hardcodes the PRODUCTION webhook URL",
+      "category": "CODE",
+      "disposition": "CLOSED",
+      "howClosed": "src/__tests__/webhookTargetCoupling.guard.test.ts. The coupling is asserted, the fail-closed early return is asserted to precede the http_post, and every hardcoded project-specific URL in the apply set is enumerated so a new one must be justified.",
+      "whyTheSqlWasNotChanged": "20260904000400 is an ADOPTION candidate: its purpose is to make the repo match the function production actually has. Rewriting the URL would make the repo disagree with production and defeat the Phase 02 contract-truth premise. The hazard was never the URL by itself — it was that the coupling was undocumented and unasserted. That is what changed.",
+      "residualOperationalRule": "Never create webhook_secret on a non-production target. Stated in the packet; it is what keeps a non-production database inert.",
+      "commit": "9af0744"
+    },
+    {
+      "id": "STAGE-MF-05",
+      "title": "Applying with the guest bypass still open must be a chosen decision",
+      "category": "ROLLOUT / OWNER DECISION",
+      "disposition": "OPEN — BY DESIGN, OWNER DECISION",
+      "whyNotClosedInCode": "S3_LIMITER_PRESENT_BYPASS_OPEN is a true and correctly-stated description of the system, not a defect to patch. Closing the bypass means routing guest ingest through the limiter, which needs a server-side ingest path that does not exist in the accepted artifact set and would itself break shipped clients. The decision is whether to apply a correct limiter that nothing yet calls.",
+      "carriedInto": "STAGING_RERUN_AUTHORIZATION_PACKET, placed alongside the Build 33 sequencing decision rather than after it — which is what the acceptor asked for.",
+      "sourceModificationRequired": false
+    },
+    {
+      "id": "STAGE-MF-06",
+      "title": "Phase 03A silently breaks shipped Build 33 authenticated reads",
+      "category": "CODE + ROLLOUT",
+      "disposition": "CLOSED",
+      "howClosed": "FDA-026 split into Stage A (additive, applies) and Stage B (cutover, withheld). New suite supabase/tests/build33-compat.test.sql exercises the shipped query shapes and applies Stage B inside its own transaction as a negative control. replay-phase03a.mjs now requires an explicit applyStage on every candidate and applies only Stage A.",
+      "twoDefectsFoundOnlyByRunningIt": [
+        "The split was incomplete: 20260905073925 independently revokes is_admin via REVOKE ALL and re-grants a list omitting it, so moving the FDA-026 revoke alone left admin.ts still broken. Stage A now carries one labelled compatibility grant, registered in the privilege allowlist with its removal migration named.",
+        "Exact restoration silently broke (restorationExact true -> false): 073925's rollback never restored is_admin and exactness had been holding only because 055633's rollback compensated. Each rollback now restores what its own forward migration changed."
+      ],
+      "fda026Status": "OPEN until the Stage B cutover. Explicitly NOT claimed closed.",
+      "commit": "a0e4050"
+    },
+    {
+      "id": "STAGE-MF-07",
+      "title": "Tracked CLI link artifact names the PRODUCTION project",
+      "category": "CODE",
+      "disposition": "CLOSED",
+      "howClosed": "supabase/.temp/ untracked and gitignored; src/__tests__/projectTargetSafety.guard.test.ts asserts no tracked link state, that the ignore covers files the CLI writes later, and that no tracked machine-readable selector carries the production ref.",
+      "deliberateChoice": "NOT repointed at staging. The prompt and my own reading agree that would swap one stale dangerous target for another; the target is named explicitly on every command instead.",
+      "negativeControl": "Re-tracking the file fails all three assertions.",
+      "commit": "235743a"
+    },
+    {
+      "id": "STAGE-MF-08",
+      "title": "Rollback does not unwind or reconcile the migration ledger",
+      "category": "TOOLING",
+      "disposition": "CLOSED",
+      "howClosed": "forwardRestorationName() in scripts/canonical-migration-identity.mjs implements the forward-only model: a restoration is a NEW migration with a later canonical version, never a deleted or rewritten row, and the function refuses to backdate one before the migration it undoes.",
+      "whyForwardOnly": "Deleting ledger rows in production is history rewriting. Under this model the ledger reads as a truthful history — applied, then deliberately undone, then re-applied — rather than the fiction that the original never ran, which is exactly the state the acceptor found after the staging rollbacks.",
+      "commit": "4c093fd"
+    }
+  ],
+
+  "summary": {
+    "closedByCodeOrTooling": ["STAGE-MF-01", "STAGE-MF-02", "STAGE-MF-04", "STAGE-MF-06", "STAGE-MF-07", "STAGE-MF-08"],
+    "openByDesignAsOwnerDecisions": ["STAGE-MF-03", "STAGE-MF-05"],
+    "note": "STAGE-MF-03 and STAGE-MF-05 are NOT unfixed defects. Neither has a source change that would close it: one is a production Vault action an agent must not take, the other is a decision about whether to ship a correct limiter that nothing yet calls. Both are carried into the packet as explicit owner decisions rather than being marked closed."
+  }
+}
