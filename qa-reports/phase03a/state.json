@@ -1,7 +1,7 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-10T03:28:35Z",
+  "updatedUtc": "2026-09-10T07:52:46Z",
   "currentGeneration": "2026-09-09-gab4",
   "generations": [
     "2026-09-04",
@@ -14,7 +14,7 @@
     "2026-09-09-gab4"
   ],
   "task": "FDA028-GAB-4 local implementation + adversarial acceptance",
-  "status": "IN_PROGRESS_V4_AWAITING_REVIEW",
+  "status": "IN_PROGRESS_V4_AWAITING_REVIEW_R4",
   "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -26,7 +26,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Await the re-review of the repaired artifact 6311691.",
+  "nextAction": "Re-dispatch the fourth independent review against the unchanged r4 artifact.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -138,9 +138,9 @@
     ],
     "v4Offered": false,
     "v4WithheldReason": "Sky authorized the probe, v3 and its review only. Two of the three MUST-FIX items need work that is not yet written or tested; writing v4 now would repeat the pattern of publishing untested mechanism.",
-    "FDA028_V4_STATE": "REPAIRED_R2_AWAITING_REREVIEW",
-    "v4SourceSha": "6311691608b131b4fdda065c4550785105b6ab74",
-    "v4SourceTree": "3df65dee8b90f3faf8690c814871b7c11b845428",
+    "FDA028_V4_STATE": "REPAIRED_R4_AWAITING_REVIEW",
+    "v4SourceSha": "ccaf6fdeff0091063c44da9bb045e22c672dca64",
+    "v4SourceTree": "7d7d03f703b029b53e69fef962e4ca52ff96b76a",
     "v4LocalResults": "62 acceptance assertions pass; 3 concurrency shapes no overshoot on ACTUAL rows; restoration + deterministic reapply clean",
     "v4BlockerClosure": {
       "BLOCKER_1_FULL_PATH": "CLOSED (pending review)",
@@ -176,9 +176,37 @@
     ],
     "v4R2Results": "78 acceptance assertions pass (was 62); 3 concurrency shapes no overshoot on actual rows; restoration + deterministic reapply clean at 16 functions; typecheck PASS",
     "v4PgtapRegressionCleared": true,
-    "v4IndependentReview_r2": "IN_PROGRESS"
+    "v4IndependentReview_r2": "IN_PROGRESS",
+    "v4RepairRounds": [
+      {
+        "round": "r1",
+        "verdict": "HOLD",
+        "mustFix": 3,
+        "summary": "caller-controlled clock; NAT64 /96-only collapse; purge deleting the live window"
+      },
+      {
+        "round": "r2",
+        "verdict": "HOLD",
+        "mustFix": 1,
+        "summary": "RFC 6052 NSPs at non-/96 lengths still collapsed; clock fix was privilege-separation only"
+      },
+      {
+        "round": "r3",
+        "verdict": "HOLD",
+        "mustFix": 1,
+        "summary": "epoch-domain wedge on a window_seconds change - found independently by BOTH the author and the reviewer; plus ::/96 capturing ::/::1, the public-unicast guard never exercised, non-finite clock unhandled"
+      },
+      {
+        "round": "r4",
+        "verdict": "NOT_RUN",
+        "summary": "review terminated by a usage limit before producing any verdict; no partial result exists"
+      }
+    ],
+    "v4AcceptanceAssertions": 107,
+    "v4IndependentReview_r4": "NOT_RUN - terminated by usage limit, no verdict produced, re-dispatch required",
+    "v4OpenLead": "A terminated reviewer was probing whether a domain reset acts as a GLOBAL budget reset (re-seeding changes every bucket key mid-window). Recorded as an open question for the next review; it is NOT a finding and no verdict was reached."
   },
-  "nextSafeAction": "Await the independent re-review. No staging, no integration, no push.",
+  "nextSafeAction": "Re-dispatch the fourth independent review. No staging, no integration, no push, no new authority.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
@@ -186,5 +214,12 @@
     "author-verification-postgres.json": "ab98bafd31da96636d2febba7cabf4ad80c065f60bf4dff7155a0af6dc44208d",
     "evidence-platform-and-boundary.json": "3426e786b2d620cab1174d56d5034030276eccd35b49100bd38d9c6b22208cd2",
     "fda028-gate.json": "5184d2859f3962426e2f9d0aa0bf3e52d6f9b54acddce6896daee7c3e11b12b7"
-  }
+  },
+  "runStatusHistory": [
+    {
+      "utc": "2026-09-10T07:52:46Z",
+      "event": "PAUSED_FOR_USAGE_LIMIT then RESUMED",
+      "note": "Usage reset grants no new authority. Scope remains LOCAL-ONLY V4. Artifact re-verified unchanged before resuming: tree 7d7d03f7, migration hash 61aa5247..."
+    }
+  ]
 }
