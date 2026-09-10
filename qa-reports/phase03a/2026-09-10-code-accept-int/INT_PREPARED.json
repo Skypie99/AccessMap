@@ -1,28 +1,29 @@
 {
   "schemaVersion": 1,
   "operationId": "P03A-INT-20260910-01",
-  "OPERATION_STATE": "PREPARED",
+  "OPERATION_STATE": "RUNNING",
   "preparedUtc": "2026-09-10",
   "mutationPerformed": false,
-
   "source": {
     "branch": "repair/flagstone-p03a-backend-foundation-20260903",
-    "sha": "5edd6455cac5fc5a42cd7e327b7a53f844a75d05",
+    "sha": "8faf8993dcdf6ee3fc13d3f46b170c789cc169b1",
     "tree": "a5ad04f4b16aa3158af0c5ef7f73710278922366",
-    "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903"
+    "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "note": "INT merges the current branch tip. Its non-QA content is byte-identical to the frozen PHASE03A_CODE_SHA 21b2bd7; the extra commits are qa-reports receipts only, so integration receives the complete evidence trail."
   },
   "target": {
     "branch": "integration/flagstone-b33-convergence-20260903",
     "sha": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
     "tree": "edaa68182add5b9a41123f6864c7774f5969e03f",
     "worktree": "/Users/skypie/AccessMap-worktrees/flagstone-b33-convergence-20260903",
-    "clean": true, "indexLock": "absent", "soleWriter": true
+    "clean": true,
+    "indexLock": "absent",
+    "soleWriter": true
   },
   "rollbackPointer": {
     "preIntegrationTargetSha": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
     "recovery": "git -C <integration worktree> reset --hard 5a64c917 restores the exact pre-INT state. The source branch is untouched by the INT and is itself a complete backup of the merged content."
   },
-
   "ancestry": {
     "mergeBase": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
     "targetIsAncestorOfSource": true,
@@ -37,7 +38,6 @@
     "treesEqual": true,
     "mechanic": "git merge --no-ff <exact source SHA> executed IN the integration worktree, producing an explicit two-parent integration commit. --no-ff is chosen over a fast-forward specifically so the integration event is auditable with recorded parents. No squash, rebase, reset, cherry-pick, force or global ours/theirs."
   },
-
   "migrationCollisionInspection": {
     "duplicateTimestamps": 0,
     "appliedMigrationsModifiedOrDeleted": 0,
@@ -48,7 +48,6 @@
       "uniquelyResolvable": true
     }
   },
-
   "expectedDiff": {
     "nonQaFilesChanged": 104,
     "productSourceFilesChanged": 25,
@@ -56,13 +55,19 @@
     "releaseControlTouched": "NONE - release/, docs/RELEASE_IDENTITY.md, vercel.json, app.json and eas.json are all unchanged by the INT",
     "renames": 6
   },
-
   "preconditions": {
-    "PHASE_03A_CODE_GATE": "PENDING - independent CODE review in flight; INT will not start until it returns PASS",
+    "PHASE_03A_CODE_GATE": "PASS",
     "MAIN_MERGE_AUTHORIZED": "NO",
     "stagingMutation": "NOT AUTHORIZED",
-    "push": "NOT AUTHORIZED"
+    "push": "NOT AUTHORIZED",
+    "INDEPENDENT_CODE_REVIEW": "PASS"
   },
-  "writeAheadStates": ["PREPARED","RUNNING","APPLIED_NOT_VERIFIED","VERIFIED | FAILED | OUTCOME_UNKNOWN"],
-  "recoveryIfInterrupted": "Do NOT assume success or failure and do NOT reset or abort blindly. Inspect the integration worktree's actual HEAD: if it equals 5a64c917 the INT never applied; if it is a new merge commit with parents 5a64c917 and the source SHA, the INT applied and only verification remains."
+  "writeAheadStates": [
+    "PREPARED",
+    "RUNNING",
+    "APPLIED_NOT_VERIFIED",
+    "VERIFIED | FAILED | OUTCOME_UNKNOWN"
+  ],
+  "recoveryIfInterrupted": "Do NOT assume success or failure and do NOT reset or abort blindly. Inspect the integration worktree's actual HEAD: if it equals 5a64c917 the INT never applied; if it is a new merge commit with parents 5a64c917 and the source SHA, the INT applied and only verification remains.",
+  "runningUtc": "2026-09-10"
 }
