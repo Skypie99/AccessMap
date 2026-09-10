@@ -37,6 +37,21 @@ CREATE TABLE limiter.config (
 INSERT INTO limiter.config (id) VALUES (true) ON CONFLICT DO NOTHING;
 -- trigger is created after limiter.bucket exists; see the end of this file.
 
+-- ------------------------------------------------- domain coordination lock
+-- The domain guard alone is NOT enough. An unlocked EXISTS cannot see a
+-- concurrent, still-uncommitted admission, so an admission that reads config
+-- before a window_seconds UPDATE and commits its row after it slips straight
+-- through. Measured at 30/30 with two ordinary concurrent sessions and no
+-- artificial delay.
+--
+-- Coordination, not just detection: every admission holds this key in SHARE for
+-- its whole transaction, and a window_seconds change takes it EXCLUSIVE. Share
+-- does not conflict with share, so admissions never serialise against each
+-- other; only a domain change waits, and while it holds the lock no new
+-- admission can read the old configuration.
+CREATE FUNCTION limiter.domain_lock_key()
+RETURNS bigint LANGUAGE sql IMMUTABLE AS $$ SELECT 7028001042800001::bigint $$;
+
 -- ------------------------------------------------- window domain guard
 -- The epoch and the window are both measured in window_seconds, so changing it
 -- re-domains the ledger. Two defects follow if that is allowed while rows exist:
@@ -53,6 +68,12 @@ CREATE FUNCTION limiter.guard_window_domain()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO 'limiter', 'pg_temp' AS $$
 BEGIN
+  IF NEW.window_seconds IS DISTINCT FROM OLD.window_seconds THEN
+    -- Wait for every in-flight admission to finish, and block new ones for the
+    -- rest of this transaction, so the check below cannot race an uncommitted
+    -- insert in either direction.
+    PERFORM pg_advisory_xact_lock(limiter.domain_lock_key());
+  END IF;
   IF NEW.window_seconds IS DISTINCT FROM OLD.window_seconds
      AND EXISTS (SELECT 1 FROM limiter.bucket) THEN
     RAISE EXCEPTION
@@ -475,6 +496,10 @@ DECLARE
   g         limiter.grant%ROWTYPE;    -- unassigned when its SELECT is skipped
   v_opening integer;
 BEGIN
+  -- Held for the whole transaction. Shared, so admissions do not serialise
+  -- against one another; it only excludes a concurrent domain change.
+  PERFORM pg_advisory_xact_lock_shared(limiter.domain_lock_key());
+
   SELECT * INTO v_cfg FROM limiter.config WHERE id;
   IF NOT COALESCE(v_cfg.enabled, true) THEN
     RETURN QUERY SELECT 'ADMITTED_LIMITER_DISABLED'::text, NULL::uuid, NULL::integer;
