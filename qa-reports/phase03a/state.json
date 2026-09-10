@@ -1,8 +1,8 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-10T08:58:15Z",
-  "currentGeneration": "2026-09-09-gab4",
+  "updatedUtc": "2026-09-10T12:53:53Z",
+  "currentGeneration": "2026-09-10-code-accept-int",
   "generations": [
     "2026-09-04",
     "2026-09-04-resume",
@@ -11,10 +11,11 @@
     "2026-09-09-final-verification",
     "2026-09-09-f28a-probe",
     "2026-09-09-gab3",
-    "2026-09-09-gab4"
+    "2026-09-09-gab4",
+    "2026-09-10-code-accept-int"
   ],
-  "task": "FDA028-GAB-4 local implementation + adversarial acceptance",
-  "status": "V4_LOCAL_GATE_PASS",
+  "task": "Final 03A CODE acceptance + controlled INT + staging packet",
+  "status": "INT_APPLIED_AWAITING_INDEPENDENT_ACCEPTANCE",
   "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -26,7 +27,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Owner decision on FDA-028 next phase. No further work authorized under the V4 grant.",
+  "nextAction": "Await independent INT acceptance; then report to Sky and stop before staging.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -151,7 +152,7 @@
       "PGTAP_KIND markers missing on the 5 new supabase/tests/fda028 files - adds 5 entries to the db:pgtap problem list. The non-zero db:pgtap exit is INHERITED (baseline-backups.sql lacks a marker at the frozen source) but the added entries are v4-introduced and must be fixed. Deferred only so the in-flight independent review is not invalidated mid-run."
     ],
     "v4IndependentReview": "IN_PROGRESS",
-    "VAULT_IO": "UNVERIFIED_LOCALLY",
+    "VAULT_IO": "OPEN_FOR_STAGE",
     "IPV6_HOSTED_EVIDENCE": "OPEN",
     "v4IndependentReview_r1": "HOLD - 3 MUST-FIX, all reproduced by the author and repaired",
     "v4R1Defects": [
@@ -231,9 +232,27 @@
     "fda028Closed": false,
     "stagingAuthorized": false,
     "integrationAuthorized": false,
-    "productionAuthorized": false
+    "productionAuthorized": false,
+    "PHASE_03A_CODE_GATE": "PASS",
+    "PHASE03A_CODE_SHA": "21b2bd7a96cd69a8d8fc3ff8756b88a5fe28d912",
+    "PHASE03A_CODE_TREE": "b47f1221e8be9c57d147a80ee328359b32f66436",
+    "CODE_INDEPENDENT_REVIEW": "PASS",
+    "PHASE_03A_INT_GATE": "PASS_PENDING_INDEPENDENT_ACCEPTANCE",
+    "ACCEPTED_INTEGRATION_SHA": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
+    "ACCEPTED_INTEGRATION_TREE": "11de0eb4cf0cbf718fe17fa8a8cab8defef21af8",
+    "integrationBranch": "integration/flagstone-b33-convergence-20260903",
+    "intRollbackPointer": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
+    "STAGING_AUTHORIZATION_PACKET": "READY",
+    "composedProof": "217/217 on both the source and the MERGED tree, with privilege guard, restorationExact and reapplyDeterministic",
+    "fullJestOnMergedTree": "4204 passed / 14 inherited failures / 32 todo - exact baseline match",
+    "R6_1_DISPOSITION": "CARRY_TO_STAGE",
+    "R6_2_DISPOSITION": "CARRY_TO_STAGE",
+    "R6_3_DISPOSITION": "CARRY_TO_STAGE",
+    "IPV6_HOSTED": "OPEN_FOR_STAGE",
+    "pushes": "NONE",
+    "mainMerges": "NONE"
   },
-  "nextSafeAction": "Report the V4 LOCAL PASS to Sky and stop. The local implementation authorization is consumed; staging, integration, production and main merge all remain separate ungranted gates.",
+  "nextSafeAction": "Await the independent INT acceptance verdict. Do NOT begin staging - staging mutation is not authorized by the governing prompt.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
