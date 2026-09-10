@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "RUN_UNIT": "FINAL_03A_CODE_ACCEPTANCE",
+  "STATUS": "PREPARED",
+  "preparedUtc": "2026-09-10",
+  "authorityScope": {
+    "granted": ["local source commits where required for complete 03A CODE acceptance", "local INT after CODE PASS"],
+    "notGranted": ["staging mutation","production","push","main merge","credential rotation","App Store","Phase 03B"]
+  },
+  "sourceIdentitiesResolvedFromGit": {
+    "note": "These are NOT assumed identical. Each was read from Git, not inferred.",
+    "preFda028PartialSourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+    "preFda028PartialSourceTree": "857411dc733b93686d789a72e461856698bec814",
+    "fda028V4ReviewedSha": "eec51b6723d04105a7ba31bf2efd2573b95e8902",
+    "fda028V4ReviewedTree": "23f352bec069522efe9a174a4551c2c484b91de2",
+    "qaDocumentationTipSha": "4f43b959f05c2fdb123f8ee9f059c5d3a03f4560",
+    "qaDocumentationTipTree": "32d0e593d0f78a56b63122661a3086f02d591bb1",
+    "nonQaDiffReviewedToTip": 0,
+    "consequence": "The exact r6-reviewed artifact bytes survive unchanged at the current branch tip; commits after eec51b6 are qa-reports bookkeeping only."
+  },
+  "v4ArtifactHashesVerifiedAtTip": {
+    "20260909120000_fda028_v4_limiter.sql": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771",
+    "20260909120000_fda028_v4_limiter.rollback.sql": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302",
+    "acceptance.sql": "5dccef0b07b9a9f0bddddfc3646a28a1a8907f0a14ae920fdc92d0f09bfc24e2",
+    "acceptance2.sql": "7283dcf8e46c459a23056486f341c10d400c714ad7f337a50582f08894d9543c",
+    "acceptance3.sql": "b60720e4cbdbda44561d2e98478b6c0e3d7fe36c05da3241a5d6438248ca6f8c",
+    "concurrency.sh": "061dfe7c019a6f7e636ef5339f6cd9ab2882340b06f2aacecadf66e29041a905",
+    "devkey.sql": "4abb7b96c36e453be3c51ca54d1d6a2fbe5e13d9a7b2dca6876ca210b0eae7ba",
+    "fixture.sql": "2186cc19d5f7c155930d0b82ba56c5f874f0593806273375544dc517abed4ca2",
+    "allMatchR6Freeze": true
+  },
+  "canonicalIntegrationTarget": {
+    "branch": "integration/flagstone-b33-convergence-20260903",
+    "sha": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
+    "tree": "edaa68182add5b9a41123f6864c7774f5969e03f",
+    "worktree": "/Users/skypie/AccessMap-worktrees/flagstone-b33-convergence-20260903",
+    "sourceOfTruth": "named in the banked 2026-09-05 owner-resume receipt and confirmed against git worktree list",
+    "recordedSeparatelyFromSource": true
+  },
+  "ownership": {
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "dirtyFiles": 0,
+    "indexLock": "absent",
+    "competingWriterEvidence": "no non-QA, non-candidate file touched by any writer in the preceding 90 minutes",
+    "soleWriter": true
+  },
+  "r6Residuals": {
+    "R6-1": "CARRY_TO_STAGE - operator-held exclusive advisory lock can block admissions",
+    "R6-2": "CARRY_TO_STAGE - advisory primitive is PUBLIC-executable to raw-SQL actors; not a PostgREST RPC",
+    "R6-3": "CARRY_TO_STAGE - no permanent CI race test; becomes a REQUIRED staging acceptance test",
+    "ownerDisposition": "ACCEPTED FOR STAGING EVALUATION. The passing V4 artifact must NOT be modified to eliminate them before INT."
+  },
+  "hostedOnlyEvidence": {
+    "VAULT_IO": "OPEN_FOR_STAGE - disposable local PostgreSQL has no Supabase Vault",
+    "IPV6_HOSTED_EVIDENCE": "OPEN_FOR_STAGE - no hosted IPv6 request has ever been observed for this project"
+  },
+  "nextUnit": "STEP 1 - complete whole-03A source composition analysis"
+}
