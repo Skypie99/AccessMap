@@ -23,7 +23,8 @@
       "normalizationDiscipline": "Ordering only. aclitem[] is compared as a sorted set, which neutralises the acceptor's leading hypothesis that REVOKE ALL + re-GRANT reorders entries without changing authorization. Nothing structural is excluded; only oid and planner statistics are, each with a written justification a test enforces.",
       "newEvidenceFound": "The LOCAL round trip is exact (reapplyDeterministic true, restorationExact true) both before and after this repair. The hosted 09c42928 vs c70e119a divergence therefore does NOT reproduce locally, which narrows it to something about the hosted environment or the hosted apply mechanism rather than the SQL. Stated as a narrowing, not as a diagnosis.",
       "commit": "9af0744",
-      "postReviewAddition": "Fixed a real collision the reviewer was asked to construct and found: a NULL acl and an explicit '{}' both normalized to [], so a proacl moving '{}' -> NULL silently re-granted PUBLIC EXECUTE with an identical checksum. NULL now carries a distinct sentinel, the capture query no longer coalesces any acl, and four regression tests pin it. Also added a CLI (sql/capture/diff) plus npm scripts."
+      "postReviewAddition": "Fixed a real collision the reviewer was asked to construct and found: a NULL acl and an explicit '{}' both normalized to [], so a proacl moving '{}' -> NULL silently re-granted PUBLIC EXECUTE with an identical checksum. NULL now carries a distinct sentinel, the capture query no longer coalesces any acl, and four regression tests pin it. Also added a CLI (sql/capture/diff) plus npm scripts.",
+      "round2Correction": "Round-2 review constructed FIVE more collisions with unchanged checksums: a SECURITY DEFINER function losing SET search_path, a disabled trigger, a removed trigger WHEN clause, a column default flipped to true, and FORCE ROW LEVEL SECURITY toggled. All five surfaces are now captured (proconfig, tgenabled, full trigger definition, column defaults, relforcerowsecurity), triggers count as security-relevant, and the header's 'NOTHING structural is excluded' claim \u2014 which was simply false \u2014 is replaced by a bounded statement plus a declared CAPTURED_SCHEMAS scope. Five parameterised regression tests pin them."
     },
     {
       "id": "STAGE-MF-03",
@@ -69,7 +70,8 @@
       ],
       "fda026Status": "OPEN until the Stage B cutover. Explicitly NOT claimed closed.",
       "commit": "a0e4050",
-      "authorCorrectionToTheReviewer": "The reviewer described all five as real data loss and said the grant was the only gate for the two _public relations. That is right for flag_comments, flag_photos and point_events. It is NOT right for flag_status_history_public and flag_edit_history_public: those are security_invoker views, and anon has never had privileges on their base tables \u2014 before Phase 03A or after \u2014 so the view grant confers nothing on its own and they were never a working guest path. Stage A keeps the view grants for fidelity with production, and the suite now asserts the honest behaviour: the grant is present AND the read still stops at the base table."
+      "authorCorrectionToTheReviewer": "The reviewer described all five as real data loss and said the grant was the only gate for the two _public relations. That is right for flag_comments, flag_photos and point_events. It is NOT right for flag_status_history_public and flag_edit_history_public: those are security_invoker views, and anon has never had privileges on their base tables \u2014 before Phase 03A or after \u2014 so the view grant confers nothing on its own and they were never a working guest path. Stage A keeps the view grants for fidelity with production, and the suite now asserts the honest behaviour: the grant is present AND the read still stops at the base table.",
+      "round2Correction": "Round-2 review found my guest assertions tested a PARAPHRASE, not the shipped shape: I asserted `SELECT id FROM flag_comments` under the label 'listComments() does not raise for anon', while the shipped COMMENT_SELECT embeds users!flag_comments_user_id_fkey(display_name), which anon cannot read. Both halves are now asserted separately, and the guest comment list is recorded as ALREADY broken locally independent of Phase 03A. Also corrected the point_events justification: its only shipped reader is authenticated, so it is retained for production fidelity, not for a guest path."
     },
     {
       "id": "STAGE-MF-07",
@@ -112,5 +114,19 @@
     "mustFixIssued": 5,
     "allAddressed": true,
     "report": "INDEPENDENT_STAGEFIX_CODE_REVIEW.md"
+  },
+  "independentReviewRound2": {
+    "verdict": "ACCEPT WITH MANDATORY CHANGES",
+    "mustFixIssued": 3,
+    "allAddressed": true,
+    "report": "INDEPENDENT_STAGEFIX_CODE_REVIEW_R2.md",
+    "roundOneItemsConfirmedClosed": [
+      "guest breakage",
+      "Jest honesty",
+      "tooling runnable",
+      "STAGE-MF-04 reclassification"
+    ],
+    "reviewerConfirmedMyCorrectionOfThem": "The security_invoker view correction was verified three ways and upheld.",
+    "evidenceGapTheyExposed": "production-catalog-capture.v2.json carries column definitions but NO column-privilege data, so every column-level production claim in this tree rests on a different artifact. My production half of the guest-embed claim was rewritten as a bounded statement because of it."
   }
 }
