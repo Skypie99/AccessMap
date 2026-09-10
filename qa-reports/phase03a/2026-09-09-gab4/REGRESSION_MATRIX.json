@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "unit": "Phase 03A regression matrix at the v4 candidate freeze",
+  "capturedUtc": "2026-09-09",
+  "v4SourceSha": "7da4dd1c3e29e81cee2900cdac81f52fbbfe04eb",
+  "hostedContact": false,
+
+  "fullJest": {
+    "observed": {"suitesFailed": 12, "suitesPassed": 273, "suitesTotal": 285,
+                 "testsFailed": 14, "testsTodo": 32, "testsPassed": 4204, "testsTotal": 4250},
+    "acceptedBaseline": {"passed": 4204, "inheritedFailures": 14, "todo": 32},
+    "countsMatchBaseline": true,
+    "exactFailureNamesCaptured": "full-jest-failure-names.txt",
+    "failingSuites": [
+      "src/__tests__/dismissalStandard.guard.test.ts",
+      "src/__tests__/focusOnOpen.guard.test.ts",
+      "src/__tests__/hitTargetFrame.guard.test.ts",
+      "src/__tests__/keyboardClass.guard.test.ts",
+      "src/__tests__/privacy.guard.test.ts",
+      "src/__tests__/visualFreezeFixWave.guard.test.ts",
+      "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+      "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+      "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+      "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+      "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+      "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts"
+    ],
+    "classification": "ALL INHERITED. Every failing suite is a UI, accessibility, geometry or copy guard (tab bars, modals, keyboard surfaces, privacy screen text, map chrome). None touches guest ingestion, rate limiting, flags or feedback.",
+    "structuralProof": "v4 changed ZERO .ts/.tsx/.js/.jsx/.json files. git diff against the frozen source shows only two SQL candidate files plus a new supabase/tests/fda028 directory of SQL and one shell script. src/, App.tsx, package.json, package-lock.json, schema.generated.sql and the 71 applied migrations are all byte-identical. It is therefore structurally impossible for v4 to have caused any Jest failure.",
+    "newRegressions": 0
+  },
+
+  "otherGates": {
+    "typecheck": "PASS",
+    "contract:check": "PASS - migration-crosswalk.v1.json is current",
+    "db:rollback:verify": "PASS - contract met for all 5 migrations-next candidates; the phase03a/ subdirectory candidates are outside this harness by existing design, unchanged by v4",
+    "focusedJest": "PASS - 40/40 across anonRateLimit and createAnonFlag",
+    "lint": "no TypeScript or JavaScript files added by v4; eslint scope is src only, unchanged"
+  },
+
+  "db_pgtap": {
+    "exitCodeWithV4": 1,
+    "exitCodeWithoutV4": 1,
+    "baselineProblem": "phase03a-fixtures/baseline-backups.sql: missing or invalid PGTAP_KIND marker - PRE-EXISTING at the frozen source 0a6a6b0, verified by re-running with the v4 test directory temporarily moved aside",
+    "nonZeroExitIsInherited": true,
+    "v4IntroducedProblems": 5,
+    "v4IntroducedDetail": "The five new supabase/tests/fda028 SQL files lack a PGTAP_KIND marker. The harness accepts kinds pgtap | fixture | raising-proof; fixture.sql and devkey.sql are fixtures, and the three acceptance files are raising-proofs.",
+    "status": "OPEN - v4-introduced and MUST be fixed",
+    "whyDeferred": "The independent reviewer is mid-run against the exact frozen artifact hashes. Changing those files during the review would invalidate it. The fix is queued to be applied with any reviewer findings, after which the artifact is re-frozen and re-verified.",
+    "safetyImpact": "None. These are harness classification markers; they alter no limiter behaviour and no test outcome."
+  }
+}

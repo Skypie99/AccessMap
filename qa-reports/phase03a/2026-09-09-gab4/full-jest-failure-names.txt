@@ -1,0 +1,52 @@
+FAIL src/screens/__tests__/bp11PressVocabGuards.test.ts
+  ● BP11 / T3 — tab bar: haptic-only + forwards a11y (source contract) › fires the haptic, forwards every injected prop, adds no visual dim
+FAIL src/__tests__/privacy.guard.test.ts
+  ● the privacy screen renders Sky's document, verbatim › every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim
+FAIL src/__tests__/visualFreezeFixWave.guard.test.ts
+  ● FV-1 — focused fields stay in their owning scroller › Address Search scrolls the full body, including its focused input
+FAIL src/screens/__tests__/tasksHeaderReclaim.guard.test.ts
+  ● the control now lives in the ⋯ tool sheet › VoiceOver order: search, then the circles, then the sheet rows
+FAIL src/__tests__/keyboardClass.guard.test.ts
+  ● THE KEYBOARD CLASS — every input-hosting surface carries a mechanism › Recipe D — every delegate is a real, live consumer (the list drains)
+FAIL src/screens/__tests__/bp3TrustEngineGuards.test.ts
+  ● T8 — one spoken voice (source contract) › each triage action names its flag (category + conditional distance)
+FAIL src/screens/__tests__/mapChromeBudget.guard.test.ts
+  ● map-chrome budget — the ONE persistent command bar › (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8
+FAIL src/__tests__/hitTargetFrame.guard.test.ts
+  ● Explore close targets › MapScreen heat notice close controls are real 44pt targets
+FAIL src/screens/__tests__/Wave2ScreenGeometry.test.ts
+  ● Wave 2 — expanded modal adoption › keeps Flag Detail hand-built and gives it expanded safe-area geometry
+FAIL src/__tests__/focusOnOpen.guard.test.ts
+  ● focus-in standard — every dismissable moves the SR cursor in on open › every ALLOWED entry still matches exactly one live surface
+FAIL src/__tests__/dismissalStandard.guard.test.ts
+  ● the dismissal standard › C · every surface is still reduced-motion gated
+  ● the dismissal standard › J · focus return is wired end to end, and nothing else claims onDismiss
+FAIL src/screens/__tests__/TasksScreenFlagCard.test.tsx
+  ● TaskCard — T8: each action names its flag › with no location, action labels are category-only (no distance)
+  ● TaskCard — T8: each action names its flag › with a location, the label carries category THEN distance
+FAIL src/screens/__tests__/bp11PressVocabGuards.test.ts
+  ● BP11 / T3 — tab bar: haptic-only + forwards a11y (source contract) › fires the haptic, forwards every injected prop, adds no visual dim
+FAIL src/__tests__/privacy.guard.test.ts
+  ● the privacy screen renders Sky's document, verbatim › every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim
+FAIL src/__tests__/visualFreezeFixWave.guard.test.ts
+  ● FV-1 — focused fields stay in their owning scroller › Address Search scrolls the full body, including its focused input
+FAIL src/screens/__tests__/tasksHeaderReclaim.guard.test.ts
+  ● the control now lives in the ⋯ tool sheet › VoiceOver order: search, then the circles, then the sheet rows
+FAIL src/__tests__/keyboardClass.guard.test.ts
+  ● THE KEYBOARD CLASS — every input-hosting surface carries a mechanism › Recipe D — every delegate is a real, live consumer (the list drains)
+FAIL src/screens/__tests__/bp3TrustEngineGuards.test.ts
+  ● T8 — one spoken voice (source contract) › each triage action names its flag (category + conditional distance)
+FAIL src/screens/__tests__/mapChromeBudget.guard.test.ts
+  ● map-chrome budget — the ONE persistent command bar › (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8
+FAIL src/__tests__/hitTargetFrame.guard.test.ts
+  ● Explore close targets › MapScreen heat notice close controls are real 44pt targets
+FAIL src/screens/__tests__/Wave2ScreenGeometry.test.ts
+  ● Wave 2 — expanded modal adoption › keeps Flag Detail hand-built and gives it expanded safe-area geometry
+FAIL src/__tests__/focusOnOpen.guard.test.ts
+  ● focus-in standard — every dismissable moves the SR cursor in on open › every ALLOWED entry still matches exactly one live surface
+FAIL src/__tests__/dismissalStandard.guard.test.ts
+  ● the dismissal standard › C · every surface is still reduced-motion gated
+  ● the dismissal standard › J · focus return is wired end to end, and nothing else claims onDismiss
+FAIL src/screens/__tests__/TasksScreenFlagCard.test.tsx
+  ● TaskCard — T8: each action names its flag › with no location, action labels are category-only (no distance)
+  ● TaskCard — T8: each action names its flag › with a location, the label carries category THEN distance
