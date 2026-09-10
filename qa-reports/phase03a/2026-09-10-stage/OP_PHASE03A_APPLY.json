@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEPS 3-4 — Vault provisioning and Phase 03A artifact application",
+  "OPERATION_STATE": "VERIFIED",
+  "capturedUtc": "2026-09-10",
+  "target": "ctshxbykuemeqnofqcdh branch 441acc38 — production NOT touched",
+
+  "FDA028_STAGING_VAULT_SECRET": "PROVISIONED_VERIFIED",
+  "vault": {
+    "name": "fda028_limiter_epoch_key",
+    "materialGeneration": "server-side via encode(extensions.gen_random_bytes(32),'hex') inside the database; the material never entered the executor's context, any log, receipt or checkpoint",
+    "materialShapeVerified": "64 hex characters = 32 bytes, matching what limiter.read_epoch_key expects",
+    "copiedFromProduction": false,
+    "totalSecretsInStaging": 1,
+    "webhookSecretPresent": 0,
+    "reachability": {"anon_vault_usage": false, "authenticated_vault_usage": false,
+      "anon_read_decrypted_secrets": false, "authenticated_read_decrypted_secrets": false,
+      "service_role_read_decrypted_secrets": true},
+    "residualRecorded": "service_role CAN read vault.decrypted_secrets — a Supabase platform default. An actor holding the service_role key could read the limiter epoch key and derive bucket identifiers. This is the same trusted-operator boundary as R6-2, not client-reachable, but it confirms the v3 review's observation that ledger access and Vault access plausibly coincide. Recorded, not hidden."
+  },
+
+  "phase03aCandidatesApplied": [
+    {"op":"OP-03A-1","file":"20260905055629_phase03a_flag_policies.sql","finding":"FDA-009","mechanism":"apply_migration","verified":"flags_user_scoped policy removed"},
+    {"op":"OP-03A-2","file":"20260905055630_phase03a_open_inserts.sql","finding":"FDA-023","mechanism":"apply_migration","verified":"RESTRICTIVE 'flags authenticated insert open' present"},
+    {"op":"OP-03A-3","file":"20260905055632_phase03a_profile_updates.sql","finding":"FDA-021","mechanism":"apply_migration","verified":"column UPDATE allowlist applied"},
+    {"op":"OP-03A-4","file":"20260905055633_phase03a_contextual_profiles.sql","finding":"FDA-026","mechanism":"apply_migration","verified":"broad users-readable policy removed; contextual RPCs created"},
+    {"op":"OP-03A-5","file":"20260905055635_phase03a_trigger_execute.sql","finding":"FDA-010","mechanism":"apply_migration","verified":"6 trigger functions revoked"},
+    {"op":"OP-03A-6","file":"20260905055636_phase03a_client_privileges.sql","finding":"FDA-012","mechanism":"apply_migration","verified":"table/sequence/default privileges narrowed"},
+    {"op":"OP-03A-7","file":"20260905073925_phase03a_effective_privileges.sql","finding":"FDA-012","sha256":"64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928","mechanism":"supabase db query --file (VERBATIM)","reason":"31KB / 234 statements — executed from the exact file to eliminate transcription risk entirely"},
+    {"op":"OP-03A-8","file":"20260909120000_fda028_v4_limiter.sql","finding":"FDA-028","sha256":"8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771","mechanism":"supabase db query --file (VERBATIM)","reason":"same — the independently accepted artifact applied byte-exactly"}
+  ],
+
+  "postApplyVerification": {
+    "limiterSchema": 1, "limiterTables": 5, "limiterFunctions": 20,
+    "domainGuardTrigger": 1, "grantParentFkDeleteAction": "c (CASCADE)",
+    "translationPrefixesSeeded": 4,
+    "keyStateEpoch": -1, "keyStateWindowSeconds": null,
+    "keyStateNote": "Unseeded as designed; the first admission seeds it.",
+    "fda009_legacyPolicyRemoved": true, "fda023_restrictivePolicyPresent": true, "fda026_broadUsersPolicyRemoved": true
+  },
+
+  "materialObservation_ledgerCoverage": {
+    "ledgerCountAfterAll": 82,
+    "arithmetic": "71 baseline + 5 Phase 02 + 6 Phase 03A applied via apply_migration = 82",
+    "gap": "Candidates 7 and 8 were applied via 'supabase db query --file' for byte-exactness and therefore have NO ledger entry.",
+    "whyThatTradeWasMade": "Hand-transcribing a 31KB / 234-statement privilege file into a tool argument is a real correctness risk. Exact application of the accepted artifact matters more for the validity of this rehearsal than ledger bookkeeping.",
+    "consequenceForProduction": "The production packet must use a mechanism that is BOTH byte-exact AND ledger-recording with correct versions - i.e. supabase db push over properly versioned migration files. Neither mechanism used here satisfies both, and that is now recorded twice: apply_migration mis-versions, db query --file does not record."
+  },
+
+  "prohibitionsRespected": {"productionMutations":"NONE","pushes":"NONE","mainMerges":"NONE","webhookSecretCreated":false}
+}
