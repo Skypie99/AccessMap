@@ -1,0 +1,65 @@
+===== acceptance =====
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: valid IPv4 accepted
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: NULL signal refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: empty signal refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: multi-valued refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: whitespace refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: garbage refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: CIDR (non-host) refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    normalize: injection-ish refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    ipv4: deterministic
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    ipv4: distinct sources distinct prefixes
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    ipv6: same /64 groups together
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    ipv6: different /64 separates
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    ipv6: case-insensitive
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    ipv6: compressed == expanded
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    ipv6: malformed refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    mapped: unwraps to IPv4 namespace
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    mapped: distinct mapped addrs do NOT collapse
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    mapped: hex form == dotted form
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    mapped: never lands in the v6 namespace
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: seeded
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: stable within an epoch
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: advances to a new epoch
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: new epoch key differs
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: ratchet is one-way forward
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: current key cannot reproduce the prior key
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: bucket derivation is epoch-bound
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: bucket derivation deterministic per key
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance.sql:74: NOTICE:  ok    key: 16-byte bucket id
+===== acceptance2 =====
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    fail-closed: missing signal refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    fail-closed: NO row written on refusal
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    fail-closed: malformed signal refused
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    fail-closed: still no row
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    full path: admitted
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    full path: REAL ROW WRITTEN
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    full path: row has guest shape
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    feedback: admitted + row written
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    feedback: fail-closed writes nothing
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    reset: second spend admitted
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    reset: grant exhausted
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    reset: fresh envelope granted
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    reset: underlying bucket KEPT the spend (3 not 1)
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    reset: repeated resets terminate
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    reset: never exceeded BUCKET_ALLOWANCE
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    reset: natural window renewal restores budget
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    independence: two grants on one bucket
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    independence: A exhausted
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    independence: B still usable
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    independence: brand-new client after 5 resets NOT starved
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance2.sql:92: NOTICE:  ok    growth: grant rows never exceed bucket units
+===== acceptance3 =====
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: grant exists under its bucket
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: bucket delete CASCADES the grant away
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: no orphan grant anywhere
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: stale grant cannot bind to a recreated bucket
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: stale grant id was NOT resurrected
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: recreated bucket starts from clean authority
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: orphan grant insert REJECTED
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: purge removed old buckets
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    lifecycle: purge left no orphan grants
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    killswitch: admits and STILL writes the row
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    failure: stale grant from an old window ignored, fresh envelope issued
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    failure: absent key material RAISES (fail closed)
+psql:/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903/supabase/tests/fda028/acceptance3.sql:74: NOTICE:  ok    failure: no row written when key unavailable

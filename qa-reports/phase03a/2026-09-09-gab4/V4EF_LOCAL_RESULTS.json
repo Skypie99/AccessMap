@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "checkpoint": "V4-E/F",
+  "FDA028_V4_STATE": "LOCAL_TESTS_PASS_UNACCEPTED",
+  "capturedUtc": "2026-09-09",
+  "engine": "PostgreSQL 17.11, disposable local clusters, destroyed after use",
+  "hostedContact": false, "stagingMutations": "NONE", "productionMutations": "NONE",
+  "acceptanceAssertions": 62,
+  "acceptanceFailures": 0,
+  "concurrencyShapes": [
+    {"parallel": 40, "allowance": 10, "admitted": 10, "rowsInserted": 10, "ledgerUnits": 10, "orphans": 0, "overshoot": false},
+    {"parallel": 60, "allowance": 25, "admitted": 25, "rowsInserted": 25, "ledgerUnits": 25, "orphans": 0, "overshoot": false},
+    {"parallel": 30, "allowance": 1,  "admitted": 1,  "rowsInserted": 1,  "ledgerUnits": 1,  "orphans": 0, "overshoot": false}
+  ],
+  "concurrencyNote": "Counts ACTUAL public.flags rows, not only ledger units, so the guest write is proven to be inside the protected transaction.",
+  "restoration": {"schemaRemoved": true, "deterministicReapplyFunctions": 12},
+
+  "defectsFoundAndFixedDuringAuthoring": [
+    {"id":"AUTH-1","defect":"PL/pgSQL IF parser stops at the first THEN at paren depth 0, so an inline CASE..THEN in an IF condition truncated the expression and the function would not even load.","fix":"rewritten without CASE","caughtBy":"first load attempt"},
+    {"id":"AUTH-2","defect":"host(set_masklen(addr,64)) strips the netmask but KEEPS the host bits, so every /64 became its own bucket and IPv6 prefix grouping never happened.","fix":"network(set_masklen(...))::text","caughtBy":"acceptance test 'ipv6: same /64 groups together'"},
+    {"id":"AUTH-3","defect":"CONCURRENCY OVERSHOOT. The initial key seeding raced: with no key_state row to lock, concurrent first-callers each generated their OWN random key and therefore derived DIFFERENT bucket keys for the same network, multiplying the effective allowance. Measured 18 admitted against an allowance of 10.","fix":"key_state pre-seeded at epoch -1 so FOR UPDATE always has a row, plus a double-checked lock with re-verification after acquiring it","caughtBy":"full-path concurrency test counting real inserted rows"}
+  ],
+
+  "blockerClosure": {
+    "BLOCKER_1_FULL_PATH": "CLOSED - limiter.admit_guest_flag / admit_guest_feedback perform normalization, key derivation, admission, ledger accounting AND the guest INSERT in one transaction. Proven by 'full path: REAL ROW WRITTEN', 'fail-closed: NO row written on refusal', and concurrency counting actual rows.",
+    "BLOCKER_2_BUCKET_GRANT_LIFECYCLE": "CLOSED - composite FK ON DELETE CASCADE (confdeltype='c'). Proven by cascade-on-delete, no-orphan-anywhere, orphan-insert-rejected (foreign_key_violation), stale-grant-not-resurrected, recreated-bucket-clean-authority, and purge-leaves-no-orphans.",
+    "BLOCKER_3_KEY_LINKABILITY": "CLOSED for the stated requirement - forward-secure ratchet. Proven by 'ratchet is one-way forward' and 'current key cannot reproduce the prior key'. Vault I/O itself is UNVERIFIED locally."
+  },
+
+  "honestLimitations": {
+    "VAULT_IO": "UNVERIFIED_LOCALLY. Disposable Postgres has no Supabase Vault, so the vault.decrypted_secrets read and vault.update_secret write branches were never executed. Only the dev-key branch and the ratchet math were exercised. This is an environment limitation and is NOT reported as a pass.",
+    "IPV6_HOSTED_EVIDENCE": "OPEN. All IPv6 assertions are local parser/normalization proofs. No hosted IPv6 request has ever been observed for this project (0 of 85 real production requests were IPv6, and the probe host had no native IPv6 route). Local parser proof is NOT hosted proof.",
+    "BACKUP_PITR": "No claim of cryptographic deletion from backups or PITR. A historical snapshot of the key permits forward ratcheting, bounded by reseed_interval rather than unbounded.",
+    "BYPASS_CLOSURE": "Not implemented and not simulated. No route, policy or grant on public.flags/public.feedback was changed by this candidate."
+  },
+
+  "thresholdsUsedInTests": {"normal_allowance": 2, "bucket_allowance": 6, "window_seconds": 60, "reseed_interval": 3,
+    "note": "CONFIGURATION rows in limiter.config, not architectural constants. Production values remain DEFERRED; the shipped defaults are inert placeholders, not policy."}
+}

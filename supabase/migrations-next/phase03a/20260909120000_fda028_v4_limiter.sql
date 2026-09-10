@@ -43,6 +43,13 @@ CREATE TABLE limiter.key_state (
   epoch         bigint  NOT NULL,
   reseed_anchor bigint  NOT NULL
 );
+-- Seeded at epoch -1 (meaning "no key yet") ON PURPOSE. The row must exist from
+-- the start so SELECT ... FOR UPDATE always has a row to serialise on. Without
+-- it, concurrent first-callers each find no row, each generate their OWN random
+-- key, and therefore derive DIFFERENT bucket keys for the same network - which
+-- silently multiplies the effective allowance.
+INSERT INTO limiter.key_state (id, epoch, reseed_anchor) VALUES (true, -1, -1)
+  ON CONFLICT DO NOTHING;
 
 -- ----------------------------------------------------------------- the ledger
 CREATE TABLE limiter.bucket (
@@ -132,12 +139,14 @@ BEGIN
     RETURN NULL;
   END IF;
 
+  -- network() is required, NOT host(): host() strips the netmask but KEEPS the
+  -- host bits, so host(set_masklen(addr,64)) returns the full address and every
+  -- /64 would be its own bucket. network() zeroes the host bits and renders the
+  -- prefix length, which is what makes prefix grouping actually group.
   IF family(v_addr) = 4 THEN
-    RETURN 'v4:' || host(set_masklen(v_addr, COALESCE(v_cfg.ipv4_prefix, 32)))
-                 || '/' || COALESCE(v_cfg.ipv4_prefix, 32)::text;
+    RETURN 'v4:' || network(set_masklen(v_addr, COALESCE(v_cfg.ipv4_prefix, 32)))::text;
   END IF;
-  RETURN 'v6:' || host(set_masklen(v_addr, COALESCE(v_cfg.ipv6_prefix, 64)))
-               || '/' || COALESCE(v_cfg.ipv6_prefix, 64)::text;
+  RETURN 'v6:' || network(set_masklen(v_addr, COALESCE(v_cfg.ipv6_prefix, 64)))::text;
 END $$;
 
 CREATE FUNCTION limiter.is_public_unicast(p_addr inet)
@@ -169,58 +178,60 @@ CREATE FUNCTION limiter.current_epoch_key(p_now timestamptz)
 RETURNS TABLE (epoch bigint, epoch_key bytea)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'limiter', 'extensions', 'pg_temp' AS $$
 DECLARE
-  v_cfg     limiter.config%ROWTYPE;
-  v_state   limiter.key_state%ROWTYPE;
-  v_target  bigint;
-  v_key     bytea;
-  v_steps   integer := 0;
-  v_anchor  bigint;
+  v_cfg    limiter.config%ROWTYPE;
+  v_state  limiter.key_state%ROWTYPE;
+  v_target bigint;
+  v_key    bytea;
+  v_steps  integer := 0;
 BEGIN
   SELECT * INTO v_cfg FROM limiter.config WHERE id;
   v_target := limiter.window_of(p_now, v_cfg.window_seconds);
 
-  -- Serialise ratchet advancement: exactly one session may advance the key.
+  -- Fast path: no lock while the stored epoch is already current.
+  SELECT * INTO v_state FROM limiter.key_state WHERE id;
+  IF v_state.epoch = v_target THEN
+    RETURN QUERY SELECT v_state.epoch, limiter.read_epoch_key(); RETURN;
+  END IF;
+
+  -- Slow path: take the row lock, then RE-CHECK. Another session may have
+  -- advanced the epoch while this one waited.
   SELECT * INTO v_state FROM limiter.key_state WHERE id FOR UPDATE;
-  IF v_state.id IS NULL THEN
-    INSERT INTO limiter.key_state (id, epoch, reseed_anchor)
-      VALUES (true, v_target, v_target)
-      ON CONFLICT (id) DO NOTHING;
-    SELECT * INTO v_state FROM limiter.key_state WHERE id FOR UPDATE;
+  IF v_state.epoch = v_target THEN
+    RETURN QUERY SELECT v_state.epoch, limiter.read_epoch_key(); RETURN;
+  END IF;
+
+  IF v_state.epoch < 0 THEN
+    -- First ever key for this database.
     v_key := extensions.gen_random_bytes(32);
-    PERFORM limiter.write_epoch_key(v_key);
-    RETURN QUERY SELECT v_state.epoch, v_key; RETURN;
+    v_state.epoch := v_target;
+    v_state.reseed_anchor := v_target;
+  ELSE
+    v_key := limiter.read_epoch_key();
+    -- A caller cannot force advancement: the target epoch is a pure function of
+    -- request time. Advance forward only, never backward.
+    WHILE v_state.epoch < v_target LOOP
+      v_steps := v_steps + 1;
+      IF v_steps > v_cfg.catchup_cap THEN
+        -- Too stale to ratchet economically. Re-seeding only DESTROYS more history.
+        v_key := extensions.gen_random_bytes(32);
+        v_state.epoch := v_target;
+        v_state.reseed_anchor := v_target;
+        EXIT;
+      END IF;
+      v_state.epoch := v_state.epoch + 1;
+      IF v_state.epoch - v_state.reseed_anchor >= v_cfg.reseed_interval THEN
+        -- Periodic re-seed bounds how far an OLD leaked key can ratchet forward.
+        v_key := extensions.gen_random_bytes(32);
+        v_state.reseed_anchor := v_state.epoch;
+      ELSE
+        v_key := limiter.ratchet(v_key, v_state.epoch);
+      END IF;
+    END LOOP;
   END IF;
 
-  v_key := limiter.read_epoch_key();
-
-  -- A caller cannot force advancement: the target epoch is a pure function of
-  -- request time. Advance forward only, never backward.
-  WHILE v_state.epoch < v_target LOOP
-    v_steps := v_steps + 1;
-    IF v_steps > v_cfg.catchup_cap THEN
-      -- Too stale to ratchet economically. Re-seeding only DESTROYS more history.
-      v_key := extensions.gen_random_bytes(32);
-      v_state.epoch := v_target;
-      v_state.reseed_anchor := v_target;
-      EXIT;
-    END IF;
-    v_state.epoch := v_state.epoch + 1;
-    IF v_state.epoch - v_state.reseed_anchor >= v_cfg.reseed_interval THEN
-      -- Periodic re-seed bounds how far an OLD leaked key can ratchet forward.
-      v_key := extensions.gen_random_bytes(32);
-      v_state.reseed_anchor := v_state.epoch;
-    ELSE
-      v_key := limiter.ratchet(v_key, v_state.epoch);
-    END IF;
-  END LOOP;
-
-  IF v_steps > 0 THEN
-    UPDATE limiter.key_state
-       SET epoch = v_state.epoch, reseed_anchor = v_state.reseed_anchor
-     WHERE id;
-    PERFORM limiter.write_epoch_key(v_key);
-  END IF;
-
+  UPDATE limiter.key_state
+     SET epoch = v_state.epoch, reseed_anchor = v_state.reseed_anchor WHERE id;
+  PERFORM limiter.write_epoch_key(v_key);
   RETURN QUERY SELECT v_state.epoch, v_key;
 END $$;
 
