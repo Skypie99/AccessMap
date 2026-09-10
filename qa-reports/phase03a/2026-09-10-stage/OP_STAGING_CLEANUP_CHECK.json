@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEP 14 — staging cleanup check",
+  "OPERATION_STATE": "VERIFIED",
+  "capturedUtc": "2026-09-10",
+
+  "STAGING_CLEANUP_REQUIRED": "YES",
+  "stagingDeleted": false,
+  "deletionAttempted": false,
+  "branchRetained": {"projectRef": "ctshxbykuemeqnofqcdh", "branchId": "441acc38-d71c-4a87-883e-61ff87e0c52e"},
+
+  "decision": "RETAIN. The twelve owner-defined cleanup conditions do not all hold, and the owner's standing rule is that it is better to retain the disposable branch briefly than to delete evidence needed for production review. Four conditions fail outright and two are only partly satisfied.",
+
+  "twelveConditions": [
+    {"condition": "CODE acceptance complete", "satisfied": true, "evidence": "PHASE_03A_CODE_GATE PASS; PHASE03A_CODE_SHA 21b2bd7a"},
+    {"condition": "INT acceptance complete", "satisfied": true, "evidence": "PHASE_03A_INT_GATE PASS; ACCEPTED_INTEGRATION_SHA 7c43c07e"},
+    {"condition": "Hosted STAGE acceptance complete", "satisfied": "PARTIAL", "evidence": "Steps 1-11 complete, but HOSTED_IPV6_TRANSPORT is OPEN by design and was deliberately not simulated."},
+    {"condition": "Independent staging acceptance complete", "satisfied": "PARTIAL", "evidence": "Complete, but the verdict is ACCEPT WITH MANDATORY CHANGES, not a clean ACCEPT. Mandatory changes remain open for the owner."},
+    {"condition": "Hosted pgTAP evidence saved", "satisfied": true, "evidence": "OP_HOSTED_PGTAP.json — 217/217 with two negative controls"},
+    {"condition": "Hosted role/RLS/REST/RPC evidence saved", "satisfied": true, "evidence": "OP_HOSTED_MATRIX_AND_FDA028.json, OP_ROLLOUT_TRUTH.json, OP_R6_RESIDUAL.json"},
+    {"condition": "Limiter/two-client evidence saved", "satisfied": true, "evidence": "OP_HOSTED_MATRIX_AND_FDA028.json plus OP_HOSTED_CONCURRENCY.json (re-run and banked after the acceptor found the original claim unreceipted)"},
+    {"condition": "Hosted restoration/reapply evidence saved", "satisfied": true, "evidence": "OP_RESTORE_REAPPLY.json — three deterministic cycles"},
+    {"condition": "Before/after staged-candidate catalogs and hashes saved", "satisfied": "PARTIAL", "evidence": "All 16 file sha256s and all three structural digests are saved, but the FIRST-APPLY structural JSON was hashed and not retained, which is exactly why the round-trip delta could not be localised. This condition is the one the author actually failed."},
+    {"condition": "Exact production-authorization packet generated", "satisfied": true, "evidence": "PRODUCTION_AUTHORIZATION_PACKET.md, revised after independent review"},
+    {"condition": "No unresolved Phase 03A reviewer request needs live staging", "satisfied": false, "evidence": "The independent acceptor could not execute real admissions, run the pgTAP suites, or reproduce the digests without mutating staging, and listed all three as limitations. Any re-verification of those needs this branch alive."},
+    {"condition": "No governing requirement keeps staging for the next owner decision", "satisfied": false, "evidence": "Eight MUST-FIX items are open, including the Build 33 breakage and the apply-mechanism defect. Several can only be re-tested against live staging."}
+  ],
+
+  "finalStagingState": {
+    "ledger": 82,
+    "auth_users": 0,
+    "public_users": 0,
+    "public_flags": 0,
+    "public_feedback": 0,
+    "storage_objects": 0,
+    "limiter_bucket": 0,
+    "limiter_grant": 0,
+    "vault_secrets": 1,
+    "limiter_schema_present": 1,
+    "structural_sha256": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",
+    "limiter_config": {"enabled": true, "normal_allowance": 5, "bucket_allowance": 50, "window_seconds": 86400, "ipv4_prefix": 32, "ipv6_prefix": 64, "require_public_ip": true},
+    "residue": "NONE — every synthetic probe row from R6-1, R6-3, STEP 10, STEP 11 and the concurrency re-run was removed, and the synthetic R6-2 auth user was deleted."
+  },
+
+  "privacyDiscipline": "No secret value, raw Auth record, user identifier or real client network address appears in any receipt from this run. Every address used in testing is an RFC 5737 (203.0.113.x, 198.51.100.x) or RFC 3849 (2001:db8::) documentation sentinel.",
+  "productionTouched": false
+}

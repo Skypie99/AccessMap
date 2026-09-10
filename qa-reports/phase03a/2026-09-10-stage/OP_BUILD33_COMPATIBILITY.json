@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "unit": "Build 33 client compatibility — raised by the independent staging acceptor, verified by the author",
+  "OPERATION_STATE": "VERIFIED",
+  "severity": "MUST-FIX BEFORE ANY PRODUCTION APPLY",
+  "capturedUtc": "2026-09-10",
+
+  "provenance": "This finding was NOT found by the author. The independent staging acceptor raised it as their MUST-FIX 2, correctly observing that no receipt in this run mentioned it. The author then verified it independently against the hosted catalog and the actual shipped Build 33 trees, and it is confirmed. It is recorded here as a first-class finding rather than as a footnote to the review.",
+
+  "claim": "Applying the accepted Phase 03A set to production breaks shipped Build 33 clients — INDEPENDENTLY of the FDA-028 limiter cutover. Every receipt in this run framed the Build 33 constraint as being about the limiter bypass alone. That framing was incomplete.",
+
+  "shippedClientsChecked": {
+    "ios": "f5594171e75bc5ec92a87d0392c361601ddedfba (app 4.1.1, iosBuild 33, per release/current.json)",
+    "web": "ebf091c21066d39898160b1357bde0aa35bdb8bf (web-only-descendant overlay of the same base)",
+    "bothVerified": "The breaking call sites exist identically in both trees."
+  },
+
+  "whatPhase03aChanges": {
+    "candidate": "20260905055633_phase03a_contextual_profiles.sql",
+    "line80": "DROP POLICY \"users readable by authenticated\" ON public.users;",
+    "line81": "REVOKE SELECT (is_admin) ON public.users FROM PUBLIC, anon, authenticated;",
+    "resultingHostedPosture": {
+      "public_users_select_policies": "exactly ONE — 'users own row full select', USING (auth.uid() = id)",
+      "is_admin_column_grant_to_anon_or_authenticated": "NONE",
+      "otherColumnsStillGranted": "avatar_object_key, avatar_url, created_at, display_name, id, points all retain authenticated SELECT"
+    }
+  },
+
+  "authorCorrectionToTheReviewersDetail": "The acceptor implied the leaderboard breaks partly on column grants. It does not: avatar_url and the other selected columns ARE still granted. The leaderboard breaks purely through RLS. That distinction matters because it changes the failure mode from a loud 42501 to SILENTLY WRONG DATA, which is worse. The finding itself stands; only the mechanism is refined.",
+
+  "confirmedBreakages": [
+    {
+      "site": "src/lib/admin.ts:31 — .from('users').select('is_admin').eq('id', user.id).single()",
+      "mechanism": "is_admin has no SELECT column grant -> PostgREST returns 42501",
+      "clientBehaviour": "The shipped code logs a warning and degrades to isAdmin=false.",
+      "userVisibleEffect": "EVERY admin silently loses the admin UI. No error is surfaced to them.",
+      "whyThisIsDamning": "The shipped source carries a comment stating this exact failure 'stayed broken and silent for months' because authenticated had no SELECT grant on users.is_admin, that the grant went live 2026-08-18, and that 'a 42501 here would now mean a real regression'. Phase 03A reintroduces precisely that 42501."
+    },
+    {
+      "site": "src/lib/flags.ts:1682 — listLeaderboard(): .from('users').select('id, display_name, avatar_url, points').order('points').limit(n)",
+      "mechanism": "RLS now restricts SELECT to the caller's own row",
+      "clientBehaviour": "No error. The query succeeds and returns at most 1 row.",
+      "userVisibleEffect": "The leaderboard silently collapses to the viewer alone."
+    },
+    {
+      "site": "src/lib/flags.ts:1702 and :1717 — getUserLeaderboardRank()",
+      "mechanism": "the .gt('points', userPoints) exact-count over public.users sees only the caller's own row",
+      "clientBehaviour": "count 0 -> rank = 0 + 1",
+      "userVisibleEffect": "Every user is silently told they are rank 1."
+    },
+    {
+      "site": "comment author profile hydration",
+      "mechanism": "same RLS narrowing on public.users",
+      "userVisibleEffect": "comment authors degrade to the anonymous fallback"
+    }
+  ],
+
+  "replacementsExistButNothingCallsThem": {
+    "rpcsAddedByPhase03A": ["public.current_user_can_admin", "private.get_comment_author_profiles", "private.get_my_leaderboard_rank", "private.list_public_leaderboard"],
+    "referencesInBuild33_ios": 0,
+    "referencesInBuild33_web": 0,
+    "meaning": "The server-side replacements are present and correct. No shipped client calls any of them. The migration and the client cutover are two halves of one change and only one half exists."
+  },
+
+  "whyTheAuthorMissedIt": "The author verified the GUEST surface end to end (anon INSERT on flags and feedback) and proved the authenticated surface only through role-matrix assertions written against the NEW intended posture. Those assertions pass precisely because they encode the new design. Nothing in this run compared the new posture against what the ALREADY-SHIPPED client actually asks for. That comparison is the gap, and it is a methodology gap, not a one-off oversight.",
+
+  "consequenceForThePacket": "PRODUCTION_AUTHORIZATION_PACKET.md section 5e must be rewritten. The Build 33 constraint is NOT only 'the limiter cutover is deferred'. Applying this set at all breaks admin access and the leaderboard for every shipped client, silently, on the day it is applied.",
+
+  "optionsForTheOwner": [
+    "Ship a client update that uses the four new RPCs BEFORE applying the migration set (ordering constraint the packet did not state).",
+    "Split the candidate set: apply everything except 20260905055633_phase03a_contextual_profiles, so FDA-026 lands only with the client cutover.",
+    "Temporarily retain a narrowed read path for the specific columns Build 33 needs, accepting the FDA-026 exposure until clients update.",
+    "Accept the breakage knowingly for a short window.",
+    "None of these is chosen here. The author is NOT authorized to pick, and explicitly does not recommend forcing an app update or a minimum-version gate, both of which the owner excluded."
+  ],
+  "productionTouched": false
+}

@@ -1,7 +1,7 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-10T18:20:00Z",
+  "updatedUtc": "2026-09-10T19:40:00Z",
   "currentGeneration": "2026-09-10-stage",
   "generations": [
     "2026-09-04",
@@ -16,7 +16,7 @@
     "2026-09-10-stage"
   ],
   "task": "Phase 03A hosted staging execution (STAGE-AUTHORIZED-20260910-R1)",
-  "status": "STAGE_STEPS_1_TO_11_COMPLETE; STEP12_INDEPENDENT_ACCEPTANCE_PENDING",
+  "status": "STAGE_COMPLETE_STEPS_1_TO_14; INDEPENDENT_ACCEPTANCE = ACCEPT_WITH_MANDATORY_CHANGES; 8 MUST-FIX OPEN; AWAITING OWNER",
   "mode": "STAGING_MUTATION_AUTHORIZED_WITHIN_EXACT_BOUNDARIES",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -28,13 +28,13 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "STEP 12 independent staging acceptance (must not self-certify), then STEP 13 production authorization packet (generation is not authorization), then STEP 14 cleanup check (retain staging).",
+  "nextAction": "Owner decision. Do NOT apply to production: 8 MUST-FIX items are open, including that this set silently breaks admin and the leaderboard on every shipped Build 33 client, and that the migration ledger cannot be trusted as a record of what is applied.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
     "PHASE03A_CODE": "HOLD",
     "INT": "NOT_RUN",
-    "STAGE": "STEPS_1_TO_11_COMPLETE_PENDING_INDEPENDENT_ACCEPTANCE",
+    "STAGE": "STEPS_1_TO_14_COMPLETE; ACCEPT_WITH_MANDATORY_CHANGES",
     "PRODUCTION": "UNTOUCHED_NOT_AUTHORIZED",
     "SAFE_TO_INTEGRATE": false,
     "MAIN_MERGE_AUTHORIZED": false,
@@ -284,7 +284,7 @@
     "HOSTED_PGTAP": "217/217, 0 failures, validated by 2 negative controls",
     "HOSTED_ROLE_MATRIX": "31/31, 0 failures",
     "FDA028_HOSTED_ACCEPTANCE": "38/38, 0 failures, deterministic",
-    "HOSTED_CONCURRENCY": "25 parallel admissions, allowance 8 -> exactly 8 admitted, 8 real rows, 8 ledger units, 0 orphans, NO OVERSHOOT",
+    "HOSTED_CONCURRENCY": "PASS \u2014 re-run and banked: 25 parallel hosted sessions, allowance 8 -> 8 ADMITTED / 17 REFUSED, 8 real rows, 8 ledger units, 0 orphans, no overshoot (OP_HOSTED_CONCURRENCY.json)",
     "R6_1_ADVISORY_COORDINATION": "PASS (6s held domain change blocked an admission 7s, which then succeeded)",
     "R6_2_ADVISORY_REACHABILITY": "PASS \u2014 NOT reachable from anon, authenticated, PostgREST, GraphQL or any deployed Edge Function. Raw-SQL residual recorded, not a bypass.",
     "R6_3_ADMISSION_VS_DOMAIN_CHANGE_RACE": "PASS in BOTH directions (change waited then refused; admission waited then admitted in the new domain). No stranded rows, no orphan grants, no incorrect budget regeneration, no lost guest write, no accounting mismatch.",
@@ -294,10 +294,14 @@
     "RESTORATION_REHEARSAL": "PASS",
     "REAPPLY_REHEARSAL": "PASS",
     "ROUND_TRIP_STRUCTURAL_IDENTITY": "FAIL \u2014 reapplied digest c70e119a != first-apply digest 09c42928. Deterministic across 3 cycles; 286/286 hosted assertions still pass. Recorded as MUST-FIX before any production rollback is relied upon.",
-    "INDEPENDENT_STAGING_ACCEPTANCE": "NOT_RUN",
-    "PRODUCTION_AUTHORIZATION_PACKET": "NOT_ISSUED",
-    "STAGING_CLEANUP_REQUIRED": "YES \u2014 staging retained; deletion NOT performed",
+    "INDEPENDENT_STAGING_ACCEPTANCE": "ACCEPT_WITH_MANDATORY_CHANGES (pinned to HEAD c1b7b21)",
+    "PRODUCTION_AUTHORIZATION_PACKET": "GENERATED AND REVISED \u2014 generation is not authorization; PRODUCTION_AUTHORITY: NONE",
+    "STAGING_CLEANUP_REQUIRED": "YES \u2014 retained, NOT deleted; 4 of the 12 conditions fail and 2 are partial",
     "structuralDigestNow": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",
-    "residue": "NONE \u2014 all synthetic probe rows removed; synthetic auth user deleted; auth.users 0, flags 0, feedback 0, limiter ledger empty."
-  }
+    "residue": "NONE \u2014 all synthetic probe rows removed; synthetic auth user deleted; auth.users 0, flags 0, feedback 0, limiter ledger empty.",
+    "BUILD33_COMPATIBILITY": "FAIL \u2014 MUST-FIX. Applying this set silently breaks admin (42501 on users.is_admin -> degrades to false) and the leaderboard/rank (RLS own-row-only) on every shipped Build 33 client, independently of the limiter cutover. Found by the independent acceptor, verified by the author.",
+    "COMMITTED_LINK_STATE": "FAIL \u2014 MUST-FIX. supabase/.temp/linked-project.json is tracked in git with ref = the PRODUCTION project. Not fixed here because it is a tracked non-qa file and changing it would break the frozen CODE tree identity.",
+    "LEDGER_TRUSTWORTHINESS": "FAIL \u2014 MUST-FIX. Applies recorded under wall-clock versions not canonical ones; 2 candidates have no ledger row at all; rollback never unwinds ledger rows."
+  },
+  "openMustFixCount": 8
 }

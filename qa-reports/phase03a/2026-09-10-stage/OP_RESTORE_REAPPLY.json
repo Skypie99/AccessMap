@@ -1,22 +1,18 @@
 {
   "schemaVersion": 1,
-  "unit": "STEP 11 — restoration / reapply rehearsal",
+  "unit": "STEP 11 \u2014 restoration / reapply rehearsal",
   "OPERATION_STATE": "VERIFIED",
   "target": "ctshxbykuemeqnofqcdh branch 441acc38 (staging only; production NOT touched)",
   "capturedUtc": "2026-09-10",
-
   "RESTORATION_REHEARSAL": "PASS",
   "REAPPLY_REHEARSAL": "PASS",
-  "ROUND_TRIP_STRUCTURAL_IDENTITY": "FAIL — see divergenceFinding. Reported as a finding, not smoothed over.",
-
+  "ROUND_TRIP_STRUCTURAL_IDENTITY": "FAIL \u2014 see divergenceFinding. Reported as a finding, not smoothed over.",
   "whatWasRun": "Three full rollback -> reapply cycles against real hosted staging, using all 8 accepted rollback scripts in reverse candidate order and all 8 accepted forward candidates in forward order. Every file was sha256-verified against the accepted set before use.",
-
   "hashGate": {
-    "20260909120000_fda028_v4_limiter.sql": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771 — matches accepted",
-    "20260909120000_fda028_v4_limiter.rollback.sql": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302 — matches accepted",
+    "20260909120000_fda028_v4_limiter.sql": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771 \u2014 matches accepted",
+    "20260909120000_fda028_v4_limiter.rollback.sql": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302 \u2014 matches accepted",
     "allEightForwardAndAllEightRollbackHashesRecorded": true
   },
-
   "digests": {
     "DIGEST_POST_APPLY_originalApply": "09c42928fd70befef680e4149b83bf89891cbaf933c6c08f5db9fb2d276d8135",
     "DIGEST_AFTER_ROLLBACK": "2d7b9f653be76d670af4e4645ab6ffd2f8bfc3d9d6b3b80a9da0de8448f27424",
@@ -24,14 +20,12 @@
     "digestScope": "schemas, relations, columns, functions (including body md5), policies, triggers, table grants and column grants across public, private, storage AND limiter. Broader than migrations-next/phase03a/catalog.sql, which does not cover the limiter schema.",
     "ledgerCountUnchangedThroughout": 82
   },
-
   "determinism": {
     "rollbackDigestReproduced": "2d7b9f65... observed on 2 independent rollbacks",
     "reapplyDigestReproduced": "c70e119a... observed on 3 independent reapplies",
     "fullJsonByteComparison": "The complete 349,583-byte structural JSON from cycle 1 and cycle 2 are byte-identical.",
     "conclusion": "Rollback and reapply are each deterministic and the pair converges to a fixed point. Restoration is repeatable, not lucky."
   },
-
   "restorationDoesNotBreakShippedClients": {
     "testedWhileFullyRolledBack": {
       "anon_INSERT_public_flags": "HTTP 201",
@@ -40,7 +34,6 @@
     },
     "meaning": "A production rollback would restore the pre-03A posture WITHOUT breaking Build 33 clients. That is the property that makes the rollback usable in an incident."
   },
-
   "behaviouralEquivalenceAfterReapply": {
     "hosted_pgTAP_foundation_plan113": "0 failures",
     "hosted_pgTAP_privileges_plan79": "0 failures",
@@ -49,10 +42,9 @@
     "hosted_role_authorization_matrix_plan31": "0 failures",
     "hosted_FDA028_acceptance_plan38": "0 failures, reproduced on 4 runs after reapply",
     "totalHostedAssertionsPassedAfterRoundTrip": 286,
-    "vaultSecretSurvived": "fda028_limiter_epoch_key still present after the round trip (metadata only — the value was never selected, printed or logged). The limiter re-derives its epoch key from Vault after the schema is recreated, which is why the FDA-028 suite passes on a freshly reapplied schema.",
+    "vaultSecretSurvived": "fda028_limiter_epoch_key still present after the round trip (metadata only \u2014 the value was never selected, printed or logged). The limiter re-derives its epoch key from Vault after the schema is recreated, which is why the FDA-028 suite passes on a freshly reapplied schema.",
     "conclusion": "The reapplied catalog is behaviourally equivalent on every assertion the accepted artifact set defines."
   },
-
   "divergenceFinding": {
     "severity": "MUST-FIX BEFORE ANY PRODUCTION ROLLBACK IS RELIED UPON",
     "statement": "DIGEST_AFTER_REAPPLY (c70e119a) does not equal DIGEST_POST_APPLY (09c42928). A rollback followed by a reapply lands on a structurally different catalog than a clean first apply, even though both pass all 286 hosted assertions.",
@@ -70,11 +62,16 @@
       "Capture and RETAIN the full structural JSON (not just its hash) immediately before and immediately after any production apply.",
       "Rehearse the production rollback with both JSONs retained, and identify the exact field-level delta before relying on the rollback in an incident.",
       "Decide explicitly whether the accepted rollbacks should be tightened into exact inverses, or whether a stable-but-different restored state is acceptable given 286/286 behavioural equivalence. This is an owner decision, not mine to assume."
-    ]
+    ],
+    "furtherLocalisationAttempted": {
+      "attempt": "Static scan pairing each rollback script's GRANT statements against its forward candidate's REVOKE statements, looking for a grant the rollback restores that the forward candidate never takes back \u2014 which would persist into the reapplied state and explain the divergence.",
+      "result": "INCONCLUSIVE \u2014 not reported as a finding.",
+      "why": "The matcher compares statement text, so it cannot tell that one broad REVOKE covers many narrow GRANTs. It flagged entries in 7 candidates, but the only wildcard REVOKEs in the whole forward set are the three limiter-scoped ones in 20260909120000, so the flags could be neither confirmed nor dismissed from text alone.",
+      "whatIsAuthoritativeInstead": "The catalog itself. Reapply reduces table grants 543 -> 266 and column grants 2309 -> 1386, and the hosted privileges pgTAP suite (plan 79) plus the role/authorization matrix (plan 31) assert the intended privilege posture directly. Both pass with 0 failures after the round trip, so the reapplied privilege posture is asserted-correct even though the structural digest differs from the first apply.",
+      "honestStatus": "The divergence is real, stable and reproducible, and it is NOT in the privilege posture that the accepted suites assert. Beyond that it is unlocalised, and localising it requires the retained first-apply structural JSON that I failed to keep."
+    }
   },
-
   "mechanismNote": "The MCP Supabase connector was invalidated partway through this step. All remaining hosted work ran through `supabase db query --file --linked --project-ref ctshxbykuemeqnofqcdh`, whose target was identity-verified against staging (ledger 82, limiter present, auth.users 0) before any further mutation. No production target was ever reachable from the linked ref.",
-
   "stagingEndState": {
     "phase03aApplied": true,
     "structural_sha256": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",
@@ -86,7 +83,23 @@
     "limiter_bucket_rows": 0,
     "limiter_grant_rows": 0,
     "vault_secret_count": 1,
-    "residue": "NONE — every synthetic probe row from R6-1, R6-3, STEP 10 and STEP 11 was removed, and the synthetic R6-2 auth user was deleted (auth.users back to 0)."
+    "residue": "NONE \u2014 every synthetic probe row from R6-1, R6-3, STEP 10 and STEP 11 was removed, and the synthetic R6-2 auth user was deleted (auth.users back to 0)."
   },
-  "productionTouched": false
+  "productionTouched": false,
+  "mechanismNote_RETRACTED": {
+    "retractedText": "No production target was ever reachable from the linked ref.",
+    "status": "FALSE AS WRITTEN \u2014 retracted by the author after the independent staging acceptor raised it.",
+    "theFact": "supabase/.temp/linked-project.json is TRACKED IN GIT on this branch and its `ref` field is kldlwszpfkdmsjrjhjym \u2014 the PRODUCTION ref. The author previously read that file, looked at its `id` field (null), concluded the untracked .temp/project-ref was authoritative, and did not notice the `ref` field naming production.",
+    "whatIsStillTrue": "Every hosted command in this run passed an explicit --project-ref ctshxbykuemeqnofqcdh, and the target was identity-verified (ledger 82, limiter present, auth.users 0) before any mutation. No production command was issued and no production object was touched.",
+    "observedCLIPrecedence": "Before `supabase link` was run, `--linked` failed with 'Cannot find project ref. Have you run supabase link?' even though linked-project.json existed with the production ref. That indicates the CLI steers on .temp/project-ref, not on linked-project.json. This was NOT tested empirically by removing project-ref, because if the precedence were the other way the test itself would have queried production.",
+    "residualRisk": "A fresh clone or worktree of this branch gets the TRACKED linked-project.json naming production and no project-ref file. Anyone running a --linked command there without an explicit --project-ref is one CLI-precedence assumption away from production.",
+    "remediationNotAppliedHere": "supabase/.temp/ should be untracked and gitignored. The author did NOT do this, because supabase/.temp/linked-project.json is a non-qa-reports tracked file and removing it would change the frozen PHASE03A_CODE tree and break the source-identity claim. It is raised as a MUST-FIX for the owner instead."
+  },
+  "ledgerNote_ELEVATED": {
+    "raisedBy": "independent staging acceptor (SHOULD-FIX); the author under-weighted it",
+    "fact": "The rollback scripts never unwind supabase_migrations.schema_migrations. The six phase03a_* ledger rows survived all three rollback cycles.",
+    "authorsOriginalFraming": "'inherent to any rollback, and resolved once reapply completes' \u2014 true for THIS rehearsal, which always reapplied.",
+    "whyThatWasTooKind": "In a real incident the database stays rolled back. It would then still claim those migrations are applied, so a later `db push` or `migration up` would skip re-applying them. Combined with the separate finding that the recorded versions are wall-clock rather than canonical, and that two candidates have no ledger row at all, the migration ledger cannot be trusted as a record of what is applied.",
+    "severity": "Folded into MUST-FIX on the apply/rollback mechanism."
+  }
 }

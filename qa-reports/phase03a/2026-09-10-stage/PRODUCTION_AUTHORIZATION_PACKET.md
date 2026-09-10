@@ -2,6 +2,10 @@
 
 **Generated 2026-09-10 from staging run FLAGSTONE-P03A-STAGE-AUTHORIZED-20260910-R1.**
 
+> **Revised 2026-09-10 after independent staging acceptance returned ACCEPT WITH
+> MANDATORY CHANGES.** The acceptor declined to sign off the first draft of this packet.
+> Sections 4, 5e and 6 changed as a result; see `INDEPENDENT_STAGING_ACCEPTANCE.md`.
+>
 > **GENERATING THIS PACKET IS NOT AUTHORIZATION.** Nothing here permits a production
 > change. `PRODUCTION_AUTHORITY: NONE`. Every item below is a *proposal* that needs an
 > explicit, separate owner token naming the exact production project ref. No production
@@ -100,7 +104,7 @@ no per-client limiter, governed only by the global anonymous emergency caps.
 | Hosted pgTAP | **217/217**, 0 failures, validated by 2 negative controls |
 | Hosted role/authorization matrix | **31/31**, 0 failures |
 | FDA-028 hosted acceptance | **38/38**, 0 failures, deterministic |
-| Hosted concurrency | 25 parallel admissions, allowance 8 → **exactly 8** admitted, 8 real rows, 8 ledger units, 0 orphans, **no overshoot** |
+| Hosted concurrency | 25 parallel admissions, allowance 8 → **exactly 8** admitted / 17 refused, 8 real rows, 8 ledger units, 0 orphans, **no overshoot** — re-run and banked in `OP_HOSTED_CONCURRENCY.json` after the independent acceptor found the original claim had no receipt |
 | R6-1 advisory coordination | PASS — a 6s held domain change blocked an admission for 7s, which then succeeded |
 | R6-2 advisory reachability | PASS — not reachable from anon, authenticated, PostgREST, GraphQL or any deployed Edge Function |
 | R6-3 admission ↔ domain-change race | PASS in **both** directions |
@@ -146,14 +150,40 @@ checkpoint discipline and is stated as such.**
 `retention_windows` are **configuration**, not architecture. The staging values
 (5 / 50 / 86400 / 32 / 64 / 1) are test values. No production threshold is proposed here.
 
-### 5e. The coordinated rollout constraint is unresolved
-Build 33 clients — the shipped iOS build and the pinned Vercel production web deployment
-— depend on the direct pre-limiter INSERT. Revoking it closes the bypass and breaks every
-shipped client; retaining it keeps the bypass open. This packet does **not** resolve that
-by forcing an app update or adding a minimum-version gate, both of which the owner
-excluded. It remains an owner decision.
+### 5e. Applying this set BREAKS shipped Build 33 clients — two separate problems
 
----
+**This section was rewritten after the independent staging acceptor found a breakage no
+receipt in this run had raised. The original text framed the Build 33 constraint as being
+about the limiter cutover alone. That was incomplete.**
+
+**(i) The limiter cutover (known).** Build 33 clients depend on the direct pre-limiter
+INSERT. Revoking it closes the bypass and breaks every shipped client; retaining it keeps
+the bypass open. This packet does not resolve that by forcing an app update or a
+minimum-version gate, both of which the owner excluded.
+
+**(ii) FDA-026 breaks admin and the leaderboard on day one (newly found, verified).**
+`20260905055633_phase03a_contextual_profiles.sql` drops the
+`users readable by authenticated` policy and revokes `SELECT (is_admin)`. After it,
+`public.users` has exactly one SELECT policy — own row only — and `is_admin` has no
+column grant. Verified against the actual shipped trees (`f5594171` iOS, `ebf091c2` web):
+
+| Shipped call site | Mechanism | Effect |
+|---|---|---|
+| `src/lib/admin.ts:31` `select('is_admin')` | no column grant → 42501 | shipped code degrades to `false`: **every admin silently loses the admin UI** |
+| `src/lib/flags.ts:1682` `listLeaderboard()` | RLS own-row-only | no error; leaderboard **silently collapses to one row** |
+| `src/lib/flags.ts:1702/1717` `getUserLeaderboardRank()` | RLS own-row-only | count 0 → **every user is silently rank 1** |
+| comment author hydration | RLS own-row-only | authors degrade to the anonymous fallback |
+
+The four replacement RPCs Phase 03A adds (`current_user_can_admin`,
+`get_comment_author_profiles`, `get_my_leaderboard_rank`, `list_public_leaderboard`) are
+referenced **zero** times in either shipped tree. The migration half of this change exists;
+the client half does not.
+
+The shipped `admin.ts` carries a comment recording that this exact 42501 already
+"stayed broken and silent for months", that the grant went live 2026-08-18, and that a
+42501 there "would now mean a real regression". This set reintroduces it.
+
+Full detail and the owner's options: `OP_BUILD33_COMPATIBILITY.json`.
 
 ## 6. MUST-FIX before any production apply
 
@@ -178,6 +208,20 @@ excluded. It remains an owner decision.
    change status-change behaviour.
 5. **Decide §5b explicitly.** Applying this set with the bypass open is a legitimate
    choice, but it must be a *chosen* one, not an accident of sequencing.
+6. **Resolve §5e(ii) before applying.** Either ship a client update that uses the four new
+   RPCs first, or split `20260905055633_phase03a_contextual_profiles` out of the apply set,
+   or knowingly accept a window of silently-broken admin and leaderboard. There is an
+   ordering constraint here that the first draft of this packet did not state.
+7. **`supabase/.temp/linked-project.json` is tracked in git and names PRODUCTION**
+   (`ref: kldlwszpfkdmsjrjhjym`). Only the untracked `.temp/project-ref` points at staging.
+   A fresh clone of this branch has the production ref committed and no staging override.
+   Untrack and gitignore `supabase/.temp/`. This was **not** fixed here because that file
+   is a tracked non-`qa-reports/` file and changing it would break the frozen
+   `PHASE03A_CODE_TREE` identity — so it needs the owner.
+8. **The ledger is not unwound by rollback.** The six `phase03a_*` rows survived all three
+   rollback cycles. A rolled-back production database would still claim those migrations
+   are applied, so a later `db push` would skip them. Together with MUST-FIX 1 this means
+   the migration ledger cannot currently be trusted as a record of what is applied.
 
 ## 7. SHOULD-FIX
 
