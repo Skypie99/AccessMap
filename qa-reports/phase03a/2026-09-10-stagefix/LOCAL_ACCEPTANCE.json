@@ -5,20 +5,34 @@
   "capturedUtc": "2026-09-10",
   "worktree": "/Users/skypie/AccessMap-worktrees/flagstone-p03a-stagefix-20260910",
   "branch": "repair/flagstone-p03a-stage-mandatory-fixes-20260910",
-
   "composedPgTap": {
-    "result": "242 / 242, 0 failures",
-    "previously": 217,
-    "delta": "+25 from the new supabase/tests/build33-compat.test.sql",
+    "result": "253 / 253, 0 failures",
+    "previously": "217 before the stage-fix; 242 at the round-1 freeze",
+    "delta": "+36 from supabase/tests/build33-compat.test.sql (25 authenticated + 11 guest/anon)",
     "suites": [
-      {"file": "promptb_media_key_guards.test.sql", "plan": 25, "failed": 0},
-      {"file": "phase03a-foundation.test.sql", "plan": 113, "failed": 0},
-      {"file": "phase03a-privileges.test.sql", "plan": 79, "failed": 0},
-      {"file": "build33-compat.test.sql", "plan": 25, "failed": 0}
+      {
+        "file": "promptb_media_key_guards.test.sql",
+        "plan": 25,
+        "failed": 0
+      },
+      {
+        "file": "phase03a-foundation.test.sql",
+        "plan": 113,
+        "failed": 0
+      },
+      {
+        "file": "phase03a-privileges.test.sql",
+        "plan": 79,
+        "failed": 0
+      },
+      {
+        "file": "build33-compat.test.sql",
+        "plan": 36,
+        "failed": 0
+      }
     ],
     "pgTapProvenance": "pgTAP 1.3.4 rebuilt from the pinned source commit 968eb53a; generated sql/pgtap.sql reproduced the pinned hash d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3 exactly."
   },
-
   "phase03aReplayGates": {
     "localProofPassed": true,
     "privilegeProofPassed": true,
@@ -27,36 +41,69 @@
     "privilegeGuard.passed": true,
     "note": "restorationExact and reapplyDeterministic are both TRUE locally, before and after this repair. The hosted 09c42928 vs c70e119a divergence does not reproduce locally."
   },
-
   "otherGates": {
     "typecheck": "PASS (tsc --noEmit, no output)",
-    "contract:check": "PASS — migration-crosswalk.v1.json is current",
+    "contract:check": "PASS \u2014 migration-crosswalk.v1.json is current",
     "db:rollback:verify": "PASS (exit 0)",
-    "rollbackRehearsal": "5 Phase 02 candidates rehearsed; 4 restore the catalog exactly. The fifth, 20260904000400_adopt_execute_revokes.sql, is mode NON_REVERSIBLE_SECURITY_REPAIR and reports rollbackRefused:true / refusalAtomic:true. That is the designed outcome — reverting a security repair would reintroduce the vulnerability — not a failure. I initially scored it as a failure and was wrong.",
-    "lint": "0 errors, 91 warnings — matches the project baseline of 0 errors"
+    "rollbackRehearsal": "5 Phase 02 candidates rehearsed; 4 restore the catalog exactly. The fifth, 20260904000400_adopt_execute_revokes.sql, is mode NON_REVERSIBLE_SECURITY_REPAIR and reports rollbackRefused:true / refusalAtomic:true. That is the designed outcome \u2014 reverting a security repair would reintroduce the vulnerability \u2014 not a failure. I initially scored it as a failure and was wrong.",
+    "lint": "0 errors, 91 warnings \u2014 matches the project baseline of 0 errors"
   },
-
   "jestBaselineReconciliation": {
-    "baseline": {"suitesFailed": 12, "suitesPassed": 273, "suitesTotal": 285, "testsFailed": 14, "todo": 32, "testsPassed": 4204, "testsTotal": 4250},
-    "run1": {"suitesFailed": 13, "suitesPassed": 276, "suitesTotal": 289, "testsFailed": 15, "todo": 32, "testsPassed": 4239, "testsTotal": 4286},
-    "run2": {"suitesFailed": 12, "suitesPassed": 277, "suitesTotal": 289, "testsFailed": 14, "todo": 32, "testsPassed": 4240, "testsTotal": 4286},
+    "baseline": {
+      "suitesFailed": 12,
+      "suitesPassed": 273,
+      "suitesTotal": 285,
+      "testsFailed": 14,
+      "todo": 32,
+      "testsPassed": 4204,
+      "testsTotal": 4250
+    },
+    "run1": {
+      "suitesFailed": 13,
+      "suitesPassed": 276,
+      "suitesTotal": 289,
+      "testsFailed": 15,
+      "todo": 32,
+      "testsPassed": 4239,
+      "testsTotal": 4286
+    },
+    "run2": {
+      "suitesFailed": 12,
+      "suitesPassed": 277,
+      "suitesTotal": 289,
+      "testsFailed": 14,
+      "todo": 32,
+      "testsPassed": 4240,
+      "testsTotal": 4286
+    },
     "reconciliation": "Run 2 reproduces the inherited 14 failures BY EXACT NAME and nothing else. Tests total 4250 -> 4286 (+36) is exactly the 36 tests added by this repair (3 + 3 + 19 + 11). Todo unchanged at 32.",
     "run1Discrepancy": {
-      "extraFailure": "useUserLocation — existing-permission-only mode > reads an already-granted one-shot location without requesting permission",
+      "extraFailure": "useUserLocation \u2014 existing-permission-only mode > reads an already-granted one-shot location without requesting permission",
       "investigated": "Not assumed to be a flake. The test passes 10/10 in isolation in BOTH the repair worktree and the unmodified source worktree, nothing in this repair touches location or permission code, and a second full run of the SAME code did not reproduce it.",
       "conclusion": "Load-order/timing flake, most likely surfaced by adding four suites to the parallel schedule. Recorded rather than quietly dropped.",
       "notTurnedIntoAPass": "Run 1 is reported as it happened; run 2 is the reconciliation."
+    },
+    "runFinal_atFrozenSha": {
+      "sha": "7c96a6eaad70734873c0019b6e95044a6314c109",
+      "suitesFailed": 12,
+      "suitesPassed": 277,
+      "suitesTotal": 289,
+      "testsFailed": 14,
+      "todo": 32,
+      "testsPassed": 4244,
+      "testsTotal": 4290,
+      "beyondBaseline": [],
+      "reconciliation": "EXACT by failure name. 4250 -> 4290 (+40) is exactly the 40 Jest tests this repair adds (3 + 3 + 20 + 14). Todo unchanged at 32.",
+      "measuredOnTheCommittedTree": "YES \u2014 the round-1 reviewer correctly caught that my earlier claim was measured before the packet file existed in the tree. This run is on the exact frozen commit."
     }
   },
-
   "fda028Preservation": {
     "FDA028_V4_PRESERVED": "YES",
     "forwardSha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771 (unchanged)",
     "rollbackSha256": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302 (unchanged)",
-    "fda028TestsChanged": "none — git diff against the accepted CODE sha over supabase/tests/fda028/ and the limiter migration is empty",
+    "fda028TestsChanged": "none \u2014 git diff against the accepted CODE sha over supabase/tests/fda028/ and the limiter migration is empty",
     "meaning": "Six rounds of accepted FDA-028 review were not reopened. No FDA-028 re-review is required by this repair."
   },
-
   "newTestsAdded": {
     "supabase/tests/build33-compat.test.sql": 25,
     "src/__tests__/projectTargetSafety.guard.test.ts": 3,
@@ -66,16 +113,19 @@
     "total": 61,
     "note": "36 of these are Jest tests (the 25 pgTAP assertions run in the replay, not in Jest), which is why the Jest total moved by exactly 36."
   },
-
   "testsInvalidatedByThisRepair": [
-    "phase03a-foundation.test.sql: five FDA-026 assertions were realigned from the CLOSED posture to the Stage A posture (enumeration still open, is_admin still selectable). The CLOSED posture is now proven in build33-compat.test.sql's Stage B section instead, so nothing lost coverage — it moved.",
+    "phase03a-foundation.test.sql: five FDA-026 assertions were realigned from the CLOSED posture to the Stage A posture (enumeration still open, is_admin still selectable). The CLOSED posture is now proven in build33-compat.test.sql's Stage B section instead, so nothing lost coverage \u2014 it moved.",
     "Any claim resting on the previous 217-assertion count."
   ],
-
   "environmentLimitationsNotTurnedIntoPasses": [
     "pgTAP discovery reports phase03a-fixtures/baseline-backups.sql missing a PGTAP_KIND marker. Verified byte-identical in the unmodified worktree: pre-existing, out of scope for the eight MUST-FIX items, and NOT fixed here.",
     "No hosted verification of any kind was performed; this prompt does not authorize staging mutation."
   ],
   "stagingMutations": "NONE",
-  "productionMutations": "NONE"
+  "productionMutations": "NONE",
+  "reviewRound1Corrections": {
+    "verdict": "ACCEPT WITH MANDATORY CHANGES; all five addressed",
+    "staleClaimAdmitted": "My round-1 Jest claim was stale: the packet and the acceptance claim landed in the same commit with no re-run, and the packet tripped noCredentialsInTree. Restated the line; guard passes 7/7; this run measures the committed tree.",
+    "guestBreakageWasMine": "The reviewer found that Stage A also broke shipped anon reads. My suite never assumed the anon role \u2014 the identical structural blind spot that let 217 hosted assertions pass while every shipped client broke. Closed, with guest assertions and a guest negative control."
+  }
 }
