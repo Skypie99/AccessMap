@@ -4,7 +4,6 @@
   "OPERATION_STATE": "VERIFIED",
   "verifiedUtc": "2026-09-10",
   "PHASE_03A_INT_GATE": "PASS_PENDING_INDEPENDENT_ACCEPTANCE",
-
   "mergeCommit": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
   "mergeTree": "11de0eb4cf0cbf718fe17fa8a8cab8defef21af8",
   "parents": {
@@ -13,7 +12,6 @@
   },
   "mechanic": "git merge --no-ff <exact SHA> executed in the integration worktree. No squash, rebase, reset, cherry-pick, force or global ours/theirs. No push. No main merge.",
   "rollbackPointer": "git -C /Users/skypie/AccessMap-worktrees/flagstone-b33-convergence-20260903 reset --hard 5a64c917 restores the exact pre-INT state; the source branch is an independent complete copy.",
-
   "verification": {
     "treeEqualsSourceTree": true,
     "conflictsRecorded": 0,
@@ -26,7 +24,6 @@
     "phase03aCandidatesAfterInt": 8,
     "fda028V4HashAfterInt": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771 (matches the accepted artifact exactly)"
   },
-
   "postIntCompositionQa": {
     "phase03aFullProofOnMergedTree": "PASS (exit 0) - 217/217 assertions, privilege guard, restorationExact, reapplyDeterministic",
     "rollbackContractsMet": 5,
@@ -34,9 +31,8 @@
     "contractCheck": "PASS - migration-crosswalk.v1.json current",
     "lint": "0 errors",
     "phase03aContractJest": "PASS - 4 suites, 61 tests (canonicalMigrationSource, contractManifest, migrationLineage, phase03aReplay guards)",
-    "fullJest": "running on the merged tree; the merged tree is byte-identical to the source tree, so the 4204/14/32 baseline is expected to reproduce exactly"
+    "fullJest": "PASS on the MERGED tree: 4,204 passed / 14 failed / 32 todo - an exact match to the accepted baseline. 12 failing suites, all inherited UI/a11y/geometry/copy guards."
   },
-
   "build33AndReleaseControlPreservation": {
     "releaseCurrentJsonChangedByInt": 0,
     "releaseIdentityDocChanged": 0,
@@ -47,11 +43,27 @@
     "webSourceCommit": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
     "conclusion": "Build 33 release control and the frozen web deployment identity are untouched by the integration."
   },
-
   "renameReconciliation": {
     "count": 6,
     "detail": "Six files moved from supabase/migrations/ to supabase/nonmanaged/proposed/ as R100 renames, byte-identical, reclassifying never-applied MOD1/MOD1R moderation and one reconciliation migration from applied to proposed. This brings the stale integration branch into line with the accepted Phase 02 baseline of exactly 71 applied migrations. No content lost."
   },
-
-  "notAuthorizedAndNotDone": ["staging mutation","production","push","main merge","Phase 03B"]
+  "notAuthorizedAndNotDone": [
+    "staging mutation",
+    "production",
+    "push",
+    "main merge",
+    "Phase 03B"
+  ],
+  "independentIntAcceptance": "NOT_RUN - first attempt terminated by a usage limit before producing any verdict; no partial file exists; re-dispatch required",
+  "interruption": {
+    "event": "PAUSED_FOR_USAGE_LIMIT then RESUMED",
+    "stateVerifiedOnResume": {
+      "integrationHead": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
+      "parentsIntact": true,
+      "workingTreeClean": true,
+      "mainUnchanged": "70b52a30e9fff0f7d538509b110212bb8d872391",
+      "noUpstreamOnEitherBranch": true,
+      "note": "A usage reset grants no new authority. Scope remains local CODE+INT; staging, production, push and main merge stay unauthorized."
+    }
+  }
 }
