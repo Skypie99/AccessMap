@@ -6,9 +6,9 @@
   "worktree": "/Users/skypie/AccessMap-worktrees/flagstone-p03a-stagefix-20260910",
   "branch": "repair/flagstone-p03a-stage-mandatory-fixes-20260910",
   "composedPgTap": {
-    "result": "253 / 253, 0 failures",
-    "previously": "217 before the stage-fix; 242 at the round-1 freeze",
-    "delta": "+36 from supabase/tests/build33-compat.test.sql (25 authenticated + 11 guest/anon)",
+    "result": "254 / 254, 0 failures",
+    "previously": "217 before the stage-fix; 242 at the round-1 freeze; 253 at the round-2 freeze",
+    "delta": "+37 from supabase/tests/build33-compat.test.sql (authenticated and guest halves, each with its own Stage B negative control)",
     "suites": [
       {
         "file": "promptb_media_key_guards.test.sql",
@@ -27,7 +27,7 @@
       },
       {
         "file": "build33-compat.test.sql",
-        "plan": 36,
+        "plan": 37,
         "failed": 0
       }
     ],
@@ -84,17 +84,18 @@
       "notTurnedIntoAPass": "Run 1 is reported as it happened; run 2 is the reconciliation."
     },
     "runFinal_atFrozenSha": {
-      "sha": "7c96a6eaad70734873c0019b6e95044a6314c109",
+      "measuredAtCommit": "834beccfe05221e5233fb90fae3a009cb0d40c6e",
+      "onlyDeltaSince": "d223683 \u2014 qa-reports/EIGHT_FIX_DISPOSITION.json only (18 insertions); no source or test file changed. The credential guard was re-run at HEAD and passes 7/7.",
       "suitesFailed": 12,
       "suitesPassed": 277,
       "suitesTotal": 289,
       "testsFailed": 14,
       "todo": 32,
-      "testsPassed": 4244,
-      "testsTotal": 4290,
+      "testsPassed": 4250,
+      "testsTotal": 4296,
       "beyondBaseline": [],
-      "reconciliation": "EXACT by failure name. 4250 -> 4290 (+40) is exactly the 40 Jest tests this repair adds (3 + 3 + 20 + 14). Todo unchanged at 32.",
-      "measuredOnTheCommittedTree": "YES \u2014 the round-1 reviewer correctly caught that my earlier claim was measured before the packet file existed in the tree. This run is on the exact frozen commit."
+      "inheritedNowPassing": [],
+      "reconciliation": "EXACT by failure name in BOTH directions. 4250 -> 4296 (+46) is exactly the Jest tests this repair adds. Todo unchanged at 32."
     }
   },
   "fda028Preservation": {
