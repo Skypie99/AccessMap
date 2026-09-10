@@ -1,0 +1,135 @@
+{
+  "manifestVersion": 1,
+  "phase": "03A",
+  "status": "LOCAL_CANDIDATE_PARTIAL_NOT_ACCEPTED",
+  "acceptedPredecessorSha": "c2e36800b269ee22f29d0be35cfb88dace7c2afc",
+  "acceptedPredecessorTree": "7a68541462f0a9e1d55f48d98ea54df0fc0b01b7",
+  "applyAuthorized": false,
+  "productionAuthorized": false,
+  "stagingProjectRef": "ctshxbykuemeqnofqcdh",
+  "baseline": "71 immutable applied sources plus five exact accepted Phase02 adoption candidates, then the explicitly local-only supplemental ACL/default fixture derived from the fresh hosted capture",
+  "localBaselineSupplement": {
+    "file": "supabase/tests/phase03a-fixtures/baseline-extra.sql",
+    "sha256": "da2ec08470d4236458e4aaf76a4b17e242baf5d278e980c8fa9e4559e51bebc0",
+    "scope": "Local model only: add is_admin column SELECT and missing postgres/storage plus supabase_admin/public default ACLs; no hosted execution or historical source rewrite.",
+    "evidence": "qa-reports/phase03a/2026-09-04/preflight/expanded-privileges.json",
+    "evidenceSha256": "2fd4f60405aab4fbdddc1786d4b6e89b873aa07576644466f855848c52048bca"
+  },
+  "migrations": [
+    {
+      "file": "20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
+      "rollback": "rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "rollbackSha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
+      "rollback": "rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "rollbackSha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
+      "rollback": "rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "rollbackSha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b",
+      "rollback": "rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "rollbackSha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
+      "rollback": "rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "rollbackSha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
+      "rollback": "rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "rollbackSha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260905073925_phase03a_effective_privileges.sql",
+      "sha256": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928",
+      "rollback": "rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+      "rollbackSha256": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+    },
+    {
+      "file": "20260909120000_fda028_v4_limiter.sql",
+      "sha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771",
+      "rollback": "rollback/20260909120000_fda028_v4_limiter.rollback.sql",
+      "rollbackSha256": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "finding": "FDA-028",
+      "note": "Independently accepted V4 limiter (review round 6 PASS). Restoration removes the limiter entirely, returning guest ingestion to the pre-v4 posture governed only by the global anonymous emergency caps - a known weakness, hence UNSAFE_BASELINE_RESTORE."
+    }
+  ],
+  "catalogSqlSha256": "6a755828dff8f85da18255c514b8e8c8cf7efe8c6b030e45a3108c4a8f23b5fc",
+  "localPgTap": {
+    "version": "1.3.4",
+    "sourceCommit": "968eb53a33114e83042b3bdb0c664b5b80cf8bdf",
+    "sourceUrl": "https://codeload.github.com/theory/pgtap/tar.gz/968eb53a33114e83042b3bdb0c664b5b80cf8bdf",
+    "archiveSha256": "78822aa24ab5119f6b1f57de1a25223e6c4a31f4df6d3ab16ca2aadd1dbdea6c",
+    "generatedSqlSha256": "d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3",
+    "build": "make sql/pgtap.sql PG_CONFIG=/opt/homebrew/opt/postgresql@17/bin/pg_config",
+    "buildPlatform": "macOS; PostgreSQL 17.11; SQL-only load in disposable database; no make install"
+  },
+  "suites": [
+    {
+      "file": "supabase/tests/promptb_media_key_guards.test.sql",
+      "sha256": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009",
+      "plan": 25
+    },
+    {
+      "file": "supabase/tests/phase03a-foundation.test.sql",
+      "sha256": "b341500a5e3c782fdc346dd0d9a089bbcb0a58e42059a445ef22f68b5c5fce3a",
+      "plan": 113
+    },
+    {
+      "file": "supabase/tests/phase03a-privileges.test.sql",
+      "sha256": "5c9171b3991c98eadd1bf939314dcf0694242d695f317026d8b40820249fe313",
+      "plan": 79
+    }
+  ],
+  "clientRpcRequirements": [
+    "current_user_can_admin()",
+    "list_public_leaderboard(integer)",
+    "get_my_leaderboard_rank()",
+    "get_comment_author_profiles(uuid[])"
+  ],
+  "openRequirements": [
+    "FDA012: final effective guard and behavior verification plus hosted role/Auth/REST proof remain required. Managed supabase_admin defaults are an explicitly adjudicated residual, never a waiver for app grants.",
+    "FDA028: verify actual trusted gateway metadata and complete independent anonymous budgets without direct bypass; local and bounded staging work authorized.",
+    "Approved staging identity, canonical reconciliation, real hosted pgTAP and role/API/restoration/reapply proof.",
+    "Independent complete 03A-CODE acceptance, INT, then STAGE; no production authorization."
+  ],
+  "limitations": [
+    "Local platform Auth/Storage/pg_net bootstrap stubs are not hosted behavior.",
+    "Seventh migration narrows every application object including service-role DML and optional historical backups. Actual hosted Auth cascades, column-grant REST behavior and gateway isolation remain separate acceptance.",
+    "Full application delete-flag Edge flow is Phase04-owned; direct flag authorization is tested here."
+  ],
+  "localBaselineBackups": {
+    "file": "supabase/tests/phase03a-fixtures/baseline-backups.sql",
+    "sha256": "1ccfe89ba366d3b12a38b18c365f075f84d295fe184d0fa7e10bad81cf576e83",
+    "scope": "Local schema/ACL-only model of seven known production backup tables; no rows. Optional exact known objects in clean hosted branches; never create them with this fixture hosted."
+  },
+  "privilegeGuard": {
+    "allowlist": "application-privileges.v1.json",
+    "allowlistSha256": "5b5b3699c6136ac7e8c7a180adc8b539148f5c8fd76857d9942c6762e2fae836",
+    "query": "effective-privileges.sql",
+    "querySha256": "21ef4203d91547f3afea8fb20f477420f4284a3dc806193af7761a330833b650"
+  },
+  "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+  "stagingAuthority": "Owner-authorized only after complete independent CODE, INT and exact staging identity gates; no mutation has occurred."
+}

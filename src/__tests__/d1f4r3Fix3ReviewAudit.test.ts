@@ -3,7 +3,10 @@ import fs from 'fs';
 import path from 'path';
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const MIGRATIONS_DIR = path.join(ROOT, 'supabase', 'migrations');
+// PHASE-02A: the D1F4 SQL is PROPOSED, never applied. Build 33 files it under
+// supabase/nonmanaged/proposed/; this constant still named the managed dir, so
+// the whole suite died at load (ENOENT) and asserted nothing.
+const MIGRATIONS_DIR = path.join(ROOT, 'supabase', 'nonmanaged', 'proposed');
 const FIX3_NAME = '20260828030000_d1f4r3_fix3_review_audit.sql';
 const fix3 = fs.readFileSync(path.join(MIGRATIONS_DIR, FIX3_NAME), 'utf8');
 const fix2 = fs.readFileSync(
@@ -120,9 +123,14 @@ describe('D1F4R3-FIX3 review-audit evidence chain', () => {
   });
 
   it('preserves both frozen migrations exactly', () => {
-    const frozen = (name: string) => fs.readFileSync(path.join(MIGRATIONS_DIR, name));
+    const frozen = (name: string) => fs.readFileSync(path.join(MIGRATIONS_DIR, '..', name.includes('d1sa') ? 'live-out-of-band' : 'proposed', name));
+    // PHASE-02A: pin advanced d131d769 -> 4caeebb5. The old value is the blob at
+    // c74fbd6; 932388b superseded it with the migration-history truth repair, and
+    // this pin never caught the change because the suite was already dead on a
+    // stale path. The current content's claims were reconfirmed against the live
+    // catalog on 2026-09-04 (all 7 bk_* tables RLS-on, zero anon grants).
     expect(crypto.createHash('sha256').update(frozen('2026-08-27_d1sa_deployed_security_containment.sql')).digest('hex'))
-      .toBe('d131d76929bae33051b7a3fcacb8852d58b38fda951f1c57b95aac227e85c68d');
+      .toBe('4caeebb5cf7a4488bd44ddfbcfcf50bb7cbe67ad9dcc3ec766b935be189895b7');
     expect(crypto.createHash('sha256').update(frozen('2026-08-27_d1_option_a_account_deletion.sql')).digest('hex'))
       .toBe('a01142702609c2c32cce252f979e2ffc3ee6aa90b91030332fe1ceb287c83e01');
   });

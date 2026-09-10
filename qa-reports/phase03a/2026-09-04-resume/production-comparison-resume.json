@@ -1,0 +1,87 @@
+{
+  "capturedAtUtc": "2026-09-05T06:26:04.808Z",
+  "previousCaptureAtUtc": "2026-09-05T05:18:03.745Z",
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "readOnly": true,
+  "applicationDataRead": false,
+  "mutationsPerformed": false,
+  "query": "qa-reports/phase03a/2026-09-04/preflight/production-catalog-query.sql",
+  "scope": "Existing comparator v3, including catalog hashes and 71 migration versions. Equality is limited to that declared scope; this is not equality to local bootstrap stubs or proof of unqueried gateway settings.",
+  "previousCatalogSha256": "6f3ee7f60f4134a83b2e013f4f3ffe98be1ae0fa489032062ee2f38cad9ca0d4",
+  "currentCatalogSha256": "6f3ee7f60f4134a83b2e013f4f3ffe98be1ae0fa489032062ee2f38cad9ca0d4",
+  "sections": [
+    {
+      "section": "roles",
+      "previousCount": 3,
+      "currentCount": 3,
+      "equal": true
+    },
+    {
+      "section": "scope",
+      "previousCount": null,
+      "currentCount": null,
+      "equal": true
+    },
+    {
+      "section": "tables",
+      "previousCount": 23,
+      "currentCount": 23,
+      "equal": true
+    },
+    {
+      "section": "columns",
+      "previousCount": 152,
+      "currentCount": 152,
+      "equal": true
+    },
+    {
+      "section": "schemas",
+      "previousCount": 3,
+      "currentCount": 3,
+      "equal": true
+    },
+    {
+      "section": "policies",
+      "previousCount": 47,
+      "currentCount": 47,
+      "equal": true
+    },
+    {
+      "section": "triggers",
+      "previousCount": 25,
+      "currentCount": 25,
+      "equal": true
+    },
+    {
+      "section": "functions",
+      "previousCount": 28,
+      "currentCount": 28,
+      "equal": true
+    },
+    {
+      "section": "tableGrants",
+      "previousCount": 434,
+      "currentCount": 434,
+      "equal": true
+    },
+    {
+      "section": "functionGrants",
+      "previousCount": 49,
+      "currentCount": 49,
+      "equal": true
+    },
+    {
+      "section": "migrationHistory",
+      "previousCount": 71,
+      "currentCount": 71,
+      "equal": true
+    },
+    {
+      "section": "comparatorVersion",
+      "previousCount": null,
+      "currentCount": null,
+      "equal": true
+    }
+  ],
+  "equal": true
+}

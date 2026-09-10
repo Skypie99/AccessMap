@@ -1,0 +1,373 @@
+[
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/FDA028_ARCHITECTURE_REVIEW.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/FDA028_ARCHITECTURE_REVIEW.json",
+    "bytes": 13038,
+    "sha256": "5d477ff74318ea075e080111365858b0defa59672fef7429f2bd4840f73de28a",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/FDA028_ARCHITECTURE_REVIEW.md",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/FDA028_ARCHITECTURE_REVIEW.md",
+    "bytes": 11865,
+    "sha256": "108041c67091abc62e19d24cafb110d66cb4a94397dfa79470b4c95d95f57039",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/FDA028_INGESTION_BOUNDARY.md",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/FDA028_INGESTION_BOUNDARY.md",
+    "bytes": 4382,
+    "sha256": "76e8a436223b5aabb94afbfbaf46c59a1324e35ffaaca1979979fe18f0a32e62",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/owner-rate-limit-decision.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/owner-rate-limit-decision.json",
+    "bytes": 535,
+    "sha256": "a15a4e9acdc4d98f220ae9537c1028e4021aba39dd7a1704b9a28ac44c741fb6",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-jest-classification.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest-classification.json",
+    "bytes": 6385,
+    "sha256": "2fffca95c14b33f2fa3b9021950adf370111b2e84840c5c3de0ca6979fb0d86e",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-jest.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest.json",
+    "bytes": 4127070,
+    "sha256": "ba78621746462da17df9fe5eed0fcd15ae80288bdb5dafed355fd8db57030b2d",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-local-01.stdout.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-01.stdout.json",
+    "bytes": 1343205,
+    "sha256": "063a33bcc7f25c60ddaf5549c26b64c435661458f559d0745e811972f84e1f6b",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-local-02.stdout.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-02.stdout.json",
+    "bytes": 1469014,
+    "sha256": "5b654168d4e0ecd9f5b627622d4bd11b0da0fefdfd1fe31dbf7ee0fe937147f9",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/guard-01.stdout.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/guard-01.stdout.json",
+    "bytes": 1455147,
+    "sha256": "7f5b4b8125ed0b1837c217a647f3f4a645d7b07332c210aa257927e284c2d00d",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-acceptance.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-acceptance.json",
+    "bytes": 36139,
+    "sha256": "d521392f637602ac15bf9c0dd0dd83d477a78cdea8fe13a8e4aa65dd7290fa6e",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-acceptance.md",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-acceptance.md",
+    "bytes": 7820,
+    "sha256": "48cdb53b5fb84b316b526e9d8d298b6bbaa3d85352f9c7a680c503a2b81f4c9d",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-commands.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-commands.json",
+    "bytes": 2567,
+    "sha256": "f158752f7537d28dfc7934eca56674c048513e0ff033bc56516650cba1f776a2",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-full-jest-classification.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-full-jest-classification.json",
+    "bytes": 7498,
+    "sha256": "6bcdcc7687585b0be714e44b9ae5d151b2b124739014afa7426bea8e768efc84",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-inventory-check.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-inventory-check.json",
+    "bytes": 2820,
+    "sha256": "515be1b67fa729e7ae45a5067a15ece8d93c5eb474da0ba2feba2d9816d5faca",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-inventory-check.mjs",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-inventory-check.mjs",
+    "bytes": 3474,
+    "sha256": "bff71483040ad6cc46efcc9ba41f6d630d234096699d65c926c3e1d03d351cb7",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser-jest.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-parser-jest.json",
+    "bytes": 4132,
+    "sha256": "aabcbfab6e54d1a17c0f2acc368801a6924c96d1de33298d0550aa35841955fc",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-preservation-check.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-preservation-check.json",
+    "bytes": 6431,
+    "sha256": "aa5423c83168285609d72f3b65e3061bfc78fad25e1de3e92afbf958032d234c",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-replay.stdout.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-replay.stdout.json",
+    "bytes": 1469013,
+    "sha256": "f5228f4a6268affc2525fdd86b759cabbd704e34bc86dc3d6cddc24baaf95049",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-source-before.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-source-before.json",
+    "bytes": 43731,
+    "sha256": "9444360dce01cbe4ff6b96a0e8e68429a940061814425247e700589c44d8ea6a",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-phase03a-foundation.test.tap",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-phase03a-foundation.test.tap",
+    "bytes": 5866,
+    "sha256": "6e927bab3862fc5f9419e56c850f85d599415efdbaaa1a0c8f72f1366dacddf2",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-phase03a-privileges.test.tap",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-phase03a-privileges.test.tap",
+    "bytes": 4267,
+    "sha256": "bcb331dd6b4629217951c10b62771c0ee142924656a8d9ff18d94205d727252b",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-promptb_media_key_guards.test.tap",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-promptb_media_key_guards.test.tap",
+    "bytes": 1589,
+    "sha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/phase02-dump.stdout.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/phase02-dump.stdout.json",
+    "bytes": 178468,
+    "sha256": "49b4e076f904101b634a5c40160b8d63f75de0f50b350e3a697cfbd07c3c6eb6",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/preservation-start.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/preservation-start.json",
+    "bytes": 200278,
+    "sha256": "7d921c6589be13bf40e0ec469f0661be8e3377386c2270d738d408d4da2bb37b",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/production-catalog-start.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/production-catalog-start.json",
+    "bytes": 239087,
+    "sha256": "44fe9ba7eed0867b1cb85f1528521edf3861f13ec15a874b19e93da76119dc82",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/production-catalog-final.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/production-catalog-final.json",
+    "bytes": 238999,
+    "sha256": "1b53617ef8d170f0e935f871b81698eac0c50b6d5bb89faa3c27985da3535b6f",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/production-final-comparison.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/production-final-comparison.json",
+    "bytes": 382,
+    "sha256": "f0ee9eff9f9033e1ae1da1fefe540a2696a004e6d3893678af073868fd8011ea",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/production-start-comparison.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/production-start-comparison.json",
+    "bytes": 258,
+    "sha256": "b01890b73e3810603babaab4d95bfe3b9496a5b9d1d7900c4efff56c01c0038c",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/source-freeze-and-preservation.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/source-freeze-and-preservation.json",
+    "bytes": 7279,
+    "sha256": "d23def6995b7f2ba30521441a8ddc49229541534523f808e21a77fd02252da07",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/staging-baseline-reconciliation-plan.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/staging-baseline-reconciliation-plan.json",
+    "bytes": 13758,
+    "sha256": "41eab1b8c92164125e911c00525a0621ea399ac808da511b67af34d12617ef02",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/staging-catalog-start.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/staging-catalog-start.json",
+    "bytes": 199331,
+    "sha256": "04db0526247f16a3da353517ea3f61fbdad013b8dfc7ad13564c50f9ca27f610",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/staging-empty-counts.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/staging-empty-counts.json",
+    "bytes": 3076,
+    "sha256": "a3600fe2c8ef1bf52703531a51fb280ef5057a483eaa7d1b5975496596596ab2",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/staging-readonly-feasibility.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/staging-readonly-feasibility.json",
+    "bytes": 2686,
+    "sha256": "a05203df40e46c66db01d36972f47c6a8742d316aefa7ce2b4cc643de3729189",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/worktree-preservation-final.json",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/worktree-preservation-final.json",
+    "bytes": 17042,
+    "sha256": "673b2c1b886e9cf12a6852f3eb801f0678df5f6b382a7c73d164525c3ceb84d7",
+    "encoding": "exact bytes"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/focused-01.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/focused-01.stderr.txt.json",
+    "bytes": 10075,
+    "sha256": "3b9911bef882b2f175a4976a298b6f3d513cdb2b1253427e1ebb01f118f8f6ba",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/focused-01.stdout.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/focused-01.stdout.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/focused-02.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/focused-02.stderr.txt.json",
+    "bytes": 87412,
+    "sha256": "f609ad477fd2d2613a5bbbc56776c49715b5d5ad6b9f1248cd12bc9eed494480",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/focused-02.stdout.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/focused-02.stdout.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-jest.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest.stderr.txt.json",
+    "bytes": 2042743,
+    "sha256": "1534873c7d4c8a9972a0c9906a54e8474daff90a7e653568d8e9712ef28a7d91",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-jest.stdout.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest.stdout.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-local-01.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-01.stderr.txt.json",
+    "bytes": 563,
+    "sha256": "41dffd2ffb895e3bcfe27a81ebbecc6d3f1ebed9a228c60d86210f3286ccbf31",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-local-02.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-02.stderr.txt.json",
+    "bytes": 563,
+    "sha256": "4f9b5128c2f8fb15e31916c52229e4cef52c50076083c933cbce194e13150a55",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/guard-01.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/guard-01.stderr.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-parser.stderr.txt.json",
+    "bytes": 1085,
+    "sha256": "f595736af38952cbdac2c5732054e32df809ce2661bc778fa5fc77e82d6d3d5f",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser.stdout.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-parser.stdout.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-replay.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-replay.stderr.txt.json",
+    "bytes": 563,
+    "sha256": "4f9b5128c2f8fb15e31916c52229e4cef52c50076083c933cbce194e13150a55",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-schema-snapshot.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-schema-snapshot.stderr.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-schema-snapshot.stdout.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/independent-schema-snapshot.stdout.txt.json",
+    "bytes": 63,
+    "sha256": "11ae6f712aaad7550b2349f73c0959638314e89e99db7fcb50a56bf54eaae355",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/lint.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/lint.stderr.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/lint.stdout.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/lint.stdout.txt.json",
+    "bytes": 13736,
+    "sha256": "1620d29a7139a19134d20b6c634b5d507a15d4bec838bcb2da833d5e509b9d70",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/phase02-dump.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/phase02-dump.stderr.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/typecheck.stderr.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/typecheck.stderr.txt.json",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "encoding": "JSON text field; decode UTF-8"
+  },
+  {
+    "original": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/typecheck.stdout.txt",
+    "repoPath": "qa-reports/phase03a/2026-09-05-owner-resume/typecheck.stdout.txt.json",
+    "bytes": 45,
+    "sha256": "d12aee5139a2fecb70054d7e23fa10972d9f2d91f79aacee1f7eb79935e9c1f8",
+    "encoding": "JSON text field; decode UTF-8"
+  }
+]

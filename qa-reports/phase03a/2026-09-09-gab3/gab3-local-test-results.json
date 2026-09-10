@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "recommendationId": "FDA028-GAB-3-20260909",
+  "capturedUtc": "2026-09-09",
+  "engine": "PostgreSQL 17.11 (Homebrew), disposable local cluster, destroyed after use",
+  "functionUnderTest": "gab3-admission-function.sql (complete, DECLARE included)",
+  "hostedContact": false,
+  "results": {
+    "T1_firstEverClientNoToken": {"observed": "ADMITTED", "pass": true,
+      "significance": "Guards the RECORD-vs-%ROWTYPE trap the v2 reviewer demonstrated. A RECORD declaration raises 'record g is not assigned yet' on every first-time client."},
+    "T2_starvationFix": {"observed": "after 5 mint-and-abandon resets on one bucket (units=5 grants=5), a BRAND-NEW client is ADMITTED", "pass": true,
+      "v2Behaviour": "REFUSED_GRANT_CAP with 47 of 50 units unspent",
+      "significance": "The v2 network-lockout defect is fixed by REMOVING the redundant grant-slot cap, not by mitigating it."},
+    "T3_resetContinuityBounded": {"observed": "at 48/50 a fresh grant opens with 2 units; at 50/50 the next new client gets REFUSED_BUCKET_EXHAUSTED", "pass": true},
+    "T4_twoClientIndependence": {"observed": "A exhausted -> REFUSED_GRANT; B on the same bucket -> ADMITTED", "pass": true},
+    "T5_crossBucketGrantReplay": {"observed": "grant minted on bucket 05 presented against bucket 06 is not matched; a fresh grant is issued for 06", "pass": true},
+    "T6_windowBoundary": {"observed": "grant from window 1 ignored in window 2; window 2 bucket starts at 0", "pass": true},
+    "T7_killSwitch": {"observed": "ADMITTED_LIMITER_DISABLED", "pass": true},
+    "T8_concurrency": {"method": "40 parallel callers, all new clients, BUCKET_ALLOWANCE=10",
+      "observed": "ADMITTED=10 REFUSED=30 final units_consumed=10", "overshoot": false, "lostUpdate": false, "pass": true}
+  },
+  "notYetTested": [
+    "guarded extraction unit tests (absent / multi-valued / malformed / IPv4-mapped IPv6)",
+    "full alternate-path bypass matrix",
+    "purge and retention",
+    "restoration against the seven existing Phase 03A pairs",
+    "load and latency under lock contention",
+    "receipt-hygiene assertions"
+  ],
+  "productionThresholdDecision": "DEFERRED",
+  "implemented": false
+}

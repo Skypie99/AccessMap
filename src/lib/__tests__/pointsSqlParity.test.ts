@@ -10,7 +10,7 @@
  * The app could describe barely half of that. `POINTS` covered verify/resolve
  * only, because it was written against `handle_flag_status_change` in
  * supabase/schema.sql — and FIVE more awarding triggers live only in
- * supabase/migrations/2026-05-30_trust_score_system.sql, which schema.sql never
+ * supabase/migrations/20260531202835_trust_score_system.sql, which schema.sql never
  * absorbed. CLAUDE.md inherited the same gap, and the in-app Help FAQ told users
  * they earn four awards when they earn nine.
  *
@@ -32,14 +32,15 @@
 import fs from 'fs';
 import path from 'path';
 
+import { readManagedMigration, SUPABASE_DIR } from './support/migrationSource';
 import { POINTS } from '../points';
 
-const SUPABASE = path.join(__dirname, '..', '..', '..', 'supabase');
+const SUPABASE = SUPABASE_DIR;
 const schema = fs.readFileSync(path.join(SUPABASE, 'schema.sql'), 'utf8');
-const trust = fs.readFileSync(
-  path.join(SUPABASE, 'migrations', '2026-05-30_trust_score_system.sql'),
-  'utf8',
-);
+// PHASE-02A: resolved by SLUG. Build 33 renamed this to the managed version
+// 20260531202835_trust_score_system.sql; the old literal path made this whole
+// suite die at load (ENOENT), so none of the assertions below had run since.
+const trust = readManagedMigration('trust_score_system');
 
 /** The `delta` written by a point_events INSERT for one event type. */
 function awardFor(sql: string, eventType: string): number | null {

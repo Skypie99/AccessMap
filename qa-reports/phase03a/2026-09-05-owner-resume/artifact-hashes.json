@@ -1,0 +1,335 @@
+{
+  "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "sourceTree": "857411dc733b93686d789a72e461856698bec814",
+  "classification": "Blocked Phase03A; local FDA012 subset evidence",
+  "files": [
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/FDA012_PRIVILEGE_REVIEW.json",
+      "bytes": 80236,
+      "sha256": "35974a1b6896f45264cbd56b348991dba2a70cf9a2f1886838dbbba9ade6bf70"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/FDA012_PRIVILEGE_REVIEW.md",
+      "bytes": 14018,
+      "sha256": "873a16856868eb64f6c6ff9d99ae05ec2a43f2e6369fc2b2cc2a34f2323c995c"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/FDA028_ARCHITECTURE_REVIEW.json",
+      "bytes": 13038,
+      "sha256": "5d477ff74318ea075e080111365858b0defa59672fef7429f2bd4840f73de28a"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/FDA028_ARCHITECTURE_REVIEW.md",
+      "bytes": 11865,
+      "sha256": "108041c67091abc62e19d24cafb110d66cb4a94397dfa79470b4c95d95f57039"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/FDA028_INGESTION_BOUNDARY.md",
+      "bytes": 4382,
+      "sha256": "76e8a436223b5aabb94afbfbaf46c59a1324e35ffaaca1979979fe18f0a32e62"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/artifact-relocations.json",
+      "bytes": 20813,
+      "sha256": "28bd866705a5931fb3666b2610e49e4b06a12d028c78376a65072efe97d0cf72"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/blocked-handoff.json",
+      "bytes": 6838,
+      "sha256": "7c71a1f24affc3bcab6d6307a3bec4f573fc3a1c0c00ea5d105e1c21296eae1e"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/deployed-server-dependencies.json",
+      "bytes": 4853,
+      "sha256": "0271cb80a9a47517cb2b2dd51dbbe13231b5ecbd6e9790fbedad43675a69883c"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/focused-01.stderr.txt.json",
+      "bytes": 10676,
+      "sha256": "2f3646e643a56727211a5bb0e6461476aea3510a1f26e3b2b75e25fae2c90f78"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/focused-01.stdout.txt.json",
+      "bytes": 298,
+      "sha256": "133cb75fe4991c98b9300782fe3380115222046ecf02b957bf3b7c224ede4723"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/focused-02.stderr.txt.json",
+      "bytes": 89196,
+      "sha256": "320592bcba1ce7ae8b632264b43a82865ebf8cd94fb758dff0664e9fa86ed77d"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/focused-02.stdout.txt.json",
+      "bytes": 298,
+      "sha256": "e70158131d0482591e80c5fe06a0b1bf686e3ccc12af3662e00aa56438c208ad"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/frozen-source.json",
+      "bytes": 14852,
+      "sha256": "093b40a5adceaaa6917b26665c5d432bc8c3294f58814c052a286cd838c3ec19"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest-classification.json",
+      "bytes": 6385,
+      "sha256": "2fffca95c14b33f2fa3b9021950adf370111b2e84840c5c3de0ca6979fb0d86e"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest.json",
+      "bytes": 4127070,
+      "sha256": "ba78621746462da17df9fe5eed0fcd15ae80288bdb5dafed355fd8db57030b2d"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest.stderr.txt.json",
+      "bytes": 2158410,
+      "sha256": "31dd1b97491647e67a6af6d4bd7fcd6570504932143c7afe6f56e04fc8f4cdb1"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-jest.stdout.txt.json",
+      "bytes": 297,
+      "sha256": "4b007a36763e1b0be2e321c6858a60713b1518a21d0b7bbe9d5768dbf2bfe4e5"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-01.stderr.txt.json",
+      "bytes": 869,
+      "sha256": "3163aed0ffb37c783f94dbe340e425114f99a61bb453adba3ab3233a9f5bfef5"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-01.stdout.json",
+      "bytes": 1343205,
+      "sha256": "063a33bcc7f25c60ddaf5549c26b64c435661458f559d0745e811972f84e1f6b"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-02.stderr.txt.json",
+      "bytes": 869,
+      "sha256": "c6cc04c20d6137606b4f8244d847ae66a261b707bf72ac2b1fa13d5f7643a1fc"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/full-local-02.stdout.json",
+      "bytes": 1469014,
+      "sha256": "5b654168d4e0ecd9f5b627622d4bd11b0da0fefdfd1fe31dbf7ee0fe937147f9"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/guard-01.stderr.txt.json",
+      "bytes": 296,
+      "sha256": "8fff2de582189d0bdf185012e78f31382a63e734c38050a6a15bcd2e44a87a04"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/guard-01.stdout.json",
+      "bytes": 1455147,
+      "sha256": "7f5b4b8125ed0b1837c217a647f3f4a645d7b07332c210aa257927e284c2d00d"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-acceptance.json",
+      "bytes": 36139,
+      "sha256": "d521392f637602ac15bf9c0dd0dd83d477a78cdea8fe13a8e4aa65dd7290fa6e"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-acceptance.md",
+      "bytes": 7820,
+      "sha256": "48cdb53b5fb84b316b526e9d8d298b6bbaa3d85352f9c7a680c503a2b81f4c9d"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-commands.json",
+      "bytes": 2567,
+      "sha256": "f158752f7537d28dfc7934eca56674c048513e0ff033bc56516650cba1f776a2"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-full-jest-classification.json",
+      "bytes": 7498,
+      "sha256": "6bcdcc7687585b0be714e44b9ae5d151b2b124739014afa7426bea8e768efc84"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-inventory-check.json",
+      "bytes": 2820,
+      "sha256": "515be1b67fa729e7ae45a5067a15ece8d93c5eb474da0ba2feba2d9816d5faca"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-inventory-check.mjs",
+      "bytes": 3474,
+      "sha256": "bff71483040ad6cc46efcc9ba41f6d630d234096699d65c926c3e1d03d351cb7"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-parser-jest.json",
+      "bytes": 4132,
+      "sha256": "aabcbfab6e54d1a17c0f2acc368801a6924c96d1de33298d0550aa35841955fc"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-parser.stderr.txt.json",
+      "bytes": 1441,
+      "sha256": "f04821f158c53c6ecafcdcb69b34be673f096f940fbb51a60d51f1c87deb9292"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-parser.stdout.txt.json",
+      "bytes": 306,
+      "sha256": "86d454a9171ffdf6fe3c070da09342af80553cb6606646b48d21794f87bd8597"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-phase03a-foundation.test.tap",
+      "bytes": 5866,
+      "sha256": "6e927bab3862fc5f9419e56c850f85d599415efdbaaa1a0c8f72f1366dacddf2"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-phase03a-privileges.test.tap",
+      "bytes": 4267,
+      "sha256": "bcb331dd6b4629217951c10b62771c0ee142924656a8d9ff18d94205d727252b"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-preservation-check.json",
+      "bytes": 6431,
+      "sha256": "aa5423c83168285609d72f3b65e3061bfc78fad25e1de3e92afbf958032d234c"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-promptb_media_key_guards.test.tap",
+      "bytes": 1589,
+      "sha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-replay.stderr.txt.json",
+      "bytes": 874,
+      "sha256": "9800392e7c7c1fdfff5c841fc7f65d895d59075ff2b82aa8fdd9df410d5ae660"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-replay.stdout.json",
+      "bytes": 1469013,
+      "sha256": "f5228f4a6268affc2525fdd86b759cabbd704e34bc86dc3d6cddc24baaf95049"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-schema-snapshot.stderr.txt.json",
+      "bytes": 315,
+      "sha256": "3eb06feeb7083104f3ef5a59e792bb599057ef56ebf22787272d00ee70c70b47"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-schema-snapshot.stdout.txt.json",
+      "bytes": 380,
+      "sha256": "3ddeaeb3a1a85913e95bf61a1b0fd167d1128fcbe091c7a21116c3588a03f7be"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/independent-source-before.json",
+      "bytes": 43731,
+      "sha256": "9444360dce01cbe4ff6b96a0e8e68429a940061814425247e700589c44d8ea6a"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/lint.stderr.txt.json",
+      "bytes": 292,
+      "sha256": "4c96ddb531b210f012945dad62d59bc9f0b8d2505619dd565f04935d4ea51055"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/lint.stdout.txt.json",
+      "bytes": 14194,
+      "sha256": "1b6ff048cdaec759cad2e57353d67a68861bc8c946c949dbfebc50a01e06a880"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/owner-rate-limit-decision.json",
+      "bytes": 535,
+      "sha256": "a15a4e9acdc4d98f220ae9537c1028e4021aba39dd7a1704b9a28ac44c741fb6"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/phase02-dump.stderr.txt.json",
+      "bytes": 300,
+      "sha256": "c36b47c3a89f39c546951dc77897063accf8af44ef896f5c54613da8f74443af"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/phase02-dump.stdout.json",
+      "bytes": 178468,
+      "sha256": "49b4e076f904101b634a5c40160b8d63f75de0f50b350e3a697cfbd07c3c6eb6"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/preservation-start.json",
+      "bytes": 200278,
+      "sha256": "7d921c6589be13bf40e0ec469f0661be8e3377386c2270d738d408d4da2bb37b"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/production-catalog-final.json",
+      "bytes": 238999,
+      "sha256": "1b53617ef8d170f0e935f871b81698eac0c50b6d5bb89faa3c27985da3535b6f"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/production-catalog-start.json",
+      "bytes": 239087,
+      "sha256": "44fe9ba7eed0867b1cb85f1528521edf3861f13ec15a874b19e93da76119dc82"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/production-defaults-readonly.json",
+      "bytes": 41316,
+      "sha256": "eaab0242481a09c4d93acc2bc19ebc3375d740f5e5c58745e86070d8e5674e00"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/production-final-comparison.json",
+      "bytes": 382,
+      "sha256": "f0ee9eff9f9033e1ae1da1fefe540a2696a004e6d3893678af073868fd8011ea"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/production-schema-roles.json",
+      "bytes": 3061,
+      "sha256": "f5cd8b2dd8d372a051a2a2c9aa61466e93110234d12d86b4f4b3e5223caa8913"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/production-start-comparison.json",
+      "bytes": 258,
+      "sha256": "b01890b73e3810603babaab4d95bfe3b9496a5b9d1d7900c4efff56c01c0038c"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/receipt-prefix-preservation.json",
+      "bytes": 374,
+      "sha256": "8b849dc7ea788742dc131c5dfc9c198ebd4d5e260a7ee415e21e9c06550924e5"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/source-freeze-and-preservation.json",
+      "bytes": 7279,
+      "sha256": "d23def6995b7f2ba30521441a8ddc49229541534523f808e21a77fd02252da07"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/staging-baseline-reconciliation-plan.json",
+      "bytes": 13758,
+      "sha256": "41eab1b8c92164125e911c00525a0621ea399ac808da511b67af34d12617ef02"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/staging-catalog-start.json",
+      "bytes": 199331,
+      "sha256": "04db0526247f16a3da353517ea3f61fbdad013b8dfc7ad13564c50f9ca27f610"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/staging-empty-counts.json",
+      "bytes": 3076,
+      "sha256": "a3600fe2c8ef1bf52703531a51fb280ef5057a483eaa7d1b5975496596596ab2"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/staging-readonly-feasibility.json",
+      "bytes": 2686,
+      "sha256": "a05203df40e46c66db01d36972f47c6a8742d316aefa7ce2b4cc643de3729189"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/test-summary.json",
+      "bytes": 13083,
+      "sha256": "31d6bfc406cd53a81704fefdfff2191c06862eb210f0a35358353eceb48590ce"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/typecheck.stderr.txt.json",
+      "bytes": 297,
+      "sha256": "22645ac36e70b89dbad064a3feeb23248784911c15030adcee0f09226d0885f3"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/typecheck.stdout.txt.json",
+      "bytes": 347,
+      "sha256": "22fd26bef8772c01d54dbec9a85b00a46680111bdb280e940d7635af335036ef"
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-05-owner-resume/worktree-preservation-final.json",
+      "bytes": 17042,
+      "sha256": "673b2c1b886e9cf12a6852f3eb801f0678df5f6b382a7c73d164525c3ceb84d7"
+    }
+  ],
+  "reports": [
+    {
+      "file": "qa-reports/2026-09-05_Codex_Phase03AOwnerResume.md",
+      "bytes": 22675,
+      "sha256": "a8c40ba2547e839dbaffa49fab49fb3b08b9f5765d6be90e7530cbf07130393a"
+    },
+    {
+      "file": "qa-reports/2026-09-03_Phase03A_BackendFoundation.md",
+      "bytes": 41302,
+      "sha256": "e9d6a72c732e2d669c3b40655cfd254f9dfe90a52c87f92e16ea8b153d34ef89"
+    }
+  ],
+  "selfHashPolicy": "Index excludes itself; finalization pins the committed index."
+}

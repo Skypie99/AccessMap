@@ -1,0 +1,109 @@
+{
+  "$schema": "./contract.schema.json",
+  "manifestVersion": 1,
+  "capturedAtUtc": "2026-09-04T06:01:12Z",
+  "source": "read-only Supabase catalog capture (Phase 02A)",
+  "project": {
+    "ref": "kldlwszpfkdmsjrjhjym",
+    "name": "Accessable City App",
+    "region": "us-west-2",
+    "postgres": "17.6.1.121",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "catalogFingerprint": {
+    "algorithm": "md5(string_agg(sig)) over columns+functions+policies+triggers+migrations",
+    "objectCount": 323,
+    "value": "2ac50a3fe61c949c2b5e66ef9daa7952"
+  },
+  "migrationLedger": {
+    "appliedCount": 71,
+    "head": { "version": "20260830130000", "name": "promptb_media_key_read_contract" },
+    "immutable": true
+  },
+  "rpc": {
+    "deployed": [
+      { "name": "increment_dispute_request", "args": "p_flag_id uuid", "returns": "integer", "securityDefiner": true, "execute": ["authenticated", "service_role", "postgres"] },
+      { "name": "increment_reopen_request", "args": "p_flag_id uuid", "returns": "integer", "securityDefiner": true, "execute": ["authenticated", "service_role", "postgres"] },
+      { "name": "log_realtime_event", "args": "p_event text, p_channel text", "returns": "void", "securityDefiner": true, "execute": ["authenticated", "service_role", "postgres"] },
+      { "name": "verify_webhook_secret", "args": "incoming text", "returns": "boolean", "securityDefiner": true, "execute": ["service_role", "postgres"] }
+    ],
+    "absentAtAnySignature": [
+      "prepare_flag_photo_upload",
+      "commit_flag_photo_upload",
+      "cancel_flag_photo_upload",
+      "commit_avatar_photo_upload",
+      "list_monthly_leaderboard",
+      "claim_next_account_deletion_operation"
+    ]
+  },
+  "edgeFunctions": {
+    "deployed": [
+      { "slug": "send-push-notification", "version": 6, "verifyJwt": false, "status": "ACTIVE" },
+      { "slug": "notify-flag-status", "version": 8, "verifyJwt": false, "status": "ACTIVE" },
+      { "slug": "delete-account", "version": 4, "verifyJwt": true, "status": "ACTIVE" }
+    ],
+    "absent": ["delete-flag", "account-deletion-status"]
+  },
+  "columns": {
+    "present": {
+      "flags.photo_object_key": true,
+      "flag_photos.object_key": true,
+      "users.avatar_object_key": true,
+      "users.is_admin": true
+    },
+    "absent": {
+      "feedback.moderation_reviewed_at": true,
+      "feedback.moderation_reviewed_by": true,
+      "feedback.moderation_resolution": true,
+      "feedback.moderation_action_intent": true
+    }
+  },
+  "storage": {
+    "buckets": [{ "id": "flag-photos", "public": true, "fileSizeLimit": null, "allowedMimeTypes": null }],
+    "objectPolicies": [
+      { "name": "flag-photos auth upload", "cmd": "INSERT", "roles": ["authenticated"], "requiresUidFolder": true },
+      { "name": "flag-photos owner delete", "cmd": "DELETE", "roles": ["authenticated"], "requiresUidFolder": true },
+      { "name": "flag-photos admin delete", "cmd": "DELETE", "roles": ["authenticated"], "requiresIsAdmin": true }
+    ],
+    "anonInsertPolicy": false
+  },
+  "authorization": {
+    "flagsPolicies": [
+      { "name": "admin delete any flag", "cmd": "DELETE", "roles": ["authenticated"], "gate": "users.is_admin" },
+      { "name": "flags delete own", "cmd": "DELETE", "roles": ["authenticated"], "gate": "auth.uid() = user_id" },
+      { "name": "flags anon insert", "cmd": "INSERT", "roles": ["anon"], "gate": "user_id IS NULL AND photo_url IS NULL AND status='open'" },
+      { "name": "flags readable by anon", "cmd": "SELECT", "roles": ["anon"], "gate": "true", "note": "FDA-042: exposes user_id with precise coordinates" },
+      { "name": "flags status update by any authenticated", "cmd": "UPDATE", "roles": ["authenticated"], "gate": "any account row exists", "note": "FDA-020: no admin/moderator restriction" },
+      { "name": "flags_user_scoped", "cmd": "ALL", "roles": ["PUBLIC"], "gate": "user_id = auth.uid()", "note": "FDA-009: legacy overlapping ALL policy still present" }
+    ],
+    "adminHelper": { "name": "private.current_user_is_admin", "securityDefiner": true, "execute": ["authenticated", "postgres"] },
+    "publicExecuteTriggerFunctions": [
+      "enforce_flag_photos_object_key_guard",
+      "enforce_flags_photo_object_key_guard",
+      "enforce_users_avatar_object_key_guard",
+      "handle_push_token_updated_at",
+      "set_flag_updated_at",
+      "update_flags_updated_at"
+    ]
+  },
+  "outOfBandObjects": {
+    "backupTables": {
+      "tables": [
+        "bk_2026_08_22_flags",
+        "bk_2026_08_22_flag_comments",
+        "bk_2026_08_22_flag_photos",
+        "bk_2026_08_22_flag_status_history",
+        "bk_2026_08_22_flag_verifications",
+        "bk_2026_08_22_flag_edit_history",
+        "bk_2026_08_22_point_links"
+      ],
+      "ledgerRecorded": false,
+      "provenance": "supabase/nonmanaged/live-out-of-band/2026-08-27_d1sa_deployed_security_containment.sql",
+      "rlsEnabled": true,
+      "policyCount": 0,
+      "anonOrAuthenticatedGrants": false,
+      "foreignKeysToUsersOrFlags": 0,
+      "reachableViaPostgrest": false
+    }
+  }
+}

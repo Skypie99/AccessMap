@@ -1,0 +1,170 @@
+{
+  "classification": "writer-run full Jest output independently parsed; no full Jest rerun by acceptor",
+  "currentEvidence": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-jest.json",
+  "currentEvidenceSha256": "ba78621746462da17df9fe5eed0fcd15ae80288bdb5dafed355fd8db57030b2d",
+  "previousEvidence": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest-results.json",
+  "previousEvidenceSha256": "a65b44580f4230338f8b593b254af0504a0fcc8087ede63dc65b50e5de77f24d",
+  "currentCounts": {
+    "numPassedTestSuites": 273,
+    "numFailedTestSuites": 12,
+    "numPassedTests": 4204,
+    "numFailedTests": 14,
+    "numTodoTests": 32,
+    "numTotalTests": 4250
+  },
+  "currentFailureNames": [
+    {
+      "file": "src/__tests__/dismissalStandard.guard.test.ts",
+      "name": "the dismissal standard C \u00b7 every surface is still reduced-motion gated"
+    },
+    {
+      "file": "src/__tests__/dismissalStandard.guard.test.ts",
+      "name": "the dismissal standard J \u00b7 focus return is wired end to end, and nothing else claims onDismiss"
+    },
+    {
+      "file": "src/__tests__/focusOnOpen.guard.test.ts",
+      "name": "focus-in standard \u2014 every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface"
+    },
+    {
+      "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+      "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets"
+    },
+    {
+      "file": "src/__tests__/keyboardClass.guard.test.ts",
+      "name": "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism Recipe D \u2014 every delegate is a real, live consumer (the list drains)"
+    },
+    {
+      "file": "src/__tests__/privacy.guard.test.ts",
+      "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+    },
+    {
+      "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+      "name": "FV-1 \u2014 focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input"
+    },
+    {
+      "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+      "name": "TaskCard \u2014 T8: each action names its flag with a location, the label carries category THEN distance"
+    },
+    {
+      "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+      "name": "TaskCard \u2014 T8: each action names its flag with no location, action labels are category-only (no distance)"
+    },
+    {
+      "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+      "name": "Wave 2 \u2014 expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry"
+    },
+    {
+      "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+      "name": "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim"
+    },
+    {
+      "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+      "name": "T8 \u2014 one spoken voice (source contract) each triage action names its flag (category + conditional distance)"
+    },
+    {
+      "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+      "name": "map-chrome budget \u2014 the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8"
+    },
+    {
+      "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+      "name": "the control now lives in the \u22ef tool sheet VoiceOver order: search, then the circles, then the sheet rows"
+    }
+  ],
+  "previousFailureNames": [
+    {
+      "file": "src/__tests__/dismissalStandard.guard.test.ts",
+      "name": "the dismissal standard C \u00b7 every surface is still reduced-motion gated"
+    },
+    {
+      "file": "src/__tests__/dismissalStandard.guard.test.ts",
+      "name": "the dismissal standard J \u00b7 focus return is wired end to end, and nothing else claims onDismiss"
+    },
+    {
+      "file": "src/__tests__/focusOnOpen.guard.test.ts",
+      "name": "focus-in standard \u2014 every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface"
+    },
+    {
+      "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+      "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets"
+    },
+    {
+      "file": "src/__tests__/keyboardClass.guard.test.ts",
+      "name": "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism Recipe D \u2014 every delegate is a real, live consumer (the list drains)"
+    },
+    {
+      "file": "src/__tests__/privacy.guard.test.ts",
+      "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+    },
+    {
+      "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+      "name": "FV-1 \u2014 focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input"
+    },
+    {
+      "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+      "name": "TaskCard \u2014 T8: each action names its flag with a location, the label carries category THEN distance"
+    },
+    {
+      "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+      "name": "TaskCard \u2014 T8: each action names its flag with no location, action labels are category-only (no distance)"
+    },
+    {
+      "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+      "name": "Wave 2 \u2014 expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry"
+    },
+    {
+      "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+      "name": "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim"
+    },
+    {
+      "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+      "name": "T8 \u2014 one spoken voice (source contract) each triage action names its flag (category + conditional distance)"
+    },
+    {
+      "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+      "name": "map-chrome budget \u2014 the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8"
+    },
+    {
+      "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+      "name": "the control now lives in the \u22ef tool sheet VoiceOver order: search, then the circles, then the sheet rows"
+    }
+  ],
+  "exactFailureNamesMatch": true,
+  "introducedFailureNames": [],
+  "affectedTestResultsInFullRun": [
+    {
+      "file": "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+      "status": "passed",
+      "counts": {
+        "passed": 7
+      }
+    },
+    {
+      "file": "scripts/__tests__/phase03aReplay.test.ts",
+      "status": "passed",
+      "counts": {
+        "passed": 9
+      }
+    },
+    {
+      "file": "src/lib/__tests__/admin.test.tsx",
+      "status": "passed",
+      "counts": {
+        "passed": 13
+      }
+    },
+    {
+      "file": "src/lib/__tests__/comments.test.ts",
+      "status": "passed",
+      "counts": {
+        "passed": 37
+      }
+    },
+    {
+      "file": "src/lib/__tests__/flags.supabase.test.ts",
+      "status": "passed",
+      "counts": {
+        "passed": 40
+      }
+    }
+  ]
+}

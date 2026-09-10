@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "checkpoint": "V4-A",
+  "FDA028_V4_STATE": "PREPARED",
+  "bankedUtc": "2026-09-09",
+  "authorizationScope": {
+    "granted": "LOCAL-ONLY FDA028-GAB-4 implementation and testing",
+    "notGranted": ["staging mutation","production mutation","integration","push","main merge","Phase 03B","Phase 03C","Phase 04"],
+    "consumesAuthorization": "V4 only"
+  },
+  "baseIdentity": {
+    "baseSha": "c53523f2053d8906166d7aaf3ed0a9b83df4668a",
+    "baseTree": "168e6743ca33c6813dae8905463c4b7241c890c3",
+    "frozenProductSourceTree": "857411dc733b93686d789a72e461856698bec814",
+    "nonQaFilesChangedSinceSourceSha": 0,
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "worktreeOwnership": "sole writer; only this session's shells hold the worktree; no non-QA file touched by any other writer in the preceding 2 hours",
+    "indexLock": "absent"
+  },
+  "acceptedEvidenceReferences": {
+    "F28_A": "qa-reports/phase03a/2026-09-09-f28a-probe/F28A_RESOLUTION.md (PASS, narrowed)",
+    "trustedSignal": "cf-connecting-ip; caller-supplied instances refused 403 error 1000 at the Cloudflare edge",
+    "v3Blockers": "qa-reports/phase03a/2026-09-09-gab3/INDEPENDENT_REVIEW_V3.md + author-verification-v3-review.json"
+  },
+
+  "V4A_KEY_LIFECYCLE_DESIGN": {
+    "problem": "v3 used ONE long-lived secret with window_id in the HMAC MESSAGE. A holder of that secret plus ledger access can derive bucket keys for every window the secret ever covered - unbounded historical linkability.",
+    "requirement": "Compromise of the CURRENTLY ACTIVE key must not permit deriving bucket identifiers for an unbounded history of EXPIRED windows.",
+
+    "chosenDesign": "FORWARD-SECURE HASH RATCHET over a single Vault secret, with periodic re-seed.",
+    "construction": {
+      "ratchet": "K_{n+1} = HMAC-SHA256(K_n, 'fda028-ratchet-v1|' || (n+1))",
+      "bucketKey": "HMAC-SHA256(K_epoch, 'fda028-bucket-v1|' || normalized_prefix) truncated to 16 bytes; the epoch is IMPLICIT in the key, not merely mixed into the message",
+      "advance": "strictly wall-clock driven: advance only while stored_epoch < epoch_of(now()). A caller cannot force an advance; epoch is a pure function of request time.",
+      "catchUpCap": "bounded iterations; if the stored key is staler than the cap, RE-SEED with fresh gen_random_bytes(32) instead of iterating",
+      "reseed": "every R epochs (configurable), replace the key with fresh randomness instead of ratcheting"
+    },
+
+    "whyThisSatisfiesBlocker3": "HMAC is one-way, so K_{n+1} cannot yield K_n. A holder of the live key can derive FUTURE keys but NO past ones. Past-window bucket identifiers are therefore underivable from a current-key compromise, which is exactly the stated requirement.",
+
+    "whyItFitsTheDOCUMENTED VaultAPI": "It needs only vault.update_secret(uuid, secret, name, description), which IS documented. It never calls vault.create_secret at request time (whose signature, uniqueness scoping and concurrent-creation behaviour the v2/v3 reviews found UNVERIFIED), and it never needs secret DELETION - which Supabase documents no method for. The old key value is destroyed by being OVERWRITTEN in place.",
+
+    "honestLimitation_backupsAndPITR": "NO CLAIM OF CRYPTOGRAPHIC DELETION FROM BACKUPS. A historical backup or PITR snapshot containing K_n lets an attacker ratchet FORWARD from epoch n. The re-seed bounds that exposure to at most R epochs rather than unbounded, but it does not eliminate it. This is stated rather than claimed away, per the governing instruction.",
+
+    "comparisonToAlternatives": {
+      "v3_longLivedSecret": "REJECTED - unbounded past and future linkability from one compromise.",
+      "independentRandomPerEpochKeys": "Strictly better against backup exposure (a backup leaks only its own epoch), but requires per-epoch secret CREATION and DELETION. Deletion is undocumented in Supabase Vault and creation semantics are unverified. Rejected as unverifiable, not as undesirable.",
+      "kdfFromLongLivedMaster": "REJECTED - master compromise derives every epoch, failing the requirement outright."
+    },
+
+    "keyMaterialStorage": "Vault only. The limiter schema stores only the non-secret epoch number and re-seed anchor. No key material in any application table.",
+    "testability": "The ratchet MATH is a pure function testable locally without Vault. The Vault read/update I/O has no local equivalent in disposable Postgres and will be recorded as VAULT_IO: UNVERIFIED_LOCALLY rather than asserted as passing."
+  },
+
+  "V4A_NORMALIZATION_PRIMITIVE_EVIDENCE": {
+    "engine": "PostgreSQL 17.11 local disposable",
+    "findings": {
+      "postgres_canonicalizes_mapped_hex_form": "'::ffff:c000:263' renders as '::ffff:192.0.2.99' - both textual forms of an IPv4-mapped address converge",
+      "case_normalization": "'::FFFF:192.0.2.99' and '2001:DB8:...' lowercase automatically",
+      "mapped_detection": "addr <<= '::ffff:0:0/96'::inet reliably identifies IPv4-mapped IPv6",
+      "dotted_tail_extraction": "substring(host(addr) from '([0-9]{1,3}(\\.[0-9]{1,3}){3})$') extracts the embedded IPv4 and is NULL for native IPv6",
+      "set_masklen_family_sensitivity": "set_masklen(addr,64) RAISES 'invalid mask length' on an IPv4 address - the family branch must precede masking"
+    },
+    "plannedRule": "if family=6 AND mapped -> unwrap to IPv4 then apply the IPv4 prefix; elif family=4 -> IPv4 prefix; else -> IPv6 prefix. Unwrap strictly BEFORE any generic IPv6 prefixing."
+  },
+
+  "V4A_IPV6_PREFIX_DECISION": {
+    "v3Choice": "/128",
+    "v3ReviewerObjection": "Modern mobile OSes rotate RFC 4941 privacy addresses automatically, so /128 effectively voids reset continuity for ordinary IPv6 mobile guests on routine reconnects - not only for deliberate evasion.",
+    "v4Choice": "/64 default, configurable",
+    "rationale": "RFC 4941 privacy-address rotation changes the low 64 bits (the interface identifier) and preserves the /64 prefix. /64 therefore defeats the DOMINANT real-world rotation vector while avoiding the over-collapse risk of /48, where an ISP assigning /64s to different subscribers from a shared larger block would lump unrelated people together. For an accessibility app, over-collapsing means locking out real users, so the asymmetry favours the narrower prefix.",
+    "residual": "In-delegation rotation across multiple /64s within a subscriber's /56 or /48 remains possible. Bounding it requires hosted IPv6 evidence, which is still OPEN.",
+    "IPV6_HOSTED_EVIDENCE": "OPEN"
+  },
+
+  "intendedFiles": [
+    "supabase/migrations-next/phase03a/<ts>_fda028_v4_limiter.sql (forward candidate)",
+    "supabase/migrations-next/phase03a/rollback/<ts>_fda028_v4_limiter.rollback.sql",
+    "supabase/functions/guest-ingest/index.ts (local prototype, NOT deployed)",
+    "supabase/tests/fda028_v4_*.test.sql (pgTAP)",
+    "qa-reports/phase03a/2026-09-09-gab4/** (evidence and checkpoints)"
+  ],
+  "notTouched": ["product UI","the 71 accepted applied historical migrations","Phase 03B/03C/04 scope"],
+  "nextUnit": "V4-B network normalization and trusted-input handling"
+}

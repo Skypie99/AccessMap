@@ -1,0 +1,434 @@
+{
+  "readOnly": true,
+  "mutationOccurred": false,
+  "stagingRef": "ctshxbykuemeqnofqcdh",
+  "startingCatalogSha256": "1679e494c63483c116b87b8aeac9344aa153d412bb1750b9f205943abbd4f686",
+  "targetLocalCanonicalCatalogSha256": "a3df39ef9ac2f5d2d4dde452fd13952127fa725146bc047f3dbecf89a41a4f65",
+  "migrationNamesAndVersionsMatch": true,
+  "startingMigrationCount": 71,
+  "targetAcceptedPredecessor": "c2e36800b269ee22f29d0be35cfb88dace7c2afc",
+  "requiredAdoptionFiles": [
+    "20260904000000_adopt_private_admin_helper.sql",
+    "20260904000100_drop_duplicate_status_triggers.sql",
+    "20260904000200_adopt_d1sa_containment.sql",
+    "20260904000300_adopt_live_insert_throttles.sql",
+    "20260904000400_adopt_execute_revokes.sql"
+  ],
+  "remainingDelta": [
+    {
+      "section": "schemas",
+      "removed": [],
+      "added": [
+        {
+          "schema": "private",
+          "anon_usage": false,
+          "public_usage": false,
+          "authenticated_usage": true
+        }
+      ]
+    },
+    {
+      "section": "policies",
+      "removed": [
+        {
+          "name": "flag_photos: authenticated insert",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "INSERT",
+          "table_name": "flag_photos",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "b326b5062b2f0e69046810717534cb09",
+          "using_expression_md5": null
+        },
+        {
+          "name": "flags status update by any authenticated",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "UPDATE",
+          "table_name": "flags",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "b326b5062b2f0e69046810717534cb09",
+          "using_expression_md5": "b326b5062b2f0e69046810717534cb09"
+        },
+        {
+          "name": "users update own row",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "UPDATE",
+          "table_name": "users",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "c0a8f98854b79601b88f2b45cd1d74e6",
+          "using_expression_md5": "95c78092b2cfa95cf7bd9a19b6329bfa"
+        },
+        {
+          "name": "flag-photos auth upload",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "storage",
+          "command": "INSERT",
+          "table_name": "objects",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "d1cca7628ecb4c0ff85e8f8490a7233b",
+          "using_expression_md5": null
+        },
+        {
+          "name": "flag-photos owner delete",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "storage",
+          "command": "DELETE",
+          "table_name": "objects",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "d1cca7628ecb4c0ff85e8f8490a7233b"
+        }
+      ],
+      "added": [
+        {
+          "name": "flags status update by any authenticated",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "UPDATE",
+          "table_name": "flags",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "469fe62bc608efe5a5eedd6626d4e896",
+          "using_expression_md5": "469fe62bc608efe5a5eedd6626d4e896"
+        },
+        {
+          "name": "users update own row",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "UPDATE",
+          "table_name": "users",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "963f5fae304f26b10bcd3b2660f48788",
+          "using_expression_md5": "95c78092b2cfa95cf7bd9a19b6329bfa"
+        },
+        {
+          "name": "flag_photos: authenticated insert",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "INSERT",
+          "table_name": "flag_photos",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "c1bc4bb827494edc75925c5853a9e4c6",
+          "using_expression_md5": null
+        },
+        {
+          "name": "flag-photos auth upload",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "storage",
+          "command": "INSERT",
+          "table_name": "objects",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "c62db0e3b8a02df07487b7b6ffeeba19",
+          "using_expression_md5": null
+        },
+        {
+          "name": "flag-photos owner delete",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "storage",
+          "command": "DELETE",
+          "table_name": "objects",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "c62db0e3b8a02df07487b7b6ffeeba19"
+        }
+      ]
+    },
+    {
+      "section": "triggers",
+      "removed": [
+        {
+          "name": "trigger_flag_status_change",
+          "schema": "public",
+          "enabled": "O",
+          "table_name": "flags",
+          "definition_md5": "f1613ed70f64489c0bcbf6afe3d2eceb",
+          "function_schema": "public",
+          "function_signature": "handle_flag_status_change()"
+        }
+      ],
+      "added": [
+        {
+          "name": "enforce_flag_rate_limit",
+          "schema": "public",
+          "enabled": "O",
+          "table_name": "flags",
+          "definition_md5": "16ddf514c617e79b0f295a53dd108975",
+          "function_schema": "public",
+          "function_signature": "check_flag_rate_limit()"
+        },
+        {
+          "name": "enforce_global_anon_rate_limit",
+          "schema": "public",
+          "enabled": "O",
+          "table_name": "flags",
+          "definition_md5": "b75ccb4e154bfa3cd35db5842d186f69",
+          "function_schema": "public",
+          "function_signature": "check_global_anon_rate_limit()"
+        }
+      ]
+    },
+    {
+      "section": "functions",
+      "removed": [
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "increment_dispute_request(p_flag_id uuid)",
+          "volatility": "v",
+          "result_type": "integer",
+          "configuration": [
+            "search_path=public"
+          ],
+          "definition_md5": "c8b65e7cc4d0e408bed247cae9ce83c2",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "increment_reopen_request(p_flag_id uuid)",
+          "volatility": "v",
+          "result_type": "integer",
+          "configuration": [
+            "search_path=public"
+          ],
+          "definition_md5": "c95d49a4283bd2efadd665107e48e76d",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "sql",
+          "signature": "verify_webhook_secret(incoming text)",
+          "volatility": "v",
+          "result_type": "boolean",
+          "configuration": [
+            "search_path=public, vault"
+          ],
+          "definition_md5": "5b23e9920c705774d270c1d609f56aea",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "notify_flag_status_webhook()",
+          "volatility": "v",
+          "result_type": "trigger",
+          "configuration": [],
+          "definition_md5": "5d026db93f3e5a07fb832e5592a2d575",
+          "parallel_safety": "u",
+          "security_definer": true
+        }
+      ],
+      "added": [
+        {
+          "schema": "private",
+          "language": "sql",
+          "signature": "current_user_is_admin()",
+          "volatility": "s",
+          "result_type": "boolean",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "1bddddf127b19cba9643b8ebb2e5f00c",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "check_global_anon_rate_limit()",
+          "volatility": "v",
+          "result_type": "trigger",
+          "configuration": [
+            "search_path=public"
+          ],
+          "definition_md5": "039f92708a2145ab3d95a3459f5446c9",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "increment_dispute_request(p_flag_id uuid)",
+          "volatility": "v",
+          "result_type": "integer",
+          "configuration": [
+            "search_path=public"
+          ],
+          "definition_md5": "430b35666f8a98db61993ddda99db921",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "check_flag_rate_limit()",
+          "volatility": "v",
+          "result_type": "trigger",
+          "configuration": [
+            "search_path=public"
+          ],
+          "definition_md5": "43fa9c7e2ad5e8802cc02bcefe54a604",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "increment_reopen_request(p_flag_id uuid)",
+          "volatility": "v",
+          "result_type": "integer",
+          "configuration": [
+            "search_path=public"
+          ],
+          "definition_md5": "a4d220e8e5589b4f5a9694fcfc804ee2",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "sql",
+          "signature": "verify_webhook_secret(incoming text)",
+          "volatility": "v",
+          "result_type": "boolean",
+          "configuration": [
+            "search_path=public, vault"
+          ],
+          "definition_md5": "1695b8d66c4dfb3e73c5a23ded1407fe",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "plpgsql",
+          "signature": "notify_flag_status_webhook()",
+          "volatility": "v",
+          "result_type": "trigger",
+          "configuration": [
+            "search_path=public, vault, net"
+          ],
+          "definition_md5": "02951838cc10134cd46aff455bbac2e9",
+          "parallel_safety": "u",
+          "security_definer": true
+        }
+      ]
+    },
+    {
+      "section": "functionGrants",
+      "removed": [
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "check_flag_creation_rate_limit()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "enforce_flag_status_transition()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "notify_flag_status_webhook()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "check_flag_creation_rate_limit()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "enforce_flag_status_transition()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "notify_flag_status_webhook()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "check_flag_creation_rate_limit()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "enforce_flag_status_transition()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "notify_flag_status_webhook()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        }
+      ],
+      "added": [
+        {
+          "schema": "private",
+          "grantee": "authenticated",
+          "signature": "current_user_is_admin()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "service_role",
+          "signature": "check_flag_rate_limit()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "service_role",
+          "signature": "check_global_anon_rate_limit()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        }
+      ]
+    }
+  ],
+  "baselineReconciled": false,
+  "decision": "Formal identity/apply gate is not passed. Differences are saved for exact five-file reconciliation after complete CODE/INT; no hosted baseline mutation or equivalence claim.",
+  "catalogNormalization": "Object keys sorted; unordered top-level comparator collections sorted by canonical row JSON. Original raw captures preserved."
+}

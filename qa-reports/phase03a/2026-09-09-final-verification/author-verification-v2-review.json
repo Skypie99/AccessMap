@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "unit": "author re-verification of the independent v2 review's load-bearing claims",
+  "capturedUtc": "2026-09-09",
+  "reviewUnderVerification": "INDEPENDENT_REVIEW_V2.md",
+  "reviewVerdict": "HOLD",
+  "engine": "PostgreSQL 17.11 (Homebrew), Node 20 Headers, Python ipaddress",
+  "hostedContact": false,
+  "repoProductFilesModified": false,
+
+  "verifiedClaims": {
+    "F1_wrongTrustedHeader": {
+      "verdict": "CONFIRMED",
+      "note": "Reviewer independently re-derived the Cloudflare half against Cloudflare's own documentation and reached the same conclusion as F28A_EVIDENCE.json, which the author produced separately from read-only production logs. Two independent routes to the same finding."
+    },
+    "F2_grantsIssuedStarvation": {
+      "verdict": "CONFIRMED - REPRODUCED BY AUTHOR",
+      "method": "K=3, NORMAL=5, BUCKET_ALLOWANCE=50. One client mints, spends 1 unit, abandons the grant, repeats.",
+      "observed": [
+        "reset-submit 1 ADMITTED  units=1 grants=1",
+        "reset-submit 2 ADMITTED  units=2 grants=2",
+        "reset-submit 3 ADMITTED  units=3 grants=3",
+        "brand-new never-seen client on same network -> REFUSED_GRANT_CAP",
+        "bucket: units_consumed=3 of 50, grants_issued=3 of 3, 47 of 50 units never spent"
+      ],
+      "significance": "NEW ARCHITECTURAL DEFECT, not present in v1's review or v2's own text. grants_issued is a per-bucket, monotonic, non-replenishing counter. The GRANT-SLOT pool, not the unit budget, becomes the binding constraint. One resetting client can lock out every future guest on that network for the rest of the window while over 90 percent of the nominal budget goes unused.",
+      "falsifies": "v2 HOW_CLIENT_A_AND_CLIENT_B_REMAIN_INDEPENDENT: 'Up to K co-located clients each reach the full NORMAL while the bucket has room.'"
+    },
+    "F3_pseudocodeThrowsOnMissingHeader": {
+      "verdict": "CONFIRMED - REPRODUCED BY AUTHOR",
+      "observed": "Headers.get('x-forwarded-for') returns null; .split() raises TypeError: Cannot read properties of null (reading 'split')",
+      "significance": "A request lacking the header 500s instead of falling back, which is worse than the status quo v2 claims as its floor."
+    },
+    "F5_unpublishedSafetyCriticalCode": {
+      "verdict": "CONFIRMED",
+      "note": "v2 elides step 4 and the DECLARE block. The author's own earlier receipt recorded aggregate outcomes only. The reviewer showed a generic RECORD declaration raises 'record g is not assigned yet' on every first-time client. The author's own verified prototype used an explicit %ROWTYPE declaration, which is why it did not surface - confirming the reviewer's point that the choice is unstated and consequential."
+    },
+    "F6_ipv4MappedIPv6Collapse": {
+      "verdict": "CONFIRMED - REPRODUCED BY AUTHOR",
+      "observed": {
+        "::ffff:192.0.2.1": "::/48",
+        "::ffff:203.0.113.77": "::/48",
+        "::ffff:10.0.0.5": "::/48",
+        "2002:c000:0201::1": "2002:c000:201::/48",
+        "2002:cb00:7145::1": "2002:cb00:7145::/48"
+      },
+      "significance": "Every IPv4-mapped IPv6 address collapses to the single prefix ::/48 because the ffff marker sits past the 48-bit truncation. 6to4 does NOT collapse. Confirms both halves of the reviewer's claim."
+    },
+    "F7_expiresAtIsAMintTimeOracle": {
+      "verdict": "CONFIRMED by inspection",
+      "note": "v2 DATA_RETENTION claims no per-request timestamps while its own limiter.grant schema carries expires_at, from which mint time is recoverable by subtracting the fixed lifetime."
+    },
+    "F8_vaultPrecedentOverstated": {
+      "verdict": "CONFIRMED - REPRODUCED BY AUTHOR",
+      "observed": "verify_webhook_secret is a plain string equality against vault.decrypted_secrets, not an HMAC. Repository-wide: 0 occurrences of 'hmac(' and 0 of 'vault.create_secret'.",
+      "significance": "The precedent is 'read a Vault secret inside SECURITY DEFINER', not 'compute an HMAC in SQL'. Atomic per-window secret creation has no local precedent and is UNVERIFIED."
+    },
+    "F12_noCustomRolePrecedent": {
+      "verdict": "CONFIRMED - REPRODUCED BY AUTHOR",
+      "observed": "supabase/functions: 17 uses of SUPABASE_SERVICE_ROLE_KEY, 7 of SUPABASE_ANON_KEY, 0 uses of any other named Postgres role.",
+      "significance": "v2's dedicated flagstone_guest_ingest role has zero precedent and v2 does not say how an Edge Function would authenticate as it."
+    },
+    "F13_webNotUnaffected": {
+      "verdict": "CONFIRMED - already independently corrected by the author in OLD_CLIENT_ROLLOUT_CONSTRAINT.md before the review landed. Two independent routes to the same correction."
+    },
+    "F14_sixVsSevenPairs": {
+      "verdict": "CONFIRMED - REPRODUCED BY AUTHOR",
+      "observed": "7 timestamped forward migrations, 7 rollback files, 7 rollbackMode entries in candidate-contract.json. v1 and v2 both say six.",
+      "authorNote": "An initial author count of 9 was wrong because it included catalog.sql and effective-privileges.sql, which are not migrations. Corrected to 7; the reviewer is right."
+    }
+  },
+
+  "reviewerCaveatsAccepted": [
+    "The reviewer could not re-run hosted log queries and said so explicitly, verifying the checkable downstream halves instead. That is the correct handling of a bounded scope.",
+    "The reviewer's own reconstruction of steps 1-3 plus a best-faith step 4 passed every concurrency, atomicity, reset-continuity and bucket-binding test it devised, independently reproducing the author's earlier concurrency result from a blank schema."
+  ],
+
+  "netAssessment": "Every load-bearing claim the author could independently test is CONFIRMED, including one genuinely new architectural defect (F2) that neither the v1 review nor v2 itself identified. V2_INDEPENDENT_REVIEW: HOLD."
+}

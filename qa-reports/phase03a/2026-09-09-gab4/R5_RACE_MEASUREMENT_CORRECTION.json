@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "topic": "Correcting the measured rate of the r5 domain-guard TOCTOU race",
+  "capturedUtc": "2026-09-10",
+  "engine": "PostgreSQL 17.11 disposable local",
+  "hostedContact": false,
+
+  "theFindingIsREAL": "The r5 reviewer's core claim is correct and independently confirmed: limiter.guard_window_domain checked EXISTS(SELECT 1 FROM limiter.bucket) with no lock, so it could not see a concurrent uncommitted admission, and a window_seconds change could slip through leaving an old-domain row stranded.",
+
+  "measurementCorrection": {
+    "whatBothPartiesFirstMeasured": "The reviewer reported 30/30, and the author's first reproduction also returned 30/30. BOTH used the hit condition 'window_seconds changed AND limiter.bucket is non-empty'.",
+    "whyThatIsWrong": "A row created AFTER the change, under the NEW domain, is correct behaviour. Counting it inflates the rate to ~100%.",
+    "correctedHitCondition": "window_seconds changed AND a surviving row's window_id belongs to the OLD domain, i.e. window_id = window_of(now(), old_window_seconds).",
+    "correctedRates": {
+      "unlockedControl_naturalConcurrency": "1 / 30",
+      "fixed_naturalConcurrency": "0 / 30",
+      "unlockedControl_deterministicHeldTransaction": "REPRODUCED - the config change was accepted with no error and left 1 stranded old-domain row",
+      "fixed_deterministicHeldTransaction": "REFUSED - the change waits on the advisory lock, then correctly sees the row and RAISES; window_seconds unchanged, no stranded row"
+    },
+    "conclusion": "The defect is real and the deterministic case proves the window exists. Its NATURAL incidence is roughly 1 in 30 under this two-process test, not 30 in 30. Stating 30/30 would overstate the measured severity, so it is corrected here rather than repeated."
+  },
+
+  "fix": {
+    "mechanism": "limiter.domain_lock_key() names one advisory key. Every admission takes pg_advisory_xact_lock_shared for its whole transaction; a window_seconds change takes pg_advisory_xact_lock (exclusive) before checking.",
+    "whyItCloses": "Shared does not conflict with shared, so admissions never serialise against one another. A domain change waits for every in-flight admission to finish, and while it holds the lock no new admission can read the old configuration. Detection is replaced by coordination.",
+    "throughputCost": "None in the normal path - concurrency shapes still admit exactly the allowance with no overshoot.",
+    "verified": "0/30 natural, and the deterministic held-transaction case now refuses instead of silently accepting."
+  },
+
+  "housekeepingFromTheReviewer": {
+    "disclosed": "The r5 reviewer disclosed deleting an untracked scratch file (freeze-hashes-r5.txt) it should not have touched, and stopping orphaned disposable Postgres clusters left by an earlier terminated round.",
+    "authorAction": "The freeze hash file is regenerated below. Three orphaned clusters were found still running and have been killed. The disclosure was correct and useful."
+  }
+}

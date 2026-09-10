@@ -67,7 +67,7 @@ describe('fork discipline — the flag must match live migration state', () => {
     // on_flag_dispute_reset trigger present.
     //
     // If the migration is ever rolled back (rollback block is at the foot of
-    // supabase/migrations/2026-07-16_fork5_dispute_counter_PROPOSED.sql), flip
+    // supabase/nonmanaged/proposed/2026-07-16_fork5_dispute_counter_PROPOSED.sql), flip
     // the constant back in the SAME commit — otherwise the client ships an
     // affordance that throws on every press, which is what the OFF-state
     // version of this guard existed to prevent.

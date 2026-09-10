@@ -407,6 +407,27 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      current_user_can_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      list_public_leaderboard: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          points: number;
+        }[];
+      };
+      get_my_leaderboard_rank: {
+        Args: Record<string, never>;
+        Returns: { rank: number; points: number }[];
+      };
+      get_comment_author_profiles: {
+        Args: { p_comment_ids: string[] };
+        Returns: { comment_id: string; display_name: string | null }[];
+      };
       // D4: Realtime observability RPC (Safeguard #3).
       // Server-side: inserts a row into realtime_subscribe_log bound to auth.uid().
       // Client must be authenticated; anon calls are rejected by the function.

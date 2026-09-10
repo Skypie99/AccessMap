@@ -1,0 +1,28 @@
+{
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "observedByUtc": "2026-09-05 05:28:16 UTC",
+  "method": "supabase_list_edge_functions",
+  "readOnly": true,
+  "fieldsOmitted": "IDs, paths, timestamps and all implementation content",
+  "functions": [
+    {
+      "slug": "send-push-notification",
+      "version": 6,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    },
+    {
+      "slug": "notify-flag-status",
+      "version": 8,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    },
+    {
+      "slug": "delete-account",
+      "version": 4,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    }
+  ],
+  "deleteFlagPresent": false
+}

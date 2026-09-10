@@ -3,7 +3,7 @@
  *
  * public.flag_comments.user_id is nullable live with ON DELETE SET NULL
  * (verified read-only 2026-07-27; both drifts banked in
- * supabase/migrations/2026-07-27_drift_capture_flag_comments_user_id.sql). The
+ * supabase/nonmanaged/rollback-recovery/2026-07-27_drift_capture_flag_comments_user_id.sql). The
  * repo migration still declares NOT NULL / ON DELETE CASCADE, so the types
  * claimed `user_id: string` and were a lie for every comment whose author had
  * deleted their account. They now say `string | null`.
@@ -88,11 +88,16 @@ describe('SR-117 — the types tell the truth about live', () => {
   });
 
   it('the drift is banked, so the type change has a versioned justification', () => {
+    // PHASE-02A: drift captures are restoration inputs, not managed migrations.
+    // Build 33 files them under supabase/nonmanaged/rollback-recovery/; this
+    // path still named the managed dir, so the assertion below was reporting
+    // "not banked" for a drift record that has been on disk the whole time.
     const migration = path.join(
       REPO,
       '..',
       'supabase',
-      'migrations',
+      'nonmanaged',
+      'rollback-recovery',
       '2026-07-27_drift_capture_flag_comments_user_id.sql',
     );
     expect(fs.existsSync(migration)).toBe(true);

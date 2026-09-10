@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "finding": "FDA-028",
+  "reviewType": "independent_read_only_architecture",
+  "generatedAtUtc": "2026-09-05T08:08:20.075879+00:00",
+  "status": "BLOCKED_IDENTITY_ADMISSION_AND_HOSTED_METADATA_UNVERIFIED",
+  "overallCodeAcceptance": false,
+  "overallStageAcceptance": false,
+  "findingClosed": false,
+  "scope": {
+    "repo": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "receiptHead": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+    "receiptTree": "9f063b465f11127a590d1863d6ebf7a63abf8e55",
+    "sourceCandidate": "6a82b8212a2d0d3de96525d98b5824b4eb7121fb",
+    "currentUncommittedParentChanges": "observed but not accepted or edited by reviewer",
+    "writes": [
+      "FDA028_ARCHITECTURE_REVIEW.md",
+      "FDA028_ARCHITECTURE_REVIEW.json"
+    ],
+    "hostedMutations": false,
+    "hostedRequestsByReviewer": false,
+    "requestLogReads": false,
+    "productionDataReads": false,
+    "credentialReads": false,
+    "implementation": false
+  },
+  "ownerRequest": {
+    "path": "/Users/skypie/.codex/attachments/14434df2-a93d-4d3c-ba91-cea758e90a1d/pasted-text.txt",
+    "requiredIndependenceAndPrivacyLines": [
+      380,
+      392
+    ],
+    "actualMetadataFirstLines": [
+      396,
+      409
+    ],
+    "stagingProofLines": [
+      415,
+      447
+    ],
+    "materialChangeStopLines": [
+      463,
+      465
+    ],
+    "orderedGateLines": [
+      615,
+      679
+    ]
+  },
+  "parentReadOnlyEvidence": {
+    "file": "staging-readonly-feasibility.json",
+    "capturedAtUtc": "2026-09-05T07:58:32.301Z",
+    "identityGate": "NOT_PASSED_CANONICAL_RECONCILIATION_AND_PRIOR_GATES_INCOMPLETE",
+    "metadataProven": false,
+    "observation": "Three existing function manifests establish inventory only; reviewer made no function invocation."
+  },
+  "findings": [
+    {
+      "id": "F28-A",
+      "type": "evidence_gap",
+      "claim": "Actual approved-hosted header provenance, overwrite and proxy-chain behavior remain unverified.",
+      "sources": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "S12"
+      ]
+    },
+    {
+      "id": "F28-B",
+      "type": "architectural_inference",
+      "claim": "A deterministic short-window keyed IP bucket gives equal outputs to A and B with the same public IP, so it cannot prove independent same-NAT normal budgets.",
+      "acceptedUse": "Potential network/emergency control only"
+    },
+    {
+      "id": "F28-C",
+      "type": "architectural_inference",
+      "claim": "Unforgeable server-issued tokens can separate sessions, but repeated anonymous issuance or client-key regeneration resets entitlement without another trusted admission primitive.",
+      "unresolved": "Owner has not defined whether one short session is the budget entitlement or budget must survive state reset."
+    },
+    {
+      "id": "F28-D",
+      "type": "source_backed_dependency",
+      "claim": "Anonymous Auth changes identity lifecycle and authenticated-role access; it cannot be silently introduced solely for the limiter.",
+      "sources": [
+        "S5",
+        "S6",
+        "S7"
+      ],
+      "compatibility": "Auth-to-profile mirror and existing authenticated policies need review; no proven signup failure asserted."
+    },
+    {
+      "id": "F28-E",
+      "type": "source_backed_option_with_inference",
+      "claim": "CAPTCHA admission constrains proof issuance, but successful proofs do not demonstrate a unique client. Enterprise device signals require a material provider/privacy/access decision.",
+      "sources": [
+        "S8",
+        "S9"
+      ]
+    },
+    {
+      "id": "F28-F",
+      "type": "architectural_inference",
+      "claim": "Existing Postgres can supply shared atomic budget state; new Redis is not intrinsically required. Identity/admission remains unresolved.",
+      "sources": [
+        "S2",
+        "S10",
+        "S11"
+      ]
+    },
+    {
+      "id": "F28-G",
+      "type": "owner_governance_dependency",
+      "claim": "A new hosted metadata-probe deployment before complete CODE/INT would require an explicit sequencing exception and the full staging identity gate."
+    }
+  ],
+  "options": [
+    {
+      "name": "short_window_ip_hmac",
+      "sameNatIsolation": false,
+      "resetResistance": "network changes change identity",
+      "privacy": "No raw app IP required, but representation does not create distinct clients",
+      "inScopeAcceptance": false
+    },
+    {
+      "name": "ephemeral_server_capability",
+      "sameNatIsolation": "yes while distinct issued sessions persist",
+      "resetResistance": "uncontrolled issuance resets quota",
+      "privacy": "Credential and internal bucket separation need owner interpretation; no durable identifier proposed",
+      "inScopeAcceptance": "unproven pending entitlement and admission decision"
+    },
+    {
+      "name": "client_generated_pop_key",
+      "sameNatIsolation": "separate generated keys",
+      "resetResistance": "caller regenerates key",
+      "inScopeAcceptance": false
+    },
+    {
+      "name": "anonymous_auth",
+      "sameNatIsolation": "separate created users",
+      "resetResistance": "new signup creates identity; signup IP cap shared",
+      "materialChange": "retained Auth records, session lifecycle, authenticated-role authorization",
+      "inScopeAcceptance": false
+    },
+    {
+      "name": "turnstile_admission",
+      "sameNatIsolation": "separate admitted sessions",
+      "resetResistance": "repeated fresh proofs remain a distinct abuse-model question",
+      "materialChange": "provider and client interaction",
+      "inScopeAcceptance": false
+    },
+    {
+      "name": "turnstile_ephemeral_ids",
+      "sameNatIsolation": "vendor offers device signal independent of IP; target suitability untested",
+      "resetResistance": "vendor-specific claims not independently verified",
+      "materialChange": "Enterprise entitlement, new provider, device linkage lasting days",
+      "inScopeAcceptance": false
+    }
+  ],
+  "localSourceDependencies": [
+    {
+      "file": "supabase/schema.generated.sql",
+      "lines": [
+        586,
+        595
+      ],
+      "atHead": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+      "proof": "Auth ID/email copied to public.users"
+    },
+    {
+      "file": "supabase/schema.generated.sql",
+      "lines": [
+        1078,
+        1080
+      ],
+      "atHead": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+      "proof": "public.users email NOT NULL; anonymous compatibility not assumed"
+    },
+    {
+      "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+      "lines": [
+        79,
+        96
+      ],
+      "atHead": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+      "proof": "Authenticated status-update policy uses matching profile existence, without is_anonymous distinction"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "lines": [
+        6,
+        7
+      ],
+      "atHead": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+      "proof": "Authenticated INSERT restriction concerns open status, without anonymous Auth distinction"
+    }
+  ],
+  "requiredProof": [
+    "same-network A and B independent budgets",
+    "A exhaustion with B still usable",
+    "concurrent atomic enforcement",
+    "reset, renewal, pre-mint and repeated issuance behavior",
+    "forged and duplicate candidate header resistance",
+    "missing or malformed trusted metadata behavior",
+    "direct REST and RPC guest denial after migration",
+    "all alternate flag/feedback paths including authenticated null-user semantics",
+    "global emergency backstop",
+    "expiry and cleanup",
+    "no raw identifying values, internal IDs, tokens or secret-derived identifiers in receipts/logs/app data",
+    "configuration and migration restoration"
+  ],
+  "ownerDecisions": [
+    {
+      "decision": "Define session entitlement/reset behavior or authorize a specified additional trusted admission mechanism",
+      "recommendation": "Keep blocked until exact model and privacy/access tradeoff are adjudicated",
+      "alternative": "Do not claim strict per-client proof from IP hashing or freely remintable tokens"
+    },
+    {
+      "decision": "Resolve actual-metadata-first versus CODE/INT-before-staging order",
+      "recommendation": "Use sufficient documented approved read-only trust evidence if available; otherwise request a narrow independently reviewed synthetic metadata-probe sequencing exception after identity gate",
+      "probeConstraints": [
+        "approved staging only",
+        "no production invocation",
+        "no notification or deletion path",
+        "booleans and bounded counts only",
+        "no identifying header output",
+        "no internal or secret-derived ID output",
+        "defined removal/restoration"
+      ],
+      "withoutDecision": "Stop at trust-input dependency"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S1",
+      "title": "Supabase Turnstile example",
+      "url": "https://supabase.com/docs/guides/functions/examples/cloudflare-turnstile",
+      "supports": "Example selects first X-Forwarded-For element; no full hosted overwrite/chain contract supplied.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S2",
+      "title": "Supabase Edge architecture",
+      "url": "https://supabase.com/docs/guides/functions/architecture",
+      "supports": "Gateway IP routing and concurrent distributed isolates; no client identity guarantee.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S3",
+      "title": "Supabase Edge runtime source",
+      "url": "https://raw.githubusercontent.com/supabase/edge-runtime/main/ext/runtime/js/http.js",
+      "supports": "Public main lines 113-118 and 231-237 use server options for handler remoteAddr; deployed version unverified.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S4",
+      "title": "Deno ServeHandlerInfo",
+      "url": "https://docs.deno.com/api/deno/http-server/#Deno.ServeHandlerInfo",
+      "supports": "Connection information is not necessarily original end-user information behind proxies.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S5",
+      "title": "Supabase Auth rate limits",
+      "url": "https://supabase.com/docs/guides/auth/rate-limits",
+      "supports": "Auth-specific trusted IP forwarding and IP-based anonymous signup throttling.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S6",
+      "title": "Supabase anonymous Auth",
+      "url": "https://supabase.com/docs/guides/auth/auth-anonymous",
+      "supports": "Stored anonymous Auth users, authenticated role, is_anonymous claim, no automatic cleanup.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S7",
+      "title": "Supabase Auth sessions",
+      "url": "https://supabase.com/docs/guides/auth/sessions",
+      "supports": "Default indefinite sessions and refresh-token lifecycle.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S8",
+      "title": "Cloudflare Turnstile server validation",
+      "url": "https://developers.cloudflare.com/turnstile/get-started/server-side-validation/",
+      "supports": "Five-minute single-use validated proof; remoteip optional; no unique-client entitlement guarantee.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S9",
+      "title": "Cloudflare Turnstile Ephemeral IDs",
+      "url": "https://developers.cloudflare.com/turnstile/additional-configuration/ephemeral-id/",
+      "supports": "Account-scoped device signal, expiry within days, Enterprise entitlement and account-team activation.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S10",
+      "title": "Supabase rate-limiting example",
+      "url": "https://supabase.com/docs/guides/functions/examples/rate-limiting",
+      "supports": "Shared atomic counter example does not establish anonymous identity.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S11",
+      "title": "Supabase recursive-function rate limits",
+      "url": "https://supabase.com/docs/guides/functions/recursive-functions",
+      "supports": "Internal function-call budget does not rate limit inbound guest requests.",
+      "accessedDate": "2026-09-05"
+    },
+    {
+      "id": "S12",
+      "title": "Supabase self-hosted Envoy",
+      "url": "https://github.com/supabase/supabase/blob/master/apps/docs/content/guides/self-hosting/self-hosted-envoy.mdx",
+      "supports": "Self-hosted deployment configuration cannot establish hosted branch configuration.",
+      "accessedDate": "2026-09-05"
+    }
+  ],
+  "limits": [
+    "Public docs/source do not prove target hosted gateway configuration",
+    "No hosted requests or metadata observations by this reviewer",
+    "No complete caller-path acceptance or source acceptance",
+    "No anonymous Auth enabled or tested",
+    "No CAPTCHA/provider entitlement verified",
+    "No final production threshold selected",
+    "No Phase03B or production authority"
+  ]
+}

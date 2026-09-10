@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "record": "PREPARED_OPERATION",
+  "finding": "F28-A",
+  "preparedUtc": "2026-09-09",
+  "authority": "Sky, explicit in-session authorization of the previously banked bounded staging diagnostic probe ONLY.",
+
+  "TEMP_PROBE_STATE": "PREPARED_NOT_YET_DEPLOYED",
+
+  "target": {
+    "stagingProjectRef": "ctshxbykuemeqnofqcdh",
+    "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+    "stagingBranchName": "flagstone-p03a-staging-20260905",
+    "isDefault": false,
+    "persistent": false,
+    "withData": false,
+    "previewProjectStatus": "ACTIVE_HEALTHY",
+    "parentProductionProjectRef": "kldlwszpfkdmsjrjhjym",
+    "productionMutation": "NOT AUTHORIZED - will not be attempted"
+  },
+
+  "probePlan": {
+    "file": "qa-reports/phase03a/2026-09-09-final-verification/STAGING_DIAGNOSTIC_PROBE_PLAN.md",
+    "sha256": "9004d6852251e5db481fcc4a66643064667a5c2dff82c954badc4e1609156726",
+    "hashVerifiedAgainstBank": true,
+    "revision": "as banked in generation 2026-09-09-final-verification, commit d555ce2"
+  },
+
+  "temporaryFunctionIdentity": {
+    "slug": "fda028-probe",
+    "verify_jwt": false,
+    "databaseAccess": "NONE - no client, no table, no RPC, no credential",
+    "writes": "NONE",
+    "returns": "booleans, small integers, fixed enums only"
+  },
+
+  "expectedPreState": {
+    "capturedUtc": "2026-09-09",
+    "stagingEdgeFunctions": ["send-push-notification", "notify-flag-status", "delete-account"],
+    "stagingEdgeFunctionCount": 3,
+    "fda028ProbePresent": false,
+    "stagingHttpLogs": "edge_logs 0, function_edge_logs 0 as of the 2026-09-09 read-only capture"
+  },
+
+  "twoPhasePlan": {
+    "phaseA": {
+      "name": "ZERO-DEPLOYMENT gateway-view probe",
+      "rationale": "The platform's own log attribute map already captures request.headers.cf_connecting_ip and x_real_ip. Sending the sentinel matrix to an EXISTING staging endpoint and reading the resulting edge_logs answers the forgeability question with NO deployment and NO cleanup obligation. Strictly less invasive than the authorized action, so it is performed first.",
+      "deploys": false,
+      "closes": ["G1 at the gateway view", "G2", "G4", "P2", "P3", "P4", "P5"]
+    },
+    "phaseB": {
+      "name": "Function-view probe",
+      "rationale": "Phase A cannot show what the Deno runtime itself receives (G3, P1, P7). Only this requires the temporary function.",
+      "deploys": true,
+      "closes": ["G3", "P1", "P6", "P7", "P8"],
+      "conditional": "Performed because the authorized plan's P1/P3/P7 require the function's own req.headers view."
+    }
+  },
+
+  "sentinelValues": {
+    "primary": "192.0.2.1",
+    "secondary": "198.51.100.2",
+    "tertiary": "203.0.113.3",
+    "ipv6Doc": "2001:db8::1",
+    "provenance": "RFC 5737 TEST-NET-1/2/3 and RFC 3849 documentation prefix. Non-routable, non-sensitive, not associated with any real client.",
+    "realAddressHandling": "No real client IP address or raw identifying header value is logged, returned, banked or printed at any point. Comparisons are emitted as enums only."
+  },
+
+  "exactCleanupAction": {
+    "command": "supabase functions delete fda028-probe --project-ref ctshxbykuemeqnofqcdh",
+    "removalPathVerifiedBeforeDeploy": true,
+    "removalPathNote": "The Supabase MCP toolset exposes deploy/get/list for edge functions but NO delete. The removal path is therefore the authenticated Supabase CLI at /opt/homebrew/bin/supabase (v2.116.0), confirmed authenticated via a read-only 'projects list' and confirmed to expose 'functions delete'. This was verified BEFORE any deployment: nothing is deployed that cannot be removed.",
+    "verification": "mcp list_edge_functions on ctshxbykuemeqnofqcdh must return exactly the three expected pre-state functions and must NOT contain fda028-probe."
+  },
+
+  "recoveryProcedure": {
+    "onInterruption": "Do NOT blindly redeploy or rerun. Resume from this record, then inspect actual staging state with list_edge_functions on ctshxbykuemeqnofqcdh BEFORE any action.",
+    "ifProbeStillPresent": "Continue the existing operation: if evidence was already banked, proceed directly to deletion and verification; if not, re-run only the missing probe calls against the EXISTING deployment, then delete.",
+    "ifProbeAbsent": "If TEMP_PROBE_STATE is DEPLOYED_NOT_YET_COMPLETE or EVIDENCE_CAPTURED but the function is absent, deletion already succeeded. Record REMOVED_VERIFIED. Do NOT redeploy.",
+    "lostOutputRule": "Never interpret lost or missing tool output as proof that deployment or deletion failed. Inspect actual state first; the platform inventory is authoritative, not the transcript."
+  },
+
+  "notAuthorized": [
+    "FDA-028 implementation", "v3 implementation", "production changes", "migration changes",
+    "product/client changes", "canonical integration", "main merge", "push", "Phase 03B",
+    "staging baseline reconciliation unrelated to this probe",
+    "staging cleanup beyond removal of fda028-probe"
+  ]
+}

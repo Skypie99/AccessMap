@@ -1,0 +1,712 @@
+{
+  "capturedAtUtc": "2026-09-05T08:22:43.818314+00:00",
+  "reviewer": "/root/03a_effective_privilege_acceptance",
+  "reviewerRole": "Independent read-only acceptor; parent is sole implementation writer",
+  "candidate": {
+    "repository": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "sha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+    "tree": "857411dc733b93686d789a72e461856698bec814",
+    "cleanAtStart": true,
+    "cleanAtReplay": true,
+    "endHead": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+    "endTree": "857411dc733b93686d789a72e461856698bec814",
+    "endStatus": "",
+    "pinnedSourceDrift": [],
+    "changedCallersMatchFrozenCommit": true
+  },
+  "decision": {
+    "FDA012_LOCAL_SUBSET_ACCEPTANCE": "PASS",
+    "COMPLETE_PHASE_03A_CODE_GATE": "HOLD",
+    "PHASE_03A_INT_GATE": "NOT_RUN",
+    "PHASE_03A_STAGE_GATE": "NOT_RUN",
+    "BACKEND_FOUNDATION_GATE": "BLOCKED",
+    "SAFE_TO_INTEGRATE": "NO",
+    "ACCEPTED_COMPLETE_PHASE03A_CODE_SHA": null,
+    "FDA012_FINDING_STATUS": "OPEN",
+    "FDA028_FINDING_STATUS": "OPEN",
+    "findingClosures": [],
+    "blocker": "FDA028 has no accepted trusted mechanism preserving an exhausted anonymous-client budget across clearing/replacing sessions; owner explicitly retained the architecture hold."
+  },
+  "scope": "Exact seven-pair local SQL subset, least-privilege allowlist and effective query/guard/replay/CI, preserved callers and local synthetic role behavior. No complete phase acceptance.",
+  "actionableDefectsInReviewedSubset": [],
+  "independentGates": {
+    "pgTap": {
+      "passed": 217,
+      "failed": 0,
+      "suites": [
+        {
+          "file": "supabase/tests/promptb_media_key_guards.test.sql",
+          "sha256": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009",
+          "bailout": 0,
+          "executed": 25,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 25,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        },
+        {
+          "file": "supabase/tests/phase03a-foundation.test.sql",
+          "sha256": "b341500a5e3c782fdc346dd0d9a089bbcb0a58e42059a445ef22f68b5c5fce3a",
+          "bailout": 0,
+          "executed": 113,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 113,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        },
+        {
+          "file": "supabase/tests/phase03a-privileges.test.sql",
+          "sha256": "5c9171b3991c98eadd1bf939314dcf0694242d695f317026d8b40820249fe313",
+          "bailout": 0,
+          "executed": 79,
+          "failed": 0,
+          "parseErrors": [],
+          "parserVersion": "3.43",
+          "planned": 79,
+          "skipped": 0,
+          "todo": 0,
+          "passed": true
+        }
+      ],
+      "sourceSqlSha256": "d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3",
+      "archive": {
+        "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-1.3.4.tar.gz",
+        "sha256": "78822aa24ab5119f6b1f57de1a25223e6c4a31f4df6d3ab16ca2aadd1dbdea6c",
+        "matchesManifest": true
+      }
+    },
+    "effectiveGuard": {
+      "passed": true,
+      "counts": {
+        "relations": 23,
+        "sequences": 2,
+        "functions": 35
+      },
+      "failures": [],
+      "reappliedPassed": true
+    },
+    "actualDatabaseMutationRefusals": {
+      "passed": true,
+      "count": 18,
+      "cases": [
+        {
+          "name": "new table",
+          "sql": "CREATE TABLE public.fda012_probe(id integer); GRANT SELECT ON public.fda012_probe TO anon;",
+          "rejected": true,
+          "failures": [
+            "Unreviewed relations object: public.fda012_probe"
+          ]
+        },
+        {
+          "name": "new view",
+          "sql": "CREATE VIEW public.fda012_probe AS SELECT 1 AS id; GRANT SELECT ON public.fda012_probe TO anon;",
+          "rejected": true,
+          "failures": [
+            "Unreviewed relations object: public.fda012_probe"
+          ]
+        },
+        {
+          "name": "new sequence",
+          "sql": "CREATE SEQUENCE public.fda012_probe; GRANT USAGE ON public.fda012_probe TO anon;",
+          "rejected": true,
+          "failures": [
+            "Unreviewed sequences object: public.fda012_probe"
+          ]
+        },
+        {
+          "name": "new function",
+          "sql": "CREATE FUNCTION public.fda012_probe() RETURNS integer LANGUAGE sql AS 'SELECT 1'; GRANT EXECUTE ON FUNCTION public.fda012_probe() TO anon;",
+          "rejected": true,
+          "failures": [
+            "Unreviewed functions object: public.fda012_probe()"
+          ]
+        },
+        {
+          "name": "new overload",
+          "sql": "CREATE FUNCTION public.current_user_can_admin(integer) RETURNS boolean LANGUAGE sql AS 'SELECT false';",
+          "rejected": true,
+          "failures": [
+            "Unreviewed functions object: public.current_user_can_admin(integer)"
+          ]
+        },
+        {
+          "name": "missing RLS",
+          "sql": "ALTER TABLE public.feedback DISABLE ROW LEVEL SECURITY;",
+          "rejected": true,
+          "failures": [
+            "RLS disabled: public.feedback"
+          ]
+        },
+        {
+          "name": "managed owner",
+          "sql": "ALTER TABLE public.feedback OWNER TO supabase_admin;",
+          "rejected": true,
+          "failures": [
+            "Unexpected owner: public.feedback"
+          ]
+        },
+        {
+          "name": "new column under SELECT",
+          "sql": "ALTER TABLE public.flags ADD COLUMN fda012_unreviewed text;",
+          "rejected": true,
+          "failures": [
+            "public.flags column inventory: expected [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]; got [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"fda012_unreviewed\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]",
+            "public.flags anon SELECT columns: expected [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]; got [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"fda012_unreviewed\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]",
+            "public.flags authenticated SELECT columns: expected [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]; got [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"fda012_unreviewed\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]"
+          ]
+        },
+        {
+          "name": "column grant",
+          "sql": "GRANT UPDATE(points) ON public.users TO authenticated;",
+          "rejected": true,
+          "failures": [
+            "public.users authenticated UPDATE columns: expected [\"avatar_object_key\",\"avatar_url\",\"display_name\"]; got [\"avatar_object_key\",\"avatar_url\",\"display_name\",\"points\"]"
+          ]
+        },
+        {
+          "name": "PUBLIC grant",
+          "sql": "GRANT SELECT ON public.users TO PUBLIC;",
+          "rejected": true,
+          "failures": [
+            "public.users PUBLIC table privileges: expected []; got [\"SELECT\"]",
+            "public.users PUBLIC SELECT columns: expected []; got [\"avatar_object_key\",\"avatar_url\",\"created_at\",\"display_name\",\"email\",\"id\",\"is_admin\",\"last_active_date\",\"longest_streak_days\",\"points\",\"streak_days\"]",
+            "public.users anon table privileges: expected []; got [\"SELECT\"]",
+            "public.users anon SELECT columns: expected []; got [\"avatar_object_key\",\"avatar_url\",\"created_at\",\"display_name\",\"email\",\"id\",\"is_admin\",\"last_active_date\",\"longest_streak_days\",\"points\",\"streak_days\"]",
+            "public.users authenticated table privileges: expected []; got [\"SELECT\"]",
+            "public.users authenticated SELECT columns: expected [\"avatar_object_key\",\"avatar_url\",\"created_at\",\"display_name\",\"id\",\"points\"]; got [\"avatar_object_key\",\"avatar_url\",\"created_at\",\"display_name\",\"email\",\"id\",\"is_admin\",\"last_active_date\",\"longest_streak_days\",\"points\",\"streak_days\"]",
+            "public.users service_role table privileges: expected []; got [\"SELECT\"]",
+            "public.users service_role SELECT columns: expected []; got [\"avatar_object_key\",\"avatar_url\",\"created_at\",\"display_name\",\"email\",\"id\",\"is_admin\",\"last_active_date\",\"longest_streak_days\",\"points\",\"streak_days\"]"
+          ]
+        },
+        {
+          "name": "inherited role grant",
+          "sql": "CREATE ROLE fda012_inherited; GRANT SELECT ON public.users TO fda012_inherited; GRANT fda012_inherited TO authenticated;",
+          "rejected": true,
+          "failures": [
+            "public.users authenticated table privileges: expected []; got [\"SELECT\"]",
+            "public.users authenticated SELECT columns: expected [\"avatar_object_key\",\"avatar_url\",\"created_at\",\"display_name\",\"id\",\"points\"]; got [\"avatar_object_key\",\"avatar_url\",\"created_at\",\"display_name\",\"email\",\"id\",\"is_admin\",\"last_active_date\",\"longest_streak_days\",\"points\",\"streak_days\"]",
+            "Unreviewed client/service role membership"
+          ]
+        },
+        {
+          "name": "grant option",
+          "sql": "GRANT SELECT ON public.flags TO authenticated WITH GRANT OPTION;",
+          "rejected": true,
+          "failures": [
+            "public.flags authenticated table grant options: expected []; got [\"SELECT\"]",
+            "public.flags authenticated SELECT column grant options: expected []; got [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]"
+          ]
+        },
+        {
+          "name": "service broad DML",
+          "sql": "GRANT INSERT,UPDATE,DELETE ON public.flags TO service_role;",
+          "rejected": true,
+          "failures": [
+            "public.flags service_role table privileges: expected []; got [\"DELETE\",\"INSERT\",\"UPDATE\"]",
+            "public.flags service_role INSERT columns: expected []; got [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]",
+            "public.flags service_role UPDATE columns: expected [\"user_id\"]; got [\"category\",\"context_tags\",\"created_at\",\"description\",\"dispute_requests\",\"dispute_requests_reset_at\",\"id\",\"lat\",\"lng\",\"photo_alt\",\"photo_object_key\",\"photo_url\",\"reopen_requests\",\"reopen_requests_reset_at\",\"severity\",\"status\",\"updated_at\",\"user_id\"]"
+          ]
+        },
+        {
+          "name": "service trigger execute",
+          "sql": "GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;",
+          "rejected": true,
+          "failures": [
+            "public.handle_new_user() service_role EXECUTE differs"
+          ]
+        },
+        {
+          "name": "schema CREATE",
+          "sql": "GRANT CREATE ON SCHEMA public TO service_role;",
+          "rejected": true,
+          "failures": [
+            "public service_role schema privileges: expected [\"USAGE\"]; got [\"CREATE\",\"USAGE\"]"
+          ]
+        },
+        {
+          "name": "future service defaults",
+          "sql": "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO service_role;",
+          "rejected": true,
+          "failures": [
+            "Application default grants DELETE to service_role in public",
+            "Application default grants INSERT to service_role in public",
+            "Application default grants MAINTAIN to service_role in public",
+            "Application default grants REFERENCES to service_role in public",
+            "Application default grants SELECT to service_role in public",
+            "Application default grants TRIGGER to service_role in public",
+            "Application default grants TRUNCATE to service_role in public",
+            "Application default grants UPDATE to service_role in public"
+          ]
+        },
+        {
+          "name": "future PUBLIC function default",
+          "sql": "ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT EXECUTE ON FUNCTIONS TO PUBLIC;",
+          "rejected": true,
+          "failures": [
+            "Application default grants EXECUTE to PUBLIC in GLOBAL"
+          ]
+        },
+        {
+          "name": "view invoker disabled",
+          "sql": "ALTER VIEW public.flag_edit_history_public SET (security_invoker=false);",
+          "rejected": true,
+          "failures": [
+            "Invoker protection missing: public.flag_edit_history_public"
+          ]
+        }
+      ]
+    },
+    "manifestHashChecks": {
+      "passed": true,
+      "positiveControls": 1,
+      "negativeRefusalsBeforeCaptureOrApply": 8
+    },
+    "parserJest": {
+      "passed": 9,
+      "failed": 0,
+      "independentlyRerun": true
+    },
+    "schemaSnapshot": {
+      "passed": true,
+      "stdout": "schema.generated.sql is current (87 ordered inputs, stamp v2)."
+    },
+    "restoration": {
+      "classification": "UNSAFE_BASELINE_RESTORE",
+      "sevenFilesInReverseOrder": true,
+      "exactCollectiveCatalogRestoration": true,
+      "beforeSha256": "1af751339866c181c600d45135a704b97d0ba1162dc4b318da544f6e75ef45cc",
+      "restoredSha256": "1af751339866c181c600d45135a704b97d0ba1162dc4b318da544f6e75ef45cc",
+      "deterministicReapply": true,
+      "afterSha256": "372e20ce2ca1afa273cbf5018ad07f22e6c18de898f05bd5e5a5b552b3899795",
+      "reappliedSha256": "372e20ce2ca1afa273cbf5018ad07f22e6c18de898f05bd5e5a5b552b3899795",
+      "perPairIntermediateSnapshots": false
+    },
+    "preservation": {
+      "capturedAtUtc": "2026-09-05T08:19:44.167566+00:00",
+      "candidateSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+      "candidateTree": "857411dc733b93686d789a72e461856698bec814",
+      "afterHead": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+      "afterTree": "857411dc733b93686d789a72e461856698bec814",
+      "afterStatus": "",
+      "pinnedSourceDrift": [],
+      "appliedCount": 71,
+      "appliedChangedAgainstAcceptedPhase02": [],
+      "sevenPairs": [
+        {
+          "path": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+          "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+          "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+          "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+          "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+          "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+          "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+          "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+          "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+          "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+          "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+          "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
+          "matchesManifest": true,
+          "unchangedFromPriorReceipt": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/20260905073925_phase03a_effective_privileges.sql",
+          "sha256": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928",
+          "matchesManifest": true
+        },
+        {
+          "path": "supabase/migrations-next/phase03a/rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+          "sha256": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f",
+          "matchesManifest": true
+        }
+      ],
+      "sourceCallersAndTests": {
+        "src/lib/__tests__/admin.test.tsx": "58da4fa676c9998cc63908b0fdc0076e6e9e402fc320b1eab34548b0260504bb",
+        "src/lib/__tests__/comments.test.ts": "be30eec9a1ef55fc7880f9cf31acfd8ae565116d989da40a50cb086154fdbd6d",
+        "src/lib/__tests__/flags.supabase.test.ts": "6aadb585448e7b8874501874017438a5ac516f3464d4b3ddc0db11b456106c6f",
+        "src/lib/admin.ts": "06c6aab54324ab6eabb3a922aad738c4e85e2413b2c1c0a7f7dedf0f03724025",
+        "src/lib/comments.ts": "c3954c25b992b55a90890e140d29614c279c15b3618ffb21a7ca6715503de26f",
+        "src/lib/flags.ts": "1068ac17542cc9db7671a21af50b9e8b9c64e1e068cd0af3dfa5cc63e0bec39a",
+        "src/screens/LeaderboardScreen.tsx": "e63cc4fc6c9b550acf411fd4e0a0623b2ea83cd4aeec427be879a26e17e8a93c",
+        "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx": "7c2d8c35e8010753b8c00a018ef02bd0c1e4562246c6b11a04d0b5bfb7924e5e",
+        "src/types/database.ts": "4dd807e0f38b2166f27ee9166dc174d937b003ebba5925b4310583cbb2537683"
+      },
+      "managedDefaults": {
+        "liveRecordedCount": 48,
+        "localModeledCount": 36,
+        "liveOwnerGranteeEntriesExcludedLocally": 12,
+        "localClientServiceExactlyMatchesCapturedSubset": true,
+        "localManagedDefaultsUnchangedBeforeAfter": true,
+        "liveDefaultCountAllOwners": 144,
+        "executionRole": "postgres",
+        "executionRoleSuperuser": false,
+        "platformRoleMembership": false
+      },
+      "historicalBackups": {
+        "modeledCount": 7,
+        "allZeroExternalEffectiveGrants": true,
+        "sourceFixtureHasNoInsertStatements": true
+      },
+      "pgTapArchive": {
+        "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-1.3.4.tar.gz",
+        "sha256": "78822aa24ab5119f6b1f57de1a25223e6c4a31f4df6d3ab16ca2aadd1dbdea6c",
+        "matchesManifest": true
+      },
+      "receiptHashes": {
+        "qa-reports/phase03a/2026-09-05-owner-resume/deployed-server-dependencies.json": "0271cb80a9a47517cb2b2dd51dbbe13231b5ecbd6e9790fbedad43675a69883c",
+        "qa-reports/phase03a/2026-09-05-owner-resume/production-defaults-readonly.json": "eaab0242481a09c4d93acc2bc19ebc3375d740f5e5c58745e86070d8e5674e00",
+        "qa-reports/phase03a/2026-09-05-owner-resume/production-schema-roles.json": "f5cd8b2dd8d372a051a2a2c9aa61466e93110234d12d86b4f4b3e5223caa8913"
+      }
+    }
+  },
+  "managedResidual": {
+    "liveRecordedCount": 48,
+    "localModeledCount": 36,
+    "liveOwnerGranteeEntriesExcludedLocally": 12,
+    "localClientServiceExactlyMatchesCapturedSubset": true,
+    "localManagedDefaultsUnchangedBeforeAfter": true,
+    "liveDefaultCountAllOwners": 144,
+    "executionRole": "postgres",
+    "executionRoleSuperuser": false,
+    "platformRoleMembership": false,
+    "all48AllowlistRowsExactlyMatchSavedLiveReceipt": true,
+    "freshHostedRecaptureByThisAcceptor": false,
+    "boundedClaim": "Flagstone-owned application surfaces only; platform-managed defaults remain recorded, unaltered residuals."
+  },
+  "writerEvidenceIndependentlyInspected": {
+    "typecheck": "PASS; stdout is tsc --noEmit, stderr empty; not rerun by acceptor",
+    "lint": "0 errors / 91 warnings; not rerun by acceptor",
+    "focusedJest": "5 suites / 182 tests passed; writer-run receipt. Includes flags.test.ts; affected flags.supabase.test.ts separately passed 40 tests in full Jest.",
+    "fullJest": {
+      "classification": "writer-run full Jest output independently parsed; no full Jest rerun by acceptor",
+      "currentEvidence": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-jest.json",
+      "currentEvidenceSha256": "ba78621746462da17df9fe5eed0fcd15ae80288bdb5dafed355fd8db57030b2d",
+      "previousEvidence": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest-results.json",
+      "previousEvidenceSha256": "a65b44580f4230338f8b593b254af0504a0fcc8087ede63dc65b50e5de77f24d",
+      "currentCounts": {
+        "numPassedTestSuites": 273,
+        "numFailedTestSuites": 12,
+        "numPassedTests": 4204,
+        "numFailedTests": 14,
+        "numTodoTests": 32,
+        "numTotalTests": 4250
+      },
+      "currentFailureNames": [
+        {
+          "file": "src/__tests__/dismissalStandard.guard.test.ts",
+          "name": "the dismissal standard C \u00b7 every surface is still reduced-motion gated"
+        },
+        {
+          "file": "src/__tests__/dismissalStandard.guard.test.ts",
+          "name": "the dismissal standard J \u00b7 focus return is wired end to end, and nothing else claims onDismiss"
+        },
+        {
+          "file": "src/__tests__/focusOnOpen.guard.test.ts",
+          "name": "focus-in standard \u2014 every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface"
+        },
+        {
+          "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+          "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets"
+        },
+        {
+          "file": "src/__tests__/keyboardClass.guard.test.ts",
+          "name": "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism Recipe D \u2014 every delegate is a real, live consumer (the list drains)"
+        },
+        {
+          "file": "src/__tests__/privacy.guard.test.ts",
+          "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+        },
+        {
+          "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+          "name": "FV-1 \u2014 focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input"
+        },
+        {
+          "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+          "name": "TaskCard \u2014 T8: each action names its flag with a location, the label carries category THEN distance"
+        },
+        {
+          "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+          "name": "TaskCard \u2014 T8: each action names its flag with no location, action labels are category-only (no distance)"
+        },
+        {
+          "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+          "name": "Wave 2 \u2014 expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry"
+        },
+        {
+          "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+          "name": "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim"
+        },
+        {
+          "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+          "name": "T8 \u2014 one spoken voice (source contract) each triage action names its flag (category + conditional distance)"
+        },
+        {
+          "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+          "name": "map-chrome budget \u2014 the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8"
+        },
+        {
+          "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+          "name": "the control now lives in the \u22ef tool sheet VoiceOver order: search, then the circles, then the sheet rows"
+        }
+      ],
+      "previousFailureNames": [
+        {
+          "file": "src/__tests__/dismissalStandard.guard.test.ts",
+          "name": "the dismissal standard C \u00b7 every surface is still reduced-motion gated"
+        },
+        {
+          "file": "src/__tests__/dismissalStandard.guard.test.ts",
+          "name": "the dismissal standard J \u00b7 focus return is wired end to end, and nothing else claims onDismiss"
+        },
+        {
+          "file": "src/__tests__/focusOnOpen.guard.test.ts",
+          "name": "focus-in standard \u2014 every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface"
+        },
+        {
+          "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+          "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets"
+        },
+        {
+          "file": "src/__tests__/keyboardClass.guard.test.ts",
+          "name": "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism Recipe D \u2014 every delegate is a real, live consumer (the list drains)"
+        },
+        {
+          "file": "src/__tests__/privacy.guard.test.ts",
+          "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+        },
+        {
+          "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+          "name": "FV-1 \u2014 focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input"
+        },
+        {
+          "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+          "name": "TaskCard \u2014 T8: each action names its flag with a location, the label carries category THEN distance"
+        },
+        {
+          "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+          "name": "TaskCard \u2014 T8: each action names its flag with no location, action labels are category-only (no distance)"
+        },
+        {
+          "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+          "name": "Wave 2 \u2014 expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry"
+        },
+        {
+          "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+          "name": "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim"
+        },
+        {
+          "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+          "name": "T8 \u2014 one spoken voice (source contract) each triage action names its flag (category + conditional distance)"
+        },
+        {
+          "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+          "name": "map-chrome budget \u2014 the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8"
+        },
+        {
+          "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+          "name": "the control now lives in the \u22ef tool sheet VoiceOver order: search, then the circles, then the sheet rows"
+        }
+      ],
+      "exactFailureNamesMatch": true,
+      "introducedFailureNames": [],
+      "affectedTestResultsInFullRun": [
+        {
+          "file": "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+          "status": "passed",
+          "counts": {
+            "passed": 7
+          }
+        },
+        {
+          "file": "scripts/__tests__/phase03aReplay.test.ts",
+          "status": "passed",
+          "counts": {
+            "passed": 9
+          }
+        },
+        {
+          "file": "src/lib/__tests__/admin.test.tsx",
+          "status": "passed",
+          "counts": {
+            "passed": 13
+          }
+        },
+        {
+          "file": "src/lib/__tests__/comments.test.ts",
+          "status": "passed",
+          "counts": {
+            "passed": 37
+          }
+        },
+        {
+          "file": "src/lib/__tests__/flags.supabase.test.ts",
+          "status": "passed",
+          "counts": {
+            "passed": 40
+          }
+        }
+      ]
+    },
+    "deployedSourceReceipts": {
+      "qa-reports/phase03a/2026-09-05-owner-resume/deployed-server-dependencies.json": "0271cb80a9a47517cb2b2dd51dbbe13231b5ecbd6e9790fbedad43675a69883c",
+      "qa-reports/phase03a/2026-09-05-owner-resume/production-defaults-readonly.json": "eaab0242481a09c4d93acc2bc19ebc3375d740f5e5c58745e86070d8e5674e00",
+      "qa-reports/phase03a/2026-09-05-owner-resume/production-schema-roles.json": "f5cd8b2dd8d372a051a2a2c9aa61466e93110234d12d86b4f4b3e5223caa8913"
+    },
+    "deployedSourceLimit": "Saved read-only source-dependency excerpts and bundle hashes inspected; no live server fetch/invocation by this acceptor."
+  },
+  "limits": [
+    "Local PostgreSQL 17.11 runs postgres as disposable cluster owner; this is not proof of hosted nonsuperuser execution authority.",
+    "Local Auth/Storage/pg_net bootstrap and absence of Vault secrets do not establish hosted Auth, Storage, REST, gateway or delivery behavior.",
+    "Three expected missing-Vault webhook warnings occurred. TAP had no skipped or TODO assertions.",
+    "Seven historical backups were modeled as schema/ACL fixtures without production rows; they are optional known objects and have zero external effective grants when present.",
+    "Guest flag/feedback direct insertion remains transitional. FDA028 budget isolation and bypass prevention remain unimplemented and unaccepted.",
+    "Full application deletion remains Phase 04-owned; local direct owner/admin flag-delete and synthetic FK cascade proof is narrower.",
+    "Restoration comparison establishes the combined reverse chain, not separately captured catalog snapshots after each pair.",
+    "No app/client deployment may precede accepted backend rollout of its currently undeployed RPC dependencies."
+  ],
+  "safety": {
+    "inheritedPgEnvironment": false,
+    "tcpDisabled": true,
+    "productionInputsAccepted": false,
+    "nonmanagedExecuted": false,
+    "nonmanagedDestructiveArtifactExecuted": false,
+    "globalPostgresUnchanged": true,
+    "tempDestroyed": true,
+    "hostedCallsByReviewer": 0,
+    "productionMutations": 0,
+    "stagingMutations": 0,
+    "repoWritesByReviewer": 0,
+    "pushes": 0,
+    "merges": 0,
+    "deploys": 0,
+    "phase03bStarted": false
+  },
+  "evidence": {
+    "independent-replay.stdout.json": {
+      "bytes": 1469013,
+      "sha256": "f5228f4a6268affc2525fdd86b759cabbd704e34bc86dc3d6cddc24baaf95049"
+    },
+    "independent-replay.stderr.txt": {
+      "bytes": 563,
+      "sha256": "4f9b5128c2f8fb15e31916c52229e4cef52c50076083c933cbce194e13150a55"
+    },
+    "independent-source-before.json": {
+      "bytes": 43731,
+      "sha256": "9444360dce01cbe4ff6b96a0e8e68429a940061814425247e700589c44d8ea6a"
+    },
+    "independent-preservation-check.json": {
+      "bytes": 6431,
+      "sha256": "aa5423c83168285609d72f3b65e3061bfc78fad25e1de3e92afbf958032d234c"
+    },
+    "independent-inventory-check.json": {
+      "bytes": 2820,
+      "sha256": "515be1b67fa729e7ae45a5067a15ece8d93c5eb474da0ba2feba2d9816d5faca"
+    },
+    "independent-inventory-check.mjs": {
+      "bytes": 3474,
+      "sha256": "bff71483040ad6cc46efcc9ba41f6d630d234096699d65c926c3e1d03d351cb7"
+    },
+    "independent-parser-jest.json": {
+      "bytes": 4132,
+      "sha256": "aabcbfab6e54d1a17c0f2acc368801a6924c96d1de33298d0550aa35841955fc"
+    },
+    "independent-parser.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "independent-parser.stderr.txt": {
+      "bytes": 1085,
+      "sha256": "f595736af38952cbdac2c5732054e32df809ce2661bc778fa5fc77e82d6d3d5f"
+    },
+    "independent-schema-snapshot.stdout.txt": {
+      "bytes": 63,
+      "sha256": "11ae6f712aaad7550b2349f73c0959638314e89e99db7fcb50a56bf54eaae355"
+    },
+    "independent-schema-snapshot.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "independent-full-jest-classification.json": {
+      "bytes": 7498,
+      "sha256": "6bcdcc7687585b0be714e44b9ae5d151b2b124739014afa7426bea8e768efc84"
+    },
+    "independent-commands.json": {
+      "bytes": 2567,
+      "sha256": "f158752f7537d28dfc7934eca56674c048513e0ff033bc56516650cba1f776a2"
+    },
+    "independent-phase03a-foundation.test.tap": {
+      "bytes": 5866,
+      "sha256": "6e927bab3862fc5f9419e56c850f85d599415efdbaaa1a0c8f72f1366dacddf2"
+    },
+    "independent-phase03a-privileges.test.tap": {
+      "bytes": 4267,
+      "sha256": "bcb331dd6b4629217951c10b62771c0ee142924656a8d9ff18d94205d727252b"
+    },
+    "independent-promptb_media_key_guards.test.tap": {
+      "bytes": 1589,
+      "sha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "sha": "6a82b8212a2d0d3de96525d98b5824b4eb7121fb",
+  "tree": "d3b750fce6ae489f793b88867f1edeca23f5c9d4",
+  "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+  "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "clean": true,
+  "capturedAtUtc": "2026-09-05T06:51:31.354Z",
+  "acceptance": "LOCAL_PARTIAL_CANDIDATE_NOT_ACCEPTED",
+  "priorSource": "6080215c409de9be67cc0c6f066f8567a2722fed",
+  "deltaFiles": [
+    "supabase/migrations-next/phase03a/candidate-contract.json",
+    "supabase/tests/phase03a-foundation.test.sql"
+  ]
+}

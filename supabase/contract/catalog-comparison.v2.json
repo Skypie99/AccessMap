@@ -1,0 +1,104 @@
+{
+  "comparisonVersion": 2,
+  "comparedAtUtc": "2026-09-05T04:28:49.371Z",
+  "source": {
+    "repositorySha": "1682bebdeafedc9b3b0f83a5d24ff07a303ef890",
+    "repositoryTree": "2be6ce7fc156b65f7b542558d6884c7c54411546",
+    "comparatorSha256": "71c98e091194e446f1aa3581a612c82041819bde36a9be8fd543496964fe4603"
+  },
+  "productionCapture": "supabase/contract/production-catalog-capture.v2.json",
+  "result": {
+    "exactAfterAcceptedResiduals": true,
+    "metadataMatches": true,
+    "sectionMatches": {
+      "roles": true,
+      "schemas": true,
+      "tables": true,
+      "columns": true,
+      "policies": true,
+      "triggers": true,
+      "functions": true,
+      "functionGrants": true,
+      "tableGrants": true,
+      "migrationHistory": true
+    },
+    "sectionDeltas": {
+      "roles": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "schemas": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "tables": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "columns": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "policies": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "triggers": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "functions": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "functionGrants": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "tableGrants": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "migrationHistory": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    "acceptedResidual": {
+      "classification": "production-only nonmanaged backup tables",
+      "expectedTables": [
+        "bk_2026_08_22_flag_comments",
+        "bk_2026_08_22_flag_edit_history",
+        "bk_2026_08_22_flag_photos",
+        "bk_2026_08_22_flag_status_history",
+        "bk_2026_08_22_flag_verifications",
+        "bk_2026_08_22_flags",
+        "bk_2026_08_22_point_links"
+      ],
+      "observedTables": [
+        "bk_2026_08_22_flag_comments",
+        "bk_2026_08_22_flag_edit_history",
+        "bk_2026_08_22_flag_photos",
+        "bk_2026_08_22_flag_status_history",
+        "bk_2026_08_22_flag_verifications",
+        "bk_2026_08_22_flags",
+        "bk_2026_08_22_point_links"
+      ],
+      "replayObservedTables": [],
+      "replayAbsent": true,
+      "exactSet": true
+    },
+    "replayCatalogSha256": "9aada3a674a3eef797303ba54a8a261dc216923bd643d87f29df072b7efa02f5",
+    "productionCatalogSha256": "6f3ee7f60f4134a83b2e013f4f3ffe98be1ae0fa489032062ee2f38cad9ca0d4"
+  }
+}

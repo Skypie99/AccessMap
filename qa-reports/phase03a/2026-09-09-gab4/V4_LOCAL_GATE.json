@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "FDA028_V4_LOCAL_GATE": "PASS",
+  "scope": "LOCAL GATE ONLY. Authorizes no staging, integration, production, push or merge action.",
+  "decidedUtc": "2026-09-10",
+  "reviewedArtifact": {
+    "V4_SOURCE_SHA": "eec51b6723d04105a7ba31bf2efd2573b95e8902",
+    "V4_SOURCE_TREE": "23f352bec069522efe9a174a4551c2c484b91de2",
+    "headAtDecision": "a95554fe3ab7ef8bf4c20d9a4c7c33990f5f114a",
+    "headDiffFromReviewed": "qa-reports bookkeeping only; 0 non-QA files; the 8 reviewed artifacts are byte-identical at HEAD"
+  },
+  "independentReview": {
+    "rounds": 6,
+    "verdicts": ["HOLD","HOLD","HOLD","HOLD","HOLD","PASS"],
+    "finalReport": "INDEPENDENT_REVIEW_V4_R6.md",
+    "reproducedByReviewer": "all 120 acceptance assertions (28+21+71), all 3 concurrency shapes, and a full rollback-reapply cycle byte-identical before/after",
+    "r5TOCTOU": "CLOSED - r5's own reproductions rerun and now blocked; 0/100 natural on the fixed code",
+    "authorMeasurementCorrectionConfirmed": "Reviewer independently measured the pre-fix natural rate at 3/100 (about 1 in 33), matching the author's corrected 1/30, and confirmed the naive hit condition inflates to ~100%"
+  },
+
+  "blockerClosure": {
+    "BLOCKER_1_FULL_PATH": "CLOSED",
+    "BLOCKER_2_BUCKET_GRANT_LIFECYCLE": "CLOSED",
+    "BLOCKER_3_KEY_LINKABILITY": "CLOSED for the stated requirement"
+  },
+
+  "openResidualsFromTheFinalReview": [
+    {"id":"R6-1","severity":"SHOULD-FIX","summary":"A config-change transaction that alters window_seconds and does not commit promptly holds the EXCLUSIVE advisory lock and freezes every guest admission for as long as it stays open. No timeout anywhere.","scope":"Requires a raw SQL connection, i.e. an actor already inside the trusted-operator boundary.","impact":"Availability only. No data corruption, no limiter bypass, no privilege escalation, fully recoverable by ending the transaction."},
+    {"id":"R6-2","severity":"SHOULD-FIX","summary":"The advisory key is a bare integer visible in source, and pg_advisory_xact_lock/_shared are PUBLIC-executable, so any role with a raw SQL connection can trigger the same freeze without holding a single grant in the limiter schema - bypassing the migration's REVOKE ALL discipline.","scope":"Raw-SQL-connection actors only. pg_advisory_xact_lock lives in pg_catalog and is NOT reachable as a PostgREST RPC, so anon and authenticated cannot reach it through the application surface.","impact":"Availability only."},
+    {"id":"R6-3","severity":"SHOULD-FIX","summary":"No acceptance test races an admission against a concurrent config change. r5 recommended one and it was not added, so the fix's correctness rests on ad hoc reproduction rather than anything CI would catch on regression.","impact":"Test-coverage gap, not a behavioural defect."}
+  ],
+  "residualsNotFixed": "Deliberately. All three are SHOULD-FIX, none is a safety defect, and modifying the artifact after its passing exact-artifact review would invalidate that review. They are handed to the owner as named follow-ups.",
+
+  "honestlyUnproven": {
+    "VAULT_IO": "UNVERIFIED_LOCALLY - disposable Postgres has no Supabase Vault, so the vault.decrypted_secrets read and vault.update_secret write branches were never executed",
+    "IPV6_HOSTED_EVIDENCE": "OPEN - every IPv6 assertion is a local parser proof; no hosted IPv6 request has ever been observed for this project"
+  },
+
+  "whatPassDoesNotMean": ["FDA_028 is NOT closed","STAGING is NOT authorized","INTEGRATION is NOT authorized","PRODUCTION is NOT authorized","MAIN MERGE is NOT authorized","Phase 03B is NOT authorized"],
+  "productionThresholds": "DEFERRED",
+  "oldClientRolloutConstraint": "UNCHANGED - backend-only work reaches stage S3; closure at S6 needs a coordinated native AND pinned-web release neither Phase 03A nor 03B owns"
+}

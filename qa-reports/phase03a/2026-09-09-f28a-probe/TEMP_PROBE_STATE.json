@@ -1,0 +1,37 @@
+{
+  "TEMP_PROBE_STATE": "REMOVED_VERIFIED",
+  "bankedUtc": "2026-09-09T22:48Z",
+  "stagingProjectRef": "ctshxbykuemeqnofqcdh",
+  "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+  "deployed": {
+    "slug": "fda028-probe",
+    "id": "2e3d1102-4e94-4190-a46a-50da9dc6d531",
+    "version": 1,
+    "status": "ACTIVE",
+    "verify_jwt": false,
+    "ezbr_sha256": "1c49b761ac561d5567fae4e4cc736e5757a5349a9c909a7e8e9e2894f9e27c78",
+    "created_at": 1788993949019
+  },
+  "databaseAccess": "NONE",
+  "writes": "NONE",
+  "credentialsHeld": "NONE",
+  "cleanupPending": false,
+  "exactCleanupAction": "supabase functions delete fda028-probe --project-ref ctshxbykuemeqnofqcdh",
+  "cleanupVerification": "list_edge_functions on ctshxbykuemeqnofqcdh must return exactly send-push-notification, notify-flag-status, delete-account and MUST NOT contain fda028-probe",
+  "expectedPostCleanupFunctionCount": 3,
+  "recoveryIfInterrupted": "Do NOT redeploy. Inspect actual staging state with list_edge_functions FIRST. If fda028-probe is present, continue the existing operation (capture any missing evidence, then delete). If absent, deletion already succeeded - record REMOVED_VERIFIED. Never treat lost output as proof of failure.",
+  "evidenceFiles": [
+    "PHASE_A_GATEWAY_EVIDENCE.json",
+    "PHASE_B_FUNCTION_EVIDENCE.json",
+    "probeB-case-*.json/.txt"
+  ],
+  "removal": {
+    "command": "supabase functions delete fda028-probe --project-ref ctshxbykuemeqnofqcdh --yes",
+    "commandResult": "{\"function_slug\":\"fda028-probe\",\"project_ref\":\"ctshxbykuemeqnofqcdh\",\"message\":\"Deleted Edge Function.\"}",
+    "independentVerification": "mcp list_edge_functions on ctshxbykuemeqnofqcdh returned exactly send-push-notification, notify-flag-status, delete-account. fda028-probe ABSENT.",
+    "verificationChannelDistinctFromDeletionChannel": true,
+    "secondCheck": "HTTP GET to the probe URL after deletion returned 404",
+    "postStateFunctionCount": 3,
+    "matchesExpectedPreState": true
+  }
+}

@@ -1,0 +1,2638 @@
+{
+  "reviewVersion": 1,
+  "phase": "03A",
+  "finding": "FDA-012",
+  "reviewStatus": "SOURCE_BACKED_PROPOSAL_NOT_ACCEPTANCE",
+  "capturedAtUtc": "2026-09-05T07:33:01.757151+00:00",
+  "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+  "receiptHead": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+  "sourceCandidate": "6a82b8212a2d0d3de96525d98b5824b4eb7121fb",
+  "sourceTree": "d3b750fce6ae489f793b88867f1edeca23f5c9d4",
+  "phaseGate": "BLOCKED",
+  "findingsClosed": [],
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "repoChangesByReviewer": [],
+  "testExecution": "No tests rerun; bounded dependency review only. Existing 138 pgTAP results are inherited, not newly established.",
+  "interpretation": [
+    "This is the minimum privilege-kind/column proposal for actual callers plus explicitly identified preserved baseline capabilities. Policy-only preserved contracts are labeled; no claim those have current app callers.",
+    "S/INSERT table privileges must not conceal added columns: guard freezes expected relation columns; column ACL checks remain mandatory. JSON uses column INSERT/UPDATE wherever caller payload is bounded.",
+    "Owner and admin user personas both run as authenticated under RLS. Database object owner is postgres, which must retain the necessary owner-held trigger/definer capabilities. service_role is not the object owner.",
+    "Guest flag and feedback INSERT remains only for FDA012 completion. FDA028 must separately replace guest capability and then remove all direct/alternate bypass rights.",
+    "Do not grant absent Phase04 deletion/media/moderation RPCs or unrelated monthly leaderboard based on local source presence."
+  ],
+  "scopeCounts": {
+    "activePublicTables": 13,
+    "historicalBackupTables": 7,
+    "publicViews": 3,
+    "publicSequences": 2,
+    "functionsAfterSixMigrations": 35,
+    "triggerFunctions": 23
+  },
+  "relations": [
+    {
+      "schema": "public",
+      "name": "bk_2026_08_22_flag_comments",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 23,
+          "lineEnd": 27
+        }
+      ],
+      "reason": "Captured postgres-owned historical backup. Zero client/service rights; owner retains manual inspection/restoration. Do not recreate production rows or delete backup objects. Guard exact names if present; synthetic schema-only fixtures may model them locally."
+    },
+    {
+      "schema": "public",
+      "name": "bk_2026_08_22_flag_edit_history",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 23,
+          "lineEnd": 27
+        }
+      ],
+      "reason": "Captured postgres-owned historical backup. Zero client/service rights; owner retains manual inspection/restoration. Do not recreate production rows or delete backup objects. Guard exact names if present; synthetic schema-only fixtures may model them locally."
+    },
+    {
+      "schema": "public",
+      "name": "bk_2026_08_22_flag_photos",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 23,
+          "lineEnd": 27
+        }
+      ],
+      "reason": "Captured postgres-owned historical backup. Zero client/service rights; owner retains manual inspection/restoration. Do not recreate production rows or delete backup objects. Guard exact names if present; synthetic schema-only fixtures may model them locally."
+    },
+    {
+      "schema": "public",
+      "name": "bk_2026_08_22_flag_status_history",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 23,
+          "lineEnd": 27
+        }
+      ],
+      "reason": "Captured postgres-owned historical backup. Zero client/service rights; owner retains manual inspection/restoration. Do not recreate production rows or delete backup objects. Guard exact names if present; synthetic schema-only fixtures may model them locally."
+    },
+    {
+      "schema": "public",
+      "name": "bk_2026_08_22_flag_verifications",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 23,
+          "lineEnd": 27
+        }
+      ],
+      "reason": "Captured postgres-owned historical backup. Zero client/service rights; owner retains manual inspection/restoration. Do not recreate production rows or delete backup objects. Guard exact names if present; synthetic schema-only fixtures may model them locally."
+    },
+    {
+      "schema": "public",
+      "name": "bk_2026_08_22_flags",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 23,
+          "lineEnd": 27
+        }
+      ],
+      "reason": "Captured postgres-owned historical backup. Zero client/service rights; owner retains manual inspection/restoration. Do not recreate production rows or delete backup objects. Guard exact names if present; synthetic schema-only fixtures may model them locally."
+    },
+    {
+      "schema": "public",
+      "name": "bk_2026_08_22_point_links",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 23,
+          "lineEnd": 27
+        }
+      ],
+      "reason": "Captured postgres-owned historical backup. Zero client/service rights; owner retains manual inspection/restoration. Do not recreate production rows or delete backup objects. Guard exact names if present; synthetic schema-only fixtures may model them locally."
+    },
+    {
+      "schema": "public",
+      "name": "comment_votes",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT",
+          "DELETE"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "comment_id",
+            "voter_id"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations/20260531202835_trust_score_system.sql",
+          "lineStart": 79,
+          "lineEnd": 104
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 359,
+          "lineEnd": 388
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 826,
+          "lineEnd": 826
+        }
+      ],
+      "reason": "No direct current TS caller found. Retain explicit existing own-vote read/insert/delete contract and reward trigger dependency; UPDATE is unnecessary."
+    },
+    {
+      "schema": "public",
+      "name": "feedback",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {
+          "INSERT": [
+            "user_id",
+            "category",
+            "body",
+            "contact_email",
+            "platform"
+          ]
+        },
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT",
+          "DELETE"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "user_id",
+            "category",
+            "body",
+            "contact_email",
+            "platform"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/feedbackStore.ts",
+          "lineStart": 54,
+          "lineEnd": 90
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1769,
+          "lineEnd": 1790
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 837,
+          "lineEnd": 837
+        }
+      ],
+      "reason": "Guest insert has no RETURNING. Signed-in submit/read and existing owner-delete policy retained. UPDATE has no accepted baseline policy or existing columns for the deferred moderation callers; do not create those columns or keep blanket UPDATE to imply Phase04 is available."
+    },
+    {
+      "schema": "public",
+      "name": "flag_comments",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT",
+          "DELETE"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "flag_id",
+            "user_id",
+            "content"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/comments.ts",
+          "lineStart": 92,
+          "lineEnd": 105
+        },
+        {
+          "file": "src/lib/comments.ts",
+          "lineStart": 180,
+          "lineEnd": 184
+        },
+        {
+          "file": "src/lib/comments.ts",
+          "lineStart": 201,
+          "lineEnd": 207
+        },
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 8,
+          "lineEnd": 9
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 854,
+          "lineEnd": 854
+        }
+      ],
+      "reason": "Read/add/own delete and admin delete retained. No comment UPDATE policy or current updater. Own INSERT returning author embed still requires users self SELECT columns."
+    },
+    {
+      "schema": "public",
+      "name": "flag_edit_history",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {
+          "SELECT": [
+            "id",
+            "flag_id",
+            "changed_fields",
+            "old_values",
+            "new_values",
+            "created_at"
+          ],
+          "INSERT": [
+            "flag_id",
+            "user_id",
+            "changed_fields",
+            "old_values",
+            "new_values"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations/20260529063432_flag_edit_history_table.sql",
+          "lineStart": 136,
+          "lineEnd": 147
+        },
+        {
+          "file": "supabase/migrations/20260727075651_a4_1_status_history_view_grant_fix_20260727.sql",
+          "lineStart": 9,
+          "lineEnd": 10
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 868,
+          "lineEnd": 868
+        }
+      ],
+      "reason": "No current TS insert/read caller found, but preserve explicit append-only owner-insert contract. Six safe base-column SELECT grants support the security-invoker view. Never restore user_id SELECT or table-wide SELECT."
+    },
+    {
+      "schema": "public",
+      "name": "flag_edit_history_public",
+      "kind": "v",
+      "owner": "postgres",
+      "requireRls": false,
+      "requireSecurityInvoker": true,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations/20260529063432_flag_edit_history_table.sql",
+          "lineStart": 180,
+          "lineEnd": 190
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 883,
+          "lineEnd": 883
+        }
+      ],
+      "reason": "Read-only preserved history projection. No view DML; underlying safe-column SELECT is required."
+    },
+    {
+      "schema": "public",
+      "name": "flag_photos",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT",
+          "DELETE"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "flag_id",
+            "url",
+            "position",
+            "alt_text"
+          ],
+          "UPDATE": [
+            "url",
+            "position",
+            "alt_text"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/photos.ts",
+          "lineStart": 33,
+          "lineEnd": 40
+        },
+        {
+          "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+          "lineStart": 60,
+          "lineEnd": 77
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1877,
+          "lineEnd": 1890
+        },
+        {
+          "file": "supabase/tests/phase03a-foundation.test.sql",
+          "lineStart": 189,
+          "lineEnd": 193
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 897,
+          "lineEnd": 897
+        }
+      ],
+      "reason": "Retain deployed legacy owner photo insert/edit/delete rights although current upload caller instead depends on absent future intent RPCs. Do not add those RPCs in FDA012. Client object_key mutations, reassignment and synthetic timestamps are unnecessary; owner trigger remains."
+    },
+    {
+      "schema": "public",
+      "name": "flag_status_history",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {
+          "SELECT": [
+            "id",
+            "flag_id",
+            "from_status",
+            "to_status",
+            "created_at"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations/20260727075651_a4_1_status_history_view_grant_fix_20260727.sql",
+          "lineStart": 6,
+          "lineEnd": 7
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 418,
+          "lineEnd": 429
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 492,
+          "lineEnd": 508
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 914,
+          "lineEnd": 914
+        }
+      ],
+      "reason": "Five safe base-column SELECT grants support history view. Existing INSERT policy is false; all client INSERT/UPDATE/DELETE unnecessary. Trigger owner writes audit rows."
+    },
+    {
+      "schema": "public",
+      "name": "flag_status_history_public",
+      "kind": "v",
+      "owner": "postgres",
+      "requireRls": false,
+      "requireSecurityInvoker": true,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/statusHistory.ts",
+          "lineStart": 72,
+          "lineEnd": 76
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 928,
+          "lineEnd": 928
+        }
+      ],
+      "reason": "Current status history caller. Read-only security-invoker view."
+    },
+    {
+      "schema": "public",
+      "name": "flag_verifications",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "flag_id",
+            "verifier_id",
+            "weight"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/migrations/20260531202835_trust_score_system.sql",
+          "lineStart": 49,
+          "lineEnd": 75
+        },
+        {
+          "file": "src/types/database.ts",
+          "lineStart": 352,
+          "lineEnd": 367
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1930,
+          "lineEnd": 1939
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 941,
+          "lineEnd": 941
+        }
+      ],
+      "reason": "No direct current TS caller found. Retain explicit existing own verification read/insert and typed weight payload; no existing UPDATE/DELETE capability. Weight-policy redesign is outside this review."
+    },
+    {
+      "schema": "public",
+      "name": "flags",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "user_id",
+            "lat",
+            "lng",
+            "category",
+            "severity",
+            "description",
+            "photo_url",
+            "photo_alt",
+            "context_tags",
+            "status"
+          ]
+        },
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT",
+          "DELETE"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "user_id",
+            "lat",
+            "lng",
+            "category",
+            "severity",
+            "description",
+            "photo_url",
+            "photo_alt",
+            "context_tags",
+            "status"
+          ],
+          "UPDATE": [
+            "description",
+            "category",
+            "severity",
+            "status",
+            "photo_url",
+            "photo_alt",
+            "context_tags"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {
+          "SELECT": [
+            "user_id"
+          ],
+          "UPDATE": [
+            "user_id"
+          ]
+        },
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/flags.ts",
+          "lineStart": 1271,
+          "lineEnd": 1310
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "lineStart": 1335,
+          "lineEnd": 1389
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "lineStart": 1762,
+          "lineEnd": 1776
+        },
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+          "lineStart": 5,
+          "lineEnd": 6
+        },
+        {
+          "file": "deployed-server-dependencies.json",
+          "lineStart": 44,
+          "lineEnd": 69,
+          "note": "Receipt JSON; deployed delete-account v4 source lines46-53"
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 954,
+          "lineEnd": 954
+        }
+      ],
+      "reason": "SELECT remains all current flag columns because current mutations request the complete returned row and guest flag reads remain in scope. UPDATE adds only the established owner media/tag capability to current UI content/status writes. Owner/admin/nonowner are authenticated personas; owner/admin direct DELETE retained. Service may only read/clear attribution. Guest INSERT is transitional until FDA028 provides its accepted gateway replacement."
+    },
+    {
+      "schema": "public",
+      "name": "notification_preferences",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "user_id",
+            "flag_status_updates",
+            "nearby_flags",
+            "watched_flag_updates",
+            "bulk_watch_alerts",
+            "updated_at"
+          ],
+          "UPDATE": [
+            "user_id",
+            "flag_status_updates",
+            "nearby_flags",
+            "watched_flag_updates",
+            "bulk_watch_alerts",
+            "updated_at"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1697,
+          "lineEnd": 1711
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 988,
+          "lineEnd": 988
+        }
+      ],
+      "reason": "No current TS caller; client-expectations names a nonexistent notifications.ts. Preserve explicit existing own read/upsert/update policy contract. Including user_id in UPDATE preserves full-payload PostgREST upsert; WITH CHECK keeps ownership. DELETE unnecessary."
+    },
+    {
+      "schema": "public",
+      "name": "point_events",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/pointEvents.ts",
+          "lineStart": 50,
+          "lineEnd": 56
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 338,
+          "lineEnd": 348
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 492,
+          "lineEnd": 549
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 603,
+          "lineEnd": 640
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1002,
+          "lineEnd": 1002
+        }
+      ],
+      "reason": "Owner reads reward ledger; owner-held SECURITY DEFINER triggers insert and update users rewards. No client/service direct reward DML or sequence privilege needed."
+    },
+    {
+      "schema": "public",
+      "name": "push_tokens",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [
+          "SELECT",
+          "DELETE"
+        ],
+        "columnPrivileges": {
+          "INSERT": [
+            "user_id",
+            "token",
+            "platform"
+          ],
+          "UPDATE": [
+            "user_id",
+            "token",
+            "platform"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {
+          "SELECT": [
+            "token",
+            "user_id"
+          ]
+        },
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/pushNotifications.ts",
+          "lineStart": 168,
+          "lineEnd": 173
+        },
+        {
+          "file": "src/lib/pushNotifications.ts",
+          "lineStart": 195,
+          "lineEnd": 197
+        },
+        {
+          "file": "supabase/functions/send-push-notification/index.ts",
+          "lineStart": 148,
+          "lineEnd": 152
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1036,
+          "lineEnd": 1036
+        }
+      ],
+      "reason": "Own upsert/opt-out retained; user_id UPDATE is required by full-payload upsert. Service reads token and filter column only, confirmed for deployed send-push v6 and notify-flag-status v8. No service INSERT/UPDATE/DELETE."
+    },
+    {
+      "schema": "public",
+      "name": "realtime_subscribe_log",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/realtimeLog.ts",
+          "lineStart": 21,
+          "lineEnd": 29
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 727,
+          "lineEnd": 742
+        },
+        {
+          "file": "supabase/migrations/20260529084118_d4_realtime_flags_filtered.sql",
+          "lineStart": 74,
+          "lineEnd": 89
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1050,
+          "lineEnd": 1050
+        }
+      ],
+      "reason": "Current app uses owner-held SECURITY DEFINER RPC only; direct client table writes and all service table grants are unnecessary to that caller. Historical comments permit direct own INSERT and manual service audit/cleanup, but no continuing caller is present. Recommend owner-role operations for manual audit; explicitly record this narrowed route."
+    },
+    {
+      "schema": "public",
+      "name": "users",
+      "kind": "r",
+      "owner": "postgres",
+      "requireRls": true,
+      "requireSecurityInvoker": false,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {
+          "SELECT": [
+            "id",
+            "display_name",
+            "avatar_url",
+            "avatar_object_key",
+            "points",
+            "created_at"
+          ],
+          "UPDATE": [
+            "display_name",
+            "avatar_url",
+            "avatar_object_key"
+          ]
+        },
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "src/lib/users.ts",
+          "lineStart": 55,
+          "lineEnd": 60
+        },
+        {
+          "file": "src/lib/users.ts",
+          "lineStart": 119,
+          "lineEnd": 130
+        },
+        {
+          "file": "src/screens/ProfileScreen.tsx",
+          "lineStart": 372,
+          "lineEnd": 372
+        },
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 80,
+          "lineEnd": 82
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 586,
+          "lineEnd": 595
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1078,
+          "lineEnd": 1078
+        }
+      ],
+      "reason": "Self row/profile fallback only; profile INSERT comes from Auth trigger owned by postgres. No email/is_admin/streak column SELECT, no direct reward/system-field UPDATE, no client/service INSERT/DELETE. Keep avatar_object_key=null fallback subject to existing guard."
+    },
+    {
+      "schema": "public",
+      "name": "users_self_email",
+      "kind": "v",
+      "owner": "postgres",
+      "requireRls": false,
+      "requireSecurityInvoker": true,
+      "PUBLIC": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "anon": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "authenticated": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "service_role": {
+        "tablePrivileges": [],
+        "columnPrivileges": {},
+        "grantOption": false
+      },
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1099,
+          "lineEnd": 1103
+        },
+        {
+          "file": "src/lib/users.ts",
+          "lineStart": 49,
+          "lineEnd": 54
+        },
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 1099,
+          "lineEnd": 1099
+        }
+      ],
+      "reason": "No current caller; SECURITY INVOKER already cannot obtain email through the existing revoked underlying email SELECT. Remove unused view privileges. Do not grant email to make a previously unavailable path pass."
+    }
+  ],
+  "sequences": [
+    {
+      "schema": "public",
+      "name": "point_events_id_seq",
+      "owner": "postgres",
+      "PUBLIC": [],
+      "anon": [],
+      "authenticated": [],
+      "service_role": [],
+      "grantOption": false,
+      "reason": "Only owner-held trigger/RPC writers allocate identifiers; no client nextval/currval/setval caller. Identity allocation and FK cascade do not justify external grants."
+    },
+    {
+      "schema": "public",
+      "name": "realtime_subscribe_log_id_seq",
+      "owner": "postgres",
+      "PUBLIC": [],
+      "anon": [],
+      "authenticated": [],
+      "service_role": [],
+      "grantOption": false,
+      "reason": "Only owner-held trigger/RPC writers allocate identifiers; no client nextval/currval/setval caller. Identity allocation and FK cascade do not justify external grants."
+    }
+  ],
+  "functions": [
+    {
+      "schema": "private",
+      "signature": "current_user_is_admin()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "boolean",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 58,
+          "lineEnd": 58
+        }
+      ],
+      "reason": "Caller-scoped private authorization helper required by invoker policies/wrappers."
+    },
+    {
+      "schema": "private",
+      "signature": "get_comment_author_profiles(uuid[])",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 48,
+          "lineEnd": 48
+        }
+      ],
+      "reason": "Required authenticated contextual projection/admin wrapper; private invoker dependency also needs authenticated EXECUTE and private schema USAGE. No service or anonymous caller."
+    },
+    {
+      "schema": "private",
+      "signature": "get_my_leaderboard_rank()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 33,
+          "lineEnd": 33
+        }
+      ],
+      "reason": "Required authenticated contextual projection/admin wrapper; private invoker dependency also needs authenticated EXECUTE and private schema USAGE. No service or anonymous caller."
+    },
+    {
+      "schema": "private",
+      "signature": "list_public_leaderboard(integer)",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 17,
+          "lineEnd": 17
+        }
+      ],
+      "reason": "Required authenticated contextual projection/admin wrapper; private invoker dependency also needs authenticated EXECUTE and private schema USAGE. No service or anonymous caller."
+    },
+    {
+      "schema": "public",
+      "signature": "check_feedback_rate_limit()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 72,
+          "lineEnd": 72
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "check_flag_creation_rate_limit()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 103,
+          "lineEnd": 103
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "check_flag_rate_limit()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 135,
+          "lineEnd": 135
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "check_global_anon_rate_limit()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 170,
+          "lineEnd": 170
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "current_user_can_admin()",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 13,
+          "lineEnd": 13
+        }
+      ],
+      "reason": "Required authenticated contextual projection/admin wrapper; private invoker dependency also needs authenticated EXECUTE and private schema USAGE. No service or anonymous caller."
+    },
+    {
+      "schema": "public",
+      "signature": "enforce_flag_photos_object_key_guard()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 203,
+          "lineEnd": 203
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "enforce_flag_status_only_for_non_owner()",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 229,
+          "lineEnd": 229
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "enforce_flag_status_transition()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 257,
+          "lineEnd": 257
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "enforce_flags_photo_object_key_guard()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 286,
+          "lineEnd": 286
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "enforce_users_avatar_object_key_guard()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 312,
+          "lineEnd": 312
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "get_comment_author_profiles(uuid[])",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 64,
+          "lineEnd": 64
+        }
+      ],
+      "reason": "Required authenticated contextual projection/admin wrapper; private invoker dependency also needs authenticated EXECUTE and private schema USAGE. No service or anonymous caller."
+    },
+    {
+      "schema": "public",
+      "signature": "get_my_leaderboard_rank()",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 43,
+          "lineEnd": 43
+        }
+      ],
+      "reason": "Required authenticated contextual projection/admin wrapper; private invoker dependency also needs authenticated EXECUTE and private schema USAGE. No service or anonymous caller."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_comment_added()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 338,
+          "lineEnd": 338
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_comment_vote_added()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 359,
+          "lineEnd": 359
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_flag_dispute_reset()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 400,
+          "lineEnd": 400
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_flag_insert_history()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 418,
+          "lineEnd": 418
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_flag_photo_added()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 437,
+          "lineEnd": 437
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_flag_reopen_reset()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 474,
+          "lineEnd": 474
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_flag_status_change()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 492,
+          "lineEnd": 492
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_flag_submitted()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 561,
+          "lineEnd": 561
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_new_user()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 586,
+          "lineEnd": 586
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_point_event_streak()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 603,
+          "lineEnd": 603
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "handle_push_token_updated_at()",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 652,
+          "lineEnd": 652
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "increment_dispute_request(uuid)",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "integer",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 663,
+          "lineEnd": 663
+        }
+      ],
+      "reason": "Current authenticated app RPC. SECURITY DEFINER owner supplies internal table rights; service_role direct EXECUTE is unnecessary."
+    },
+    {
+      "schema": "public",
+      "signature": "increment_reopen_request(uuid)",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "integer",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 695,
+          "lineEnd": 695
+        }
+      ],
+      "reason": "Current authenticated app RPC. SECURITY DEFINER owner supplies internal table rights; service_role direct EXECUTE is unnecessary."
+    },
+    {
+      "schema": "public",
+      "signature": "list_public_leaderboard(integer)",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+          "lineStart": 28,
+          "lineEnd": 28
+        }
+      ],
+      "reason": "Required authenticated contextual projection/admin wrapper; private invoker dependency also needs authenticated EXECUTE and private schema USAGE. No service or anonymous caller."
+    },
+    {
+      "schema": "public",
+      "signature": "log_realtime_event(text,text)",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "void",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": true,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 727,
+          "lineEnd": 727
+        }
+      ],
+      "reason": "Current authenticated app RPC. SECURITY DEFINER owner supplies internal table rights; service_role direct EXECUTE is unnecessary."
+    },
+    {
+      "schema": "public",
+      "signature": "notify_flag_status_webhook()",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 750,
+          "lineEnd": 750
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "set_flag_updated_at()",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 777,
+          "lineEnd": 777
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "update_flags_updated_at()",
+      "owner": "postgres",
+      "securityDefiner": false,
+      "returnType": "trigger",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": false
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 792,
+          "lineEnd": 792
+        }
+      ],
+      "reason": "Existing trigger function; owner/trigger execution only, no direct external EXECUTE required."
+    },
+    {
+      "schema": "public",
+      "signature": "verify_webhook_secret(text)",
+      "owner": "postgres",
+      "securityDefiner": true,
+      "returnType": "boolean",
+      "EXECUTE": {
+        "PUBLIC": false,
+        "anon": false,
+        "authenticated": false,
+        "service_role": true
+      },
+      "grantOption": false,
+      "evidence": [
+        {
+          "file": "supabase/schema.generated.sql",
+          "lineStart": 807,
+          "lineEnd": 807
+        }
+      ],
+      "reason": "Deployed trusted notification gateway verifies shared secret via this RPC; required service EXECUTE only."
+    }
+  ],
+  "schemas": {
+    "public": {
+      "ownerExpected": "pg_database_owner or captured platform owner; not a Flagstone object to re-own",
+      "PUBLIC": [],
+      "anon": [
+        "USAGE"
+      ],
+      "authenticated": [
+        "USAGE"
+      ],
+      "service_role": [
+        "USAGE"
+      ],
+      "CREATE": "No app-client/service CREATE; inspect PUBLIC and inherited schema grants."
+    },
+    "private": {
+      "owner": "postgres",
+      "PUBLIC": [],
+      "anon": [],
+      "authenticated": [
+        "USAGE"
+      ],
+      "service_role": [],
+      "CREATE": "Owner only; authenticated USAGE is necessary for current invoker wrappers/policies."
+    }
+  },
+  "managedResidual": {
+    "classification": "OWNER_ADJUDICATED_MANAGED_PLATFORM_RESIDUAL",
+    "evidenceFile": "production-defaults-readonly.json",
+    "captureUtc": "2026-09-05 07:23:09.369416+00",
+    "executionRole": "postgres",
+    "executionRoleSuperuser": false,
+    "platformRoleMembership": false,
+    "allExplicitDefaultAclRows": 144,
+    "managedRows": [
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "USAGE"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "USAGE"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "USAGE"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "kind": "S",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "USAGE"
+      },
+      {
+        "kind": "f",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "EXECUTE"
+      },
+      {
+        "kind": "f",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "EXECUTE"
+      },
+      {
+        "kind": "f",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "EXECUTE"
+      },
+      {
+        "kind": "f",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "EXECUTE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "postgres",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "anon",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "authenticated",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "kind": "r",
+        "owner": "supabase_admin",
+        "schema": "public",
+        "grantee": "service_role",
+        "grantor": "supabase_admin",
+        "grantable": false,
+        "privilege": "UPDATE"
+      }
+    ],
+    "managedRowsCount": 48,
+    "changeManagedDefaults": false,
+    "postgresDefaultsAction": "Remove PUBLIC/anon/authenticated/service_role default TABLE/SEQUENCE/FUNCTION grants in app-owned public/private scopes. Remove GLOBAL PUBLIC function EXECUTE too; schema-local revokes cannot cancel global defaults. Preserve earlier six migration hashes and distinguish postgres/storage defaults from managed-owned platform objects."
+  },
+  "trustedBackendEvidence": {
+    "file": "deployed-server-dependencies.json",
+    "sha256": "0271cb80a9a47517cb2b2dd51dbbe13231b5ecbd6e9790fbedad43675a69883c",
+    "captureUtc": "2026-09-05T07:26:25.662Z",
+    "functions": [
+      {
+        "slug": "delete-account",
+        "version": 4,
+        "bundleSha256": "9edfdaf21ee036632b47a10438f0d7e0d6b97f19c62b3f6cb57884dd68abdb34"
+      },
+      {
+        "slug": "send-push-notification",
+        "version": 6,
+        "bundleSha256": "0434671ed6ad9f62e8e5a94a200f8caad3d2771e8cbb3a0053229874a1595be8"
+      },
+      {
+        "slug": "notify-flag-status",
+        "version": 8,
+        "bundleSha256": "633db2d2ae659ffc03d4758be2538253413c65c54a4f9b66ca8d3057c0ba7a0e"
+      }
+    ],
+    "requiredServicePermissions": [
+      "SELECT(user_id), UPDATE(user_id) ON public.flags",
+      "SELECT(token,user_id) ON public.push_tokens",
+      "EXECUTE ON public.verify_webhook_secret(text)",
+      "USAGE ON SCHEMA public"
+    ],
+    "cascadeNote": "Auth-owned DELETE cascades through existing FK actions; do not infer public service DML needs from cascading rows. Exercise synthetic role/mutation proof after narrowing; hosted Auth API proof remains separate."
+  },
+  "objectiveGuardRequirements": [
+    "Enumerate all non-extension-owned public/private relations (ordinary/partitioned/foreign tables, views/materialized views, sequences) and routines, including unknown signatures; fail unknown objects before matching permissions. Extension exclusions must use pg_depend extension membership, never names or broad owner exclusions.",
+    "Require exact known object identities, relkind, expected columns, expected owner and non-Supabase-managed creation ownership. Reject app objects created under supabase_admin or owned by app-client/service/unknown roles. Do not blindly ALTER OWNER to silence failures.",
+    "Require RLS on every app table, including historical backups/private future tables. Views must retain expected security_invoker and underlying policy/column boundaries; views do not have table RLS flags. Detect disabled RLS or altered view definition/security options.",
+    "Evaluate every table privilege including SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER/MAINTAIN using has_table_privilege for anon/authenticated/service_role/PUBLIC. Check WITH GRANT OPTION separately.",
+    "For every non-dropped column, evaluate has_column_privilege for SELECT/INSERT/UPDATE/REFERENCES and corresponding WITH GRANT OPTION. Table-level grants imply column access; checking pg_attribute.attacl alone misses these. Existing table revokes do not remove independent column grants.",
+    "Evaluate every sequence SELECT/UPDATE/USAGE and every routine EXECUTE with exact identity arguments via effective privilege functions and grant-option checks; raw ACL grantee lists alone miss PUBLIC and inherited access.",
+    "Inspect role memberships and schema effective USAGE/CREATE; fail any current/inherited app-role capability exceeding allowlist. Do not waive access because no direct ACL is present. Existing roles must not gain ownership, SUPERUSER or BYPASSRLS (except expected service bypass) outside contract.",
+    "Scan postgres/application default ACLs, including GLOBAL function EXECUTE and public/private TABLE/SEQUENCE defaults for all external roles including service_role. Record managed supabase_admin residual exactly and separately; it never excuses an unsafe app object.",
+    "Mutation-test the guard against a new overgranted app table/view/sequence/function, missing RLS, owner mismatch, column grants, PUBLIC grant, inherited-role grant, grant-option grants, service-role broad DML and unknown overload. Every case must fail; approved baseline should pass.",
+    "Run actual positive and negative role behavior for guest/current app inserts, own and other profile projection, owner/admin/nonowner delete, comments/votes/rewards/photo guards, token upsert, exact service attribution clear, notification lookup, Auth cascades, and RPC wrapper/helper calls. Catalog privilege PASS alone does not prove RLS or behavior.",
+    "An ephemeral probe object must be created only inside disposable local/staging acceptance transactions. Never create app probes on production or change managed owners merely for testing."
+  ],
+  "unresolvedDependencies": [
+    {
+      "id": "POLICY_ONLY_CONTRACTS",
+      "status": "REVIEW_REQUIRED_IN_FINAL_ALLOWLIST",
+      "detail": "comment_votes, flag_verifications, notification_preferences, flag_edit_history INSERT and legacy flag_photos mutations have no current direct TS caller but explicit canonical policy contracts. Proposed matrix preserves those logical capabilities; focused positives must prove narrowed column payloads. Caller presence must not be claimed."
+    },
+    {
+      "id": "REALTIME_DIRECT_ROUTE",
+      "status": "RECOMMEND_REMOVE_UNNECESSARY_DIRECT_GRANTS",
+      "detail": "Current source calls only log_realtime_event. Old migration comments describe direct own INSERT and manual service-role read/cleanup. Proposed minimal matrix removes them, retains RPC and postgres-owner manual operations; root should record this route narrowing in final contract, not silently claim no historical route ever existed."
+    },
+    {
+      "id": "COLUMN_INSERT_PROOF",
+      "status": "LOCAL_AND_HOSTED_ACCEPTANCE_REQUIRED",
+      "detail": "Narrow INSERT to logical payload columns requires affected positive tests (fixtures may deliberately pass synthetic id/created_at; change synthetic setup rather than infer app permissions from fixtures). ON CONFLICT upserts require UPDATE of submitted conflict key fields too."
+    },
+    {
+      "id": "AUTH_CASCADE",
+      "status": "HOSTED_PROOF_REQUIRED",
+      "detail": "Deployed v4 source now resolved; minimal service attribution clear is known. Local role/FK tests must prove cascades with narrowed child grants, and hosted Auth acceptance must separately prove real managed Auth behavior. No Phase04 pipeline implementation authorized."
+    },
+    {
+      "id": "FDA028",
+      "status": "SEPARATE_NEXT_DEPENDENCY",
+      "detail": "Guest INSERT retained here on flags/feedback for current capability. Final Phase03A guard allowlist must be amended after gateway architecture to deny every direct/alternate guest bypass; this review is not limiter acceptance."
+    },
+    {
+      "id": "PHASE04_AND_DEFERRED_CONTRACTS",
+      "status": "PRESERVED_OPEN",
+      "detail": "Async deletion worker RPCs, photo-intent RPCs, moderation feedback columns and optional monthly leaderboard are absent baseline/deferred contracts. Do not create or grant these in FDA012. The current manifest also incorrectly names src/lib/notifications.ts; source verification uses actual files."
+    }
+  ],
+  "documentationSources": [
+    {
+      "url": "https://www.postgresql.org/docs/current/functions-info.html",
+      "use": "Effective table/column/function/sequence/schema privilege and PUBLIC inquiry functions."
+    },
+    {
+      "url": "https://www.postgresql.org/docs/current/sql-grant.html",
+      "use": "Privilege semantics and column-grant implications."
+    },
+    {
+      "url": "https://www.postgresql.org/docs/current/sql-alterdefaultprivileges.html",
+      "use": "Global versus per-schema default privilege composition."
+    },
+    {
+      "url": "https://www.postgresql.org/docs/current/sql-createtrigger.html",
+      "use": "Trigger creation permission and FK-trigger behavior; actual after-revoke execution still needs local proof."
+    },
+    {
+      "url": "https://supabase.com/docs/guides/api/securing-your-api",
+      "use": "Grants and RLS jointly determine Data API access."
+    },
+    {
+      "url": "https://supabase.com/changelog",
+      "use": "Current changelog read; no platform policy change inferred. Markdown endpoints returned unsupported content type; HTML equivalents were read."
+    }
+  ]
+}

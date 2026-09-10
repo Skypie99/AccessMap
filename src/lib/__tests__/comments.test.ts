@@ -2,6 +2,7 @@
 import {
   addComment,
   COMMENT_SELECT,
+  COMMENT_READ_SELECT,
   CommentsTableNotReadyError,
   deleteComment,
   fetchCommentsByIds,
@@ -11,13 +12,19 @@ import {
 } from '../comments';
 
 const mockFrom = jest.fn();
+const mockRpc = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
     from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
+
+beforeEach(() => {
+  mockRpc.mockReset();
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,6 +95,7 @@ describe('listComments', () => {
     const result = await listComments('flag-1');
     expect(result).toEqual([]);
     expect(mockFrom).toHaveBeenCalledWith('flag_comments');
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('filters by flag_id and orders by created_at (newest first)', async () => {
@@ -110,7 +118,7 @@ describe('listComments', () => {
     expect(chain.limit).toHaveBeenCalledWith(MAX_COMMENTS);
   });
 
-  it('flattens the users.display_name join into display_name', async () => {
+  it('hydrates another author through the comment-scoped public projection', async () => {
     const rawRow = {
       id: 'c1',
       flag_id: 'flag-1',
@@ -121,6 +129,7 @@ describe('listComments', () => {
     };
     const chain = selectChain([rawRow]);
     mockFrom.mockReturnValue(chain);
+    mockRpc.mockResolvedValue({ data: [{ comment_id: 'c1', display_name: 'Sky' }], error: null });
 
     const result = await listComments('flag-1');
     expect(result).toHaveLength(1);
@@ -131,22 +140,27 @@ describe('listComments', () => {
       content: 'Great spot!',
       display_name: 'Sky',
     });
+    expect(chain.select).toHaveBeenCalledWith(COMMENT_READ_SELECT);
+    expect(mockRpc).toHaveBeenCalledWith('get_comment_author_profiles', { p_comment_ids: ['c1'] });
+    expect(result[0]).not.toHaveProperty('users');
   });
 
-  it('sets display_name to null when users is null (deleted user)', async () => {
+  it('preserves a null display name for a deleted author', async () => {
     const rawRow = {
       id: 'c2',
       flag_id: 'flag-1',
-      user_id: 'user-x',
+      user_id: null,
       content: 'Note',
       created_at: '2026-05-30T13:00:00Z',
       users: null,
     };
     const chain = selectChain([rawRow]);
     mockFrom.mockReturnValue(chain);
+    mockRpc.mockResolvedValue({ data: [{ comment_id: 'c2', display_name: null }], error: null });
 
     const [comment] = await listComments('flag-1');
     expect(comment.display_name).toBeNull();
+    expect(comment.user_id).toBeNull();
   });
 
   it('throws CommentsTableNotReadyError on 42P01 error code', async () => {
@@ -214,6 +228,7 @@ describe('addComment', () => {
       single: jest.fn().mockResolvedValue({ data: rawRow, error: null }),
     };
     mockFrom.mockReturnValue(chain);
+    mockRpc.mockRejectedValue(new Error('Public projection unavailable'));
 
     const result = await addComment('flag-1', 'New comment');
     expect(result).toMatchObject({
@@ -224,6 +239,9 @@ describe('addComment', () => {
     expect(chain.insert).toHaveBeenCalledWith(
       expect.objectContaining({ flag_id: 'flag-1', content: 'New comment' }),
     );
+    expect(chain.insert).toHaveBeenCalledTimes(1);
+    expect(chain.select).toHaveBeenCalledWith(COMMENT_SELECT);
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('trims whitespace before inserting', async () => {
@@ -322,16 +340,17 @@ describe('B-7 — PGRST201 embed guard', () => {
     expect(/(^|[\s,])users\(/.test(COMMENT_SELECT)).toBe(false);
   });
 
-  it('listComments sends the disambiguated embed', async () => {
+  it('listComments reads only comment columns, without a users embed', async () => {
     const chain = selectChain([]);
     mockFrom.mockReturnValue(chain);
 
     await listComments('flag-42');
 
-    expect(chain.select).toHaveBeenCalledWith(COMMENT_SELECT);
+    expect(chain.select).toHaveBeenCalledWith(COMMENT_READ_SELECT);
+    expect(COMMENT_READ_SELECT).not.toContain('users');
   });
 
-  it("addComment's returning-clause sends the same embed (both paths were broken)", async () => {
+  it("addComment's own-author returning-clause retains the disambiguated embed", async () => {
     const chain = {
       insert: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
@@ -411,9 +430,10 @@ describe('fetchCommentsByIds', () => {
   it('returns [] and never touches the network for an empty id list', async () => {
     await expect(fetchCommentsByIds([])).resolves.toEqual([]);
     expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
-  it('flattens display_name out of the joined users row', async () => {
+  it('hydrates display_name through the comment-scoped projection', async () => {
     const chain = inChain([
       {
         id: 'c1',
@@ -425,12 +445,14 @@ describe('fetchCommentsByIds', () => {
       },
     ]);
     mockFrom.mockReturnValue(chain);
+    mockRpc.mockResolvedValue({ data: [{ comment_id: 'c1', display_name: 'Jordan M' }], error: null });
 
     const rows = await fetchCommentsByIds(['c1']);
     expect(rows).toHaveLength(1);
     expect(rows[0].display_name).toBe('Jordan M');
-    expect(chain.select).toHaveBeenCalledWith(COMMENT_SELECT);
+    expect(chain.select).toHaveBeenCalledWith(COMMENT_READ_SELECT);
     expect(chain.in).toHaveBeenCalledWith('id', ['c1']);
+    expect(mockRpc).toHaveBeenCalledWith('get_comment_author_profiles', { p_comment_ids: ['c1'] });
   });
 
   it('a comment whose author account is gone flattens to a null display_name', async () => {
@@ -448,6 +470,7 @@ describe('fetchCommentsByIds', () => {
         },
       ]),
     );
+    mockRpc.mockResolvedValue({ data: [{ comment_id: 'c1', display_name: null }], error: null });
     const rows = await fetchCommentsByIds(['c1']);
     expect(rows[0].display_name).toBeNull();
   });
@@ -487,8 +510,17 @@ describe('fetchCommentsByIds', () => {
     let call = 0;
     mockFrom.mockImplementation(() => chains[call++]);
 
+    mockRpc
+      .mockResolvedValueOnce({ data: [{ comment_id: 'c0', display_name: 'A' }], error: null })
+      .mockResolvedValueOnce({ data: [{ comment_id: 'c100', display_name: 'A' }], error: null });
+
     const rows = await fetchCommentsByIds(ids);
     expect(rows.map((r) => r.id)).toEqual(['c0', 'c100']);
+    expect(rows.map((r) => r.display_name)).toEqual(['A', 'A']);
+    expect(mockRpc.mock.calls.map((args) => args[1])).toEqual([
+      { p_comment_ids: ['c0'] },
+      { p_comment_ids: ['c100'] },
+    ]);
   });
 
   it('surfaces a missing table as CommentsTableNotReadyError', async () => {
@@ -501,5 +533,63 @@ describe('fetchCommentsByIds', () => {
   it('surfaces any other error as a thrown Error', async () => {
     mockFrom.mockReturnValue(inChain([], { message: 'network down' }));
     await expect(fetchCommentsByIds(['c1'])).rejects.toThrow();
+  });
+});
+
+describe('comment author projection failures and bounds', () => {
+  const row = {
+    id: 'comment-1',
+    flag_id: 'flag-1',
+    user_id: 'author-1',
+    content: 'A report comment',
+    created_at: '2026-01-01T00:00:00Z',
+  };
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it.each([
+    ['42501', "You don't have permission to do that."],
+    ['PGRST202', "That feature isn't available yet."],
+  ])(
+    'surfaces profile RPC %s without querying users or calling the author anonymous',
+    async (code, expectedMessage) => {
+      mockFrom.mockReturnValue(selectChain([row]));
+      mockRpc.mockResolvedValue({ data: null, error: { code, message: 'Author projection unavailable' } });
+      await expect(listComments('flag-1')).rejects.toThrow(expectedMessage);
+      expect(mockFrom).toHaveBeenCalledTimes(1);
+      expect(mockFrom).toHaveBeenCalledWith('flag_comments');
+    },
+  );
+
+  it.each([null, [], [{ comment_id: 'author-1', display_name: 'Wrong context' }]])(
+    'rejects an incomplete comment projection: %p',
+    async (data) => {
+      mockFrom.mockReturnValue(selectChain([row]));
+      mockRpc.mockResolvedValue({ data, error: null });
+      await expect(listComments('flag-1')).rejects.toThrow('Comment author details could not be loaded.');
+    },
+  );
+
+  it('keeps Unhide fetch failures distinct from missing comments', async () => {
+    mockFrom.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockResolvedValue({ data: [row], error: null }),
+    });
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'Author projection unavailable' } });
+    await expect(fetchCommentsByIds(['comment-1'])).rejects.toThrow('Author projection unavailable');
+  });
+
+  it('hydrates the complete 200-comment page using comment IDs only', async () => {
+    const rows = Array.from({ length: MAX_COMMENTS }, (_, i) => ({ ...row, id: `comment-${i}` }));
+    mockFrom.mockReturnValue(selectChain(rows));
+    mockRpc.mockResolvedValue({
+      data: rows.map((comment) => ({ comment_id: comment.id, display_name: 'Contributor' })),
+      error: null,
+    });
+    await expect(listComments('flag-1')).resolves.toHaveLength(MAX_COMMENTS);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith('get_comment_author_profiles', {
+      p_comment_ids: rows.map((comment) => comment.id),
+    });
   });
 });

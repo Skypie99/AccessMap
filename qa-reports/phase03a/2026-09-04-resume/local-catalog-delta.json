@@ -1,0 +1,2012 @@
+{
+  "source": {
+    "sha": "6a82b8212a2d0d3de96525d98b5824b4eb7121fb",
+    "tree": "d3b750fce6ae489f793b88867f1edeca23f5c9d4",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "clean": true,
+    "capturedAtUtc": "2026-09-05T06:51:31.354Z",
+    "acceptance": "LOCAL_PARTIAL_CANDIDATE_NOT_ACCEPTED",
+    "priorSource": "6080215c409de9be67cc0c6f066f8567a2722fed",
+    "deltaFiles": [
+      "supabase/migrations-next/phase03a/candidate-contract.json",
+      "supabase/tests/phase03a-foundation.test.sql"
+    ]
+  },
+  "scope": "Disposable local model, catalog ACLs and definition hashes only. No hosted post-apply state exists.",
+  "beforeSha256": "4e6ccf5fc982d4880ae14cc12ad6ac9bdf8df018de436ff2abffcf4f03a2716b",
+  "afterSha256": "2a23c1dd9b70c175e29d379ce7d28cb190c53b6d6ed44ad1437a75d454ccd7b7",
+  "restoredSha256": "4e6ccf5fc982d4880ae14cc12ad6ac9bdf8df018de436ff2abffcf4f03a2716b",
+  "reappliedSha256": "2a23c1dd9b70c175e29d379ce7d28cb190c53b6d6ed44ad1437a75d454ccd7b7",
+  "baselineAclVerification": {
+    "columns": {
+      "count": 18,
+      "expected": 18,
+      "matches": true
+    },
+    "defaults": {
+      "count": 108,
+      "expected": 108,
+      "matches": true
+    },
+    "sequences": {
+      "count": 18,
+      "expected": 18,
+      "matches": true
+    }
+  },
+  "restorationExact": true,
+  "reapplyDeterministic": true,
+  "sections": [
+    {
+      "scope": "catalog",
+      "section": "roles",
+      "beforeCount": 3,
+      "afterCount": 3,
+      "removed": [],
+      "added": []
+    },
+    {
+      "scope": "catalog",
+      "section": "tables",
+      "beforeCount": 16,
+      "afterCount": 16,
+      "removed": [],
+      "added": []
+    },
+    {
+      "scope": "catalog",
+      "section": "columns",
+      "beforeCount": 104,
+      "afterCount": 104,
+      "removed": [],
+      "added": []
+    },
+    {
+      "scope": "catalog",
+      "section": "schemas",
+      "beforeCount": 3,
+      "afterCount": 3,
+      "removed": [],
+      "added": []
+    },
+    {
+      "scope": "catalog",
+      "section": "policies",
+      "beforeCount": 47,
+      "afterCount": 46,
+      "removed": [
+        {
+          "name": "admin delete any comment",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "DELETE",
+          "table_name": "flag_comments",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "435920e129a83ffbee062c4910d8c1d6"
+        },
+        {
+          "name": "admin delete any flag",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "DELETE",
+          "table_name": "flags",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "435920e129a83ffbee062c4910d8c1d6"
+        },
+        {
+          "name": "flag-photos admin delete",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "storage",
+          "command": "DELETE",
+          "table_name": "objects",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "6a997fcf80ed0b8c752e832c23a7cb65"
+        },
+        {
+          "name": "flags_user_scoped",
+          "roles": [
+            "public"
+          ],
+          "schema": "public",
+          "command": "ALL",
+          "table_name": "flags",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": "76f4e267ef9ffc789dd9cdb9ee823918",
+          "using_expression_md5": "76f4e267ef9ffc789dd9cdb9ee823918"
+        },
+        {
+          "name": "users readable by authenticated",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "SELECT",
+          "table_name": "users",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "b326b5062b2f0e69046810717534cb09"
+        }
+      ],
+      "added": [
+        {
+          "name": "admin delete any comment",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "DELETE",
+          "table_name": "flag_comments",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "8ab708d77db3b50335695f7a26a24005"
+        },
+        {
+          "name": "admin delete any flag",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "DELETE",
+          "table_name": "flags",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "8ab708d77db3b50335695f7a26a24005"
+        },
+        {
+          "name": "flag-photos admin delete",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "storage",
+          "command": "DELETE",
+          "table_name": "objects",
+          "permissiveness": "PERMISSIVE",
+          "check_expression_md5": null,
+          "using_expression_md5": "9a850c3a612035b1d8056cf2fd227404"
+        },
+        {
+          "name": "flags authenticated insert open",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "command": "INSERT",
+          "table_name": "flags",
+          "permissiveness": "RESTRICTIVE",
+          "check_expression_md5": "6dca740bc87d49a177e74db26960f19f",
+          "using_expression_md5": null
+        }
+      ]
+    },
+    {
+      "scope": "catalog",
+      "section": "triggers",
+      "beforeCount": 25,
+      "afterCount": 25,
+      "removed": [],
+      "added": []
+    },
+    {
+      "scope": "catalog",
+      "section": "functions",
+      "beforeCount": 28,
+      "afterCount": 35,
+      "removed": [],
+      "added": [
+        {
+          "schema": "private",
+          "language": "plpgsql",
+          "signature": "get_comment_author_profiles(p_comment_ids uuid[])",
+          "volatility": "s",
+          "result_type": "TABLE(comment_id uuid, display_name text)",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "f938a9d0b2812fed47bdaca51972a1f7",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "private",
+          "language": "plpgsql",
+          "signature": "get_my_leaderboard_rank()",
+          "volatility": "s",
+          "result_type": "TABLE(rank bigint, points integer)",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "060fbd3e3d0da1a896e86ad25e1cbbd2",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "private",
+          "language": "plpgsql",
+          "signature": "list_public_leaderboard(p_limit integer)",
+          "volatility": "s",
+          "result_type": "TABLE(id uuid, display_name text, avatar_url text, points integer)",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "fac016925b26cd1d61fce2f388d42cf4",
+          "parallel_safety": "u",
+          "security_definer": true
+        },
+        {
+          "schema": "public",
+          "language": "sql",
+          "signature": "current_user_can_admin()",
+          "volatility": "s",
+          "result_type": "boolean",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "2169f39891c687e61d11fc4436dbceb4",
+          "parallel_safety": "u",
+          "security_definer": false
+        },
+        {
+          "schema": "public",
+          "language": "sql",
+          "signature": "get_comment_author_profiles(p_comment_ids uuid[])",
+          "volatility": "s",
+          "result_type": "TABLE(comment_id uuid, display_name text)",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "f916c961f303436b7fcdae0148a5e02a",
+          "parallel_safety": "u",
+          "security_definer": false
+        },
+        {
+          "schema": "public",
+          "language": "sql",
+          "signature": "get_my_leaderboard_rank()",
+          "volatility": "s",
+          "result_type": "TABLE(rank bigint, points integer)",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "2c11ef93dd453cced5a737f2da5edafc",
+          "parallel_safety": "u",
+          "security_definer": false
+        },
+        {
+          "schema": "public",
+          "language": "sql",
+          "signature": "list_public_leaderboard(p_limit integer)",
+          "volatility": "s",
+          "result_type": "TABLE(id uuid, display_name text, avatar_url text, points integer)",
+          "configuration": [
+            "search_path=\"\""
+          ],
+          "definition_md5": "0ff6968b329b9baea0a162df3664ea94",
+          "parallel_safety": "u",
+          "security_definer": false
+        }
+      ]
+    },
+    {
+      "scope": "catalog",
+      "section": "tableGrants",
+      "beforeCount": 378,
+      "afterCount": 248,
+      "removed": [
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "UPDATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "comment_votes",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "feedback",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_comments",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_edit_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_photos",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_status_history_public",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flag_verifications",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "flags",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "notification_preferences",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "point_events",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "push_tokens",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "realtime_subscribe_log",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users",
+          "is_grantable": false,
+          "privilege_type": "UPDATE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "MAINTAIN"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "REFERENCES"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "TRIGGER"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "table_name": "users_self_email",
+          "is_grantable": false,
+          "privilege_type": "TRUNCATE"
+        }
+      ],
+      "added": []
+    },
+    {
+      "scope": "catalog",
+      "section": "functionGrants",
+      "beforeCount": 49,
+      "afterCount": 38,
+      "removed": [
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "enforce_flag_photos_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "enforce_flags_photo_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "enforce_users_avatar_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "handle_push_token_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "set_flag_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "anon",
+          "signature": "update_flags_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "enforce_flag_photos_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "enforce_flags_photo_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "enforce_users_avatar_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "handle_push_token_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "set_flag_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "update_flags_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "enforce_flag_photos_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "enforce_flags_photo_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "enforce_users_avatar_object_key_guard()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "handle_push_token_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "set_flag_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "public",
+          "signature": "update_flags_updated_at()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        }
+      ],
+      "added": [
+        {
+          "schema": "private",
+          "grantee": "authenticated",
+          "signature": "get_comment_author_profiles(p_comment_ids uuid[])",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "private",
+          "grantee": "authenticated",
+          "signature": "get_my_leaderboard_rank()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "private",
+          "grantee": "authenticated",
+          "signature": "list_public_leaderboard(p_limit integer)",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "current_user_can_admin()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "get_comment_author_profiles(p_comment_ids uuid[])",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "get_my_leaderboard_rank()",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        },
+        {
+          "schema": "public",
+          "grantee": "authenticated",
+          "signature": "list_public_leaderboard(p_limit integer)",
+          "is_grantable": false,
+          "privilege_type": "EXECUTE"
+        }
+      ]
+    },
+    {
+      "scope": "catalog",
+      "section": "migrationHistory",
+      "beforeCount": 71,
+      "afterCount": 71,
+      "removed": [],
+      "added": []
+    },
+    {
+      "scope": "extra",
+      "section": "owners",
+      "beforeCount": 49,
+      "afterCount": 56,
+      "removed": [],
+      "added": [
+        {
+          "args": "",
+          "kind": "function",
+          "name": "current_user_can_admin",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "args": "",
+          "kind": "function",
+          "name": "get_my_leaderboard_rank",
+          "owner": "postgres",
+          "schema": "private"
+        },
+        {
+          "args": "",
+          "kind": "function",
+          "name": "get_my_leaderboard_rank",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "args": "p_comment_ids uuid[]",
+          "kind": "function",
+          "name": "get_comment_author_profiles",
+          "owner": "postgres",
+          "schema": "private"
+        },
+        {
+          "args": "p_comment_ids uuid[]",
+          "kind": "function",
+          "name": "get_comment_author_profiles",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "args": "p_limit integer",
+          "kind": "function",
+          "name": "list_public_leaderboard",
+          "owner": "postgres",
+          "schema": "private"
+        },
+        {
+          "args": "p_limit integer",
+          "kind": "function",
+          "name": "list_public_leaderboard",
+          "owner": "postgres",
+          "schema": "public"
+        }
+      ]
+    },
+    {
+      "scope": "extra",
+      "section": "columnAcls",
+      "beforeCount": 18,
+      "afterCount": 20,
+      "removed": [
+        {
+          "table": "users",
+          "column": "is_admin",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        }
+      ],
+      "added": [
+        {
+          "table": "users",
+          "column": "avatar_object_key",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "table": "users",
+          "column": "avatar_url",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "table": "users",
+          "column": "display_name",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        }
+      ]
+    },
+    {
+      "scope": "extra",
+      "section": "defaultAcls",
+      "beforeCount": 108,
+      "afterCount": 61,
+      "removed": [
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "USAGE"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "USAGE"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "USAGE"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "kind": "S",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "USAGE"
+        },
+        {
+          "kind": "f",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "kind": "f",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "kind": "f",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "kind": "f",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "DELETE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "INSERT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "MAINTAIN"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "REFERENCES"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRIGGER"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRUNCATE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "DELETE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "INSERT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "MAINTAIN"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "REFERENCES"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRIGGER"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRUNCATE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "DELETE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "INSERT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "MAINTAIN"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "REFERENCES"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRIGGER"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRUNCATE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "DELETE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "INSERT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "MAINTAIN"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "REFERENCES"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRIGGER"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "TRUNCATE"
+        },
+        {
+          "kind": "r",
+          "owner": "postgres",
+          "schema": "storage",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "UPDATE"
+        }
+      ],
+      "added": [
+        {
+          "kind": "f",
+          "owner": "postgres",
+          "schema": "GLOBAL",
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ]
+    },
+    {
+      "scope": "extra",
+      "section": "sequenceAcls",
+      "beforeCount": 24,
+      "afterCount": 20,
+      "removed": [
+        {
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "sequence": "point_events_id_seq",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "anon",
+          "grantor": "postgres",
+          "sequence": "realtime_subscribe_log_id_seq",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "sequence": "point_events_id_seq",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "owner": "postgres",
+          "schema": "public",
+          "grantee": "authenticated",
+          "grantor": "postgres",
+          "sequence": "realtime_subscribe_log_id_seq",
+          "grantable": false,
+          "privilege": "UPDATE"
+        }
+      ],
+      "added": []
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "phase": "03A",
+  "promptId": "FLAGSTONE PHASE-03A \u2014 BACKEND HARDENING FOUNDATION",
+  "authority": "Authoritative owner resume plus explicit budget-persistence reply",
+  "repositoryRemote": "Skypie99/AccessMap",
+  "phaseGate": "BLOCKED",
+  "backendFoundationGate": "BLOCKED",
+  "safeToIntegrate": false,
+  "phase03aCodeGate": "HOLD",
+  "fda012LocalSubset": "PASS",
+  "phase03aIntGate": "NOT_RUN",
+  "phase03aStageGate": "NOT_RUN",
+  "acceptedPhase03aCodeSha": null,
+  "acceptedPhase03aCodeTree": null,
+  "localPartialCandidateSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "localPartialCandidateTree": "857411dc733b93686d789a72e461856698bec814",
+  "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+  "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "ownerDecision": {
+    "finding": "FDA-028",
+    "question": "Must an anonymous client keep its exhausted budget after clearing or replacing its session?",
+    "ownerAnswer": "Keep the budget across session resets; retain the architecture hold until a trusted mechanism is approved.",
+    "status": "ARCHITECTURE_HOLD_CONFIRMED_BY_OWNER",
+    "resettableSessionSubstitutionAuthorized": false,
+    "newTrustedIdentityMechanismApproved": false,
+    "limiterImplemented": false,
+    "stagingMutations": "NONE",
+    "productionAuthority": "NONE",
+    "phaseGate": "BLOCKED"
+  },
+  "findings": {
+    "FDA-009": "OPEN",
+    "FDA-010": "OPEN",
+    "FDA-012": "OPEN",
+    "FDA-021": "OPEN",
+    "FDA-023": "OPEN",
+    "FDA-026": "OPEN",
+    "FDA-028": "OPEN"
+  },
+  "supportingFindings": "Inherited Phase02 and program deferrals preserved; no new closure or scope reassignment.",
+  "internalTaskIdsExecuted": {
+    "03A-CODE": "FDA012 local subset and FDA028 architecture review only; full task HOLD",
+    "INT": "NOT_RUN",
+    "03A-STAGE": "Read-only feasibility, not formal acceptance",
+    "03A-PROD": "Read-only catalog preflight only; no authorization"
+  },
+  "independentLocalSubsetAcceptor": "/root/03a_effective_privilege_acceptance",
+  "independentCompleteCodeAcceptor": null,
+  "independentStageAcceptor": null,
+  "staging": {
+    "projectRef": "ctshxbykuemeqnofqcdh",
+    "branchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+    "branchName": "flagstone-p03a-staging-20260905",
+    "parentProductionProjectRef": "kldlwszpfkdmsjrjhjym",
+    "refsDiffer": true,
+    "nonDefault": true,
+    "nonProduction": true,
+    "healthAtCapture": "ACTIVE_HEALTHY",
+    "withData": false,
+    "productionDataPresent": "NO in counted public tables, auth.users, storage.objects, vault.secrets; all zero",
+    "startingMigrationCount": 71,
+    "baselineReconciled": false,
+    "startingCatalogSha256": "1679e494c63483c116b87b8aeac9344aa153d412bb1750b9f205943abbd4f686",
+    "identityGate": "NOT_PASSED; read-only feasibility only and canonical baseline not reconciled",
+    "catalogAfterCandidateSha256": null,
+    "mutations": "NONE",
+    "hostedPgTap": "NOT_RUN",
+    "roleMatrix": "NOT_RUN",
+    "RLS": "NOT_RUN",
+    "REST_RPC": "NOT_RUN",
+    "AUTH_STORAGE": "NOT_RUN",
+    "twoClientLimiter": "NOT_RUN; no implementation",
+    "bypassPrevention": "NOT_PROVEN",
+    "transitionalDelete": "NOT_RUN_HOSTED; local synthetic role proof only",
+    "restoration": "NOT_RUN_HOSTED",
+    "reapply": "NOT_RUN_HOSTED"
+  },
+  "cleanup": {
+    "safe": false,
+    "branchDeleted": false,
+    "verifiedDeleted": false,
+    "required": true,
+    "conditions": [
+      {
+        "condition": "CODE acceptance complete",
+        "satisfied": false
+      },
+      {
+        "condition": "INT acceptance complete",
+        "satisfied": false
+      },
+      {
+        "condition": "Hosted STAGE acceptance complete",
+        "satisfied": false
+      },
+      {
+        "condition": "Independent staging acceptance complete",
+        "satisfied": false
+      },
+      {
+        "condition": "Hosted pgTAP evidence saved",
+        "satisfied": false
+      },
+      {
+        "condition": "Hosted role/RLS/REST/RPC evidence saved",
+        "satisfied": false
+      },
+      {
+        "condition": "Limiter/two-client evidence saved",
+        "satisfied": false
+      },
+      {
+        "condition": "Hosted restoration/reapply evidence saved",
+        "satisfied": false
+      },
+      {
+        "condition": "Before/after staged-candidate catalogs and hashes saved",
+        "satisfied": false
+      },
+      {
+        "condition": "Exact production-authorization packet generated",
+        "satisfied": false
+      },
+      {
+        "condition": "No unresolved Phase03A reviewer request needs live staging",
+        "satisfied": "NOT_ATTESTED_AFTER_STAGE"
+      },
+      {
+        "condition": "No governing requirement keeps staging for the next owner decision",
+        "satisfied": "NOT_ATTESTED; no-early-delete rule remains"
+      }
+    ],
+    "reasonNotDeleted": "Owner explicitly prohibits deletion before all twelve conditions hold. Complete CODE/INT/STAGE and their hosted evidence are incomplete; FDA028 architecture hold was confirmed. No cleanup was attempted."
+  },
+  "production": {
+    "authority": "NONE",
+    "authorizationPacket": "NOT_ISSUED",
+    "proposedGatewayPolicy": "NONE_APPROVED; trusted continuity/admission mechanism missing",
+    "proposedApplyOrder": "NOT_ISSUED",
+    "proposedRestorationPlan": "NOT_ISSUED",
+    "catalogComparison": {
+      "comparatorVersion": 3,
+      "sameCatalogBeforeAndAfter": true,
+      "initialSha256": "6f3ee7f60f4134a83b2e013f4f3ffe98be1ae0fa489032062ee2f38cad9ca0d4",
+      "finalSha256": "6f3ee7f60f4134a83b2e013f4f3ffe98be1ae0fa489032062ee2f38cad9ca0d4",
+      "productionMutations": "NONE",
+      "claimScope": "Catalog v3 metadata comparison; no application rows or operational platform logs inspected."
+    },
+    "mutations": "NONE"
+  },
+  "managedPlatformResidual": {
+    "liveRecordedCount": 48,
+    "localModeledCount": 36,
+    "liveOwnerGranteeEntriesExcludedLocally": 12,
+    "localClientServiceExactlyMatchesCapturedSubset": true,
+    "localManagedDefaultsUnchangedBeforeAfter": true,
+    "liveDefaultCountAllOwners": 144,
+    "executionRole": "postgres",
+    "executionRoleSuperuser": false,
+    "platformRoleMembership": false,
+    "all48AllowlistRowsExactlyMatchSavedLiveReceipt": true,
+    "freshHostedRecaptureByThisAcceptor": false,
+    "boundedClaim": "Flagstone-owned application surfaces only; platform-managed defaults remain recorded, unaltered residuals."
+  },
+  "pushes": "NONE",
+  "merges": "NONE",
+  "deploys": "NONE",
+  "remoteMutations": "NONE",
+  "appStoreReviewProtected": "YES by no action; live review status unverified",
+  "mainMergeAuthorized": false,
+  "phase03bStarted": false,
+  "phase03bHandoff": "NOT_ISSUED",
+  "nextPermittedWork": "Resume Phase03A only after a specific trusted continuity/admission mechanism is approved; preserve source and all gates."
+}

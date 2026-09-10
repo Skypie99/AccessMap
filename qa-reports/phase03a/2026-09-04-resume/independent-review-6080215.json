@@ -1,0 +1,627 @@
+{
+  "reviewKind": "Independent bounded read-only review and explicitly authorized disposable local execution; reviewer did not author source",
+  "capturedAtUtc": "2026-09-05T06:48:19.315333+00:00",
+  "verdict": {
+    "partialLocalSubset": "PASS",
+    "overall03ACODE": "HOLD",
+    "findingClosure": false,
+    "intStageProdPhase03B": "NOT ACCEPTED"
+  },
+  "source": {
+    "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+    "sha": "6080215c409de9be67cc0c6f066f8567a2722fed",
+    "tree": "23cf68c37574499d153e7e12dccf3031faf0f02d",
+    "branchAtExecution": "repair/flagstone-p03a-backend-foundation-20260903",
+    "diffBase": "9469c43ee68360dc28a74f8d0dd9a6930a602d33",
+    "changedFileCount": 31,
+    "files": [
+      {
+        "file": "scripts/__tests__/phase03aReplay.test.ts",
+        "sha256": "c50b96c44a7e1eb5345c3b72fcd6ace2d2af177812deb8281110b64862e4eecf"
+      },
+      {
+        "file": "scripts/replay-migrations.mjs",
+        "sha256": "d6977ef26362c40d77922aebb6c45a0fe870c276e5b18746a4d3ada904728128"
+      },
+      {
+        "file": "scripts/replay-phase03a.mjs",
+        "sha256": "10248a11ebf9d2823290a5e6f38d86ed97e8de3a3999ec934ca70f73702a922b"
+      },
+      {
+        "file": "src/lib/__tests__/admin.test.tsx",
+        "sha256": "58da4fa676c9998cc63908b0fdc0076e6e9e402fc320b1eab34548b0260504bb"
+      },
+      {
+        "file": "src/lib/__tests__/comments.test.ts",
+        "sha256": "be30eec9a1ef55fc7880f9cf31acfd8ae565116d989da40a50cb086154fdbd6d"
+      },
+      {
+        "file": "src/lib/__tests__/flags.supabase.test.ts",
+        "sha256": "6aadb585448e7b8874501874017438a5ac516f3464d4b3ddc0db11b456106c6f"
+      },
+      {
+        "file": "src/lib/admin.ts",
+        "sha256": "06c6aab54324ab6eabb3a922aad738c4e85e2413b2c1c0a7f7dedf0f03724025"
+      },
+      {
+        "file": "src/lib/comments.ts",
+        "sha256": "c3954c25b992b55a90890e140d29614c279c15b3618ffb21a7ca6715503de26f"
+      },
+      {
+        "file": "src/lib/flags.ts",
+        "sha256": "1068ac17542cc9db7671a21af50b9e8b9c64e1e068cd0af3dfa5cc63e0bec39a"
+      },
+      {
+        "file": "src/screens/LeaderboardScreen.tsx",
+        "sha256": "e63cc4fc6c9b550acf411fd4e0a0623b2ea83cd4aeec427be879a26e17e8a93c"
+      },
+      {
+        "file": "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+        "sha256": "7c2d8c35e8010753b8c00a018ef02bd0c1e4562246c6b11a04d0b5bfb7924e5e"
+      },
+      {
+        "file": "src/types/database.ts",
+        "sha256": "4dd807e0f38b2166f27ee9166dc174d937b003ebba5925b4310583cbb2537683"
+      },
+      {
+        "file": "supabase/contract/client-expectations.v1.json",
+        "sha256": "1f8a91ae216f86e543f68907e09a951a118f8c21b4fab5769f6a581bd6b1c60e"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+        "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+        "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+        "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+        "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+        "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+        "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/README.md",
+        "sha256": "4dea4bf149bb6441a180e423b64ec1c72ab20c320feeb7eb665551d0761c6305"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/candidate-contract.json",
+        "sha256": "227a0cd7af48c64468fdf391c67ea1b973ace47d28f0039fa8b2c7caa0ba04c0"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/catalog.sql",
+        "sha256": "6a755828dff8f85da18255c514b8e8c8cf7efe8c6b030e45a3108c4a8f23b5fc"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+        "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+        "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+        "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+        "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+        "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce"
+      },
+      {
+        "file": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+        "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9"
+      },
+      {
+        "file": "supabase/schema.generated.stamp.json",
+        "sha256": "d21889516f3fc72e6f587f01d681105cbcf8c85ec41f73591295b973e804b511"
+      },
+      {
+        "file": "supabase/tests/phase03a-fixtures/baseline-extra.sql",
+        "sha256": "da2ec08470d4236458e4aaf76a4b17e242baf5d278e980c8fa9e4559e51bebc0"
+      },
+      {
+        "file": "supabase/tests/phase03a-foundation.test.sql",
+        "sha256": "90312cabf153efa2a23e424cbeaa9110a9665dc9f92dbc3d222e4d6bc7f6b433"
+      }
+    ],
+    "sourceUnchangedDuringIndependentCommands": true,
+    "cleanAfterLastIndependentExecution": true,
+    "cleanCheckTimeUtc": "2026-09-05T06:41:18.157327+00:00",
+    "sourceReadsAfterParentPermissionToEdit": "Only immutable git objects at the reviewed SHA; current working files not used"
+  },
+  "migrationPairs": [
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9"
+    }
+  ],
+  "migrationPairDigestSha256": "350b9ba9355402dd1e610826d6e9e559d27bbe59df911734a477e3497d2d368e",
+  "gitDiffCheck": {
+    "argv": [
+      "git",
+      "diff",
+      "--check",
+      "9469c43ee68360dc28a74f8d0dd9a6930a602d33",
+      "6080215c409de9be67cc0c6f066f8567a2722fed"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "preservedArtifactsIndependentlyHashedFromCommit": [
+    {
+      "file": "qa-reports/2026-09-03_Phase03A_BackendFoundation.md",
+      "sha256": "35d0f4959cff8949b4d608b4d3e481aeffdbde74c2a914969e6e3d25502cc64d",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/2026-09-04_Codex_Phase03APreflight.md",
+      "sha256": "44350f974e09b26a530dc3732ed72a1eafe94af8f28152e4c834a57188441bde",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/artifact-hashes.json",
+      "sha256": "23f39afdcb87c7a631566b06b11d1b4dc4b6b1f200866bbdb431c169329d5b98",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/independent-preflight-reviews.md",
+      "sha256": "8e9433c161f127c3f893bace4a7718796df489700cf6a7c9aa051c430b3e8a3a",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/catalog-comparison.json",
+      "sha256": "c5a621012db990859982542009515775b9fb8ae149f3beb2f806cea40d0b44ba",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/edge-function-metadata.json",
+      "sha256": "92aff79734edd8a53921bf85f7fe125d5a9db65f8442f065a4d054b22bd039ba",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/expanded-privileges-query.sql",
+      "sha256": "f13a271a89c826fb4d373f2c751280368f2013a694ca43dc4e49c28289774bdc",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/expanded-privileges.json",
+      "sha256": "2fd4f60405aab4fbdddc1786d4b6e89b873aa07576644466f855848c52048bca",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/local-checks.json",
+      "sha256": "2b3414454a1a1691b3eee4faf8160e1fab7397d4a7534aa72190d2c4be49dabc",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/preservation-check.json",
+      "sha256": "c14057915616eb0cec33e7e63f3d6d6de5c58b255ab6e1ec761cf7151377f6d2",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/production-catalog-query.sql",
+      "sha256": "a28f4dcef018a6fd572433654d51b9ab9c00cc7fdecdc8d0d3f641e74e98e532",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/production-catalog.json",
+      "sha256": "aa5c9defefc23fdeaf7e8b2568b70f826daf9a59e6937db8b2e5e36db09afd31",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/source-inventory.json",
+      "sha256": "4e650c69fe4cb5578930e9474388c6faacb3b5f0ba117ee00bfd98e6bb734493",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "qa-reports/phase03a/2026-09-04/preflight/staging-discovery.json",
+      "sha256": "e360ddf641b9e70ad409b8f418b234f18b19a12659426ee1146e69cebdf14c79",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/contract/deployed-contract.v1.json",
+      "sha256": "a4f59651f3f59b918a54654bfd502e262637a8096f9219fe28d8944020bdb963",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/contract/migration-crosswalk.v1.json",
+      "sha256": "79b0640752e963ad9e26fcec33d2ffe4bd456fccb62c94cab1a76419da045fc4",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/contract/production-catalog-capture.v2.json",
+      "sha256": "0b685c20c8788b619ff545a3b7824b4619e4bf59cef3c27c97eae562f326f6d8",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/replay/compare.sql",
+      "sha256": "71c98e091194e446f1aa3581a612c82041819bde36a9be8fd543496964fe4603",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/rollback/rollback-contract.v1.json",
+      "sha256": "24d584a7235eed9888c80287bf63a3c891e34a65b2b6316abd128d7c6fd92f8b",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/20260904000000_adopt_private_admin_helper.sql",
+      "sha256": "1d504c3ad05c0b31052715406059071301a51f4359ef35ce85c92cb61202fbf7",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/20260904000100_drop_duplicate_status_triggers.sql",
+      "sha256": "9771e7c5df363b139e8bcd9e9f9e58b15e6c2f59eebb4523a330a774fc18db49",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+      "sha256": "fbc986296aee71109639ad833d4c75422c28bbefa4fddfefe51f29eeaf03dfb6",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/20260904000300_adopt_live_insert_throttles.sql",
+      "sha256": "b346b2c7775543c9a268098c0956812b7ad9a9ddf49680202fe846073d4ef776",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/20260904000400_adopt_execute_revokes.sql",
+      "sha256": "e8a3d880d361e5d6be96c8b30709a9b1b3d8a8d94e6d23175342db41bb20cf13",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/rollback/20260904000000_adopt_private_admin_helper.rollback.sql",
+      "sha256": "aea2f69cf9319718acc80de8af9ddd4354b52735a0b49dd00189c5df8565d16c",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/rollback/20260904000100_drop_duplicate_status_triggers.rollback.sql",
+      "sha256": "47a087094b5978b27977c598d0b8454a489138178327758d42fdb57a9c80b906",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/rollback/20260904000200_adopt_d1sa_containment.rollback.sql",
+      "sha256": "8ff49d968a82cdfe4f45f564b7ab61101b9bc35c429fafec09b51a9f69b8bd1b",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/rollback/20260904000300_adopt_live_insert_throttles.rollback.sql",
+      "sha256": "3c67f9b3545a62cd45fca0688a117b2597a8cdc71486105b9349e281a493392d",
+      "matchesPreservationRecord": true
+    },
+    {
+      "file": "supabase/migrations-next/rollback/20260904000400_adopt_execute_revokes.rollback.sql",
+      "sha256": "f9a9faee565cdf3454e143c3a2f4c28cf8c3071c8ba7a78552c6be5607683839",
+      "matchesPreservationRecord": true
+    }
+  ],
+  "preservationBoundaries": {
+    "acceptedFiveAdoptionCandidatesAndRollbacks": "unchanged; direct immutable-blob hash comparison",
+    "appliedSourcesAndReplayCatalogAndSnapshot": "no paths changed in candidate diff",
+    "other40Worktrees": "Parent metadata evidence inspected; not independently re-read or content-hashed",
+    "packages": "manifest and lockfile hashes unchanged"
+  },
+  "independentPgTap": {
+    "commandMetadataPath": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.metadata.json",
+    "exitCode": 0,
+    "startUtc": "2026-09-05T06:38:44.056603+00:00",
+    "endUtc": "2026-09-05T06:38:48.813057+00:00",
+    "installMode": "upstream_sql_load",
+    "sourceCommit": "968eb53a33114e83042b3bdb0c664b5b80cf8bdf",
+    "generatedSqlSha256": "d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3",
+    "baselineAclVerification": {
+      "columns": {
+        "count": 18,
+        "expected": 18,
+        "matches": true
+      },
+      "defaults": {
+        "count": 108,
+        "expected": 108,
+        "matches": true
+      },
+      "sequences": {
+        "count": 18,
+        "expected": 18,
+        "matches": true
+      }
+    },
+    "suites": [
+      {
+        "file": "supabase/tests/promptb_media_key_guards.test.sql",
+        "sha256": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009",
+        "bailout": 0,
+        "executed": 25,
+        "failed": 0,
+        "parseErrors": [],
+        "parserVersion": "3.43",
+        "planned": 25,
+        "skipped": 0,
+        "todo": 0,
+        "passed": true,
+        "tapPath": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.media.tap",
+        "tapSha256": "7d6eae352558b456ab8816714485ad5f1a534f67f685134fbace58d8b8751e1e"
+      },
+      {
+        "file": "supabase/tests/phase03a-foundation.test.sql",
+        "sha256": "90312cabf153efa2a23e424cbeaa9110a9665dc9f92dbc3d222e4d6bc7f6b433",
+        "bailout": 0,
+        "executed": 113,
+        "failed": 0,
+        "parseErrors": [],
+        "parserVersion": "3.43",
+        "planned": 113,
+        "skipped": 0,
+        "todo": 0,
+        "passed": true,
+        "tapPath": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.phase03a.tap",
+        "tapSha256": "b6b6bb56db623649fa95d2ec364aef3eb95f9c1aebc9fecc0efae956ccb58cc1"
+      }
+    ],
+    "beforeSha256": "4e6ccf5fc982d4880ae14cc12ad6ac9bdf8df018de436ff2abffcf4f03a2716b",
+    "afterSha256": "2a23c1dd9b70c175e29d379ce7d28cb190c53b6d6ed44ad1437a75d454ccd7b7",
+    "restoredSha256": "4e6ccf5fc982d4880ae14cc12ad6ac9bdf8df018de436ff2abffcf4f03a2716b",
+    "reappliedSha256": "2a23c1dd9b70c175e29d379ce7d28cb190c53b6d6ed44ad1437a75d454ccd7b7",
+    "restorationExact": true,
+    "reapplyDeterministic": true,
+    "localProofPassed": true,
+    "phaseGate": "BLOCKED",
+    "stderrLimit": "Expected local webhook warning: vault secret missing - skipping; no delivery or secret content read"
+  },
+  "independentCallerJest": {
+    "commandMetadataPath": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.metadata.json",
+    "exitCode": 0,
+    "startUtc": "2026-09-05T06:41:11.979626+00:00",
+    "endUtc": "2026-09-05T06:41:18.157327+00:00",
+    "summary": {
+      "success": true,
+      "numTotalTestSuites": 5,
+      "numPassedTestSuites": 5,
+      "numFailedTestSuites": 0,
+      "numTotalTests": 106,
+      "numPassedTests": 106,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "numTodoTests": 0
+    }
+  },
+  "parentEvidenceIndependentlyInspected": {
+    "fullJestFile": "verified-jest-results.json",
+    "fullJestSummary": {
+      "numFailedTestSuites": 12,
+      "numFailedTests": 14,
+      "numPassedTestSuites": 273,
+      "numPassedTests": 4204,
+      "numPendingTestSuites": 0,
+      "numPendingTests": 0,
+      "numRuntimeErrorTestSuites": 0,
+      "numTodoTests": 32,
+      "numTotalTestSuites": 285,
+      "numTotalTests": 4250,
+      "success": false
+    },
+    "newFailedNamesAgainstSavedBaseline": [],
+    "typecheckExitCode": 0,
+    "lintExitCode": 0,
+    "lintSummary": [
+      "",
+      "\u2716 91 problems (0 errors, 91 warnings)",
+      "  0 errors and 12 warnings potentially fixable with the `--fix` option.",
+      ""
+    ],
+    "catalogCaptureUtc": "2026-09-05T06:26:04.808Z",
+    "catalogSectionsEqualToSavedEarlierCapture": {
+      "roles": {
+        "equal": true,
+        "count": 3
+      },
+      "scope": {
+        "equal": true,
+        "count": 9
+      },
+      "tables": {
+        "equal": true,
+        "count": 23
+      },
+      "columns": {
+        "equal": true,
+        "count": 152
+      },
+      "schemas": {
+        "equal": true,
+        "count": 3
+      },
+      "policies": {
+        "equal": true,
+        "count": 47
+      },
+      "triggers": {
+        "equal": true,
+        "count": 25
+      },
+      "functions": {
+        "equal": true,
+        "count": 28
+      },
+      "tableGrants": {
+        "equal": true,
+        "count": 434
+      },
+      "functionGrants": {
+        "equal": true,
+        "count": 49
+      },
+      "migrationHistory": {
+        "equal": true,
+        "count": 71
+      },
+      "comparatorVersion": {
+        "equal": true,
+        "count": null
+      }
+    },
+    "scope": "Artifact inspection and direct comparison; no independent hosted reads, full Jest, typecheck or lint rerun in this bounded review"
+  },
+  "substantiveReview": [
+    "Six pairs are explicitly separate from the five exact Phase02 adoptions. Immutable source review and genuine execution show the modeled permission changes and preserved owner/admin direct deletion, profile/media guards, reward/streak triggers and service writes.",
+    "Admin RPC fails closed; leaderboard exposes the existing four public fields with top-20 cap and caller-only rank; comment authors are resolved from bounded comment context. No direct-users read fallback reopens the broad policy.",
+    "The supplemental fixture is explicitly LOCAL ONLY. Its pre-candidate equality gate checks 18 client column ACL entries,108 client default ACL entries and18 client sequence ACL entries against saved sanitized hosted metadata. It is not an applied migration, retroactive Phase02 claim or hosted behavior proof.",
+    "Reversal exactly restores the broadened local captured baseline including ACL/default/owner-related comparison metadata; all rollback modes remain UNSAFE_BASELINE_RESTORE. Equality is local-model proof, not authority for restoration on a hosted database.",
+    "Current captured storage-policy hook capability and postgres global PUBLIC-function default precondition support preparation/restoration assumptions at metadata level; local postgres superuser execution does not prove tenant-role hosted DDL.",
+    "Comment author context follows current authenticated comment visibility. Re-review if comment visibility becomes restricted."
+  ],
+  "actionableFindingAtThisSha": {
+    "file": "supabase/tests/phase03a-foundation.test.sql",
+    "startLine": 25,
+    "endLine": 27,
+    "issue": "Seed UPDATE has no WHERE clause and touches all public.users rows. The independently executed disposable database contains only synthetic fixtures, so this does not invalidate local proof. Before any populated hosted staging reuse, restrict the UPDATE to the exact synthetic UUID set.",
+    "parentDisposition": "Parent agreed to correct fixture and manifest suite hash in a separate commit; exact successor requires independent delta binding/replay."
+  },
+  "requiredHolds": [
+    "FDA012 supabase_admin-managed public default grants remain unresolved; no privilege escalation or silent widening.",
+    "FDA028 independent anonymous budgets remain unimplemented pending owner scope/configuration decision; no invented client rate key.",
+    "Staging reference is a literal placeholder; no verified separate target, hosted role/RLS/REST/RPC or deployment-role apply/restoration execution.",
+    "No overall 03A-CODE, INT, STAGE, PROD, finding closure or Phase03B acceptance."
+  ],
+  "meaningfulUnrunLimits": [
+    "Local Auth/Storage/pg_net stubs do not prove hosted hooks, REST embedding/schema-cache or Edge behavior.",
+    "Storage admin policy is catalog-checked; real Storage ownership/DELETE runtime not exercised.",
+    "Full delete-flag Edge workflow is Phase04-owned and not proved.",
+    "No visual/device/App Store/build/deployment verification.",
+    "Full application Jest remains red on inherited names, not a global PASS."
+  ],
+  "artifactReferences": [
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.stdout.json",
+      "sha256": "ca4235f5015d662e15b0199b53c9052e36a52dda352655e5f51200e7ec6d05d5"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.stderr.txt",
+      "sha256": "c34f762ded2ea572459ecfe4309a665486b044316711c6221232e3da57adee6c"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.metadata.json",
+      "sha256": "dceb8f505894cd899c11013cdeda5d6a699017d596af22fabd0f2b244edaf98a"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.stdout.json",
+      "sha256": "b5d9e0bb7a7bfe28dee740e8ba798619e1cef25a67f545b26d1838f68b27032f"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.stderr.txt",
+      "sha256": "15a0871aaf84b395609a21d6bfcbb73cf9e2e7a862dac119a85e73d34914f8d6"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-caller-jest-6080215-20260905T064111Z.metadata.json",
+      "sha256": "792d20845f7c31fcac92a204765d209913baf7c3bad2928e0046d9cfa1b44bde"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/source-freeze-check.json",
+      "sha256": "24b3408998876cbc8bfc602cd5d8566ff69f329b305f50fb9b2ab814014c8354"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/preservation-check-resume.json",
+      "sha256": "21225dc12ae564c185d153cad371b634f9525c2cc2ae71c1dc9f1263b09c8902"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/final-small-gates.json",
+      "sha256": "a74643a11d1dbb96cda1cb0d3e70f94b805dd8e6e8dc1e0f508d38cc6d133378"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/final-production-catalog.json",
+      "sha256": "7813d5d29cd01ecba49a476844323e89872435c850193033e1c0ad4193783564"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/final-typecheck.json",
+      "sha256": "f891240ddaea4987a6e948b02388e670cd151a9050344c7a0aa19d2b8f845445"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/final-lint.json",
+      "sha256": "335669a995d00e3a9cf30f563b51a21c4ccc5880990e4f3d3e7f3fab1653215c"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/jest-results.json",
+      "sha256": "6af9ecc18d06ddfd532758c82718038a6817ef3299580572de77f515923437e3"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest-results.json",
+      "sha256": "a65b44580f4230338f8b593b254af0504a0fcc8087ede63dc65b50e5de77f24d"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest.json",
+      "sha256": "6c55335edd25a7e54f6ee930a22d3c6f9954580c6ce06fbe99880defbccfb625"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/capabilities.json",
+      "sha256": "0815bc457d810355c1f2d26215c59ca425c7f5924cd5daebadd66635bbcac93f"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/storage-policy-ownership-bypass.json",
+      "sha256": "dcc028599be4cf581b4c14e70f9d0893144f57e8ee6c8a566d76e45f835d61ad"
+    },
+    {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/global-default-restoration-precondition.json",
+      "sha256": "03620d3ca122d6adbbc433fc8565cada2c48a6bbf03592c63b04555be1aa483e"
+    }
+  ]
+}

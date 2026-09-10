@@ -1,0 +1,335 @@
+{
+  "scope": "FDA012 local subset and preserved partial Phase03A source only",
+  "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "sourceTree": "857411dc733b93686d789a72e461856698bec814",
+  "writerSourceAtExecution": {
+    "sha": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+    "tree": "9f063b465f11127a590d1863d6ebf7a63abf8e55",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "workingTreeClean": false
+  },
+  "frozenSourceAttribution": "Independent replay ran the exact clean committed SHA/tree; writer runs preceded source commit and are distinguished.",
+  "pgTap": {
+    "passed": 217,
+    "failed": 0,
+    "suites": [
+      {
+        "file": "supabase/tests/promptb_media_key_guards.test.sql",
+        "sha256": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009",
+        "bailout": 0,
+        "executed": 25,
+        "failed": 0,
+        "parseErrors": [],
+        "parserVersion": "3.43",
+        "planned": 25,
+        "skipped": 0,
+        "todo": 0,
+        "passed": true
+      },
+      {
+        "file": "supabase/tests/phase03a-foundation.test.sql",
+        "sha256": "b341500a5e3c782fdc346dd0d9a089bbcb0a58e42059a445ef22f68b5c5fce3a",
+        "bailout": 0,
+        "executed": 113,
+        "failed": 0,
+        "parseErrors": [],
+        "parserVersion": "3.43",
+        "planned": 113,
+        "skipped": 0,
+        "todo": 0,
+        "passed": true
+      },
+      {
+        "file": "supabase/tests/phase03a-privileges.test.sql",
+        "sha256": "5c9171b3991c98eadd1bf939314dcf0694242d695f317026d8b40820249fe313",
+        "bailout": 0,
+        "executed": 79,
+        "failed": 0,
+        "parseErrors": [],
+        "parserVersion": "3.43",
+        "planned": 79,
+        "skipped": 0,
+        "todo": 0,
+        "passed": true
+      }
+    ],
+    "sourceSqlSha256": "d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3",
+    "archive": {
+      "path": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-1.3.4.tar.gz",
+      "sha256": "78822aa24ab5119f6b1f57de1a25223e6c4a31f4df6d3ab16ca2aadd1dbdea6c",
+      "matchesManifest": true
+    }
+  },
+  "effectiveGuard": {
+    "passed": true,
+    "counts": {
+      "relations": 23,
+      "sequences": 2,
+      "functions": 35
+    },
+    "failures": [],
+    "reappliedPassed": true
+  },
+  "actualDatabaseMutationRefusals": {
+    "count": 18,
+    "passed": true
+  },
+  "inventoryRefusalsBeforeCaptureOrApply": {
+    "negative": 8,
+    "positive": 1,
+    "passed": true
+  },
+  "parser": {
+    "passed": 9,
+    "failed": 0,
+    "independentlyRerun": true
+  },
+  "focusedWriterJest": {
+    "suites": 5,
+    "passed": 182,
+    "failed": 0,
+    "note": "flags.test.ts was in this focused run. Changed flags.supabase.test.ts passed 40 tests in the full run."
+  },
+  "typecheck": {
+    "status": "PASS",
+    "exitCode": 0
+  },
+  "lint": {
+    "status": "PASS",
+    "errors": 0,
+    "warnings": 91,
+    "exitCode": 0
+  },
+  "fullJest": {
+    "classification": "writer-run full Jest output independently parsed; no full Jest rerun by acceptor",
+    "currentEvidence": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/full-jest.json",
+    "currentEvidenceSha256": "ba78621746462da17df9fe5eed0fcd15ae80288bdb5dafed355fd8db57030b2d",
+    "previousEvidence": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/verified-jest-results.json",
+    "previousEvidenceSha256": "a65b44580f4230338f8b593b254af0504a0fcc8087ede63dc65b50e5de77f24d",
+    "currentCounts": {
+      "numPassedTestSuites": 273,
+      "numFailedTestSuites": 12,
+      "numPassedTests": 4204,
+      "numFailedTests": 14,
+      "numTodoTests": 32,
+      "numTotalTests": 4250
+    },
+    "currentFailureNames": [
+      {
+        "file": "src/__tests__/dismissalStandard.guard.test.ts",
+        "name": "the dismissal standard C \u00b7 every surface is still reduced-motion gated"
+      },
+      {
+        "file": "src/__tests__/dismissalStandard.guard.test.ts",
+        "name": "the dismissal standard J \u00b7 focus return is wired end to end, and nothing else claims onDismiss"
+      },
+      {
+        "file": "src/__tests__/focusOnOpen.guard.test.ts",
+        "name": "focus-in standard \u2014 every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface"
+      },
+      {
+        "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+        "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets"
+      },
+      {
+        "file": "src/__tests__/keyboardClass.guard.test.ts",
+        "name": "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism Recipe D \u2014 every delegate is a real, live consumer (the list drains)"
+      },
+      {
+        "file": "src/__tests__/privacy.guard.test.ts",
+        "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+      },
+      {
+        "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+        "name": "FV-1 \u2014 focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input"
+      },
+      {
+        "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+        "name": "TaskCard \u2014 T8: each action names its flag with a location, the label carries category THEN distance"
+      },
+      {
+        "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+        "name": "TaskCard \u2014 T8: each action names its flag with no location, action labels are category-only (no distance)"
+      },
+      {
+        "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+        "name": "Wave 2 \u2014 expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry"
+      },
+      {
+        "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+        "name": "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim"
+      },
+      {
+        "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+        "name": "T8 \u2014 one spoken voice (source contract) each triage action names its flag (category + conditional distance)"
+      },
+      {
+        "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+        "name": "map-chrome budget \u2014 the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8"
+      },
+      {
+        "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+        "name": "the control now lives in the \u22ef tool sheet VoiceOver order: search, then the circles, then the sheet rows"
+      }
+    ],
+    "previousFailureNames": [
+      {
+        "file": "src/__tests__/dismissalStandard.guard.test.ts",
+        "name": "the dismissal standard C \u00b7 every surface is still reduced-motion gated"
+      },
+      {
+        "file": "src/__tests__/dismissalStandard.guard.test.ts",
+        "name": "the dismissal standard J \u00b7 focus return is wired end to end, and nothing else claims onDismiss"
+      },
+      {
+        "file": "src/__tests__/focusOnOpen.guard.test.ts",
+        "name": "focus-in standard \u2014 every dismissable moves the SR cursor in on open every ALLOWED entry still matches exactly one live surface"
+      },
+      {
+        "file": "src/__tests__/hitTargetFrame.guard.test.ts",
+        "name": "Explore close targets MapScreen heat notice close controls are real 44pt targets"
+      },
+      {
+        "file": "src/__tests__/keyboardClass.guard.test.ts",
+        "name": "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism Recipe D \u2014 every delegate is a real, live consumer (the list drains)"
+      },
+      {
+        "file": "src/__tests__/privacy.guard.test.ts",
+        "name": "the privacy screen renders Sky's document, verbatim every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+      },
+      {
+        "file": "src/__tests__/visualFreezeFixWave.guard.test.ts",
+        "name": "FV-1 \u2014 focused fields stay in their owning scroller Address Search scrolls the full body, including its focused input"
+      },
+      {
+        "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+        "name": "TaskCard \u2014 T8: each action names its flag with a location, the label carries category THEN distance"
+      },
+      {
+        "file": "src/screens/__tests__/TasksScreenFlagCard.test.tsx",
+        "name": "TaskCard \u2014 T8: each action names its flag with no location, action labels are category-only (no distance)"
+      },
+      {
+        "file": "src/screens/__tests__/Wave2ScreenGeometry.test.ts",
+        "name": "Wave 2 \u2014 expanded modal adoption keeps Flag Detail hand-built and gives it expanded safe-area geometry"
+      },
+      {
+        "file": "src/screens/__tests__/bp11PressVocabGuards.test.ts",
+        "name": "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) fires the haptic, forwards every injected prop, adds no visual dim"
+      },
+      {
+        "file": "src/screens/__tests__/bp3TrustEngineGuards.test.ts",
+        "name": "T8 \u2014 one spoken voice (source contract) each triage action names its flag (category + conditional distance)"
+      },
+      {
+        "file": "src/screens/__tests__/mapChromeBudget.guard.test.ts",
+        "name": "map-chrome budget \u2014 the ONE persistent command bar (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8"
+      },
+      {
+        "file": "src/screens/__tests__/tasksHeaderReclaim.guard.test.ts",
+        "name": "the control now lives in the \u22ef tool sheet VoiceOver order: search, then the circles, then the sheet rows"
+      }
+    ],
+    "exactFailureNamesMatch": true,
+    "introducedFailureNames": [],
+    "affectedTestResultsInFullRun": [
+      {
+        "file": "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+        "status": "passed",
+        "counts": {
+          "passed": 7
+        }
+      },
+      {
+        "file": "scripts/__tests__/phase03aReplay.test.ts",
+        "status": "passed",
+        "counts": {
+          "passed": 9
+        }
+      },
+      {
+        "file": "src/lib/__tests__/admin.test.tsx",
+        "status": "passed",
+        "counts": {
+          "passed": 13
+        }
+      },
+      {
+        "file": "src/lib/__tests__/comments.test.ts",
+        "status": "passed",
+        "counts": {
+          "passed": 37
+        }
+      },
+      {
+        "file": "src/lib/__tests__/flags.supabase.test.ts",
+        "status": "passed",
+        "counts": {
+          "passed": 40
+        }
+      }
+    ]
+  },
+  "phase02Replay": {
+    "status": "LOCAL_REPLAY_ONLY",
+    "failed": null,
+    "generatedSqlSha256": "206ae8c6d09e1da340c424b318fe95f221d4af29b0c8722fa46868850b530d19",
+    "schemaSqlUnchanged": true,
+    "stampInputs": 87
+  },
+  "schemaSnapshot": {
+    "passed": true,
+    "stdout": "schema.generated.sql is current (87 ordered inputs, stamp v2)."
+  },
+  "restoration": {
+    "classification": "UNSAFE_BASELINE_RESTORE",
+    "sevenFilesInReverseOrder": true,
+    "exactCollectiveCatalogRestoration": true,
+    "beforeSha256": "1af751339866c181c600d45135a704b97d0ba1162dc4b318da544f6e75ef45cc",
+    "restoredSha256": "1af751339866c181c600d45135a704b97d0ba1162dc4b318da544f6e75ef45cc",
+    "deterministicReapply": true,
+    "afterSha256": "372e20ce2ca1afa273cbf5018ad07f22e6c18de898f05bd5e5a5b552b3899795",
+    "reappliedSha256": "372e20ce2ca1afa273cbf5018ad07f22e6c18de898f05bd5e5a5b552b3899795",
+    "perPairIntermediateSnapshots": false
+  },
+  "baselineAclVerification": {
+    "columns": {
+      "count": 18,
+      "expected": 18,
+      "matches": true
+    },
+    "defaults": {
+      "count": 108,
+      "expected": 108,
+      "matches": true
+    },
+    "sequences": {
+      "count": 18,
+      "expected": 18,
+      "matches": true
+    }
+  },
+  "recoveredAttempts": [
+    {
+      "evidence": "full-local-01.stdout.json",
+      "status": "FAIL",
+      "exitCode": 1,
+      "reason": "Three REFERENCES assertions used temporary referencing tables against permanent targets, producing 42P16 instead of testing privilege denial.",
+      "correction": "Use an isolated local schema for referencing-table creation so the actual REFERENCES permission denial is exercised. Final 217 assertions pass."
+    },
+    {
+      "evidence": "focused-01.stderr.txt.json",
+      "status": "FAIL",
+      "exitCode": 1,
+      "reason": "Two guessed test paths did not exist (admin.test.ts and LeaderboardScreen.test.tsx).",
+      "correction": "Resolved actual .tsx and monogram test files; final five-suite run passes 182 tests."
+    }
+  ],
+  "hostedPgTap": "NOT_RUN",
+  "runtimeDevice": "NOT_RUN",
+  "screenshots": [],
+  "fullAppDeleteE2E": "PHASE_04_OWNED",
+  "independentCommandReceipt": "independent-commands.json",
+  "completeCodeGate": "HOLD",
+  "phaseGate": "BLOCKED"
+}

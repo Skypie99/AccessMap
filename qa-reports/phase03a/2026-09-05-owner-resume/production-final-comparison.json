@@ -1,0 +1,8 @@
+{
+  "comparatorVersion": 3,
+  "sameCatalogBeforeAndAfter": true,
+  "initialSha256": "6f3ee7f60f4134a83b2e013f4f3ffe98be1ae0fa489032062ee2f38cad9ca0d4",
+  "finalSha256": "6f3ee7f60f4134a83b2e013f4f3ffe98be1ae0fa489032062ee2f38cad9ca0d4",
+  "productionMutations": "NONE",
+  "claimScope": "Catalog v3 metadata comparison; no application rows or operational platform logs inspected."
+}

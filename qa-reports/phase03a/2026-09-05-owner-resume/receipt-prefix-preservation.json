@@ -1,0 +1,9 @@
+{
+  "file": "qa-reports/2026-09-03_Phase03A_BackendFoundation.md",
+  "priorReceiptSha": "c794ba8544df2f128269eabf6d87c9ed07a8fd68",
+  "prefixBytes": 31677,
+  "prefixSha256": "d49a6fb0f88ae3995481f6149e4d58af161694efcbb5ca06415faf4f07e63ffa",
+  "prefixUnchanged": true,
+  "newBytes": 41302,
+  "newSha256": "e9d6a72c732e2d669c3b40655cfd254f9dfe90a52c87f92e16ea8b153d34ef89"
+}

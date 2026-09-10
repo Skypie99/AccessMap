@@ -1,3 +1,5 @@
+-- PGTAP_KIND: pgtap
+-- PGTAP_EXECUTION: authorized-staging-only
 -- Staging-only pgTAP proof for D1F4R3-FIX2. Run after an authorized migration
 -- apply against the real catalog. It verifies both effective grants and RLS
 -- policies; Jest cannot establish Data API role behavior without PostgreSQL.

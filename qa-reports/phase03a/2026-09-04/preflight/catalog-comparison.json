@@ -1,0 +1,71 @@
+{
+  "phase": "PHASE-03A",
+  "capturedAtUtc": "2026-09-05T05:18:03.745Z",
+  "baselinePath": "supabase/contract/production-catalog-capture.v2.json",
+  "baselineFileSha256": "0b685c20c8788b619ff545a3b7824b4619e4bf59cef3c27c97eae562f326f6d8",
+  "comparison": "Recursive object-key normalization; array order preserved from the identical SQL comparator",
+  "status": "MATCH_WITHIN_COMPARATOR_V3_SCOPE",
+  "checks": [
+    {
+      "section": "roles",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "scope",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "tables",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "columns",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "schemas",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "policies",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "triggers",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "functions",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "tableGrants",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "functionGrants",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "migrationHistory",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    },
+    {
+      "section": "comparatorVersion",
+      "equalToAcceptedCapture": true,
+      "equalToFirstFreshCapture": true
+    }
+  ],
+  "limitations": "No behavioral/runtime proof; fresh supplemental grants have no accepted historical comparison baseline."
+}

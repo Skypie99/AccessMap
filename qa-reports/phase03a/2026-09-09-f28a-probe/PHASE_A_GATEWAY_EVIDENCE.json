@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "phase": "A",
+  "name": "Zero-deployment gateway-view probe",
+  "capturedUtc": "2026-09-09T22:43Z",
+  "deployments": "NONE",
+  "stagingMutations": "NONE - HTTP requests only, all unauthenticated and refused (401/403); no table, row, schema or function touched",
+  "productionContact": "NONE",
+  "target": "https://ctshxbykuemeqnofqcdh.supabase.co/rest/v1/ (staging branch REST root, unauthenticated)",
+  "sentinels": "192.0.2.1 / 198.51.100.2 / 203.0.113.3 (RFC 5737, reserved, non-routable)",
+  "piiDiscipline": "No real client address was selected, returned, printed or banked. All header findings are booleans, counts and enums. The only literal address appearing anywhere is the reserved sentinel and Cloudflare's own anycast destination address.",
+
+  "transportLayerResult": {
+    "method": "HTTP status per case, observed directly from the client",
+    "observed": {
+      "A_no_forwarding_headers": 401,
+      "B_caller_supplied_cf_connecting_ip": 403,
+      "C_caller_supplied_x_real_ip": 401,
+      "D_caller_supplied_both": 403,
+      "E_caller_supplied_true_client_ip": 401,
+      "F_caller_supplied_forwarded": 401,
+      "G_caller_supplied_xff_single": 401,
+      "H_caller_supplied_xff_three_values": 401,
+      "I_caller_supplied_xff_mixed_case_spaced": 401,
+      "J_ipv6_attempt_no_headers": 401,
+      "K_ipv6_attempt_plus_cf_connecting_ip": 403,
+      "L_repeat_baseline": 401
+    },
+    "finding": "403 occurs if and only if the caller supplies cf-connecting-ip. Every other case returns the ordinary unauthenticated 401."
+  },
+
+  "rejectionProvenance": {
+    "method": "Full response headers captured for a repeat of case B and its control",
+    "case_B_403": {
+      "server": "cloudflare",
+      "cf_ray_present": true,
+      "content_type": "text/plain; charset=UTF-8",
+      "content_length": 17
+    },
+    "control_401": {
+      "content_type": "application/json;charset=UTF-8",
+      "server_header": "absent (PostgREST/Supabase response)"
+    },
+    "conclusion": "The 403 is issued BY CLOUDFLARE AT THE EDGE, not by Supabase or PostgREST. A request carrying a caller-supplied cf-connecting-ip is refused before it reaches Supabase at all."
+  },
+
+  "logView": {
+    "source": "staging edge_logs, read-only aggregate query, counts and equality only",
+    "casesLogged": ["A","A2","B3","C","E","F","G","H","I","J","J2","L"],
+    "casesNeverLogged": ["B","B2","D","K"],
+    "casesNeverLoggedNote": "Exactly and only the four cases that supplied cf-connecting-ip. They produce no Supabase log record whatsoever, corroborating edge rejection rather than pass-through or overwrite.",
+    "perCaseFindings": {
+      "cf_connecting_ip_present": "12/12 logged cases",
+      "cf_connecting_ip_contains_sentinel": "0/12 - NEVER",
+      "cf_connecting_ip_multivalued": "0/12 - always single-valued",
+      "cf_connecting_ip_equals_x_real_ip": "12/12",
+      "case_C_x_real_ip_equals_sentinel": "0 - a caller-supplied x-real-ip is SILENTLY OVERWRITTEN with the true value",
+      "case_E_true_client_ip_present_at_origin": "0 - STRIPPED",
+      "case_F_forwarded_present_at_origin": "0 - STRIPPED",
+      "cases_G_H_I_xff_present_at_origin": "1 each - PASSES THROUGH",
+      "cases_G_H_I_xff_contains_sentinel": "1 each - CALLER VALUE IS REFLECTED VERBATIM",
+      "cases_A_J_L_xff_present": "0 - NO x-forwarded-for IS ADDED when the caller sends none"
+    }
+  },
+
+  "resolvedGaps": {
+    "G1_forgeability": "RESOLVED. cf-connecting-ip cannot be supplied by the caller at all - the attempt is refused with 403 at the Cloudflare edge. x-real-ip can be supplied but is silently overwritten with the true value. Neither can be forged.",
+    "G2_logAllowlist": "RESOLVED. The attribute map is NOT a restrictive allowlist: caller-supplied x-forwarded-for DOES appear as request.headers.x_forwarded_for in cases G/H/I. Its absence in cases A/J/L is therefore a genuine absence from the request, not a capture artifact.",
+    "G4_ipv6": "STILL OPEN. curl -6 resolved to ::ffff:104.18.38.10, an IPv4-mapped address - this host has no native IPv6 route to supabase.co, so cases J/K did not genuinely exercise IPv6 transport. Pseudo IPv4 status remains UNDETERMINED."
+  },
+
+  "criticalFindingForTheDesign": {
+    "headline": "x-forwarded-for at this origin carries ONLY caller-supplied data and nothing platform-derived.",
+    "evidence": "Cases A, J, L (no caller XFF) show xff_present = 0: the platform adds no XFF of its own. Cases G, H, I show the caller's value reflected verbatim.",
+    "consequence": "Reading ANY element of x-forwarded-for here - leftmost or rightmost - is unsafe, because every element is caller-chosen. FDA028-GAB-2's rightmost-element-under-pinned-hop-count rule would have read attacker-controlled data on every request. This directly and independently confirms the independent reviewer's Finding 1 and the F28A_EVIDENCE consequenceForV2 assessment.",
+    "note": "This differs from Cloudflare's general documented append behaviour, which applies to traffic Cloudflare forwards to a customer origin. For this Supabase-fronted path the observed behaviour is what governs."
+  },
+
+  "incidentalObservation": {
+    "ipv4MappedIPv6Seen": "The client stack produced ::ffff:104.18.38.10 when forced to IPv6. This is live corroboration that the ::ffff: representation the independent reviewer flagged (Finding 6, every such address collapsing to ::/48) occurs in real client stacks, not only in theory."
+  },
+
+  "nextPhase": "Phase B - deploy the temporary fda028-probe function to close G3 (what the Deno runtime itself receives) and P1/P7."
+}

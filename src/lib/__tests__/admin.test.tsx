@@ -20,18 +20,14 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import { useIsAdmin } from '../admin';
 
 const mockGetUser = jest.fn();
-const mockSingle = jest.fn();
+const mockRpc = jest.fn();
+const mockFrom = jest.fn();
 
 jest.mock('../supabase', () => ({
   supabase: {
     auth: { getUser: (...a: unknown[]) => mockGetUser(...a) },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => mockSingle(),
-        }),
-      }),
-    }),
+    rpc: (...a: unknown[]) => mockRpc(...a),
+    from: (...a: unknown[]) => mockFrom(...a),
   },
 }));
 
@@ -46,47 +42,79 @@ describe('useIsAdmin', () => {
   let warn: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
   afterEach(() => warn.mockRestore());
 
-  it('is true for an account with is_admin = true', async () => {
+  it('is true only when the caller-scoped RPC authorizes admin actions', async () => {
     signedInAs('admin-uid');
-    mockSingle.mockResolvedValue({ data: { is_admin: true }, error: null });
+    mockRpc.mockResolvedValue({ data: true, error: null });
     render(<Probe />);
+    expect(screen.getByTestId('v')).toHaveTextContent('null');
     await waitFor(() => expect(screen.getByTestId('v')).toHaveTextContent('true'));
+    expect(mockRpc).toHaveBeenCalledWith('current_user_can_admin');
+    expect(mockFrom).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('is false for an account with is_admin = false', async () => {
+  it('is false for a caller without admin authority', async () => {
     signedInAs('plain-uid');
-    mockSingle.mockResolvedValue({ data: { is_admin: false }, error: null });
+    mockRpc.mockResolvedValue({ data: false, error: null });
     render(<Probe />);
     await waitFor(() => expect(screen.getByTestId('v')).toHaveTextContent('false'));
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('degrades to false AND warns when the read is refused (the 42501 case)', async () => {
+  it('degrades to false and warns without backend error text when the RPC is refused', async () => {
     signedInAs('blocked-uid');
-    mockSingle.mockResolvedValue({
-      data: null,
-      error: { code: '42501', message: 'permission denied for table users' },
+    mockRpc.mockResolvedValue({
+      data: true,
+      error: { code: '42501', message: 'permission denied for function current_user_can_admin' },
     });
     render(<Probe />);
     await waitFor(() => expect(screen.getByTestId('v')).toHaveTextContent('false'));
     // The whole point: it must not fail silently again.
-    expect(warn).toHaveBeenCalledWith(
-      '[admin] is_admin read failed, treating as non-admin:',
-      'permission denied for table users',
-    );
+    expect(warn.mock.calls).toEqual([
+      ['[admin] authorization check failed, treating as non-admin.'],
+    ]);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('permission denied for function current_user_can_admin');
   });
 
   it('is false when nobody is signed in, without querying', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     render(<Probe />);
     await waitFor(() => expect(screen.getByTestId('v')).toHaveTextContent('false'));
-    expect(mockSingle).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it.each([null, undefined, 'true', 1, { is_admin: true }])(
+    'fails closed for a non-boolean RPC result: %p',
+    async (data) => {
+      signedInAs('plain-uid');
+      mockRpc.mockResolvedValue({ data, error: null });
+      render(<Probe />);
+      await waitFor(() => expect(screen.getByTestId('v')).toHaveTextContent('false'));
+      expect(mockFrom).not.toHaveBeenCalled();
+    },
+  );
+
+  it('warns and fails closed when the RPC is absent, without a users fallback', async () => {
+    signedInAs('plain-uid');
+    mockRpc.mockResolvedValue({ data: null, error: { code: 'PGRST202', message: 'RPC unavailable' } });
+    render(<Probe />);
+    await waitFor(() => expect(screen.getByTestId('v')).toHaveTextContent('false'));
+    expect(warn).toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('warns and fails closed when the authorization request throws', async () => {
+    signedInAs('plain-uid');
+    mockRpc.mockRejectedValue(new Error('network unavailable'));
+    render(<Probe />);
+    await waitFor(() => expect(screen.getByTestId('v')).toHaveTextContent('false'));
+    expect(warn).toHaveBeenCalledWith('[admin] authorization check failed, treating as non-admin.');
   });
 });
 

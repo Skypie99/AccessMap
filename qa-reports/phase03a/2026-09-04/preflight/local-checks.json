@@ -1,0 +1,43 @@
+{
+  "phase": "PHASE-03A",
+  "sourceSha": "c2e36800b269ee22f29d0be35cfb88dace7c2afc",
+  "sourceTree": "7a68541462f0a9e1d55f48d98ea54df0fc0b01b7",
+  "checks": [
+    {
+      "command": "node scripts/generate-migration-crosswalk.mjs --check",
+      "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+      "chunk_id": "a9c325",
+      "wall_time_seconds": 0.090156875,
+      "exit_code": 0,
+      "original_token_count": 10,
+      "output": "migration-crosswalk.v1.json is current.\n"
+    },
+    {
+      "command": "node scripts/check-schema-snapshot.mjs",
+      "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+      "chunk_id": "34963c",
+      "wall_time_seconds": 0.07886575,
+      "exit_code": 0,
+      "original_token_count": 16,
+      "output": "schema.generated.sql is current (87 ordered inputs, stamp v2).\n"
+    },
+    {
+      "command": "node scripts/run-pgtap.mjs --run",
+      "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+      "chunk_id": "8af3dd",
+      "wall_time_seconds": 0.116130333,
+      "exit_code": 2,
+      "original_token_count": 240,
+      "output": "{\n  \"status\": \"DISCOVERED\",\n  \"suites\": [\n    {\n      \"suite\": \"d1f4r3_fix2_flags_delete_rls.test.sql\",\n      \"kind\": \"pgtap\",\n      \"execution\": \"authorized-staging-only\",\n      \"planned\": 7\n    },\n    {\n      \"suite\": \"d1f4r3_fix3_review_audit.test.sql\",\n      \"kind\": \"pgtap\",\n      \"execution\": \"authorized-staging-only\",\n      \"planned\": 26\n    },\n    {\n      \"suite\": \"mod1r_fix1/00_baseline.sql\",\n      \"kind\": \"fixture\",\n      \"execution\": null,\n      \"planned\": 0\n    },\n    {\n      \"suite\": \"mod1r_fix1/10_proof.sql\",\n      \"kind\": \"raising-proof\",\n      \"execution\": null,\n      \"planned\": 0\n    },\n    {\n      \"suite\": \"promptb_media_key_guards.test.sql\",\n      \"kind\": \"pgtap\",\n      \"execution\": \"canonical-replay-with-next\",\n      \"planned\": 25\n    }\n  ],\n  \"problems\": []\n}\nUNAVAILABLE: pgTAP extension absent; suites NOT RUN. No installation was attempted.\nThe MOD1R raising proof is not pgTAP and runs separately via npm run db:mod1r-proof.\n"
+    },
+    {
+      "command": "npm run typecheck",
+      "worktree": "/Users/skypie/AccessMap-codex/p02b-repair-rev2-20260904",
+      "chunk_id": "320cf1",
+      "wall_time_seconds": 0.212161625,
+      "exit_code": 127,
+      "original_token_count": 18,
+      "output": "\n> accessmap@4.1.1 typecheck\n> tsc --noEmit\n\nsh: tsc: command not found\n"
+    }
+  ]
+}

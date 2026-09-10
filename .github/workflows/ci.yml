@@ -72,6 +72,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # PHASE-02A: the migration-lineage guard pins every APPLIED migration
+          # against its blob in the immutable Build 33 commit (f5594171). A
+          # shallow clone does not carry that object, so the strongest
+          # immutability check would degrade to "cannot verify" in CI.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -81,8 +87,77 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      # PHASE-02A: the crosswalk is generated. If it drifts from the tree, the
+      # lineage guard is asserting against a stale record.
+      - name: Verify migration crosswalk is current
+        run: npm run contract:check
+
       - name: Run tests with coverage
         run: npm run test:ci -- --passWithNoTests --forceExit --watchAll=false
+
+  migration-replay:
+    name: Migration Replay (FDA-027)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Capture provenance is bound to the implementation parent commit.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # PHASE-02B: the replay needs a real Postgres to be evidence at all. 17
+      # matches production's major version. The harness builds its own throwaway
+      # cluster with initdb, so no service container is used and nothing
+      # persists between steps.
+      - name: Install PostgreSQL 17
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-17
+
+      - name: Discover pgTAP suites
+        run: node scripts/run-pgtap.mjs --discover
+
+      - name: Schema snapshot is current
+        run: node scripts/check-schema-snapshot.mjs
+
+      - name: Schema snapshot negative tamper rehearsal
+        run: node scripts/rehearse-schema-snapshot-guard.mjs
+
+      # Applied lineage must replay from zero. The crosswalk/Build-33 guard and
+      # snapshot stamp separately pin the exact immutable inputs.
+      - name: Replay applied lineage from zero
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/replay-migrations.mjs
+
+      # And the lineage plus the forward-only candidates must still reproduce
+      # PRODUCTION's authorization and trigger surface exactly.
+      - name: Replay with forward-only candidates and compare to production
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/replay-migrations.mjs --with-next
+
+      - name: Rehearse declared rollback contracts
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/replay-migrations.mjs --with-next --local-only --verify-rollbacks
+
+      - name: Run MOD1R raising proof (19 cases)
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/run-mod1r-proof.mjs
+
+      # Effective grants and adversarial DDL run against real disposable PG17.
+      # This does not claim pgTAP, hosted behavior or complete Phase03A acceptance.
+      - name: Guard Phase03A application privileges and rehearse excess-grant refusals
+        env:
+          PG_BINDIR: /usr/lib/postgresql/17/bin
+        run: node scripts/replay-migrations.mjs --with-next --local-only --phase03a-privileges-only
 
   perf-budget:
     name: Performance Budget

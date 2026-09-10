@@ -6,10 +6,13 @@ const REPO = path.join(__dirname, '..', '..');
 const APPROVED_BASE = 'ed37860e9cc7989802a87f9994b78ed258210cc7';
 const read = (...parts: string[]) => fs.readFileSync(path.join(REPO, ...parts), 'utf8');
 
-const migration = read('supabase', 'migrations', '2026-08-27_d1_option_a_account_deletion.sql');
+const migration = read('supabase', 'nonmanaged', 'proposed', '2026-08-27_d1_option_a_account_deletion.sql');
+// PHASE-02A: D1S-A is live-but-unrecorded, so Build 33 files it under
+// nonmanaged/live-out-of-band/ rather than the managed migration lineage.
 const d1saMigration = read(
   'supabase',
-  'migrations',
+  'nonmanaged',
+  'live-out-of-band',
   '2026-08-27_d1sa_deployed_security_containment.sql',
 );
 const edgeFunction = read('supabase', 'functions', 'delete-account', 'index.ts');
@@ -79,11 +82,27 @@ describe('D1 Option A migration stays additive to deployed D1S-A', () => {
   it('does not alter the D1S-A artifact and preserves its containment anchors', () => {
     const d1saAtApprovedBase = execFileSync(
       'git',
+      // PHASE-02A: this reads a HISTORICAL blob, so it must keep the path the file
+      // had at APPROVED_BASE (ed37860) — before Build 33 moved live-but-unrecorded
+      // SQL into nonmanaged/. Rewriting this to the current path breaks the read.
       ['show', `${APPROVED_BASE}:supabase/migrations/2026-08-27_d1sa_deployed_security_containment.sql`],
       { cwd: REPO, encoding: 'utf8' },
     );
 
-    expect(d1saMigration).toBe(d1saAtApprovedBase);
+    // PHASE-02A: was byte-equality with APPROVED_BASE. That froze the file's
+    // COMMENTS as well as its SQL, so 932388b's migration-history truth repair
+    // (which only corrected a stale "not applied" claim in the header) would
+    // have failed this — except the suite was already dead on a stale path and
+    // never ran. The invariant that actually matters is that D1 Option A leaves
+    // D1S-A's EFFECTS untouched, so compare executable statements and let a
+    // documentation correction through.
+    const statementsOnly = (sql: string) =>
+      sql
+        .split('\n')
+        .map((line) => (/^\s*--/.test(line) ? '' : line.replace(/\s+$/, '')))
+        .filter((line) => line !== '')
+        .join('\n');
+    expect(statementsOnly(d1saMigration)).toBe(statementsOnly(d1saAtApprovedBase));
     expect(d1saMigration).toContain('D1S-A — deployed security containment');
     expect(d1saMigration).toContain('bk_2026_08_22_flags');
     expect(d1saMigration).toContain('flags status update by any authenticated');

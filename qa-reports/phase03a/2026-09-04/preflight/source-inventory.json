@@ -1,0 +1,513 @@
+{
+  "recordedAtUtc": "2026-09-05 05:19:47 UTC",
+  "scope": "pre-write Git metadata; file content not read",
+  "records": [
+    {
+      "main_compare": {
+        "error": "",
+        "exit": 0,
+        "output": "0\t0"
+      },
+      "main_log": {
+        "error": "",
+        "exit": 0,
+        "output": "70b52a30e9fff0f7d538509b110212bb8d872391 docs(release): finish source-lock documentation reconciliation\n0f2254636adb5e829a2fc9110baa0f6cde1d1c17 docs(release): reconcile TestFlight playbook with source lock\n3e63e5aab1d2bd58f0a952d20b02d85c90553c4c docs(release): establish release identity control plane"
+      },
+      "origin_head": {
+        "error": "",
+        "exit": 0,
+        "output": "refs/remotes/origin/main"
+      },
+      "remote": "https://github.com/Skypie99/AccessMap.git",
+      "root": {
+        "error": "",
+        "exit": 0,
+        "output": "/Users/skypie/AccessMap"
+      }
+    },
+    {
+      "ref": "70b52a30e9fff0f7d538509b110212bb8d872391",
+      "tree": {
+        "exit": 0,
+        "output": "847f39f6d8e5d7feb28af0f5da823034ce19f848",
+        "error": ""
+      }
+    },
+    {
+      "ref": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+      "tree": {
+        "exit": 0,
+        "output": "a4a5e70c1a413d39e457f5254af1bba91f08d7ed",
+        "error": ""
+      }
+    },
+    {
+      "ref": "a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50",
+      "tree": {
+        "exit": 0,
+        "output": "97b75c4604c36ed1da22893304e23e877acb3708",
+        "error": ""
+      }
+    },
+    {
+      "ref": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+      "tree": {
+        "exit": 0,
+        "output": "6cb842e3be0f4c3bfec569307829ad240d3f270a",
+        "error": ""
+      }
+    },
+    {
+      "ref": "ea610fe7a0863144a697a89a421faec9dc7c2315",
+      "tree": {
+        "exit": 0,
+        "output": "0924c5a0f27dcbe4cbcdbcee1cba05dacefdb028",
+        "error": ""
+      }
+    },
+    {
+      "ref": "c2e36800b269ee22f29d0be35cfb88dace7c2afc",
+      "tree": {
+        "exit": 0,
+        "output": "7a68541462f0a9e1d55f48d98ea54df0fc0b01b7",
+        "error": ""
+      }
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/spark-a11y-c2a-infra-20260830",
+      "head": "94d86239fed85e9e9135522e5271af813d6dfc90",
+      "path": "/Users/skypie/AccessMap",
+      "status_exit": 0,
+      "status_sha256": "1297263970cfa3242755cc1e987124bcc2734c295b7d6c1b6a53beb76a554202",
+      "tracked": 1,
+      "untracked": 1178
+    },
+    {
+      "path": "/private/tmp/claude-501/-Users-skypie/9279f62b-a4b8-4e22-a3c9-8222530a7344/scratchpad/pre-r3-93036d1",
+      "exists": false,
+      "preserved": true
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d1-option-a-account-deletion",
+      "head": "cf2b7f8c0c8b5b941d49fd4eae97d955a350478e",
+      "path": "/Users/skypie/AccessMap-codex/d1-option-a-account-deletion",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d1f4-async-account-deletion",
+      "head": "8376c0dd085903153fe6977add73d8044e18959b",
+      "path": "/Users/skypie/AccessMap-codex/d1f4-async-account-deletion",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d1f4-async-account-deletion-i",
+      "head": "960fbcc8d194910760e55106445c2a5595fd5cf5",
+      "path": "/Users/skypie/AccessMap-codex/d1f4-async-account-deletion-i",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d1f4-source-repair",
+      "head": "6ed37396cb4f7b6e0285c821441a20ae48b89ccb",
+      "path": "/Users/skypie/AccessMap-codex/d1f4-source-repair",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d1f4-source-repair-r2",
+      "head": "93036d13980eaa54e3c126043dc6d7116514210e",
+      "path": "/Users/skypie/AccessMap-codex/d1f4-source-repair-r2",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d1f4-source-repair-r3",
+      "head": "b4c11a3e4eda646fa99313165f1527972e935adb",
+      "path": "/Users/skypie/AccessMap-codex/d1f4-source-repair-r3",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d1f4r3-fix2",
+      "head": "b28ed042ca828dcdd6bb7ae47e900b45330fd7a8",
+      "path": "/Users/skypie/AccessMap-codex/d1f4r3-fix2",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/d2-option-a-account-deletion-acceptance",
+      "head": "fb8cf19f1131b80392401a398a46871d29f8ac37",
+      "path": "/Users/skypie/AccessMap-codex/d2-option-a-account-deletion-acceptance",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/final-polish-consolidation-20260831",
+      "head": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+      "path": "/Users/skypie/AccessMap-codex/final-polish-consolidation-20260831",
+      "status_exit": 0,
+      "status_sha256": "38f446b41e4b0ae6ebd20ca8acfe174d18a7e2c6033cef3005b16e30bee1f61d",
+      "tracked": 0,
+      "untracked": 1
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/final-ui-stabilization-build32-20260831",
+      "head": "7c0fc24b7739b9142ac9d428d34216d9707a4413",
+      "path": "/Users/skypie/AccessMap-codex/final-ui-stabilization-build32",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/fix4c-activityfeed-sectionlist-scroll",
+      "head": "5df47999c88999ab0fc518bfc9039b7afab11194",
+      "path": "/Users/skypie/AccessMap-codex/fix4c-activityfeed-sectionlist-scroll",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/flagstone-web-demo-repair-20260901",
+      "head": "d6b17a180f900128bd34af2ca3d88cf43d2e4a4a",
+      "path": "/Users/skypie/AccessMap-codex/flagstone-web-demo-repair-20260901",
+      "status_exit": 0,
+      "status_sha256": "38a4b66efcb6c38f5fb802e3333860c08aba7a73a839c72b09ab8ca6c62b8265",
+      "tracked": 0,
+      "untracked": 5
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/map-heat-duplicate-microfix-20260831",
+      "head": "d7b33fd23917c643d083d2dd549c07ec12891351",
+      "path": "/Users/skypie/AccessMap-codex/map-heat-duplicate-microfix-20260831",
+      "status_exit": 0,
+      "status_sha256": "d05f318d4d9ba402e3526974c6076df8b830870e3272b0f5f7036b3a1ff10aaf",
+      "tracked": 2,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/map-heat-xxxl-fix-20260831",
+      "head": "7e13d76e70e6604f4ee1035267fecdb4ad387905",
+      "path": "/Users/skypie/AccessMap-codex/map-heat-xxxl-fix-20260831",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/p02b-repair-rev2-20260904",
+      "head": "c2e36800b269ee22f29d0be35cfb88dace7c2afc",
+      "path": "/Users/skypie/AccessMap-codex/p02b-repair-rev2-20260904",
+      "status_exit": 0,
+      "status_lines": [],
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "tree": "7a68541462f0a9e1d55f48d98ea54df0fc0b01b7",
+      "untracked": 0,
+      "upstream": {
+        "error": "fatal: no upstream configured for branch 'codex/p02b-repair-rev2-20260904'",
+        "exit": 128,
+        "output": ""
+      }
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/presubmission-ui-polish",
+      "head": "ed37860e9cc7989802a87f9994b78ed258210cc7",
+      "path": "/Users/skypie/AccessMap-codex/presubmission-ui-polish",
+      "status_exit": 0,
+      "status_sha256": "42d6abce2d2d71eeefd3fb171dc92f23dd016f30a76755d9327e8f6e7e5e5343",
+      "tracked": 0,
+      "untracked": 1
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/prompt-a-final-integration-20260830",
+      "head": "188c53fee5c3f4d05db0facca199db2fc819d8b8",
+      "path": "/Users/skypie/AccessMap-codex/prompt-a-final-integration-20260830",
+      "status_exit": 0,
+      "status_sha256": "b819ef346772eb1ce815cad8c9017ba52313ac6581debaed93883a08aaef253a",
+      "tracked": 0,
+      "untracked": 27
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/prompt-b-schema-repair",
+      "head": "a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50",
+      "path": "/Users/skypie/AccessMap-codex/prompt-b-schema-repair",
+      "status_exit": 0,
+      "status_sha256": "4f8358a87a565943da92d1dc280b48b66559c2937dd00be016fa282816500693",
+      "tracked": 1,
+      "untracked": 1
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/s1p-final-security-logging-rollback",
+      "head": "5edbdae4e107188a75e301564030425b1627d42d",
+      "path": "/Users/skypie/AccessMap-codex/s1p-final-security-logging-rollback",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "codex/spark-a11y-c1-primitives-map-20260829",
+      "head": "0c5b53f85435c8b0f0d4f71c5fa4f9e24382703b",
+      "path": "/Users/skypie/AccessMap-codex/spark-a11y-prompt-c-prep-20260829",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "",
+      "head": "2690d440fbd8e62059c9f93601638778a09853d3",
+      "path": "/Users/skypie/AccessMap-codex/ui-fix3-accept-20260829",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "claude/flagstone-deep-audit-20260902",
+      "head": "ea610fe7a0863144a697a89a421faec9dc7c2315",
+      "path": "/Users/skypie/AccessMap-deep-audit-20260902",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "",
+      "head": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+      "path": "/Users/skypie/AccessMap-deep-audit-20260902-b33",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "main",
+      "head": "70b52a30e9fff0f7d538509b110212bb8d872391",
+      "path": "/Users/skypie/AccessMap-main-merge-20260901",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "claude/mr1-v2-clean-replay-repair-20260830",
+      "head": "a1970cc615780a5a1d40bcc67ec0574085278637",
+      "path": "/Users/skypie/AccessMap-mr1-v2",
+      "status_exit": 0,
+      "status_sha256": "b241fb86b97afb48467e2b39878161221d381b24bed3644d9fb1e33ef3a177b3",
+      "tracked": 0,
+      "untracked": 7
+    },
+    {
+      "active_operations": [],
+      "branch": "claude/prompt-b-final-implementation-20260830",
+      "head": "a1970cc615780a5a1d40bcc67ec0574085278637",
+      "path": "/Users/skypie/AccessMap-prompt-b-final",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "claude/prompt-c-final-accessibility-20260830",
+      "head": "d7b33fd23917c643d083d2dd549c07ec12891351",
+      "path": "/Users/skypie/AccessMap-prompt-c-final",
+      "status_exit": 0,
+      "status_sha256": "b9bfe02198e6b67af53aa5c2c6d172f16ff75383dc7f3c95b3f9456d313b5080",
+      "tracked": 0,
+      "untracked": 2
+    },
+    {
+      "active_operations": [],
+      "branch": "",
+      "head": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+      "path": "/Users/skypie/AccessMap-worktrees/_phase01-baseline-ebf091c",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "hygiene/flagstone-00b-credential-config-20260903",
+      "head": "5fabe8ed905e1f0527ec2ea198c090673df10142",
+      "path": "/Users/skypie/AccessMap-worktrees/flagstone-00b-hygiene-20260903",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "integration/flagstone-b33-convergence-20260903",
+      "head": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
+      "path": "/Users/skypie/AccessMap-worktrees/flagstone-b33-convergence-20260903",
+      "status_exit": 0,
+      "status_lines": [],
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "tree": "edaa68182add5b9a41123f6864c7774f5969e03f",
+      "untracked": 0,
+      "upstream": {
+        "error": "fatal: no upstream configured for branch 'integration/flagstone-b33-convergence-20260903'",
+        "exit": 128,
+        "output": ""
+      }
+    },
+    {
+      "active_operations": [],
+      "branch": "repair/flagstone-p02-canonical-migrations-20260903",
+      "head": "68aaf711c2023dd4aa1d6b9324f30e2b4e4b3bc1",
+      "path": "/Users/skypie/AccessMap-worktrees/flagstone-p02-canonical-migrations-20260903",
+      "status_exit": 0,
+      "status_lines": [],
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "tree": "1f4ea1c1b2122c5c7e6404e99c407eeb4cc0f003",
+      "untracked": 0,
+      "upstream": {
+        "error": "fatal: no upstream configured for branch 'repair/flagstone-p02-canonical-migrations-20260903'",
+        "exit": 128,
+        "output": ""
+      }
+    },
+    {
+      "active_operations": [],
+      "branch": "repair/flagstone-p02-contract-truth-20260903",
+      "head": "e0bb8aaa24cac2fe27318c262c7153be15f31806",
+      "path": "/Users/skypie/AccessMap-worktrees/flagstone-p02-contract-truth-20260903",
+      "status_exit": 0,
+      "status_lines": [],
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "tree": "a651598004313bf55cce44c986b535e17cf0b1a5",
+      "untracked": 0,
+      "upstream": {
+        "error": "fatal: no upstream configured for branch 'repair/flagstone-p02-contract-truth-20260903'",
+        "exit": 128,
+        "output": ""
+      }
+    },
+    {
+      "active_operations": [],
+      "branch": "",
+      "head": "70b52a30e9fff0f7d538509b110212bb8d872391",
+      "path": "/Users/skypie/AccessMap/.claude/worktrees/distracted-heisenberg-062a37",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "",
+      "head": "c4626479f6344011530396602422c746f4bb4cc9",
+      "path": "/Users/skypie/AccessMap/.claude/worktrees/flagstone-build-33-docs-6ff9d2",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "",
+      "head": "a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50",
+      "path": "/Users/skypie/AccessMap/.claude/worktrees/flagstone-build-33-release-5b94fb",
+      "status_exit": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked": 0,
+      "untracked": 0
+    },
+    {
+      "active_operations": [],
+      "branch": "claude/exciting-sanderson-3daa05",
+      "head": "a1970cc615780a5a1d40bcc67ec0574085278637",
+      "path": "/Users/skypie/AccessMap/.claude/worktrees/flagstone-ui-polish-4bc3e3",
+      "status_exit": 0,
+      "status_sha256": "8f6f3b8808977b7889aa8abce2ea41eeec4a9cea3e3ccbaf2a2cf2b4ac28b3b5",
+      "tracked": 0,
+      "untracked": 1
+    },
+    {
+      "active_operations": [],
+      "branch": "claude/build33-openfreemap-web-20260901",
+      "head": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+      "path": "/Users/skypie/AccessMap/.claude/worktrees/migration-map-repair-fix2-921aac",
+      "status_exit": 0,
+      "status_sha256": "b7de3574ff6aece46950b5e2ca7bb712ae417b7682fea737761a2ee1ae16c915",
+      "tracked": 0,
+      "untracked": 1
+    },
+    {
+      "active_operations": [],
+      "branch": "claude/mr1-clean-replay-repair-8cd6a8",
+      "head": "a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50",
+      "path": "/Users/skypie/AccessMap/.claude/worktrees/vp1-visual-navigation-polish-4a517c",
+      "status_exit": 0,
+      "status_sha256": "1aef04c9ce45eca364f5bae9478841d19f20ab7d83803f0e30f04daaf08e40e6",
+      "tracked": 1,
+      "untracked": 0
+    },
+    {
+      "proposed_path_exists": false,
+      "proposed_branch": {
+        "exit": 128,
+        "output": "",
+        "error": "fatal: 'refs/heads/repair/flagstone-p03a-backend-foundation-20260903' - not a valid ref"
+      },
+      "primary_reflog": {
+        "exit": 0,
+        "output": "94d86239fed85e9e9135522e5271af813d6dfc90 commit: report(a11y): add spark c2a infra micro-audit\n2762a5447600e8de55be912ccb26e95456484945 checkout: moving from main to codex/spark-a11y-c2a-infra-20260830\na0bf4d04d0d2e11e6e56d1cd3546175d5759fb50 commit: feat(about): repoint the Apple-facing privacy URL, add Accessibility + Support links\n5e2e14d7a467e6368105fd82d0e65910cbb9b3bc commit: polish(docs): curly apostrophes + rel=noopener noreferrer + new-tab announcements\n665fa787dd045fb7a5cabdec50b3212de9443434 merge chore/scrub-personal-email-2026-08-23: Fast-forward",
+        "error": ""
+      }
+    }
+  ]
+}

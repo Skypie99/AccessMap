@@ -1,0 +1,177 @@
+{
+  "capturedAtUtc": "2026-09-05T07:26:25.662Z",
+  "source": "Supabase get_edge_function, read-only source dependency excerpts only; no invocation or application-data access",
+  "functions": [
+    {
+      "projectRef": "kldlwszpfkdmsjrjhjym",
+      "readOnly": true,
+      "slug": "delete-account",
+      "version": 4,
+      "status": "ACTIVE",
+      "verifyJwt": true,
+      "bundleSha256": "9edfdaf21ee036632b47a10438f0d7e0d6b97f19c62b3f6cb57884dd68abdb34",
+      "files": [
+        {
+          "name": "index.ts",
+          "lineCount": 70,
+          "dependencyExcerpts": [
+            {
+              "line": 11,
+              "text": "//   1. UPDATE public.flags SET user_id = NULL WHERE user_id = <userId>"
+            },
+            {
+              "line": 12,
+              "text": "//   2. adminClient.auth.admin.deleteUser(userId) triggers the cascade"
+            },
+            {
+              "line": 13,
+              "text": "//"
+            },
+            {
+              "line": 14,
+              "text": "// If step 1 fails, the function returns 500 and the account is NOT deleted."
+            },
+            {
+              "line": 46,
+              "text": "    const { error: anonError } = await adminClient"
+            },
+            {
+              "line": 47,
+              "text": "      .from('flags')"
+            },
+            {
+              "line": 48,
+              "text": "      .update({ user_id: null })"
+            },
+            {
+              "line": 49,
+              "text": "      .eq('user_id', userId);"
+            },
+            {
+              "line": 50,
+              "text": "    if (anonError) throw anonError;"
+            },
+            {
+              "line": 51,
+              "text": ""
+            },
+            {
+              "line": 52,
+              "text": "    // Step 2: Delete the auth user, triggers cascade"
+            },
+            {
+              "line": 53,
+              "text": "    const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);"
+            },
+            {
+              "line": 54,
+              "text": "    if (deleteError) throw deleteError;"
+            },
+            {
+              "line": 55,
+              "text": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "projectRef": "kldlwszpfkdmsjrjhjym",
+      "readOnly": true,
+      "slug": "send-push-notification",
+      "version": 6,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "bundleSha256": "0434671ed6ad9f62e8e5a94a200f8caad3d2771e8cbb3a0053229874a1595be8",
+      "files": [
+        {
+          "name": "index.ts",
+          "lineCount": 265,
+          "dependencyExcerpts": [
+            {
+              "line": 148,
+              "text": "  const { data: tokenRow, error: dbError } = await supabase"
+            },
+            {
+              "line": 149,
+              "text": "    .from('push_tokens')"
+            },
+            {
+              "line": 150,
+              "text": "    .select('token')"
+            },
+            {
+              "line": 151,
+              "text": "    .eq('user_id', userId)"
+            },
+            {
+              "line": 152,
+              "text": "    .single();"
+            },
+            {
+              "line": 153,
+              "text": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "projectRef": "kldlwszpfkdmsjrjhjym",
+      "readOnly": true,
+      "slug": "notify-flag-status",
+      "version": 8,
+      "status": "ACTIVE",
+      "verifyJwt": false,
+      "bundleSha256": "633db2d2ae659ffc03d4758be2538253413c65c54a4f9b66ca8d3057c0ba7a0e",
+      "files": [
+        {
+          "name": "index.ts",
+          "lineCount": 153,
+          "dependencyExcerpts": [
+            {
+              "line": 44,
+              "text": "  try {"
+            },
+            {
+              "line": 45,
+              "text": "    const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/verify_webhook_secret`, {"
+            },
+            {
+              "line": 46,
+              "text": "      method: 'POST',"
+            },
+            {
+              "line": 47,
+              "text": "      headers: {"
+            },
+            {
+              "line": 122,
+              "text": "  const { data: tokenRow } = await supabase"
+            },
+            {
+              "line": 123,
+              "text": "    .from('push_tokens')"
+            },
+            {
+              "line": 124,
+              "text": "    .select('token')"
+            },
+            {
+              "line": 125,
+              "text": "    .eq('user_id', record.user_id)"
+            },
+            {
+              "line": 126,
+              "text": "    .single();"
+            },
+            {
+              "line": 127,
+              "text": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

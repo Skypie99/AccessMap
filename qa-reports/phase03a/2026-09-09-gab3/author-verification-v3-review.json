@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "unit": "author re-verification of the independent v3 review",
+  "capturedUtc": "2026-09-09",
+  "reviewVerdict": "HOLD",
+  "engine": "PostgreSQL 17.11, disposable local cluster, destroyed after use",
+  "hostedContact": false,
+
+  "F1_completeFunctionClaimOnlyTrueForLedger": {
+    "verdict": "CONFIRMED",
+    "evidence": "gab3-admission-function.sql contains no hmac, no vault, no decrypted_secret, no INSERT into flags or feedback. limiter.admit() takes p_bucket bytea already formed. The MECHANISM section claims one function does the HMAC, the ledger decision and the INSERT - that combined function does not exist as tested code.",
+    "significance": "Same defect class as v2 Finding 5, relocated to the derivation and enforcement half of the pipeline. v3's changelog claim is accurate only for the concurrency step v2 Finding 5 named."
+  },
+
+  "F2_bucketPurgeBreaksTheCeiling": {
+    "verdict": "FALSIFIED THE INVARIANT - REPRODUCED BY AUTHOR",
+    "method": "Mint a grant on one bucket, spend 3, delete ONLY the bucket row (simulating a per-table retention job), replay the surviving grant.",
+    "observed": [
+      "before purge: bucket units=3, grant units=3",
+      "after bucket-only purge, replay same grant -> ADMITTED remaining=6",
+      "bucket row silently recreated at 0 then incremented to 1",
+      "grant units=4 (true cumulative) while the bucket records 1"
+    ],
+    "significance": "The bucket's recorded consumption UNDERSTATES true consumption after a purge, so total consumption can exceed BUCKET_ALLOWANCE. This is the exact invariant the starvation fix rests on, and it fails in the unsafe direction (more consumption, not less).",
+    "fixVerifiedByAuthor": {
+      "change": "FOREIGN KEY limiter.grant (bucket_key, window_id) REFERENCES limiter.bucket ON DELETE CASCADE",
+      "observed": "after the same bucket purge, surviving grant rows = 0 (cascaded away, no orphan); replaying the old grant issues a fresh grant and the ceiling holds",
+      "pass": true
+    },
+    "note": "No purge SQL or scheduled job exists anywhere in the evidence - the retention step is prose only, and pg_cron availability for this project remains UNVERIFIED (carried from v1 Finding 15 / v2 Finding 12)."
+  },
+
+  "F3_privacyRegression": {
+    "verdict": "CONFIRMED - and the author flagged this to the reviewer as a suspected self-introduced regression before the review ran",
+    "detail": "window_id is mixed into the HMAC MESSAGE, not the key, so one long-lived secret spans every window. An actor with ledger access in this project plausibly also holds the elevated role needed to read vault.decrypted_secrets, and can forward-compute the bucket key for ANY window the secret has covered - a strictly stronger capability than v2's destroyed-per-window secret gave the same actor. No rotation interval, deletion step or precedent is specified.",
+    "significance": "KNOWN_LIMITATIONS 6 and 7 currently understate exposure as roughly one live window. The true bound is however long any historical secret value plus any backup or PITR snapshot survives, which is presently unbounded."
+  },
+
+  "F6_twoKnobsNotOne": {
+    "verdict": "CONFIRMED - REPRODUCED BY AUTHOR",
+    "observed": ["p_normal=100 p_bucket_allow=5  -> remaining 4 (bounded by allowance)",
+                 "p_normal=1   p_bucket_allow=50 -> remaining 0 (bounded by NORMAL)"],
+    "significance": "BUCKET_ALLOWANCE is the only refusal CEILING, but NORMAL remains an independent fairness knob. v3's 'single policy number' wording is an overstatement."
+  },
+
+  "F7_pgcryptoSearchPathLandmine": {
+    "verdict": "ACCEPTED AS A REAL RISK, UNVERIFIED against hosted Supabase by the author",
+    "detail": "limiter.admit sets search_path to 'limiter','pg_temp'. Supabase installs pgcrypto into the extensions schema, so an unqualified hmac() call in the still-unwritten wrapper would fail at runtime. Must be schema-qualified and explicitly tested."
+  },
+
+  "F5_droppedV2Findings": {
+    "verdict": "CONFIRMED by inspection",
+    "detail": "v3 has NO rollback section at all (v2 Finding 11 lever-independence concern unaddressed), and does not differentiate network-rotation difficulty by connection type (v2 Finding 9). Neither is claimed as fixed, but both are dropped from the record while v3 declares it supersedes v2."
+  },
+
+  "reviewerConfirmations": [
+    "All eight v3 local tests reproduced exactly from the verbatim artifact.",
+    "New adversarial cases passed: 50-way same-grant reuse (no double-spend), 100-way across 10 buckets (no deadlock), negative/zero/INT_MAX parameters fail safe, empty/duplicate limiter.config fails toward enabled.",
+    "The Cloudflare trust boundary reproduced live with clean negative controls: only cf-connecting-ip triggers the 403/error-1000 block, including on OPTIONS preflight; x-real-ip, true-client-ip and x-forwarded-for pass through normally.",
+    "Bypass mechanics re-verified against the real schema, including that feedback_insert_self_or_anon has no TO clause."
+  ],
+
+  "netAssessment": "V3_INDEPENDENT_REVIEW: HOLD. The ledger core is sound and independently reproduced. Three MUST-FIX items stand, one of which (F2) falsifies the invariant underpinning v3's headline starvation fix. A verified fix exists for F2 but is not yet incorporated or re-reviewed."
+}

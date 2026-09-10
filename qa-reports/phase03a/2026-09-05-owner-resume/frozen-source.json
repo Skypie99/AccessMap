@@ -1,0 +1,293 @@
+{
+  "classification": "UNACCEPTED_PARTIAL_PHASE03A_SOURCE",
+  "sha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "tree": "857411dc733b93686d789a72e461856698bec814",
+  "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+  "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "acceptedPhase02Sha": "c2e36800b269ee22f29d0be35cfb88dace7c2afc",
+  "acceptedPhase02Tree": "7a68541462f0a9e1d55f48d98ea54df0fc0b01b7",
+  "acceptedCompletePhase03aSha": null,
+  "acceptedCompletePhase03aTree": null,
+  "sourceFiles": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "3bb1907184d2150dee407ae35262e7b221bc2a562a6d98c4af47e78d45a5c8ba"
+    },
+    {
+      "file": "scripts/__tests__/phase03aReplay.test.ts",
+      "sha256": "c50b96c44a7e1eb5345c3b72fcd6ace2d2af177812deb8281110b64862e4eecf"
+    },
+    {
+      "file": "scripts/check-application-privileges.mjs",
+      "sha256": "b700198e77d2da35adb4b9b07337ecf0beabdf1c64748d14c79ed2236b5e5557"
+    },
+    {
+      "file": "scripts/replay-migrations.mjs",
+      "sha256": "0ef63a18dcbdc0a8c7ad4d58a12c41f284c1b8f2a3787feae1e698e06f4af2cd"
+    },
+    {
+      "file": "scripts/replay-phase03a.mjs",
+      "sha256": "d49db6adef8e9f7eb72dc7fa0da4647acefe27d9900dd7fae09170aa6bfbf2a1"
+    },
+    {
+      "file": "src/lib/__tests__/admin.test.tsx",
+      "sha256": "58da4fa676c9998cc63908b0fdc0076e6e9e402fc320b1eab34548b0260504bb"
+    },
+    {
+      "file": "src/lib/__tests__/comments.test.ts",
+      "sha256": "be30eec9a1ef55fc7880f9cf31acfd8ae565116d989da40a50cb086154fdbd6d"
+    },
+    {
+      "file": "src/lib/__tests__/flags.supabase.test.ts",
+      "sha256": "6aadb585448e7b8874501874017438a5ac516f3464d4b3ddc0db11b456106c6f"
+    },
+    {
+      "file": "src/lib/admin.ts",
+      "sha256": "06c6aab54324ab6eabb3a922aad738c4e85e2413b2c1c0a7f7dedf0f03724025"
+    },
+    {
+      "file": "src/lib/comments.ts",
+      "sha256": "c3954c25b992b55a90890e140d29614c279c15b3618ffb21a7ca6715503de26f"
+    },
+    {
+      "file": "src/lib/flags.ts",
+      "sha256": "1068ac17542cc9db7671a21af50b9e8b9c64e1e068cd0af3dfa5cc63e0bec39a"
+    },
+    {
+      "file": "src/screens/LeaderboardScreen.tsx",
+      "sha256": "e63cc4fc6c9b550acf411fd4e0a0623b2ea83cd4aeec427be879a26e17e8a93c"
+    },
+    {
+      "file": "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx",
+      "sha256": "7c2d8c35e8010753b8c00a018ef02bd0c1e4562246c6b11a04d0b5bfb7924e5e"
+    },
+    {
+      "file": "src/types/database.ts",
+      "sha256": "4dd807e0f38b2166f27ee9166dc174d937b003ebba5925b4310583cbb2537683"
+    },
+    {
+      "file": "supabase/contract/client-expectations.v1.json",
+      "sha256": "ae8c351bfc119cd527246733c407d98a0794d0a2faace33feb0aa829a48e5c07"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/20260905073925_phase03a_effective_privileges.sql",
+      "sha256": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/README.md",
+      "sha256": "439bbe529f7fced8d8c768206a7e0c97ac455fa257edeba7ce2303a0ec3b2193"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/application-privileges.v1.json",
+      "sha256": "5b5b3699c6136ac7e8c7a180adc8b539148f5c8fd76857d9942c6762e2fae836"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/candidate-contract.json",
+      "sha256": "24e741b75ea2165e2e479fbdbc3d8a2552fca0f059b3fa4f7b52b9865108f865"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/catalog.sql",
+      "sha256": "6a755828dff8f85da18255c514b8e8c8cf7efe8c6b030e45a3108c4a8f23b5fc"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/effective-privileges.sql",
+      "sha256": "21ef4203d91547f3afea8fb20f477420f4284a3dc806193af7761a330833b650"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9"
+    },
+    {
+      "file": "supabase/migrations-next/phase03a/rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+      "sha256": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f"
+    },
+    {
+      "file": "supabase/schema.generated.stamp.json",
+      "sha256": "936d983349e813b2f061db993670c1f8355f1b0d4482aacfa7434a7375542d82"
+    },
+    {
+      "file": "supabase/tests/phase03a-fixtures/baseline-backups.sql",
+      "sha256": "1ccfe89ba366d3b12a38b18c365f075f84d295fe184d0fa7e10bad81cf576e83"
+    },
+    {
+      "file": "supabase/tests/phase03a-fixtures/baseline-extra.sql",
+      "sha256": "da2ec08470d4236458e4aaf76a4b17e242baf5d278e980c8fa9e4559e51bebc0"
+    },
+    {
+      "file": "supabase/tests/phase03a-foundation.test.sql",
+      "sha256": "b341500a5e3c782fdc346dd0d9a089bbcb0a58e42059a445ef22f68b5c5fce3a"
+    },
+    {
+      "file": "supabase/tests/phase03a-privileges.test.sql",
+      "sha256": "5c9171b3991c98eadd1bf939314dcf0694242d695f317026d8b40820249fe313"
+    }
+  ],
+  "migrationAndRestorationHashes": [
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "sha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "sha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "sha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "sha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "sha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "sha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
+      "matchesManifest": true,
+      "unchangedFromPriorReceipt": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/20260905073925_phase03a_effective_privileges.sql",
+      "sha256": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928",
+      "matchesManifest": true
+    },
+    {
+      "path": "supabase/migrations-next/phase03a/rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+      "sha256": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f",
+      "matchesManifest": true
+    }
+  ],
+  "callerAndTestHashes": {
+    "src/lib/__tests__/admin.test.tsx": "58da4fa676c9998cc63908b0fdc0076e6e9e402fc320b1eab34548b0260504bb",
+    "src/lib/__tests__/comments.test.ts": "be30eec9a1ef55fc7880f9cf31acfd8ae565116d989da40a50cb086154fdbd6d",
+    "src/lib/__tests__/flags.supabase.test.ts": "6aadb585448e7b8874501874017438a5ac516f3464d4b3ddc0db11b456106c6f",
+    "src/lib/admin.ts": "06c6aab54324ab6eabb3a922aad738c4e85e2413b2c1c0a7f7dedf0f03724025",
+    "src/lib/comments.ts": "c3954c25b992b55a90890e140d29614c279c15b3618ffb21a7ca6715503de26f",
+    "src/lib/flags.ts": "1068ac17542cc9db7671a21af50b9e8b9c64e1e068cd0af3dfa5cc63e0bec39a",
+    "src/screens/LeaderboardScreen.tsx": "e63cc4fc6c9b550acf411fd4e0a0623b2ea83cd4aeec427be879a26e17e8a93c",
+    "src/screens/__tests__/LeaderboardScreen.monogram.test.tsx": "7c2d8c35e8010753b8c00a018ef02bd0c1e4562246c6b11a04d0b5bfb7924e5e",
+    "src/types/database.ts": "4dd807e0f38b2166f27ee9166dc174d937b003ebba5925b4310583cbb2537683"
+  },
+  "limiterHashes": [],
+  "limiterImplemented": false,
+  "sourceCommitChangedFiles": [
+    ".github/workflows/ci.yml",
+    "qa-reports/phase03a/2026-09-05-owner-resume/FDA012_PRIVILEGE_REVIEW.json",
+    "qa-reports/phase03a/2026-09-05-owner-resume/FDA012_PRIVILEGE_REVIEW.md",
+    "qa-reports/phase03a/2026-09-05-owner-resume/deployed-server-dependencies.json",
+    "qa-reports/phase03a/2026-09-05-owner-resume/production-defaults-readonly.json",
+    "qa-reports/phase03a/2026-09-05-owner-resume/production-schema-roles.json",
+    "scripts/check-application-privileges.mjs",
+    "scripts/replay-migrations.mjs",
+    "scripts/replay-phase03a.mjs",
+    "supabase/contract/client-expectations.v1.json",
+    "supabase/migrations-next/phase03a/20260905073925_phase03a_effective_privileges.sql",
+    "supabase/migrations-next/phase03a/README.md",
+    "supabase/migrations-next/phase03a/application-privileges.v1.json",
+    "supabase/migrations-next/phase03a/candidate-contract.json",
+    "supabase/migrations-next/phase03a/effective-privileges.sql",
+    "supabase/migrations-next/phase03a/rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+    "supabase/schema.generated.stamp.json",
+    "supabase/tests/phase03a-fixtures/baseline-backups.sql",
+    "supabase/tests/phase03a-foundation.test.sql",
+    "supabase/tests/phase03a-privileges.test.sql"
+  ],
+  "sourceCommitStat": ".github/workflows/ci.yml                           |    7 +\n .../FDA012_PRIVILEGE_REVIEW.json                   | 2638 +++++++++++++++++++\n .../FDA012_PRIVILEGE_REVIEW.md                     |   94 +\n .../deployed-server-dependencies.json              |  177 ++\n .../production-defaults-readonly.json              | 1514 +++++++++++\n .../production-schema-roles.json                   |   85 +\n scripts/check-application-privileges.mjs           |  106 +\n scripts/replay-migrations.mjs                      |   11 +-\n scripts/replay-phase03a.mjs                        |   67 +-\n supabase/contract/client-expectations.v1.json      |   21 +-\n ...0260905073925_phase03a_effective_privileges.sql |  242 ++\n supabase/migrations-next/phase03a/README.md        |   52 +-\n .../phase03a/application-privileges.v1.json        | 2772 ++++++++++++++++++++\n .../phase03a/candidate-contract.json               |   39 +-\n .../phase03a/effective-privileges.sql              |   70 +\n ...3925_phase03a_effective_privileges.rollback.sql |  620 +++++\n supabase/schema.generated.stamp.json               |    4 +-\n .../tests/phase03a-fixtures/baseline-backups.sql   |  136 +\n supabase/tests/phase03a-foundation.test.sql        |   36 +-\n supabase/tests/phase03a-privileges.test.sql        |  202 ++\n 20 files changed, 8825 insertions(+), 68 deletions(-)",
+  "backendManifest": {
+    "file": "supabase/contract/deployed-contract.v1.json",
+    "sha256": "a4f59651f3f59b918a54654bfd502e262637a8096f9219fe28d8944020bdb963"
+  }
+}

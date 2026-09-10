@@ -4,11 +4,11 @@ import path from 'path';
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const read = (...parts: string[]) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8');
-const originalMigration = read('supabase', 'migrations', '2026-08-27_d1f4_async_account_deletion.sql');
-const repairMigration = read('supabase', 'migrations', '20260828000000_d1f4r2_source_repair.sql');
+const originalMigration = read('supabase', 'nonmanaged', 'proposed', '2026-08-27_d1f4_async_account_deletion.sql');
+const repairMigration = read('supabase', 'nonmanaged', 'proposed', '20260828000000_d1f4r2_source_repair.sql');
 // R2's review resolver is superseded (R3 -> FIX2 -> FIX3); resolver behavior
 // assertions read the effective FIX3 body instead of the historical one.
-const fix3Migration = read('supabase', 'migrations', '20260828030000_d1f4r3_fix3_review_audit.sql');
+const fix3Migration = read('supabase', 'nonmanaged', 'proposed', '20260828030000_d1f4r3_fix3_review_audit.sql');
 const worker = read('supabase', 'functions', 'account-deletion-worker', 'index.ts');
 const workerCore = read('supabase', 'functions', '_shared', 'accountDeletionWorkerCore.ts');
 const review = read('supabase', 'functions', 'account-deletion-review', 'index.ts');
@@ -20,7 +20,7 @@ const profile = read('src', 'screens', 'ProfileScreen.tsx');
 const availability = read('src', 'lib', 'accountDeletionAvailability.ts');
 const packageJson = read('package.json');
 const packageLock = read('package-lock.json');
-const frozen = (name: string) => fs.readFileSync(path.join(ROOT, 'supabase', 'migrations', name));
+const frozen = (name: string) => fs.readFileSync(path.join(ROOT, 'supabase', 'nonmanaged', name.includes('d1sa') ? 'live-out-of-band' : 'proposed', name));
 
 function slice(source: string, anchor: string): string {
   const start = source.indexOf(anchor);
@@ -32,8 +32,13 @@ function slice(source: string, anchor: string): string {
 
 describe('D1F4R2 source and database-contract guards', () => {
   it('preserves both frozen predecessor migrations byte-for-byte', () => {
+    // PHASE-02A: pin advanced d131d769 -> 4caeebb5. The old value is the blob at
+    // c74fbd6; 932388b superseded it with the migration-history truth repair, and
+    // this pin never caught the change because the suite was already dead on a
+    // stale path. The current content's claims were reconfirmed against the live
+    // catalog on 2026-09-04 (all 7 bk_* tables RLS-on, zero anon grants).
     expect(crypto.createHash('sha256').update(frozen('2026-08-27_d1sa_deployed_security_containment.sql')).digest('hex'))
-      .toBe('d131d76929bae33051b7a3fcacb8852d58b38fda951f1c57b95aac227e85c68d');
+      .toBe('4caeebb5cf7a4488bd44ddfbcfcf50bb7cbe67ad9dcc3ec766b935be189895b7');
     expect(crypto.createHash('sha256').update(frozen('2026-08-27_d1_option_a_account_deletion.sql')).digest('hex'))
       .toBe('a01142702609c2c32cce252f979e2ffc3ee6aa90b91030332fe1ceb287c83e01');
   });

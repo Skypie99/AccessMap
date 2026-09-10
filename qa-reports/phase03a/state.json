@@ -1,0 +1,252 @@
+{
+  "bankVersion": 1,
+  "phase": "03A",
+  "updatedUtc": "2026-09-10T08:58:15Z",
+  "currentGeneration": "2026-09-09-gab4",
+  "generations": [
+    "2026-09-04",
+    "2026-09-04-resume",
+    "2026-09-05-owner-resume",
+    "2026-09-09-fda028-recommendation",
+    "2026-09-09-final-verification",
+    "2026-09-09-f28a-probe",
+    "2026-09-09-gab3",
+    "2026-09-09-gab4"
+  ],
+  "task": "FDA028-GAB-4 local implementation + adversarial acceptance",
+  "status": "V4_LOCAL_GATE_PASS",
+  "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
+  "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "sourceTree": "857411dc733b93686d789a72e461856698bec814",
+  "headShaAtCheckpoint": "5d3ed0c8544872756cb99d48c076c0edcad4c529",
+  "headTreeAtCheckpoint": "3717664ce386850a5fac6a5f2f05ebfa845ef31c",
+  "headDiffFromSourceIsQaOnly": true,
+  "nonQaChangedFilesSourceToHead": 0,
+  "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+  "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "repositoryRemote": "Skypie99/AccessMap",
+  "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
+  "nextAction": "Owner decision on FDA-028 next phase. No further work authorized under the V4 grant.",
+  "gatesPreserved": {
+    "BACKEND_FOUNDATION_GATE": "BLOCKED",
+    "PHASE_GATE": "BLOCKED",
+    "PHASE03A_CODE": "HOLD",
+    "INT": "NOT_RUN",
+    "STAGE": "NOT_RUN",
+    "PRODUCTION": "UNTOUCHED_NOT_AUTHORIZED",
+    "SAFE_TO_INTEGRATE": false,
+    "MAIN_MERGE_AUTHORIZED": false,
+    "PHASE03B_STARTED": false
+  },
+  "findings": {
+    "FDA-009": "OPEN",
+    "FDA-010": "OPEN",
+    "FDA-012": "OPEN",
+    "FDA-021": "OPEN",
+    "FDA-023": "OPEN",
+    "FDA-026": "OPEN",
+    "FDA-028": "OPEN"
+  },
+  "fda028": {
+    "ownerContract": "Keep the budget across session resets; retain the architecture hold until a trusted mechanism is approved.",
+    "architectureGate": "HOLD",
+    "recommendationId": "FDA028-GAB-3-20260909",
+    "preferredRecommendation": "qa-reports/phase03a/2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION_V2.md",
+    "supersededDraft": "qa-reports/phase03a/2026-09-09-fda028-recommendation/FDA028_RECOMMENDATION.md",
+    "independentReview": "qa-reports/phase03a/2026-09-09-fda028-recommendation/INDEPENDENT_REVIEW.md",
+    "independentVerdictOnV1": "ACCEPT_WITH_MANDATORY_CHANGES",
+    "claimsFalsified": [
+      "concurrency",
+      "bypass_protection"
+    ],
+    "allMustFixIncorporatedInV2": true,
+    "v2IndependentlyReviewed": false,
+    "limiterImplemented": false,
+    "stagingMutations": "NONE",
+    "productionMutations": "NONE",
+    "ownerApprovedForImplementation": false,
+    "localImplementationAuthorization": "CONSUMED_FOR_V4_ONLY",
+    "productionThresholdDecision": "DEFERRED",
+    "verificationWave": {
+      "F28_A": "HOLD",
+      "V2_INDEPENDENT_REVIEW": "HOLD",
+      "OLD_CLIENT_ROLLOUT_CONSTRAINT": "COMPLETE",
+      "THRESHOLD_SEPARATION": "COMPLETE"
+    },
+    "f28aBlocker": "G1 forgeability of cf-connecting-ip / x-real-ip on this path. Needs the 12-call bounded staging probe; owner authorization NOT granted and NOT covered by existing authority.",
+    "v2TrustedInputMisspecified": true,
+    "v2IllustrativeThresholdsWithdrawn": true,
+    "blockers": [
+      {
+        "id": "BLOCKER-1",
+        "gate": "F28-A",
+        "summary": "Forgeability (G1) of cf-connecting-ip / x-real-ip is unproven. Docs, existing Flagstone evidence and existing staging logs are exhausted; staging holds no HTTP logs.",
+        "unblockedBy": "12-call bounded staging probe - NOT AUTHORIZED, NOT EXECUTED"
+      },
+      {
+        "id": "BLOCKER-2",
+        "gate": "V2_INDEPENDENT_REVIEW",
+        "summary": "HOLD. 2 items FALSIFIED, 7 MUST-FIX. Most serious is a NEW defect: grants_issued is a per-bucket monotonic non-replenishing counter, so one resetting client starves every future guest on that network while >90% of the budget goes unspent.",
+        "unblockedBy": "A v3 written AFTER F28-A resolves, then independently reviewed"
+      }
+    ],
+    "v2Status": "SUPERSEDED - must not be implemented",
+    "v3Offered": true,
+    "v3WithheldReason": "Writing v3 now would repeat the defect that produced v1 and v2: specifying against a signal whose behaviour has not been measured.",
+    "artifactHashes": {
+      "WAVE_RESULT.md": "4a9c8a3a511a67a3607a7b6eea1038ebe22481f881a657ad7565fe0b07bf7490",
+      "INDEPENDENT_REVIEW_V2.md": "45aa5ad9c0f042e67d9ae614ec72ccfcf56fd19ce3d84f0973bc4057b13bb159",
+      "F28A_EVIDENCE.json": "14cb09283611f55d3cdc57dbe1709188a69b0c5dcf09ef5098e99fd8d0d4cb3b",
+      "STAGING_DIAGNOSTIC_PROBE_PLAN.md": "9004d6852251e5db481fcc4a66643064667a5c2dff82c954badc4e1609156726",
+      "OLD_CLIENT_ROLLOUT_CONSTRAINT.md": "57283f00a4f12988112a32881da6a8d3c4d4f61d711e1ade0abe22520bfe7e86",
+      "THRESHOLD_SEPARATION.md": "dc4557a6824db5a66528cda9e8480d1b237485ba64a3d1abee6b8bc466913bd8",
+      "author-verification-v2-review.json": "bf6f71ae68580f5d6d4fc451dbd60d55df5c6184ee93afe32bbc2affee40f665"
+    },
+    "F28_A": "PASS (narrowed) - independently verified, two corrections applied, one documentation upgrade",
+    "trustedSignal": "cf-connecting-ip - measured: reaches the Deno runtime, single-valued, stable, and refused 403 at the Cloudflare edge if caller-supplied",
+    "probe": {
+      "authority": "Sky, explicit bounded authorization",
+      "TEMP_PROBE_STATE": "REMOVED_VERIFIED",
+      "deployed": "fda028-probe id 2e3d1102-4e94-4190-a46a-50da9dc6d531",
+      "removedVerifiedVia": "MCP inventory (3 expected functions, probe absent) + HTTP 404 to the probe URL",
+      "stagingDatabaseMutations": "NONE",
+      "productionContact": "NONE - read-only log queries only, no mutation"
+    },
+    "v3LocalTests": "8/8 pass including 40-way concurrency with no overshoot",
+    "v3IndependentReview": "HOLD",
+    "F28_A_verifierVerdict": "F28_A_PASS_WITH_NARROWED_CLAIM",
+    "callerSpoofResistance": "PASS - documented by Cloudflare Error 1000 and reproduced live by two independent parties",
+    "v3Blockers": [
+      {
+        "id": "V3-MUST-1",
+        "summary": "The tested artifact is the ledger only. The HMAC/Vault derivation, IP normalisation, enforcement RAISE and the actual INSERT do not exist as tested code. Same defect class as v2 Finding 5, relocated."
+      },
+      {
+        "id": "V3-MUST-2",
+        "summary": "FALSIFIED INVARIANT: deleting a bucket row while its grant survives silently resets the bucket to 0 and lets the grant keep spending, so consumption can exceed BUCKET_ALLOWANCE - the exact invariant the starvation fix rests on. Author-verified fix (FK ON DELETE CASCADE) works but is not yet incorporated or re-reviewed."
+      },
+      {
+        "id": "V3-MUST-3",
+        "summary": "Privacy regression understated: one long-lived secret with window_id in the HMAC MESSAGE lets a ledger+Vault holder forward-compute bucket keys for every window the secret covered. Exposure is unbounded, not one live window."
+      }
+    ],
+    "v3ShouldFix": [
+      "IPv6 /128 understates automatic OS-level privacy-address rotation on mobile",
+      "v2 Findings 9 and 11 dropped: no rollback section at all in v3; network-rotation difficulty not differentiated",
+      "pgcrypto lives in the extensions schema - an unqualified hmac() under a restrictive search_path will fail at runtime",
+      "NORMAL and BUCKET_ALLOWANCE are two knobs, not one"
+    ],
+    "v4Offered": false,
+    "v4WithheldReason": "Sky authorized the probe, v3 and its review only. Two of the three MUST-FIX items need work that is not yet written or tested; writing v4 now would repeat the pattern of publishing untested mechanism.",
+    "FDA028_V4_STATE": "LOCAL_ACCEPTED_R6",
+    "v4SourceSha": "eec51b6723d04105a7ba31bf2efd2573b95e8902",
+    "v4SourceTree": "23f352bec069522efe9a174a4551c2c484b91de2",
+    "v4LocalResults": "62 acceptance assertions pass; 3 concurrency shapes no overshoot on ACTUAL rows; restoration + deterministic reapply clean",
+    "v4BlockerClosure": {
+      "BLOCKER_1_FULL_PATH": "CLOSED (pending review)",
+      "BLOCKER_2_BUCKET_GRANT_LIFECYCLE": "CLOSED (pending review)",
+      "BLOCKER_3_KEY_LINKABILITY": "CLOSED for the stated requirement (pending review)"
+    },
+    "v4KnownFollowUps": [
+      "PGTAP_KIND markers missing on the 5 new supabase/tests/fda028 files - adds 5 entries to the db:pgtap problem list. The non-zero db:pgtap exit is INHERITED (baseline-backups.sql lacks a marker at the frozen source) but the added entries are v4-introduced and must be fixed. Deferred only so the in-flight independent review is not invalidated mid-run."
+    ],
+    "v4IndependentReview": "IN_PROGRESS",
+    "VAULT_IO": "UNVERIFIED_LOCALLY",
+    "IPV6_HOSTED_EVIDENCE": "OPEN",
+    "v4IndependentReview_r1": "HOLD - 3 MUST-FIX, all reproduced by the author and repaired",
+    "v4R1Defects": [
+      {
+        "id": "REV-1",
+        "defect": "p_now was a caller-controlled unvalidated parameter on the guest entry points. One call with now()+400 days advanced the epoch 400 times, orphaning every live bucket so the next ordinary request received a fresh fully funded one.",
+        "fix": "guest entry points take NO clock and read now() inside the database; clocked *_at variants are owner-only; a test asserts no service_role-executable limiter function accepts a timestamptz",
+        "reproducedByAuthor": true
+      },
+      {
+        "id": "REV-2",
+        "defect": "NAT64 and other IPv4-embedding IPv6 forms collapsed: 64:ff9b::203.0.113.1 and ...99 both masked to 64:ff9b::/64 and shared one bucket. NAT64 is live on IPv6-only mobile carriers.",
+        "fix": "limiter.embedded_ipv4 covering ::ffff:0:0/96, 64:ff9b::/96, 64:ff9b:1::/96 and the deprecated ::/96, unwrapped before any /64 masking",
+        "reproducedByAuthor": true
+      },
+      {
+        "id": "REV-3",
+        "defect": "purge() deleted the LIVE bucket when retention_windows=0 - a value the CHECK permits - zeroing a live ledger and letting BUCKET_ALLOWANCE be exceeded outright.",
+        "fix": "strict less-than, hard-floored at the live window",
+        "reproducedByAuthor": true
+      }
+    ],
+    "v4R2Results": "78 acceptance assertions pass (was 62); 3 concurrency shapes no overshoot on actual rows; restoration + deterministic reapply clean at 16 functions; typecheck PASS",
+    "v4PgtapRegressionCleared": true,
+    "v4IndependentReview_r2": "IN_PROGRESS",
+    "v4RepairRounds": [
+      {
+        "round": "r1",
+        "verdict": "HOLD",
+        "newDefects": 3,
+        "summary": "caller-controlled clock; NAT64 /96-only collapse; purge deleting the live window"
+      },
+      {
+        "round": "r2",
+        "verdict": "HOLD",
+        "newDefects": 1,
+        "summary": "RFC 6052 NSPs at non-/96 lengths still collapsed; clock fix was privilege-separation only"
+      },
+      {
+        "round": "r3",
+        "verdict": "HOLD",
+        "newDefects": 1,
+        "summary": "epoch-domain wedge introduced BY the r2 clock hardening; found independently by author and reviewer"
+      },
+      {
+        "round": "r4",
+        "verdict": "HOLD",
+        "newDefects": 2,
+        "summary": "domain-revisit re-funding and permanent row stranding, both introduced BY the r3 domain marker"
+      },
+      {
+        "round": "r5",
+        "verdict": "HOLD",
+        "newDefects": 1,
+        "summary": "TOCTOU race in the guard introduced BY the r4 structural fix - unlocked EXISTS cannot see an uncommitted admission"
+      },
+      {
+        "round": "r6",
+        "verdict": "PASS",
+        "newDefects": 0,
+        "summary": "advisory-lock coordination closes r5 TOCTOU; reviewer reproduced all 120 assertions, all 3 concurrency shapes and a full rollback-reapply cycle; 3 SHOULD-FIX residuals, no MUST-FIX"
+      }
+    ],
+    "v4AcceptanceAssertions": 120,
+    "v4IndependentReview_r4": "NOT_RUN - terminated by usage limit, no verdict produced, re-dispatch required",
+    "v4OpenLead": "A terminated reviewer was probing whether a domain reset acts as a GLOBAL budget reset (re-seeding changes every bucket key mid-window). Recorded as an open question for the next review; it is NOT a finding and no verdict was reached.",
+    "FDA028_V4_LOCAL_GATE": "PASS",
+    "v4Pattern": "Six rounds. Every repair through r5 introduced at least one new defect, each in the same area: the coupling between a configurable/caller-supplied time base and the key/window derivation. r6 changes approach from detection to lock coordination.",
+    "v4IndependentReview_r5": "HOLD",
+    "v4IndependentReview_r6": "PASS",
+    "v4OpenResiduals": [
+      "R6-1 operator-held EXCLUSIVE lock can freeze admissions (availability, trusted-operator scope)",
+      "R6-2 advisory key is PUBLIC-lockable by raw-SQL actors (availability, not reachable via PostgREST)",
+      "R6-3 no CI test races an admission against a config change"
+    ],
+    "localImplementationAccepted": "YES - LOCAL ONLY",
+    "fda028Closed": false,
+    "stagingAuthorized": false,
+    "integrationAuthorized": false,
+    "productionAuthorized": false
+  },
+  "nextSafeAction": "Report the V4 LOCAL PASS to Sky and stop. The local implementation authorization is consumed; staging, integration, production and main merge all remain separate ungranted gates.",
+  "recommendationHashes": {
+    "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
+    "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
+    "INDEPENDENT_REVIEW.md": "68bdbf71a0fd71c5283508a1b955a46474abc4d50da4a39220ef47a544ecb33b",
+    "author-verification-postgres.json": "ab98bafd31da96636d2febba7cabf4ad80c065f60bf4dff7155a0af6dc44208d",
+    "evidence-platform-and-boundary.json": "3426e786b2d620cab1174d56d5034030276eccd35b49100bd38d9c6b22208cd2",
+    "fda028-gate.json": "5184d2859f3962426e2f9d0aa0bf3e52d6f9b54acddce6896daee7c3e11b12b7"
+  },
+  "runStatusHistory": [
+    {
+      "utc": "2026-09-10T07:52:46Z",
+      "event": "PAUSED_FOR_USAGE_LIMIT then RESUMED",
+      "note": "Usage reset grants no new authority. Scope remains LOCAL-ONLY V4. Artifact re-verified unchanged before resuming: tree 7d7d03f7, migration hash 61aa5247..."
+    }
+  ]
+}

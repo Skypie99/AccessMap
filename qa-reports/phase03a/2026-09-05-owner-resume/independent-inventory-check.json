@@ -1,0 +1,70 @@
+{
+  "scope": "Independent manifest/hash gate tests in disposable Documents copies; no database or repository mutation",
+  "candidateSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
+  "cases": [
+    {
+      "name": "unchanged inventory reaches capture",
+      "expectedError": "INDEPENDENT_AFTER_VALIDATION",
+      "error": "INDEPENDENT_AFTER_VALIDATION",
+      "reachedCapture": true,
+      "passed": true
+    },
+    {
+      "name": "new unlisted migration",
+      "expectedError": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "error": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "reachedCapture": false,
+      "passed": true
+    },
+    {
+      "name": "new unlisted restoration",
+      "expectedError": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "error": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "reachedCapture": false,
+      "passed": true
+    },
+    {
+      "name": "missing migration",
+      "expectedError": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "error": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "reachedCapture": false,
+      "passed": true
+    },
+    {
+      "name": "missing restoration",
+      "expectedError": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "error": "Phase03A migration/restoration inventory differs from the reviewed manifest",
+      "reachedCapture": false,
+      "passed": true
+    },
+    {
+      "name": "migration source drift",
+      "expectedError": "Phase03A artifact hash mismatch: 20260905055629_phase03a_flag_policies.sql",
+      "error": "Phase03A artifact hash mismatch: 20260905055629_phase03a_flag_policies.sql",
+      "reachedCapture": false,
+      "passed": true
+    },
+    {
+      "name": "restoration source drift",
+      "expectedError": "Phase03A artifact hash mismatch: rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "error": "Phase03A artifact hash mismatch: rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "reachedCapture": false,
+      "passed": true
+    },
+    {
+      "name": "allowlist source drift",
+      "expectedError": "Phase03A artifact hash mismatch: application-privileges.v1.json",
+      "error": "Phase03A artifact hash mismatch: application-privileges.v1.json",
+      "reachedCapture": false,
+      "passed": true
+    },
+    {
+      "name": "effective capture query drift",
+      "expectedError": "Phase03A artifact hash mismatch: effective-privileges.sql",
+      "error": "Phase03A artifact hash mismatch: effective-privileges.sql",
+      "reachedCapture": false,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

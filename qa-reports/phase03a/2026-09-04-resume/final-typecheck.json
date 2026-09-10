@@ -1,0 +1,14 @@
+{
+  "name": "typecheck",
+  "program": "npm",
+  "args": [
+    "run",
+    "typecheck"
+  ],
+  "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "startedAtUtc": "2026-09-05T06:23:43.193Z",
+  "finishedAtUtc": "2026-09-05T06:23:52.002Z",
+  "exitCode": 0,
+  "signal": null,
+  "output": "\n> accessmap@4.1.1 typecheck\n> tsc --noEmit\n\n"
+}

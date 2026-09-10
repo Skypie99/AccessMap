@@ -1,0 +1,7 @@
+{
+  "originalFile": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser.stderr.txt",
+  "originalBytes": 1085,
+  "originalSha256": "f595736af38952cbdac2c5732054e32df809ce2661bc778fa5fc77e82d6d3d5f",
+  "encoding": "utf-8",
+  "text": "PASS scripts/__tests__/phase03aReplay.test.ts\n  Phase03A genuine TAP acceptance\n    \u2713 accepts an executed exact nonzero plan (371 ms)\n    \u2713 rejects failed assertion rather than claiming database proof (64 ms)\n    \u2713 rejects missing plan rather than claiming database proof (72 ms)\n    \u2713 rejects count mismatch rather than claiming database proof (65 ms)\n    \u2713 rejects wrong expected plan rather than claiming database proof (67 ms)\n    \u2713 rejects bailout after complete count rather than claiming database proof (63 ms)\n    \u2713 rejects skip all rather than claiming database proof (60 ms)\n    \u2713 rejects skipped assertion rather than claiming database proof (60 ms)\n    \u2713 rejects TODO assertion rather than claiming database proof (59 ms)\n\nTest Suites: 1 passed, 1 total\nTests:       9 passed, 9 total\nSnapshots:   0 total\nTime:        2.015 s\nRan all test suites within paths \"scripts/__tests__/phase03aReplay.test.ts\".\nTest results written to: ../../Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-owner-resume/independent-parser-jest.json\n"
+}

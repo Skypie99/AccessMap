@@ -313,7 +313,7 @@ export default function LeaderboardScreen({ visible, onClose }: Props) {
       // leaderboard we already loaded successfully.
       if (user && !data.some((e) => e.id === user.id)) {
         try {
-          const myRank = await getUserLeaderboardRank(user.id);
+          const myRank = await getUserLeaderboardRank();
           setUserFooter(myRank);
         } catch {
           setUserFooter(null);

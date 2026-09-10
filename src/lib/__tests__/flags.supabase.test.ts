@@ -43,6 +43,7 @@ import {
   fetchFlagsByIds,
   listRecentFlags,
   listLeaderboard,
+  getUserLeaderboardRank,
   requestFlagReopen,
   FlagStatusConflictError,
 } from '../flags';
@@ -420,29 +421,72 @@ describe('listLeaderboard', () => {
       { id: 'u1', display_name: 'Alice', points: 100 },
       { id: 'u2', display_name: 'Bob', points: 50 },
     ];
-    setupChain({ data: users, error: null });
+    mockRpc.mockResolvedValue({ data: users, error: null });
 
     const result = await listLeaderboard();
     expect(result).toHaveLength(2);
     expect(result[0]?.points).toBe(100);
     expect(result[1]?.display_name).toBe('Bob');
+    expect(mockRpc).toHaveBeenCalledWith('list_public_leaderboard', { p_limit: 20 });
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   it('returns [] when data is null', async () => {
-    setupChain({ data: null, error: null });
+    mockRpc.mockResolvedValue({ data: null, error: null });
     const result = await listLeaderboard();
     expect(result).toEqual([]);
   });
 
   it('throws on Supabase error', async () => {
-    setupChain({ data: null, error: { message: 'permission denied', code: '42501' } });
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'permission denied', code: '42501' } });
     await expect(listLeaderboard()).rejects.toMatchObject({ code: '42501' });
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   it('accepts a custom limit', async () => {
-    setupChain({ data: [{ id: 'u1', display_name: 'Top', points: 999 }], error: null });
+    mockRpc.mockResolvedValue({ data: [{ id: 'u1', display_name: 'Top', points: 999 }], error: null });
     const result = await listLeaderboard(1);
     expect(result).toHaveLength(1);
+    expect(mockRpc).toHaveBeenCalledWith('list_public_leaderboard', { p_limit: 1 });
+  });
+
+  it('keeps only the four public fields in its result', async () => {
+    mockRpc.mockResolvedValue({
+      data: [{ id: 'u1', display_name: null, avatar_url: null, points: 7, is_admin: true }],
+      error: null,
+    });
+    await expect(listLeaderboard()).resolves.toEqual([
+      { id: 'u1', display_name: null, avatar_url: null, points: 7 },
+    ]);
+  });
+
+  it('does not fall back to users when the public projection is absent', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: { code: 'PGRST202', message: 'RPC unavailable' } });
+    await expect(listLeaderboard()).rejects.toMatchObject({ code: 'PGRST202' });
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+});
+
+describe('getUserLeaderboardRank', () => {
+  it('returns only the caller rank and points without sending a user identifier', async () => {
+    mockSingle.mockResolvedValue({ data: { rank: 23, points: 8, id: 'private-id' }, error: null });
+    mockRpc.mockReturnValue({ single: mockSingle });
+    await expect(getUserLeaderboardRank()).resolves.toEqual({ rank: 23, points: 8 });
+    expect(mockRpc).toHaveBeenCalledWith('get_my_leaderboard_rank');
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it.each(['42501', 'PGRST202'])('surfaces %s without fabricating a rank or querying users', async (code) => {
+    mockSingle.mockResolvedValue({ data: null, error: { code, message: 'Rank unavailable' } });
+    mockRpc.mockReturnValue({ single: mockSingle });
+    await expect(getUserLeaderboardRank()).rejects.toMatchObject({ code });
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('refuses a missing caller result instead of claiming first place', async () => {
+    mockSingle.mockResolvedValue({ data: null, error: null });
+    mockRpc.mockReturnValue({ single: mockSingle });
+    await expect(getUserLeaderboardRank()).rejects.toThrow('Leaderboard rank could not be loaded.');
   });
 });
 

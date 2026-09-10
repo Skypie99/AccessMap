@@ -1,0 +1,85 @@
+{
+  "capturedAtUtc": "2026-09-05T07:39:00.567Z",
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "readOnly": true,
+  "query": "SELECT jsonb_build_object(\n 'schemaAcls', (SELECT jsonb_agg(jsonb_build_object('schema',n.nspname,'owner',pg_get_userbyid(n.nspowner),'grantee',CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END,'privilege',a.privilege_type,'grantable',a.is_grantable) ORDER BY n.nspname,a.grantee,a.privilege_type) FROM pg_namespace n CROSS JOIN LATERAL aclexplode(coalesce(n.nspacl,acldefault('n',n.nspowner))) a WHERE n.nspname IN ('public','private')),\n 'memberships', coalesce((SELECT jsonb_agg(jsonb_build_object('member',pg_get_userbyid(member),'role',pg_get_userbyid(roleid),'inherit',inherit_option,'set',set_option,'admin',admin_option) ORDER BY member,roleid) FROM pg_auth_members WHERE member IN (SELECT oid FROM pg_roles WHERE rolname IN ('anon','authenticated','service_role'))),'[]'::jsonb)) AS catalog;",
+  "result": [
+    {
+      "catalog": {
+        "schemaAcls": [
+          {
+            "owner": "postgres",
+            "schema": "private",
+            "grantee": "postgres",
+            "grantable": false,
+            "privilege": "CREATE"
+          },
+          {
+            "owner": "postgres",
+            "schema": "private",
+            "grantee": "postgres",
+            "grantable": false,
+            "privilege": "USAGE"
+          },
+          {
+            "owner": "postgres",
+            "schema": "private",
+            "grantee": "authenticated",
+            "grantable": false,
+            "privilege": "USAGE"
+          },
+          {
+            "owner": "pg_database_owner",
+            "schema": "public",
+            "grantee": "PUBLIC",
+            "grantable": false,
+            "privilege": "USAGE"
+          },
+          {
+            "owner": "pg_database_owner",
+            "schema": "public",
+            "grantee": "pg_database_owner",
+            "grantable": false,
+            "privilege": "CREATE"
+          },
+          {
+            "owner": "pg_database_owner",
+            "schema": "public",
+            "grantee": "pg_database_owner",
+            "grantable": false,
+            "privilege": "USAGE"
+          },
+          {
+            "owner": "pg_database_owner",
+            "schema": "public",
+            "grantee": "postgres",
+            "grantable": false,
+            "privilege": "USAGE"
+          },
+          {
+            "owner": "pg_database_owner",
+            "schema": "public",
+            "grantee": "anon",
+            "grantable": false,
+            "privilege": "USAGE"
+          },
+          {
+            "owner": "pg_database_owner",
+            "schema": "public",
+            "grantee": "authenticated",
+            "grantable": false,
+            "privilege": "USAGE"
+          },
+          {
+            "owner": "pg_database_owner",
+            "schema": "public",
+            "grantee": "service_role",
+            "grantable": false,
+            "privilege": "USAGE"
+          }
+        ],
+        "memberships": []
+      }
+    }
+  ]
+}

@@ -11,17 +11,17 @@ import { parseReviewResolution } from '../../supabase/functions/_shared/accountD
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const fix = fs.readFileSync(
-  path.join(ROOT, 'supabase', 'migrations', '20260828020000_d1f4r3_fix2_review_replay_and_flag_delete.sql'),
+  path.join(ROOT, 'supabase', 'nonmanaged', 'proposed', '20260828020000_d1f4r3_fix2_review_replay_and_flag_delete.sql'),
   'utf8',
 );
 // FIX3 supersedes the FIX2 resolver body (audit-before-return); resolver
 // behavior assertions must target the effective definition, not FIX2's.
 const fix3 = fs.readFileSync(
-  path.join(ROOT, 'supabase', 'migrations', '20260828030000_d1f4r3_fix3_review_audit.sql'),
+  path.join(ROOT, 'supabase', 'nonmanaged', 'proposed', '20260828030000_d1f4r3_fix3_review_audit.sql'),
   'utf8',
 );
 const r3 = fs.readFileSync(
-  path.join(ROOT, 'supabase', 'migrations', '20260828010000_d1f4r3_source_closure.sql'),
+  path.join(ROOT, 'supabase', 'nonmanaged', 'proposed', '20260828010000_d1f4r3_source_closure.sql'),
   'utf8',
 );
 const reviewRoute = fs.readFileSync(
@@ -194,9 +194,14 @@ describe('D1F4R3-FIX2 direct flag deletion containment', () => {
   });
 
   it('preserves both frozen migrations exactly', () => {
-    const frozen = (name: string) => fs.readFileSync(path.join(ROOT, 'supabase', 'migrations', name));
+    const frozen = (name: string) => fs.readFileSync(path.join(ROOT, 'supabase', 'nonmanaged', name.includes('d1sa') ? 'live-out-of-band' : 'proposed', name));
+    // PHASE-02A: pin advanced d131d769 -> 4caeebb5. The old value is the blob at
+    // c74fbd6; 932388b superseded it with the migration-history truth repair, and
+    // this pin never caught the change because the suite was already dead on a
+    // stale path. The current content's claims were reconfirmed against the live
+    // catalog on 2026-09-04 (all 7 bk_* tables RLS-on, zero anon grants).
     expect(crypto.createHash('sha256').update(frozen('2026-08-27_d1sa_deployed_security_containment.sql')).digest('hex'))
-      .toBe('d131d76929bae33051b7a3fcacb8852d58b38fda951f1c57b95aac227e85c68d');
+      .toBe('4caeebb5cf7a4488bd44ddfbcfcf50bb7cbe67ad9dcc3ec766b935be189895b7');
     expect(crypto.createHash('sha256').update(frozen('2026-08-27_d1_option_a_account_deletion.sql')).digest('hex'))
       .toBe('a01142702609c2c32cce252f979e2ffc3ee6aa90b91030332fe1ceb287c83e01');
   });

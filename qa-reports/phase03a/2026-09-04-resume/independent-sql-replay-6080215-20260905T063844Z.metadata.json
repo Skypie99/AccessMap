@@ -1,0 +1,39 @@
+{
+  "kind": "independent read-only source review with explicitly authorized disposable local PostgreSQL execution",
+  "commandArgv": [
+    "/usr/local/bin/node",
+    "scripts/replay-migrations.mjs",
+    "--with-next",
+    "--local-only",
+    "--phase03a",
+    "--phase03a-pgtap-sql=/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/pgtap-968eb53a33114e83042b3bdb0c664b5b80cf8bdf/sql/pgtap.sql",
+    "--json"
+  ],
+  "cwd": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
+  "startedAtUtc": "2026-09-05T06:38:44.056603+00:00",
+  "finishedAtUtc": "2026-09-05T06:38:48.813057+00:00",
+  "elapsedSeconds": 4.753294541995274,
+  "exitCode": 0,
+  "sourceBefore": {
+    "sha": "6080215c409de9be67cc0c6f066f8567a2722fed",
+    "tree": "23cf68c37574499d153e7e12dccf3031faf0f02d",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "statusPorcelain": ""
+  },
+  "sourceAfter": {
+    "sha": "6080215c409de9be67cc0c6f066f8567a2722fed",
+    "tree": "23cf68c37574499d153e7e12dccf3031faf0f02d",
+    "branch": "repair/flagstone-p03a-backend-foundation-20260903",
+    "statusPorcelain": ""
+  },
+  "sourceUnchanged": true,
+  "productionMutation": false,
+  "artifactPaths": {
+    "stdout": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.stdout.json",
+    "stderr": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/independent-sql-replay-6080215-20260905T063844Z.stderr.txt"
+  },
+  "artifactSha256": {
+    "stdout": "ca4235f5015d662e15b0199b53c9052e36a52dda352655e5f51200e7ec6d05d5",
+    "stderr": "c34f762ded2ea572459ecfe4309a665486b044316711c6221232e3da57adee6c"
+  }
+}

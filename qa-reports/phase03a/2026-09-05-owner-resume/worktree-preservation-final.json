@@ -1,0 +1,177 @@
+{
+  "otherWorktreesUnchanged": true,
+  "startingRegisteredCount": 42,
+  "finalRegisteredCount": 42,
+  "changedOtherWorktrees": [],
+  "current": [
+    {
+      "metadata": "worktree /Users/skypie/AccessMap\nHEAD 94d86239fed85e9e9135522e5271af813d6dfc90\nbranch refs/heads/codex/spark-a11y-c2a-infra-20260830",
+      "status": "## codex/spark-a11y-c2a-infra-20260830...origin/codex/spark-a11y-c2a-infra-20260830\n M CLAUDE.md\n?? AGENTS.md\n?? _to_delete/\n?? build.log\n?? design-reviews/art-direction/2026-08-21/HANDOFF.md\n?? design-reviews/art-direction/2026-08-21/PLAN.md\n?? design-reviews/art-direction/2026-08-21/build-prompts/\n?? design-reviews/art-direction/2026-08-21/captures/\n?? design-reviews/art-direction/2026-08-21/mockups/\n?? design-reviews/art-direction/2026-08-21/sections/\n?? design-reviews/art-direction/2026-08-21/tools/\n?? design-reviews/device-tune/D2b_mockup_gate.html\n?? design-reviews/device-tune/Phase3_mockup_gate.html\n?? design-reviews/device-tune/assets/\n?? design-reviews/device-tune/tools/build-board-p3.mjs\n?? design-reviews/device-tune/tools/build-board.mjs\n?? design-reviews/device-tune/tools/capture.mjs\n?? design-reviews/device-tune/tools/devicetune-drawer-material-stacks.json\n?? design-reviews/device-tune/tools/devicetune-drawer-material-stacks.txt\n?? design-reviews/device-tune/tools/manifests/\n?? design-reviews/device-tune/tools/measure-header.mjs\n?? design-reviews/evidence-log/\n?? design-reviews/fable-audit/assets/\n?? design-reviews/fable-audit/bench-assets/BENCH-3-modal-board.html\n?? design-reviews/fable-audit/tools/\n?? design-reviews/guards/\n?? design-reviews/map-chrome/2026-08-12/01_CHROME_INVENTORY.md\n?? design-reviews/map-chrome/2026-08-12/BUILD_PROMPT.md\n?? design-reviews/map-chrome/2026-08-12/CLOSEOUT.md\n?? design-reviews/map-chrome/2026-08-12/HANDOFF.md\n?? design-reviews/map-chrome/2026-08-12/SPEC.md\n?? design-reviews/map-chrome/2026-08-12/mockups/\n?? design-reviews/name-forge/2026-08-16/\n?? design-reviews/r2-audit/assets/\n?? design-reviews/r2-audit/build-plan/evidence/BP01/\n?? design-reviews/r2-audit/build-plan/evidence/BP02/\n?? design-reviews/r2-audit/build-plan/evidence/BP03/\n?? design-reviews/r2-audit/build-plan/evidence/BP04/\n?? design-reviews/r2-audit/build-plan/evidence/BP05/\n?? design-reviews/r2-audit/build-plan/evidence/BP06/\n?? design-reviews/r2-audit/build-plan/evidence/BP07/\n?? design-reviews/r2-audit/build-plan/evidence/BP08/\n?? design-reviews/r2-audit/build-plan/evidence/BP09/\n?? design-reviews/r2-audit/build-plan/evidence/BP12/\n?? design-reviews/r2-audit/build-plan/evidence/selfverify-raw.json\n?? design-reviews/r2-audit/partials/crit-high-blocks.json\n?? design-reviews/r2-audit/partials/ladder.json\n?? design-reviews/r2-audit/partials/r2p3-draft-pool.json\n?? design-reviews/r2-audit/partials/r2p3-ranking.json\n?? design-reviews/r2-audit/partials/r2p3-slatemeta.json\n?? design-reviews/r2-audit/partials/r2p3-stage3-raw.json\n?? design-reviews/r2-audit/partials/verdicts.json\n?? design-reviews/r2-audit/tools/annotate.mjs\n?? design-reviews/r2-audit/tools/capture.mjs\n?? design-reviews/r2-audit/tools/manifests/\n?? design-reviews/r2-audit/tools/probe-bp2-perception.mjs\n?? design-reviews/r2-audit/tools/probe-export.mjs\n?? design-reviews/r2-audit/tools/probe-f104-skeptic.mjs\n?? design-reviews/r2-audit/tools/probe-f401-detail.mjs\n?? design-reviews/r2-audit/tools/probe-f401-skeptic.mjs\n?? design-reviews/r2-audit/tools/probe-f403-denied-real.mjs\n?? design-reviews/r2-audit/tools/probe-f403-skeptic.mjs\n?? design-reviews/r2-audit/tools/probe-f501-skeptic.mjs\n?? design-reviews/r2-audit/tools/probe-f503-skeptic.mjs\n?? design-reviews/r2-audit/tools/r2-brand-cameo-stacks.json\n?? design-reviews/r2-audit/tools/r2-focus-net-stacks.json\n?? design-reviews/r2-audit/tools/r2-guest-profile-stacks.json\n?? design-reviews/r2-audit/tools/r2-material-stacks.json\n?? design-reviews/r2-audit/tools/r2-press-vocab-stacks.json\n?? design-reviews/r2-audit/tools/r2-report-ack-stacks.json\n?? design-reviews/r2-audit/tools/r2-severity-disc-stacks.json\n?? design-reviews/r2-audit/tools/r2-tabbar-ink-stacks.json\n?? design-reviews/r2-audit/tools/r2-trials-stacks.json\n?? design-reviews/r2-audit/tools/test-photo.png\n?? design-reviews/r2-audit/tools/verify1.mjs\n?? design-reviews/store-dossier/\n?? design-reviews/submission-sprint/\n?? design-reviews/three-fixes/\n?? qa-reports/2026-08-23_COWORK_PROMPT_email-forwarding-setup.md\n?? qa-reports/2026-08-28_Claude_D1F4R3_CleanIdleGate.md\n?? qa-reports/2026-08-28_Claude_D1F4R3_ForensicTriage.md\n?? qa-reports/2026-09-03_Phase00_MainOwner_SANITIZED.md\n?? qa-reports/cycle-2026-08-19-morgan-status.md\n?? qa-reports/cycle-2026-08-23-iron-lantern-weekly.md\n?? qa-reports/cycle-2026-08-30-iron-lantern-weekly.md\n?? security-audit/2026-07-31/00_MASTER_TABLE.md\n?? security-audit/2026-07-31/HANDOFF.md\n?? security-audit/2026-07-31/LENS1_secrets_exposure.md\n?? security-audit/2026-07-31/LENS2_trust_boundary.md\n?? security-audit/2026-07-31/LENS3_authz_deep_dive.md\n?? security-audit/2026-07-31/LENS4_input_output.md\n?? security-audit/2026-07-31/LENS5_platform_supply_chain.md\n?? security-audit/2026-07-31/LENS6_privacy_claims.md\n?? security-audit/2026-07-31/LENS7_abuse_misuse.md\n?? specs/"
+    },
+    {
+      "metadata": "worktree /private/tmp/claude-501/-Users-skypie/9279f62b-a4b8-4e22-a3c9-8222530a7344/scratchpad/pre-r3-93036d1\nHEAD 93036d13980eaa54e3c126043dc6d7116514210e\ndetached\nprunable gitdir file points to non-existent location",
+      "status": "REGISTERED_PATH_MISSING"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d1-option-a-account-deletion\nHEAD cf2b7f8c0c8b5b941d49fd4eae97d955a350478e\nbranch refs/heads/codex/d1-option-a-account-deletion",
+      "status": "## codex/d1-option-a-account-deletion"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d1f4-async-account-deletion\nHEAD 8376c0dd085903153fe6977add73d8044e18959b\nbranch refs/heads/codex/d1f4-async-account-deletion",
+      "status": "## codex/d1f4-async-account-deletion"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d1f4-async-account-deletion-i\nHEAD 960fbcc8d194910760e55106445c2a5595fd5cf5\nbranch refs/heads/codex/d1f4-async-account-deletion-i",
+      "status": "## codex/d1f4-async-account-deletion-i"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d1f4-source-repair\nHEAD 6ed37396cb4f7b6e0285c821441a20ae48b89ccb\nbranch refs/heads/codex/d1f4-source-repair",
+      "status": "## codex/d1f4-source-repair"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d1f4-source-repair-r2\nHEAD 93036d13980eaa54e3c126043dc6d7116514210e\nbranch refs/heads/codex/d1f4-source-repair-r2",
+      "status": "## codex/d1f4-source-repair-r2"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d1f4-source-repair-r3\nHEAD b4c11a3e4eda646fa99313165f1527972e935adb\nbranch refs/heads/codex/d1f4-source-repair-r3",
+      "status": "## codex/d1f4-source-repair-r3"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d1f4r3-fix2\nHEAD b28ed042ca828dcdd6bb7ae47e900b45330fd7a8\nbranch refs/heads/codex/d1f4r3-fix2",
+      "status": "## codex/d1f4r3-fix2"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/d2-option-a-account-deletion-acceptance\nHEAD fb8cf19f1131b80392401a398a46871d29f8ac37\nbranch refs/heads/codex/d2-option-a-account-deletion-acceptance",
+      "status": "## codex/d2-option-a-account-deletion-acceptance"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/final-polish-consolidation-20260831\nHEAD f5594171e75bc5ec92a87d0392c361601ddedfba\nbranch refs/heads/codex/final-polish-consolidation-20260831",
+      "status": "## codex/final-polish-consolidation-20260831...origin/codex/final-polish-consolidation-20260831\n?? qa-reports/2026-08-31_Codex_ProductionRLSApplyBlocked.md"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/final-ui-stabilization-build32\nHEAD 7c0fc24b7739b9142ac9d428d34216d9707a4413\nbranch refs/heads/codex/final-ui-stabilization-build32-20260831",
+      "status": "## codex/final-ui-stabilization-build32-20260831"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/fix4c-activityfeed-sectionlist-scroll\nHEAD 5df47999c88999ab0fc518bfc9039b7afab11194\nbranch refs/heads/codex/fix4c-activityfeed-sectionlist-scroll",
+      "status": "## codex/fix4c-activityfeed-sectionlist-scroll"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/flagstone-web-demo-repair-20260901\nHEAD d6b17a180f900128bd34af2ca3d88cf43d2e4a4a\nbranch refs/heads/codex/flagstone-web-demo-repair-20260901",
+      "status": "## codex/flagstone-web-demo-repair-20260901\n?? qa-reports/assets/2026-09-01_openfreemap_runtime/"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/map-heat-duplicate-microfix-20260831\nHEAD d7b33fd23917c643d083d2dd549c07ec12891351\nbranch refs/heads/codex/map-heat-duplicate-microfix-20260831",
+      "status": "## codex/map-heat-duplicate-microfix-20260831\n M src/screens/MapScreen.tsx\n M src/screens/__tests__/MapScreenHeatEmpty.test.ts"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/map-heat-xxxl-fix-20260831\nHEAD 7e13d76e70e6604f4ee1035267fecdb4ad387905\nbranch refs/heads/codex/map-heat-xxxl-fix-20260831",
+      "status": "## codex/map-heat-xxxl-fix-20260831"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/p02b-repair-rev2-20260904\nHEAD c2e36800b269ee22f29d0be35cfb88dace7c2afc\nbranch refs/heads/codex/p02b-repair-rev2-20260904",
+      "status": "## codex/p02b-repair-rev2-20260904"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903\nHEAD 0a6a6b03fd0cbe72f70f67260f6cab746e098f6a\nbranch refs/heads/repair/flagstone-p03a-backend-foundation-20260903",
+      "status": "## repair/flagstone-p03a-backend-foundation-20260903"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/portfolio-3.0-phase06-readme-20260904\nHEAD 7232c26621a2cdcfb94e8cdf5e31355944bef265\nbranch refs/heads/codex/portfolio-3.0-phase06-readme-20260904",
+      "status": "## codex/portfolio-3.0-phase06-readme-20260904"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/presubmission-ui-polish\nHEAD ed37860e9cc7989802a87f9994b78ed258210cc7\nbranch refs/heads/codex/presubmission-ui-polish",
+      "status": "## codex/presubmission-ui-polish\n?? qa-reports/2026-08-27_Codex_D1SA_Preflight.md"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/prompt-a-final-integration-20260830\nHEAD 188c53fee5c3f4d05db0facca199db2fc819d8b8\nbranch refs/heads/codex/prompt-a-final-integration-20260830",
+      "status": "## codex/prompt-a-final-integration-20260830\n?? qa-reports/2026-08-30_Codex_PromptAFinalIntegration.md\n?? qa-reports/2026-08-30_Codex_PromptAIntegrationConflict.md\n?? qa-reports/evidence/"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/prompt-b-schema-repair\nHEAD a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50\nbranch refs/heads/codex/prompt-b-schema-repair",
+      "status": "## codex/prompt-b-schema-repair\n M src/lib/flags.ts\n?? supabase/migrations/2026-08-30_prompt_b_schema_contract_repair.sql"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/s1p-final-security-logging-rollback\nHEAD 5edbdae4e107188a75e301564030425b1627d42d\nbranch refs/heads/codex/s1p-final-security-logging-rollback",
+      "status": "## codex/s1p-final-security-logging-rollback"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/spark-a11y-prompt-c-prep-20260829\nHEAD 0c5b53f85435c8b0f0d4f71c5fa4f9e24382703b\nbranch refs/heads/codex/spark-a11y-c1-primitives-map-20260829",
+      "status": "## codex/spark-a11y-c1-primitives-map-20260829...origin/codex/spark-a11y-c1-primitives-map-20260829"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-codex/ui-fix3-accept-20260829\nHEAD 2690d440fbd8e62059c9f93601638778a09853d3\ndetached",
+      "status": "## HEAD (no branch)"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-deep-audit-20260902\nHEAD ea610fe7a0863144a697a89a421faec9dc7c2315\nbranch refs/heads/claude/flagstone-deep-audit-20260902",
+      "status": "## claude/flagstone-deep-audit-20260902...origin/claude/flagstone-deep-audit-20260902"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-deep-audit-20260902-b33\nHEAD f5594171e75bc5ec92a87d0392c361601ddedfba\ndetached",
+      "status": "## HEAD (no branch)"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-main-merge-20260901\nHEAD 70b52a30e9fff0f7d538509b110212bb8d872391\nbranch refs/heads/main",
+      "status": "## main...origin/main"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-mr1-v2\nHEAD a1970cc615780a5a1d40bcc67ec0574085278637\nbranch refs/heads/claude/mr1-v2-clean-replay-repair-20260830",
+      "status": "## claude/mr1-v2-clean-replay-repair-20260830\n?? supabase/.temp/gotrue-version\n?? supabase/.temp/pooler-url\n?? supabase/.temp/postgres-version\n?? supabase/.temp/project-ref\n?? supabase/.temp/rest-version\n?? supabase/.temp/storage-migration\n?? supabase/.temp/storage-version"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-prompt-b-final\nHEAD a1970cc615780a5a1d40bcc67ec0574085278637\nbranch refs/heads/claude/prompt-b-final-implementation-20260830",
+      "status": "## claude/prompt-b-final-implementation-20260830"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-prompt-c-final\nHEAD d7b33fd23917c643d083d2dd549c07ec12891351\nbranch refs/heads/claude/prompt-c-final-accessibility-20260830",
+      "status": "## claude/prompt-c-final-accessibility-20260830\n?? qa-reports/2026-08-31_Codex_TerraEMDFinalRuntimeRerun.md\n?? qa-reports/FLAGSTONE_POST_RELEASE_VISUAL_AUDIT_BACKLOG.md"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-worktrees/_phase01-baseline-ebf091c\nHEAD ebf091c21066d39898160b1357bde0aa35bdb8bf\ndetached",
+      "status": "## HEAD (no branch)"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-worktrees/flagstone-00b-hygiene-20260903\nHEAD 5fabe8ed905e1f0527ec2ea198c090673df10142\nbranch refs/heads/hygiene/flagstone-00b-credential-config-20260903",
+      "status": "## hygiene/flagstone-00b-credential-config-20260903"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-worktrees/flagstone-b33-convergence-20260903\nHEAD 5a64c9174ae5d9d5a94ed543bc4663216df67e7f\nbranch refs/heads/integration/flagstone-b33-convergence-20260903",
+      "status": "## integration/flagstone-b33-convergence-20260903"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-worktrees/flagstone-p02-canonical-migrations-20260903\nHEAD 68aaf711c2023dd4aa1d6b9324f30e2b4e4b3bc1\nbranch refs/heads/repair/flagstone-p02-canonical-migrations-20260903",
+      "status": "## repair/flagstone-p02-canonical-migrations-20260903"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap-worktrees/flagstone-p02-contract-truth-20260903\nHEAD e0bb8aaa24cac2fe27318c262c7153be15f31806\nbranch refs/heads/repair/flagstone-p02-contract-truth-20260903",
+      "status": "## repair/flagstone-p02-contract-truth-20260903"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap/.claude/worktrees/distracted-heisenberg-062a37\nHEAD 70b52a30e9fff0f7d538509b110212bb8d872391\ndetached",
+      "status": "## HEAD (no branch)"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap/.claude/worktrees/flagstone-build-33-docs-6ff9d2\nHEAD c4626479f6344011530396602422c746f4bb4cc9\ndetached",
+      "status": "## HEAD (no branch)"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap/.claude/worktrees/flagstone-build-33-release-5b94fb\nHEAD a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50\ndetached",
+      "status": "## HEAD (no branch)"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap/.claude/worktrees/flagstone-ui-polish-4bc3e3\nHEAD a1970cc615780a5a1d40bcc67ec0574085278637\nbranch refs/heads/claude/exciting-sanderson-3daa05",
+      "status": "## claude/exciting-sanderson-3daa05\n?? qa-reports/2026-08-30_Claude_SheetPullDismissFlash.md"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap/.claude/worktrees/migration-map-repair-fix2-921aac\nHEAD ebf091c21066d39898160b1357bde0aa35bdb8bf\nbranch refs/heads/claude/build33-openfreemap-web-20260901",
+      "status": "## claude/build33-openfreemap-web-20260901\n?? qa-reports/2026-09-01_Claude_MainIntegrationScopeAudit.md"
+    },
+    {
+      "metadata": "worktree /Users/skypie/AccessMap/.claude/worktrees/vp1-visual-navigation-polish-4a517c\nHEAD a0bf4d04d0d2e11e6e56d1cd3546175d5759fb50\nbranch refs/heads/claude/mr1-clean-replay-repair-8cd6a8",
+      "status": "## claude/mr1-clean-replay-repair-8cd6a8\n M supabase/.temp/cli-latest"
+    }
+  ],
+  "rootSourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a"
+}

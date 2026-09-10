@@ -1,0 +1,22 @@
+{
+  "capturedAtUtc": "2026-09-05T07:03:54.587Z",
+  "initialDiffCheck": {
+    "command": [
+      "git",
+      "diff",
+      "--cached",
+      "--check"
+    ],
+    "exitCode": 2,
+    "output": "qa-reports/phase03a/2026-09-04-resume/final-production-catalog.json:7359: new blank line at EOF."
+  },
+  "correction": {
+    "file": "qa-reports/phase03a/2026-09-04-resume/final-production-catalog.json",
+    "scope": "Remove one extra trailing blank line only; parsed JSON unchanged.",
+    "rawSource": "/Users/skypie/Documents/Codex/2026-09-04/files-pasted-by-the-user-flagstone-2/work/phase03a-resume/final-production-catalog.json",
+    "originalSha256": "7813d5d29cd01ecba49a476844323e89872435c850193033e1c0ad4193783564",
+    "normalizedSha256": "479f5fedc8d957a6f2fe208cd90dd74ca531f64c97e8bc860a5314fd32d66d41",
+    "jsonUnchanged": true
+  },
+  "finalDiffCheck": "Required before documentation commit; recorded in exported finalization."
+}

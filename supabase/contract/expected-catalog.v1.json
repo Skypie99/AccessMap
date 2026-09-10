@@ -1,0 +1,57 @@
+{
+  "$schema": "./contract.schema.json",
+  "manifestVersion": 1,
+  "status": "SUPERSEDED_BY_PHASE_02B_REV2",
+  "capturedAtUtc": "2026-09-04T06:01:12Z",
+  "comparedAtUtc": null,
+  "project": "kldlwszpfkdmsjrjhjym",
+  "note": "Historical rev1 two-hash target retained for provenance only. Independent acceptance found it too narrow and its comparison timestamp unsupported. It must not be used as production-parity evidence; rev2 uses production-catalog-capture.v2.json plus the expanded comparator.",
+  "appliedLineageOnly": {
+    "description": "Replaying only the 71 applied migrations. Does NOT match production: the repository lineage is missing every out-of-band change and carries a duplicate status trigger the lineage never drops.",
+    "policyCount": 47,
+    "policyPredicateMd5": "9d3698f625119e2634e126956d291a21",
+    "triggerCount": 24,
+    "triggerMd5": "4f2f5e82566fb143341a68c5ac884c01",
+    "matchesProduction": false,
+    "knownDeltasVsProduction": [
+      "users update own row: uses an inline subquery instead of private.current_user_is_admin()",
+      "4 D1S-A policies differ (flag_photos authenticated insert, flags status update by any authenticated, flag-photos auth upload, flag-photos owner delete)",
+      "trigger_flag_status_change present -> DOUBLE points per status change",
+      "enforce_flag_rate_limit and enforce_global_anon_rate_limit absent",
+      "EXECUTE on 3 trigger-only functions still reachable by PUBLIC/anon"
+    ]
+  },
+  "withForwardCandidates": {
+    "description": "Rev1 historical claim, superseded and not accepted as proof.",
+    "policyCount": 47,
+    "policyPredicateMd5": "2cd803fa731ab9ef84c7f751222b9d10",
+    "triggerCount": 25,
+    "triggerMd5": "cefac00f38ec8ca9e63f0569b64d6272",
+    "matchesProduction": null
+  },
+  "production": {
+    "policyCount": 47,
+    "policyPredicateMd5": "2cd803fa731ab9ef84c7f751222b9d10",
+    "triggerCount": 25,
+    "triggerMd5": "cefac00f38ec8ca9e63f0569b64d6272",
+    "capturedReadOnly": true,
+    "captureProvenanceValidated": false
+  },
+  "acceptedResidualDeltas": [
+    {
+      "objects": [
+        "bk_2026_08_22_flags", "bk_2026_08_22_flag_comments", "bk_2026_08_22_flag_photos",
+        "bk_2026_08_22_flag_status_history", "bk_2026_08_22_flag_verifications",
+        "bk_2026_08_22_flag_edit_history", "bk_2026_08_22_point_links"
+      ],
+      "presentIn": "production only",
+      "reason": "Data snapshots created out of band by nonmanaged/destructive-data/2026-08-22_takedown_junk_flags_APPLIED.sql, which the replay harness refuses to execute. They are not part of the application contract, hold no FK to users or flags, and Phase 05 may remove them outright (they are unreachable by any deletion path). Recreating them in a rebuilt database would prejudge that privacy decision.",
+      "owner": "Jordan / Phase 05"
+    }
+  ],
+  "environmentCaveats": [
+    "Replay Postgres is 17.11; production is 17.6.1. Same major version; no schema-affecting difference observed.",
+    "pg_net is a signature-compatible stub (supabase/replay/stub-extensions/) performing no network I/O. auth.uid()/auth.email()/auth.role() read GUCs instead of a JWT. vault.decrypted_secrets is an empty view. The replay therefore proves SCHEMA reproduction, not runtime behaviour of those stubbed pieces.",
+    "uuid-ossp and pgcrypto are real, not stubbed."
+  ]
+}
