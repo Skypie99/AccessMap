@@ -1,7 +1,7 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-10T07:52:46Z",
+  "updatedUtc": "2026-09-10T08:33:28Z",
   "currentGeneration": "2026-09-09-gab4",
   "generations": [
     "2026-09-04",
@@ -14,7 +14,7 @@
     "2026-09-09-gab4"
   ],
   "task": "FDA028-GAB-4 local implementation + adversarial acceptance",
-  "status": "IN_PROGRESS_V4_AWAITING_REVIEW_R4",
+  "status": "V4_REPAIRED_R6_AWAITING_OWNER_DECISION_ON_FURTHER_REVIEW",
   "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -26,7 +26,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Re-dispatch the fourth independent review against the unchanged r4 artifact.",
+  "nextAction": "Owner decision: dispatch a sixth independent review of eec51b6, or stop iterating and accept the current HOLD with residuals named.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -138,9 +138,9 @@
     ],
     "v4Offered": false,
     "v4WithheldReason": "Sky authorized the probe, v3 and its review only. Two of the three MUST-FIX items need work that is not yet written or tested; writing v4 now would repeat the pattern of publishing untested mechanism.",
-    "FDA028_V4_STATE": "REPAIRED_R4_AWAITING_REVIEW",
-    "v4SourceSha": "ccaf6fdeff0091063c44da9bb045e22c672dca64",
-    "v4SourceTree": "7d7d03f703b029b53e69fef962e4ca52ff96b76a",
+    "FDA028_V4_STATE": "REPAIRED_R6_UNREVIEWED",
+    "v4SourceSha": "eec51b6723d04105a7ba31bf2efd2573b95e8902",
+    "v4SourceTree": "23f352bec069522efe9a174a4551c2c484b91de2",
     "v4LocalResults": "62 acceptance assertions pass; 3 concurrency shapes no overshoot on ACTUAL rows; restoration + deterministic reapply clean",
     "v4BlockerClosure": {
       "BLOCKER_1_FULL_PATH": "CLOSED (pending review)",
@@ -181,32 +181,49 @@
       {
         "round": "r1",
         "verdict": "HOLD",
-        "mustFix": 3,
+        "newDefects": 3,
         "summary": "caller-controlled clock; NAT64 /96-only collapse; purge deleting the live window"
       },
       {
         "round": "r2",
         "verdict": "HOLD",
-        "mustFix": 1,
+        "newDefects": 1,
         "summary": "RFC 6052 NSPs at non-/96 lengths still collapsed; clock fix was privilege-separation only"
       },
       {
         "round": "r3",
         "verdict": "HOLD",
-        "mustFix": 1,
-        "summary": "epoch-domain wedge on a window_seconds change - found independently by BOTH the author and the reviewer; plus ::/96 capturing ::/::1, the public-unicast guard never exercised, non-finite clock unhandled"
+        "newDefects": 1,
+        "summary": "epoch-domain wedge introduced BY the r2 clock hardening; found independently by author and reviewer"
       },
       {
         "round": "r4",
+        "verdict": "HOLD",
+        "newDefects": 2,
+        "summary": "domain-revisit re-funding and permanent row stranding, both introduced BY the r3 domain marker"
+      },
+      {
+        "round": "r5",
+        "verdict": "HOLD",
+        "newDefects": 1,
+        "summary": "TOCTOU race in the guard introduced BY the r4 structural fix - unlocked EXISTS cannot see an uncommitted admission"
+      },
+      {
+        "round": "r6",
         "verdict": "NOT_RUN",
-        "summary": "review terminated by a usage limit before producing any verdict; no partial result exists"
+        "newDefects": null,
+        "summary": "advisory-lock coordination replaces detection; verified deterministically and 0/30 naturally; NOT independently reviewed"
       }
     ],
-    "v4AcceptanceAssertions": 107,
+    "v4AcceptanceAssertions": 120,
     "v4IndependentReview_r4": "NOT_RUN - terminated by usage limit, no verdict produced, re-dispatch required",
-    "v4OpenLead": "A terminated reviewer was probing whether a domain reset acts as a GLOBAL budget reset (re-seeding changes every bucket key mid-window). Recorded as an open question for the next review; it is NOT a finding and no verdict was reached."
+    "v4OpenLead": "A terminated reviewer was probing whether a domain reset acts as a GLOBAL budget reset (re-seeding changes every bucket key mid-window). Recorded as an open question for the next review; it is NOT a finding and no verdict was reached.",
+    "FDA028_V4_LOCAL_GATE": "HOLD",
+    "v4Pattern": "Six rounds. Every repair through r5 introduced at least one new defect, each in the same area: the coupling between a configurable/caller-supplied time base and the key/window derivation. r6 changes approach from detection to lock coordination.",
+    "v4IndependentReview_r5": "HOLD",
+    "v4IndependentReview_r6": "NOT_RUN - owner decision requested before spending another cycle"
   },
-  "nextSafeAction": "Re-dispatch the fourth independent review. No staging, no integration, no push, no new authority.",
+  "nextSafeAction": "Await Sky's decision on whether to run a sixth independent review. No staging, no integration, no push, no merge.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
