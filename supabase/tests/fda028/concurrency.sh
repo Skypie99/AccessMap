@@ -9,7 +9,7 @@ Q "delete from limiter.bucket; delete from public.flags;" >/dev/null
 : > "$OUT"
 for i in $(seq 1 $N); do
   ( psql -h 127.0.0.1 -p $PORT -U v -d t -tAq -c \
-      "select decision from limiter.admit_guest_flag('198.51.100.200', NULL, 1,2,'ramp',3,'c', now());" \
+      "select decision from limiter.admit_guest_flag_at('198.51.100.200', NULL, 1,2,'ramp',3,'c', now());" \
       >> "$OUT" 2>/dev/null ) &
 done
 wait

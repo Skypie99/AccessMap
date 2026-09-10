@@ -5,14 +5,18 @@
 -- Disposable rehearsal only until a separate exact production token authorizes it.
 BEGIN;
 
-DROP FUNCTION IF EXISTS limiter.purge(timestamptz);
-DROP FUNCTION IF EXISTS limiter.admit_guest_feedback(text, uuid, text, text, text, timestamptz);
-DROP FUNCTION IF EXISTS limiter.admit_guest_flag(text, uuid, double precision, double precision, text, integer, text, timestamptz);
-DROP FUNCTION IF EXISTS limiter.admit(text, uuid, timestamptz);
+DROP FUNCTION IF EXISTS limiter.purge();
+DROP FUNCTION IF EXISTS limiter.purge_at(timestamptz);
+DROP FUNCTION IF EXISTS limiter.admit_guest_feedback(text, uuid, text, text, text);
+DROP FUNCTION IF EXISTS limiter.admit_guest_feedback_at(text, uuid, text, text, text, timestamptz);
+DROP FUNCTION IF EXISTS limiter.admit_guest_flag(text, uuid, double precision, double precision, text, integer, text);
+DROP FUNCTION IF EXISTS limiter.admit_guest_flag_at(text, uuid, double precision, double precision, text, integer, text, timestamptz);
+DROP FUNCTION IF EXISTS limiter.admit_at(text, uuid, timestamptz);
 DROP FUNCTION IF EXISTS limiter.write_epoch_key(bytea);
 DROP FUNCTION IF EXISTS limiter.read_epoch_key();
 DROP FUNCTION IF EXISTS limiter.current_epoch_key(timestamptz);
 DROP FUNCTION IF EXISTS limiter.normalize_source(text);
+DROP FUNCTION IF EXISTS limiter.embedded_ipv4(inet);
 DROP FUNCTION IF EXISTS limiter.is_public_unicast(inet);
 DROP FUNCTION IF EXISTS limiter.derive_bucket_key(bytea, text);
 DROP FUNCTION IF EXISTS limiter.ratchet(bytea, bigint);

@@ -1,3 +1,4 @@
+-- PGTAP_KIND: fixture
 -- Dev key store, LOCAL ONLY. The forward candidate never creates this table;
 -- where Vault exists the Vault branch is taken and this is unreachable.
 CREATE TABLE IF NOT EXISTS limiter.dev_key_material (

@@ -96,6 +96,30 @@ RETURNS bytea LANGUAGE sql IMMUTABLE AS $$
     FROM 1 FOR 16)
 $$;
 
+-- Unwraps every IPv4-embedding IPv6 form this design must not collapse. Returns
+-- the embedded IPv4 as inet, or NULL when the address embeds no IPv4.
+--   ::ffff:0:0/96  RFC 4291 IPv4-mapped
+--   64:ff9b::/96   RFC 6052 well-known NAT64  (live on IPv6-only mobile carriers)
+--   64:ff9b:1::/96 RFC 8215 local-use NAT64
+--   ::/96          RFC 4291 IPv4-compatible (deprecated, still seen)
+-- Masking any of these to /64 would destroy the embedded host bits and collapse
+-- unrelated subscribers into one bucket.
+CREATE FUNCTION limiter.embedded_ipv4(p_addr inet)
+RETURNS inet LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE v_base inet;
+BEGIN
+  IF family(p_addr) <> 6 THEN RETURN NULL; END IF;
+  IF    p_addr <<= '::ffff:0:0/96'::inet   THEN v_base := '::ffff:0:0'::inet;
+  ELSIF p_addr <<= '64:ff9b::/96'::inet    THEN v_base := '64:ff9b::'::inet;
+  ELSIF p_addr <<= '64:ff9b:1::/96'::inet  THEN v_base := '64:ff9b:1::'::inet;
+  ELSIF p_addr <<= '::/96'::inet           THEN v_base := '::'::inet;
+  ELSE  RETURN NULL;
+  END IF;
+  RETURN '0.0.0.0'::inet + (p_addr - v_base);
+EXCEPTION WHEN others THEN
+  RETURN NULL;
+END $$;
+
 -- Canonical network normalization. Returns NULL for anything unusable, so every
 -- caller fails closed. IPv4-mapped IPv6 is unwrapped BEFORE any generic IPv6
 -- prefixing, so ::ffff:192.0.2.1 and ::ffff:192.0.2.99 cannot collapse together.
@@ -103,7 +127,7 @@ CREATE FUNCTION limiter.normalize_source(p_raw text)
 RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
 DECLARE
   v_addr   inet;
-  v_dotted text;
+  v_embedded inet;
   v_cfg    limiter.config%ROWTYPE;
 BEGIN
   IF p_raw IS NULL THEN RETURN NULL; END IF;
@@ -128,11 +152,12 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  -- IPv4-mapped IPv6 -> unwrap FIRST.
-  IF family(v_addr) = 6 AND v_addr <<= '::ffff:0:0/96'::inet THEN
-    v_dotted := substring(host(v_addr) FROM '([0-9]{1,3}(\.[0-9]{1,3}){3})$');
-    IF v_dotted IS NULL THEN RETURN NULL; END IF;
-    v_addr := v_dotted::inet;
+  -- Every IPv4-embedding IPv6 form -> unwrap FIRST, before any /64 masking.
+  IF family(v_addr) = 6 THEN
+    v_embedded := limiter.embedded_ipv4(v_addr);
+    IF v_embedded IS NOT NULL THEN
+      v_addr := v_embedded;
+    END IF;
   END IF;
 
   IF COALESCE(v_cfg.require_public_ip, true) AND NOT limiter.is_public_unicast(v_addr) THEN
@@ -290,7 +315,7 @@ BEGIN;
 -- ------------------------------------------------- admission core (shared)
 -- Returns the decision and the grant. The CALLER performs the guest write in the
 -- SAME transaction, so admission and the write cannot be separated.
-CREATE FUNCTION limiter.admit(p_source_raw text, p_grant uuid, p_now timestamptz)
+CREATE FUNCTION limiter.admit_at(p_source_raw text, p_grant uuid, p_now timestamptz)
 RETURNS TABLE (decision text, out_grant uuid, remaining integer)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO 'limiter', 'extensions', 'pg_temp' AS $$
@@ -363,7 +388,11 @@ BEGIN
 END $$;
 
 -- -------------------------------------------- COMPLETE PATH: admit AND write
-CREATE FUNCTION limiter.admit_guest_flag(
+-- OWNER-ONLY. Takes an explicit clock for tests and operations. Never granted to
+-- service_role, anon or authenticated: a caller-supplied clock can force a key
+-- ratchet, which orphans every live bucket in the current window and hands the
+-- next request a brand-new fully-funded bucket.
+CREATE FUNCTION limiter.admit_guest_flag_at(
   p_source_raw  text,
   p_grant       uuid,
   p_lat         double precision,
@@ -371,14 +400,14 @@ CREATE FUNCTION limiter.admit_guest_flag(
   p_category    text,
   p_severity    integer,
   p_description text,
-  p_now         timestamptz DEFAULT now()
+  p_now         timestamptz
 ) RETURNS TABLE (decision text, out_grant uuid, remaining integer, flag_id uuid)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO 'limiter', 'public', 'extensions', 'pg_temp' AS $$
 DECLARE d text; gr uuid; rem integer; new_id uuid;
 BEGIN
   SELECT a.decision, a.out_grant, a.remaining INTO d, gr, rem
-    FROM limiter.admit(p_source_raw, p_grant, p_now) a;
+    FROM limiter.admit_at(p_source_raw, p_grant, p_now) a;
 
   IF d NOT IN ('ADMITTED', 'ADMITTED_LIMITER_DISABLED') THEN
     RETURN QUERY SELECT d, gr, rem, NULL::uuid; RETURN;
@@ -391,20 +420,21 @@ BEGIN
   RETURN QUERY SELECT d, gr, rem, new_id;
 END $$;
 
-CREATE FUNCTION limiter.admit_guest_feedback(
+-- OWNER-ONLY, same reasoning as limiter.admit_guest_flag_at.
+CREATE FUNCTION limiter.admit_guest_feedback_at(
   p_source_raw text,
   p_grant      uuid,
   p_category   text,
   p_body       text,
   p_platform   text,
-  p_now        timestamptz DEFAULT now()
+  p_now        timestamptz
 ) RETURNS TABLE (decision text, out_grant uuid, remaining integer)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO 'limiter', 'public', 'extensions', 'pg_temp' AS $$
 DECLARE d text; gr uuid; rem integer;
 BEGIN
   SELECT a.decision, a.out_grant, a.remaining INTO d, gr, rem
-    FROM limiter.admit(p_source_raw, p_grant, p_now) a;
+    FROM limiter.admit_at(p_source_raw, p_grant, p_now) a;
   IF d NOT IN ('ADMITTED', 'ADMITTED_LIMITER_DISABLED') THEN
     RETURN QUERY SELECT d, gr, rem; RETURN;
   END IF;
@@ -415,17 +445,57 @@ END $$;
 
 -- ------------------------------------------------------------------ retention
 -- Deletes buckets; grants cascade with their parent, so no orphan can survive.
-CREATE FUNCTION limiter.purge(p_now timestamptz DEFAULT now())
+CREATE FUNCTION limiter.purge_at(p_now timestamptz)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO 'limiter', 'pg_temp' AS $$
-DECLARE v_cfg limiter.config%ROWTYPE; v_cutoff bigint; v_n integer;
+DECLARE v_cfg limiter.config%ROWTYPE; v_cutoff bigint; v_live bigint; v_n integer;
 BEGIN
   SELECT * INTO v_cfg FROM limiter.config WHERE id;
-  v_cutoff := limiter.window_of(p_now, v_cfg.window_seconds) - v_cfg.retention_windows;
-  DELETE FROM limiter.bucket WHERE window_id <= v_cutoff;
+  -- STRICTLY less-than, and hard-floored at the live window. With
+  -- retention_windows = 0 the previous form deleted the CURRENT window, zeroing
+  -- a live ledger mid-window and letting BUCKET_ALLOWANCE be exceeded outright.
+  v_live   := limiter.window_of(now(), v_cfg.window_seconds);
+  v_cutoff := LEAST(limiter.window_of(p_now, v_cfg.window_seconds) - v_cfg.retention_windows,
+                    v_live);
+  DELETE FROM limiter.bucket WHERE window_id < v_cutoff;
   GET DIAGNOSTICS v_n = ROW_COUNT;
   RETURN v_n;
 END $$;
+
+-- ------------------------------------------------- GUEST-FACING ENTRY POINTS
+-- These take NO clock. Time comes from now() inside the database, so a caller
+-- cannot influence the epoch, the window, or the ratchet. These are the ONLY
+-- limiter functions granted to service_role.
+CREATE FUNCTION limiter.admit_guest_flag(
+  p_source_raw  text,
+  p_grant       uuid,
+  p_lat         double precision,
+  p_lng         double precision,
+  p_category    text,
+  p_severity    integer,
+  p_description text
+) RETURNS TABLE (decision text, out_grant uuid, remaining integer, flag_id uuid)
+LANGUAGE sql SECURITY DEFINER SET search_path TO 'limiter', 'pg_temp' AS $$
+  SELECT * FROM limiter.admit_guest_flag_at(p_source_raw, p_grant, p_lat, p_lng,
+                                            p_category, p_severity, p_description, now())
+$$;
+
+CREATE FUNCTION limiter.admit_guest_feedback(
+  p_source_raw text,
+  p_grant      uuid,
+  p_category   text,
+  p_body       text,
+  p_platform   text
+) RETURNS TABLE (decision text, out_grant uuid, remaining integer)
+LANGUAGE sql SECURITY DEFINER SET search_path TO 'limiter', 'pg_temp' AS $$
+  SELECT * FROM limiter.admit_guest_feedback_at(p_source_raw, p_grant, p_category,
+                                                p_body, p_platform, now())
+$$;
+
+CREATE FUNCTION limiter.purge()
+RETURNS integer LANGUAGE sql SECURITY DEFINER SET search_path TO 'limiter', 'pg_temp' AS $$
+  SELECT limiter.purge_at(now())
+$$;
 
 -- ------------------------------------------------------------------ privileges
 -- No precedent exists in this codebase for an Edge Function reaching Postgres as
@@ -434,10 +504,12 @@ END $$;
 REVOKE ALL ON ALL TABLES    IN SCHEMA limiter FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA limiter FROM PUBLIC, anon, authenticated;
 GRANT USAGE ON SCHEMA limiter TO service_role;
+-- Only the clockless entry points are reachable. The *_at variants stay
+-- owner-only so no caller can supply a clock.
 GRANT EXECUTE ON FUNCTION
-  limiter.admit_guest_flag(text, uuid, double precision, double precision, text, integer, text, timestamptz),
-  limiter.admit_guest_feedback(text, uuid, text, text, text, timestamptz),
-  limiter.purge(timestamptz)
+  limiter.admit_guest_flag(text, uuid, double precision, double precision, text, integer, text),
+  limiter.admit_guest_feedback(text, uuid, text, text, text),
+  limiter.purge()
 TO service_role;
 
 COMMIT;

@@ -1,3 +1,4 @@
+-- PGTAP_KIND: fixture
 -- FDA-028 v4 LOCAL TEST FIXTURE. Never applied to any hosted environment.
 -- Creates the dev key store the forward candidate deliberately does NOT create,
 -- plus a minimal host schema, so the EXACT shipped functions can be exercised.

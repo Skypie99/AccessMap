@@ -1,3 +1,4 @@
+-- PGTAP_KIND: raising-proof
 \set ON_ERROR_STOP on
 \pset pager off
 \set QUIET on
