@@ -21,49 +21,56 @@
       "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
       "rollback": "rollback/20260905055629_phase03a_flag_policies.rollback.sql",
       "rollbackSha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
-      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "applyStage": "A"
     },
     {
       "file": "20260905055630_phase03a_open_inserts.sql",
       "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
       "rollback": "rollback/20260905055630_phase03a_open_inserts.rollback.sql",
       "rollbackSha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
-      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "applyStage": "A"
     },
     {
       "file": "20260905055632_phase03a_profile_updates.sql",
       "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
       "rollback": "rollback/20260905055632_phase03a_profile_updates.rollback.sql",
       "rollbackSha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
-      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "applyStage": "A"
     },
     {
       "file": "20260905055633_phase03a_contextual_profiles.sql",
-      "sha256": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b",
+      "sha256": "46268d4e747f07167b112cdb186ee22a5a2228f1ff34e0fb0b3602379e6b3a8c",
       "rollback": "rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
-      "rollbackSha256": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21",
-      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+      "rollbackSha256": "ce2892d86787e98ca2909136f6a760b3a8fd8debe1130334c84a662db77cfc48",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "applyStage": "A"
     },
     {
       "file": "20260905055635_phase03a_trigger_execute.sql",
       "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
       "rollback": "rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
       "rollbackSha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
-      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "applyStage": "A"
     },
     {
       "file": "20260905055636_phase03a_client_privileges.sql",
       "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
       "rollback": "rollback/20260905055636_phase03a_client_privileges.rollback.sql",
       "rollbackSha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
-      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "applyStage": "A"
     },
     {
       "file": "20260905073925_phase03a_effective_privileges.sql",
-      "sha256": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928",
+      "sha256": "eb6cf2ba6393c7879bf8f46940577a0eca0aac7deaf8b27c30b86ab7433300b2",
       "rollback": "rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
-      "rollbackSha256": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f",
-      "rollbackMode": "UNSAFE_BASELINE_RESTORE"
+      "rollbackSha256": "3753ce33e975cfa1e26e25f4b3929b4c0af5e4d3a03d4e33bb74bb7796951c4d",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "applyStage": "A"
     },
     {
       "file": "20260909120000_fda028_v4_limiter.sql",
@@ -72,7 +79,25 @@
       "rollbackSha256": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302",
       "rollbackMode": "UNSAFE_BASELINE_RESTORE",
       "finding": "FDA-028",
-      "note": "Independently accepted V4 limiter (review round 6 PASS). Restoration removes the limiter entirely, returning guest ingestion to the pre-v4 posture governed only by the global anonymous emergency caps - a known weakness, hence UNSAFE_BASELINE_RESTORE."
+      "note": "Independently accepted V4 limiter (review round 6 PASS). Restoration removes the limiter entirely, returning guest ingestion to the pre-v4 posture governed only by the global anonymous emergency caps - a known weakness, hence UNSAFE_BASELINE_RESTORE.",
+      "applyStage": "A"
+    },
+    {
+      "file": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+      "sha256": "a5c92c42057368544ab36a6ded04b153ba9eda808365d59efa85a388e3599217",
+      "rollback": "rollback/20260910120000_phase03a_fda026_stage_b_cutover.rollback.sql",
+      "rollbackSha256": "351fade8cf099a6ad1d8cb00bc14ce45005c8ea4ef1519d86cd090d1701ebd65",
+      "rollbackMode": "FORWARD_RESTORE_TO_STAGE_A",
+      "applyStage": "B",
+      "finding": "FDA-026",
+      "notInStageAApplySet": true,
+      "requiresSeparateOwnerAuthorization": "release-capability proof that no client reading public.users directly is still in the field",
+      "breaksIfAppliedEarly": [
+        "src/lib/admin.ts:31 select(is_admin) -> 42501, shipped catch degrades to isAdmin=false, admin UI silently lost",
+        "src/lib/flags.ts:1682 listLeaderboard() -> silently returns <=1 row",
+        "src/lib/flags.ts:1702/1717 getUserLeaderboardRank() -> rank silently always 1",
+        "comment author hydration -> authors fall back to anonymous"
+      ]
     }
   ],
   "catalogSqlSha256": "6a755828dff8f85da18255c514b8e8c8cf7efe8c6b030e45a3108c4a8f23b5fc",
@@ -93,13 +118,19 @@
     },
     {
       "file": "supabase/tests/phase03a-foundation.test.sql",
-      "sha256": "b341500a5e3c782fdc346dd0d9a089bbcb0a58e42059a445ef22f68b5c5fce3a",
+      "sha256": "9cda3618b9768470a8467ecf078ff26342ea12627681648b5e7a309ce48fd19c",
       "plan": 113
     },
     {
       "file": "supabase/tests/phase03a-privileges.test.sql",
       "sha256": "5c9171b3991c98eadd1bf939314dcf0694242d695f317026d8b40820249fe313",
       "plan": 79
+    },
+    {
+      "file": "supabase/tests/build33-compat.test.sql",
+      "sha256": "f42bd72fb0b030b9577cb6603337fb5038cf9aea219a1a87066f7e5731b7baa1",
+      "plan": 25,
+      "purpose": "STAGE-MF-06 Build 33 compatibility contract: exercises the SHIPPED query shapes, and applies Stage B inside the transaction as a negative control to prove the split is load-bearing."
     }
   ],
   "clientRpcRequirements": [
@@ -126,10 +157,17 @@
   },
   "privilegeGuard": {
     "allowlist": "application-privileges.v1.json",
-    "allowlistSha256": "5b5b3699c6136ac7e8c7a180adc8b539148f5c8fd76857d9942c6762e2fae836",
+    "allowlistSha256": "aa737249ce3c2314ffa0bf6fb6facaf23bdbbabc9093b85774ecaa39260ae556",
     "query": "effective-privileges.sql",
     "querySha256": "21ef4203d91547f3afea8fb20f477420f4284a3dc806193af7761a330833b650"
   },
   "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
-  "stagingAuthority": "Owner-authorized only after complete independent CODE, INT and exact staging identity gates; no mutation has occurred."
+  "stagingAuthority": "Owner-authorized only after complete independent CODE, INT and exact staging identity gates; no mutation has occurred.",
+  "fda026": {
+    "status": "OPEN_UNTIL_STAGE_B",
+    "stageA": "additive only \u2014 creates the four bounded replacement RPCs and grants them to authenticated; removes nothing",
+    "stageB": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+    "whySplit": "Neither shipped tree (f5594171 iOS, ebf091c2 web) references the replacement RPCs. Closing FDA-026 in one step breaks both, silently.",
+    "doNotClaimClosedBeforeStageB": true
+  }
 }

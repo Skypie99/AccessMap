@@ -60,7 +60,9 @@ SELECT ok((NOT has_column_privilege('authenticated','public.users','last_active_
 
 SELECT ok((NOT has_column_privilege('authenticated','public.users','id','UPDATE')), 'forged id has no UPDATE grant');
 
-SELECT ok((NOT has_column_privilege('authenticated','public.users','is_admin','SELECT')), 'FDA026 admin column cannot be selected');
+-- FDA-026 STAGE A: is_admin stays readable so shipped Build 33 admin.ts:31 keeps
+-- working. Stage B revokes it; build33-compat.test.sql proves both sides.
+SELECT ok(has_column_privilege('authenticated','public.users','is_admin','SELECT'), 'FDA026 Stage A: admin column still selectable for shipped Build 33 (revoked by Stage B)');
 
 SELECT ok((NOT has_table_privilege('anon','public.flags','TRUNCATE') AND NOT has_table_privilege('authenticated','public.flags','TRUNCATE')), 'FDA012 flags has no client TRUNCATE');
 
@@ -102,13 +104,18 @@ SELECT ok((EXISTS(SELECT 1 FROM pg_policy WHERE polrelid='storage.objects'::regc
 
 RESET ROLE; SET LOCAL request.jwt.claim.sub = '30000000-0000-4000-8000-000000000001'; SET LOCAL request.jwt.claim.role = 'authenticated'; SET LOCAL ROLE authenticated;
 
-SELECT is((SELECT count(id) FROM public.users), 1::bigint, 'users SELECT returns only self');
+-- FDA-026 STAGE A: profile enumeration is deliberately still OPEN. Closing it is
+-- 20260910120000_phase03a_fda026_stage_b_cutover, held back because shipped Build 33
+-- reads public.users directly. These two assertions therefore describe the Stage A
+-- posture; the CLOSED posture is proven in supabase/tests/build33-compat.test.sql,
+-- which applies Stage B inside its own transaction and asserts the count collapses.
+SELECT cmp_ok((SELECT count(id) FROM public.users), '>', 1::bigint, 'FDA026 Stage A: enumeration still open (closed by Stage B, proven in build33-compat)');
 
-SELECT is((SELECT count(id) FROM public.users WHERE id='30000000-0000-4000-8000-000000000002'), 0::bigint, 'known other user cannot be enumerated');
+SELECT is((SELECT count(id) FROM public.users WHERE id='30000000-0000-4000-8000-000000000002'), 1::bigint, 'FDA026 Stage A: a known other user is still visible (closed by Stage B)');
 
-SELECT throws_ok($test$SELECT is_admin FROM public.users$test$, '42501', NULL, 'direct admin enumeration refused');
+SELECT lives_ok($test$SELECT is_admin FROM public.users$test$, 'FDA026 Stage A: admin enumeration still possible (refused after Stage B)');
 
-SELECT throws_ok($test$SELECT id FROM public.users WHERE is_admin$test$, '42501', NULL, 'filtering by private admin column refused');
+SELECT lives_ok($test$SELECT id FROM public.users WHERE is_admin$test$, 'FDA026 Stage A: filtering by admin column still possible (refused after Stage B)');
 
 SELECT is(public.current_user_can_admin(), false, 'normal caller is not admin');
 

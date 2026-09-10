@@ -52,9 +52,20 @@ export function replayPhase03a({ root, psql, applySqlFile, comparator, adaptatio
     if (hash(fs.readFileSync(full)) !== digest) throw new Error(`Phase03A artifact hash mismatch: ${relative}`);
     return full;
   };
-  const candidates = contract.migrations.map(m => ({
+  // Every declared candidate is hash-verified, but only Stage A is APPLIED here.
+  // Stage B (FDA-026 cutover) is declared so the inventory guard above still sees a
+  // manifest that matches the directory, and is deliberately withheld from the
+  // replay: applying it silently breaks the shipped Build 33 read paths, so it needs
+  // a separate owner authorization carrying release-capability proof.
+  const declared = contract.migrations.map(m => ({
     ...m, forwardPath: verified(m.file, m.sha256), rollbackPath: verified(m.rollback, m.rollbackSha256),
   }));
+  const unknownStage = declared.filter(m => m.applyStage !== 'A' && m.applyStage !== 'B');
+  if (unknownStage.length) {
+    throw new Error(`Phase03A candidate missing applyStage A|B: ${unknownStage.map(m => m.file).join(', ')}`);
+  }
+  const candidates = declared.filter(m => m.applyStage === 'A');
+  const withheld = declared.filter(m => m.applyStage === 'B');
   const extraSql = fs.readFileSync(verified('catalog.sql', contract.catalogSqlSha256), 'utf8');
   const guard = contract.privilegeGuard;
   const allowlist = JSON.parse(fs.readFileSync(verified(guard.allowlist, guard.allowlistSha256)));
@@ -98,7 +109,13 @@ export function replayPhase03a({ root, psql, applySqlFile, comparator, adaptatio
   };
   for (const m of candidates) {
     applySqlFile('flagstone_replay', m.forwardPath, adaptations);
-    result.migrations.push({ file: m.file, sha256: m.sha256, appliedLocally: true });
+    result.migrations.push({ file: m.file, sha256: m.sha256, applyStage: 'A', appliedLocally: true });
+  }
+  for (const m of withheld) {
+    result.migrations.push({
+      file: m.file, sha256: m.sha256, applyStage: 'B', appliedLocally: false,
+      withheldReason: 'FDA-026 cutover: breaks shipped Build 33 read paths silently; needs separate owner authorization with release-capability proof',
+    });
   }
   result.after = capture(); result.afterSha256 = fingerprint(result.after);
   result.privilegeCapture = capturePrivileges();

@@ -1,4 +1,4 @@
--- PHASE-03A LOCAL CANDIDATE: FDA-026. NOT AUTHORIZED FOR APPLY.
+-- PHASE-03A LOCAL CANDIDATE: FDA-026 STAGE A (additive). NOT AUTHORIZED FOR APPLY.
 -- Requires accepted Phase 02 applied + adoption baseline. No production change.
 -- Exact order/hashes and outstanding gates are declared in candidate-contract.json.
 BEGIN;
@@ -77,7 +77,23 @@ GRANT EXECUTE ON FUNCTION public.current_user_can_admin(),
   private.get_my_leaderboard_rank(), private.get_comment_author_profiles(uuid[])
   TO authenticated;
 
-DROP POLICY "users readable by authenticated" ON public.users;
-REVOKE SELECT (is_admin) ON public.users FROM PUBLIC, anon, authenticated;
--- Existing own-profile columns and own-user INSERT returning embeds are preserved.
+-- ---------------------------------------------------------------- STAGE A ONLY
+-- The two statements that CLOSE FDA-026 deliberately do NOT live here:
+--
+--   DROP POLICY "users readable by authenticated" ON public.users;
+--   REVOKE SELECT (is_admin) ON public.users FROM PUBLIC, anon, authenticated;
+--
+-- They moved to 20260910120000_phase03a_fda026_stage_b_cutover.sql because
+-- applying them breaks the CURRENTLY SHIPPED clients, silently:
+--   * admin.ts reads users.is_admin and would take 42501, and the shipped code
+--     swallows that into isAdmin=false, so every admin loses the admin UI with
+--     no error shown;
+--   * listLeaderboard() and getUserLeaderboardRank() read other users' rows and
+--     would silently return one row / rank 1 rather than failing loudly.
+-- Neither shipped tree (f5594171 iOS, ebf091c2 web) references the four RPCs
+-- created above -- they are additive today and become load-bearing at cutover.
+--
+-- THEREFORE: FDA-026 IS NOT CLOSED BY THIS MIGRATION. It remains OPEN until the
+-- Stage B cutover, which requires objective proof that clients reading
+-- public.users directly are no longer in the field.
 COMMIT;

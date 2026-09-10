@@ -218,6 +218,17 @@ GRANT INSERT ("user_id", "token", "platform") ON TABLE "public"."push_tokens" TO
 GRANT UPDATE ("user_id", "token", "platform") ON TABLE "public"."push_tokens" TO "authenticated";
 GRANT SELECT ("token", "user_id") ON TABLE "public"."push_tokens" TO "service_role";
 GRANT SELECT ("id", "display_name", "avatar_url", "avatar_object_key", "points", "created_at") ON TABLE "public"."users" TO "authenticated";
+-- STAGE A COMPATIBILITY GRANT — removed by 20260910120000_phase03a_fda026_stage_b_cutover.
+-- is_admin is deliberately absent from the secure-end-state list above. It is
+-- re-granted here for one reason only: shipped Build 33 (iOS f5594171, pinned web
+-- ebf091c2) reads it directly at src/lib/admin.ts:31, and without the grant that
+-- read returns 42501, which the shipped catch turns into isAdmin=false. The admin
+-- UI then disappears with no error shown to the admin.
+--
+-- This line is the WHOLE of the is_admin compatibility retention. Stage B revokes
+-- exactly it, and public.current_user_can_admin() (Stage A) is the replacement:
+-- it answers a boolean about the CALLER without exposing anyone's flag.
+GRANT SELECT ("is_admin") ON TABLE "public"."users" TO "authenticated";
 GRANT UPDATE ("display_name", "avatar_url", "avatar_object_key") ON TABLE "public"."users" TO "authenticated";
 GRANT EXECUTE ON FUNCTION "private".current_user_is_admin() TO "authenticated";
 GRANT EXECUTE ON FUNCTION "private".get_comment_author_profiles(uuid[]) TO "authenticated";
