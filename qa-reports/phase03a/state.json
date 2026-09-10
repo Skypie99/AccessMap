@@ -1,8 +1,8 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-09T23:09:45Z",
-  "currentGeneration": "2026-09-09-gab3",
+  "updatedUtc": "2026-09-10T03:06:40Z",
+  "currentGeneration": "2026-09-09-gab4",
   "generations": [
     "2026-09-04",
     "2026-09-04-resume",
@@ -10,10 +10,11 @@
     "2026-09-09-fda028-recommendation",
     "2026-09-09-final-verification",
     "2026-09-09-f28a-probe",
-    "2026-09-09-gab3"
+    "2026-09-09-gab3",
+    "2026-09-09-gab4"
   ],
-  "task": "F28-A bounded probe (complete) + FDA028-GAB-3 (drafted, under review)",
-  "status": "COMPLETE_BLOCKED",
+  "task": "FDA028-GAB-4 local implementation + adversarial acceptance",
+  "status": "IN_PROGRESS_V4_AWAITING_REVIEW",
   "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -25,7 +26,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Report to Sky; await decision.",
+  "nextAction": "Await independent v4 review; then apply the PGTAP_KIND marker fix and re-verify.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -64,7 +65,7 @@
     "stagingMutations": "NONE",
     "productionMutations": "NONE",
     "ownerApprovedForImplementation": false,
-    "localImplementationAuthorization": "NOT_GRANTED",
+    "localImplementationAuthorization": "CONSUMED_FOR_V4_ONLY",
     "productionThresholdDecision": "DEFERRED",
     "verificationWave": {
       "F28_A": "HOLD",
@@ -136,9 +137,24 @@
       "NORMAL and BUCKET_ALLOWANCE are two knobs, not one"
     ],
     "v4Offered": false,
-    "v4WithheldReason": "Sky authorized the probe, v3 and its review only. Two of the three MUST-FIX items need work that is not yet written or tested; writing v4 now would repeat the pattern of publishing untested mechanism."
+    "v4WithheldReason": "Sky authorized the probe, v3 and its review only. Two of the three MUST-FIX items need work that is not yet written or tested; writing v4 now would repeat the pattern of publishing untested mechanism.",
+    "FDA028_V4_STATE": "LOCAL_TESTS_PASS_UNACCEPTED",
+    "v4SourceSha": "7da4dd1c3e29e81cee2900cdac81f52fbbfe04eb",
+    "v4SourceTree": "07f0514cb5660e18ce87402816d4298a9022a295",
+    "v4LocalResults": "62 acceptance assertions pass; 3 concurrency shapes no overshoot on ACTUAL rows; restoration + deterministic reapply clean",
+    "v4BlockerClosure": {
+      "BLOCKER_1_FULL_PATH": "CLOSED (pending review)",
+      "BLOCKER_2_BUCKET_GRANT_LIFECYCLE": "CLOSED (pending review)",
+      "BLOCKER_3_KEY_LINKABILITY": "CLOSED for the stated requirement (pending review)"
+    },
+    "v4KnownFollowUps": [
+      "PGTAP_KIND markers missing on the 5 new supabase/tests/fda028 files - adds 5 entries to the db:pgtap problem list. The non-zero db:pgtap exit is INHERITED (baseline-backups.sql lacks a marker at the frozen source) but the added entries are v4-introduced and must be fixed. Deferred only so the in-flight independent review is not invalidated mid-run."
+    ],
+    "v4IndependentReview": "IN_PROGRESS",
+    "VAULT_IO": "UNVERIFIED_LOCALLY",
+    "IPV6_HOSTED_EVIDENCE": "OPEN"
   },
-  "nextSafeAction": "Put the three v3 MUST-FIX blockers to Sky and await direction. No implementation, no v4, no staging mutation.",
+  "nextSafeAction": "Await the independent v4 review. No staging, no integration, no push.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
