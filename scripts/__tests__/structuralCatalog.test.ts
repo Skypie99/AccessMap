@@ -48,9 +48,37 @@ describe('ACL normalization neutralises reordering, not substance', () => {
     expect(a).not.toEqual(b);
   });
 
-  it('handles an empty or absent ACL', () => {
+  it('handles an empty ACL', () => {
     expect(call('normalizeAcl', '')).toEqual([]);
     expect(call('normalizeAcl', '{}')).toEqual([]);
+  });
+
+  // Regression. An independent reviewer was asked to construct a case where two
+  // genuinely different privilege states normalize to one checksum, and found this:
+  // NULL acl and '{}' both became []. For a FUNCTION that is the difference between
+  // "EXECUTE to PUBLIC" and "nobody", so a proacl moving '{}' -> NULL silently
+  // re-granted PUBLIC EXECUTE and diffCaptures() called the captures identical.
+  it('never collides a NULL ACL with an explicitly empty one', () => {
+    const nul = call('normalizeAcl', null);
+    const empty = call('normalizeAcl', '{}');
+    expect(nul).not.toEqual(empty);
+    expect(nul).toEqual([constant('ACL_DEFAULT_SENTINEL')]);
+  });
+
+  it('reports a proacl going {} -> NULL as a security-relevant residual', () => {
+    const restrictive = catalogOf({ functions: [{ n: 'admin_fn', acl: '{}' }] });
+    const permissive = catalogOf({ functions: [{ n: 'admin_fn', acl: null }] });
+    expect(restrictive.checksum).not.toBe(permissive.checksum);
+    const d = call('diffCaptures', restrictive, permissive);
+    expect(d.identical).toBe(false);
+    expect(d.securityRelevantSections).toContain('functions');
+  });
+
+  it('does not coalesce a NULL acl away in the capture query', () => {
+    const sql = constant('CATALOG_SQL');
+    for (const acl of ['nspacl', 'relacl', 'attacl', 'proacl', 'defaclacl']) {
+      expect(sql).not.toContain(`coalesce(${acl}`);
+    }
   });
 });
 

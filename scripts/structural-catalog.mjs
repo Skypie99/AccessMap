@@ -55,18 +55,18 @@ export const CATALOG_SQL = `
 with s as (select unnest(array['public','private','storage','limiter']) as nspname)
 select jsonb_build_object(
   'schemas', coalesce((select jsonb_agg(jsonb_build_object(
-      'n', nspname, 'owner', pg_get_userbyid(nspowner), 'acl', coalesce(nspacl::text,''))
+      'n', nspname, 'owner', pg_get_userbyid(nspowner), 'acl', nspacl::text)
       order by nspname) from pg_namespace where nspname in (select nspname from s)), '[]'::jsonb),
   'relations', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 'n', c.relname, 'kind', c.relkind, 'rls', c.relrowsecurity,
-      'owner', pg_get_userbyid(c.relowner), 'acl', coalesce(c.relacl::text,''))
+      'owner', pg_get_userbyid(c.relowner), 'acl', c.relacl::text)
       order by n.nspname, c.relname, c.relkind)
     from pg_class c join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in (select nspname from s) and c.relkind in ('r','v','m','S','p')), '[]'::jsonb),
   'columns', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 't', c.relname, 'c', a.attname,
       'type', format_type(a.atttypid, a.atttypmod), 'notnull', a.attnotnull,
-      'acl', coalesce(a.attacl::text,''))
+      'acl', a.attacl::text)
       order by n.nspname, c.relname, a.attname)
     from pg_attribute a join pg_class c on c.oid=a.attrelid join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in (select nspname from s) and a.attnum>0 and not a.attisdropped
@@ -74,7 +74,7 @@ select jsonb_build_object(
   'functions', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 'n', p.proname, 'args', pg_get_function_identity_arguments(p.oid),
       'secdef', p.prosecdef, 'kind', p.prokind, 'body', md5(coalesce(p.prosrc,'')),
-      'acl', coalesce(p.proacl::text,''))
+      'acl', p.proacl::text)
       order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid))
     from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname in (select nspname from s)), '[]'::jsonb),
@@ -92,7 +92,7 @@ select jsonb_build_object(
     where n.nspname in (select nspname from s) and not tg.tgisinternal), '[]'::jsonb),
   'defaultAcls', coalesce((select jsonb_agg(jsonb_build_object(
       'owner', pg_get_userbyid(d.defaclrole), 's', coalesce(n.nspname,'GLOBAL'),
-      'kind', d.defaclobjtype, 'acl', coalesce(d.defaclacl::text,''))
+      'kind', d.defaclobjtype, 'acl', d.defaclacl::text)
       order by pg_get_userbyid(d.defaclrole), coalesce(n.nspname,'GLOBAL'), d.defaclobjtype)
     from pg_default_acl d left join pg_namespace n on n.oid=d.defaclnamespace
     where n.nspname in (select nspname from s) or d.defaclnamespace=0), '[]'::jsonb)
@@ -104,8 +104,20 @@ select jsonb_build_object(
  * "{postgres=arwd/postgres,anon=r/postgres}" -> ["anon=r/postgres","postgres=arwd/postgres"]
  * Order is a serialisation artifact; who-can-do-what is the fact.
  */
+/**
+ * A NULL acl and an EMPTY acl are NOT the same thing and must never collide.
+ *   NULL  -> "no explicit ACL": Postgres applies the built-in default, which for a
+ *            FUNCTION means EXECUTE to PUBLIC. Permissive.
+ *   '{}'  -> an explicit empty ACL: nobody but the owner. Restrictive.
+ * A proacl moving '{}' -> NULL silently re-grants PUBLIC EXECUTE. An earlier version
+ * of this file coalesced NULL to '' and mapped both to [], so that change produced an
+ * identical checksum and diffCaptures() reported `identical: true`. Found by
+ * independent review, which was asked to construct exactly this collision.
+ */
+export const ACL_DEFAULT_SENTINEL = '<no-explicit-acl:postgres-default-applies>';
+
 export function normalizeAcl(aclText) {
-  if (!aclText) return [];
+  if (aclText === null || aclText === undefined) return [ACL_DEFAULT_SENTINEL];
   const inner = String(aclText).replace(/^\{/, '').replace(/\}$/, '');
   if (!inner.trim()) return [];
   return inner
@@ -187,4 +199,54 @@ export function diffCaptures(a, b) {
     securityRelevantSections: [...new Set(residuals.map((r) => r.section))]
       .filter((s) => ['policies', 'functions', 'columns', 'relations', 'schemas', 'defaultAcls'].includes(s)),
   };
+}
+
+// ---------------------------------------------------------------------------
+// CLI.
+//   node scripts/structural-catalog.mjs sql
+//        prints the exact capture query, to be run READ-ONLY against a target.
+//   node scripts/structural-catalog.mjs capture --label FIRST_APPLY --in <raw.json> \
+//        --out <dir> [--source-sha X] [--integration-sha Y] [--target REF]
+//        writes CATALOG_<label>.json — full content first, checksum second.
+//   node scripts/structural-catalog.mjs diff --first <a.json> --second <b.json>
+//        prints every residual and exits non-zero if any exist.
+// This tool never connects to a database.
+// ---------------------------------------------------------------------------
+if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(process.argv[1])}`).href) {
+  const argv = process.argv.slice(2);
+  const cmd = argv[0];
+  const flag = (n, d = null) => { const i = argv.indexOf(`--${n}`); return i === -1 ? d : argv[i + 1]; };
+
+  if (cmd === 'sql') { console.log(CATALOG_SQL); process.exit(0); }
+
+  if (cmd === 'capture') {
+    const label = flag('label');
+    const input = flag('in');
+    if (!label || !input) { console.error('ERROR: --label and --in are required'); process.exit(2); }
+    const raw = JSON.parse(fs.readFileSync(input, 'utf8'));
+    const res = writeCapture({
+      outDir: flag('out', '.'), label,
+      rawCatalog: raw.catalog ?? raw,
+      sourceSha: flag('source-sha'), integrationSha: flag('integration-sha'), target: flag('target'),
+    });
+    console.log(JSON.stringify(res, null, 2));
+    console.error(`OK: content written to ${res.file} BEFORE the checksum was taken.`);
+    process.exit(0);
+  }
+
+  if (cmd === 'diff') {
+    const a = JSON.parse(fs.readFileSync(flag('first'), 'utf8'));
+    const b = JSON.parse(fs.readFileSync(flag('second'), 'utf8'));
+    const d = diffCaptures(a, b);
+    console.log(JSON.stringify(d, null, 2));
+    if (!d.identical) {
+      console.error(`${d.residualCount} residual(s); security-relevant sections: ${d.securityRelevantSections.join(', ') || 'none'}`);
+      process.exit(1);
+    }
+    console.error('OK: captures are structurally identical.');
+    process.exit(0);
+  }
+
+  console.error('usage: structural-catalog.mjs <sql|capture|diff> [flags] (see header)');
+  process.exit(2);
 }

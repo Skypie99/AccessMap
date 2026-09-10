@@ -31,7 +31,7 @@ now closed, with tests that would have caught them.
 | STAGE-MF-01 | Apply mechanism destroys canonical identity | **CLOSED** — tooling + 19 tests |
 | STAGE-MF-02 | Round-trip identity unlocalisable; JSON discarded | **CLOSED** — capture recipe published + 11 tests |
 | STAGE-MF-03 | Production Vault secret | **OPEN by design** — owner action, §6 |
-| STAGE-MF-04 | Apply-set candidate hardcodes the production webhook URL | **CLOSED** — coupling asserted |
+| STAGE-MF-04 | Apply-set candidate hardcodes the production webhook URL | **OPEN by design** — coupling asserted, decision at §6 |
 | STAGE-MF-05 | Applying with the guest bypass open | **OPEN by design** — owner decision, §6 |
 | STAGE-MF-06 | Silently breaks shipped Build 33 reads | **CLOSED** — Stage A/B split + 25-assertion contract |
 | STAGE-MF-07 | Tracked link artifact names production | **CLOSED** — untracked, ignored, guarded |
@@ -57,10 +57,21 @@ canonical version. It is the only mechanism authorized by this packet.
 | Management API `apply_migration` | recorded the wall-clock apply time (`20260910161947`) instead of the canonical version (`20260904000000`) |
 | `supabase db query --file` | recorded **no ledger row at all**; two candidates are invisible to `migration list` |
 
-Before any apply, `scripts/canonical-migration-identity.mjs` `planApply()` must return
-`ok: true`. After any apply, `verifyLedgerIdentity()` must return `passed: true`. Run
-against the first run's actual ledger it returns **14 problems**, so it demonstrably
-detects the defect rather than merely asserting it cannot happen.
+Runnable commands (independent review found the first draft named a function with no
+command behind it):
+
+```bash
+npm run db:apply:plan                                  # must exit 0 before any apply
+npm run db:apply:command -- --project-ref <ref>        # prints the exact push command
+npm run db:apply:verify -- --ledger <ledger.json>      # must exit 0 after any apply
+npm run db:apply:restore -- --candidate <f> --reason "…"   # forward-only rollback
+```
+
+Obtain `<ledger.json>` read-only: `select version,name from
+supabase_migrations.schema_migrations order by version`. The tool never connects to a
+database. Run against the first run's actual ledger, `verify` exits **1** with the
+ledgerless and wall-clock problems named, so it demonstrably detects the defect rather
+than merely asserting it cannot happen.
 
 ## 4. Forward-only ledger semantics (STAGE-MF-08)
 
@@ -96,15 +107,19 @@ separate owner authorization carrying release-capability proof.
 
 ## 6. What the owner must decide
 
-1. **STAGE-MF-03** — provision the production Vault secret `fda028_limiter_epoch_key`
-   yourself. Never copy the staging secret. Without it `limiter.current_epoch_key`
+1. **STAGE-MF-03** — provision the production Vault secret for the FDA-028 limiter epoch key
+   yourself (the exact name is the one read by the limiter migration). Never copy the staging secret. Without it `limiter.current_epoch_key`
    cannot derive a key. No agent should create it.
 2. **STAGE-MF-05** — whether to apply at all while `ROLLOUT_STAGE` is
    `S3_LIMITER_PRESENT_BYPASS_OPEN`, i.e. shipping a correct limiter that nothing yet
    calls. A legitimate choice; it must be *chosen*.
 3. **Stage B timing** — what counts as proof that no client reading `public.users`
    directly is still in the field. "We shipped an update" is not proof.
-4. **Production thresholds** — still `DEFERRED`. Staging values (5 / 50 / 86400 / 32 /
+4. **STAGE-MF-04** — accept the hardcoded production webhook URL in
+   `20260904000400` together with the operational rule below, or require it to become
+   environment-derived, which makes that adoption candidate diverge from the function
+   production actually has and needs an explicit contract-truth exception.
+5. **Production thresholds** — still `DEFERRED`. Staging values (5 / 50 / 86400 / 32 /
    64 / 1) are test values and must not become production policy by default.
 
 These are placed together, deliberately: the acceptor's point was that the Build 33
@@ -151,7 +166,8 @@ apply mechanism rather than the SQL. That is a narrowing, not a diagnosis.
 
 ## 10. Vault and webhook preconditions
 
-- Staging keeps exactly one secret, `fda028_limiter_epoch_key`.
+- Staging keeps exactly one Vault secret: the FDA-028 limiter epoch key. Its exact
+  name is the one the limiter migration reads; no value appears in any receipt.
 - **`webhook_secret` must never exist on a non-production target.** `20260904000400` is
   in the apply set and recreates `notify_flag_status_webhook()` with a hardcoded
   production URL; the absent secret is the only thing keeping a non-production database

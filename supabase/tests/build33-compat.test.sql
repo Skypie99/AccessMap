@@ -20,7 +20,7 @@
 -- and the bounded replacements must keep working. Everything rolls back.
 BEGIN;
 SET LOCAL search_path = public, phase03a_tap, extensions;
-SELECT plan(25);
+SELECT plan(36);
 
 -- ------------------------------------------------------------------ fixtures
 INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
@@ -99,11 +99,51 @@ SELECT is(
 
 RESET ROLE;
 
+-- ------------------------------------------------ SHIPPED GUEST (anon) READS
+-- The blind spot an independent reviewer found after the first version of this
+-- split: every assertion above runs as `authenticated`, so a Stage A that broke
+-- GUESTS would still have produced a green 242/242 run. anon is the DEFAULT role
+-- for every web session and every native guest (src/screens/GuestProfile.tsx), and
+-- shipped Build 33 reads these WITHOUT gating on a signed-in user, so a lost grant
+-- makes the client THROW rather than show an empty list.
+RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.role = 'anon'; SET LOCAL ROLE anon;
+
+SELECT lives_ok($$ SELECT id FROM public.flag_comments LIMIT 1 $$,
+  'B33 guest: src/lib/comments.ts listComments() does not raise for anon');
+SELECT lives_ok($$ SELECT id FROM public.flag_photos LIMIT 1 $$,
+  'B33 guest: listFlagPhotos() does not raise for anon');
+-- The two _public relations need care, and the first version of this suite got
+-- them wrong. They are security_invoker views, so reading one needs privileges on
+-- the BASE table as well as on the view — and anon has never had base-table
+-- privileges, before Phase 03A or after. The view grant alone therefore confers
+-- nothing, and these were never a working guest path. Stage A keeps the view grant
+-- for fidelity with production, which does hold it, but the honest assertion is
+-- that the read still stops at the base table.
+SELECT ok(has_table_privilege('anon','public.flag_status_history_public','SELECT'),
+  'B33 guest: Stage A keeps the status-history VIEW grant that production holds');
+SELECT throws_ok($$ SELECT id FROM public.flag_status_history_public LIMIT 1 $$, '42501', NULL,
+  'B33 guest: ...but security_invoker still stops anon at the base table — never a guest path');
+SELECT ok(has_table_privilege('anon','public.flag_edit_history_public','SELECT'),
+  'B33 guest: Stage A keeps the edit-history VIEW grant that production holds');
+SELECT throws_ok($$ SELECT id FROM public.flag_edit_history_public LIMIT 1 $$, '42501', NULL,
+  'B33 guest: ...same for edit history — the view grant confers nothing on its own');
+SELECT lives_ok($$ SELECT id FROM public.point_events LIMIT 1 $$,
+  'B33 guest: point_events is readable by anon');
+SELECT lives_ok($$ SELECT id FROM public.flags LIMIT 1 $$,
+  'B33 guest: the map itself still loads for anon');
+
+RESET ROLE;
+
 -- ================================================= STAGE B cutover, applied here
 -- Negative control. If these do NOT flip, the split is not load-bearing and this
 -- whole compatibility contract would be worthless.
 DROP POLICY "users readable by authenticated" ON public.users;
 REVOKE SELECT (is_admin) ON public.users FROM PUBLIC, anon, authenticated;
+REVOKE SELECT ON TABLE public.flag_comments FROM anon;
+REVOKE SELECT ON TABLE public.flag_photos FROM anon;
+REVOKE SELECT ON TABLE public.flag_status_history_public FROM anon;
+REVOKE SELECT ON TABLE public.flag_edit_history_public FROM anon;
+REVOKE SELECT ON TABLE public.point_events FROM anon;
 
 SELECT ok(NOT has_column_privilege('authenticated','public.users','is_admin','SELECT'),
   'STAGE B: the is_admin column grant is gone');
@@ -153,6 +193,17 @@ SELECT ok(NOT public.current_user_can_admin(),
 RESET ROLE; SET LOCAL request.jwt.claim.sub = '33000000-0000-4000-8000-000000000001'; SET LOCAL request.jwt.claim.role = 'authenticated'; SET LOCAL ROLE authenticated;
 SELECT ok(public.current_user_can_admin(),
   'STAGE B: current_user_can_admin() still returns true for the admin — capability is preserved, only the column read is closed');
+
+RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.role = 'anon'; SET LOCAL ROLE anon;
+
+-- Negative control for the guest half: if these do not raise after the cutover,
+-- the Stage A retention above was not load-bearing and proves nothing.
+SELECT throws_ok($$ SELECT id FROM public.flag_comments LIMIT 1 $$, '42501', NULL,
+  'STAGE B: guest comment reads now raise 42501 — the shipped client would throw');
+SELECT throws_ok($$ SELECT id FROM public.flag_photos LIMIT 1 $$, '42501', NULL,
+  'STAGE B: guest photo reads now raise 42501');
+SELECT lives_ok($$ SELECT id FROM public.flags LIMIT 1 $$,
+  'STAGE B: the map still loads for anon — the cutover is targeted, not a blanket lockout');
 
 RESET ROLE;
 SELECT * FROM finish();

@@ -10,4 +10,9 @@
 BEGIN;
 CREATE POLICY "users readable by authenticated" ON public.users FOR SELECT TO authenticated USING (true);
 GRANT SELECT (is_admin) ON public.users TO authenticated;
+GRANT SELECT ON TABLE public.flag_comments TO anon;
+GRANT SELECT ON TABLE public.flag_photos TO anon;
+GRANT SELECT ON TABLE public.flag_status_history_public TO anon;
+GRANT SELECT ON TABLE public.flag_edit_history_public TO anon;
+GRANT SELECT ON TABLE public.point_events TO anon;
 COMMIT;

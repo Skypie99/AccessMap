@@ -47,4 +47,20 @@ REVOKE SELECT (is_admin) ON public.users FROM PUBLIC, anon, authenticated;
 
 -- Own-profile columns and the own-user INSERT returning embeds are preserved:
 -- the "users own row full select" policy still covers the caller's own row.
+
+-- ------------------------------------------------ guest (anon) read narrowing
+-- The other half of the cutover. Stage A retains these five because anon is the
+-- default role for every web session and native guest, production grants all five
+-- today, and shipped Build 33 reads them WITHOUT gating on a signed-in user — so
+-- revoking early makes listComments() and listFlagPhotos() throw rather than
+-- degrade. flag_status_history_public and flag_edit_history_public are
+-- security_invoker views, so the grant is the only thing letting anon reach them.
+--
+-- Same precondition as above: do not apply until no client still reading these as
+-- anon is in the field.
+REVOKE SELECT ON TABLE "public"."flag_comments" FROM "anon";
+REVOKE SELECT ON TABLE "public"."flag_photos" FROM "anon";
+REVOKE SELECT ON TABLE "public"."flag_status_history_public" FROM "anon";
+REVOKE SELECT ON TABLE "public"."flag_edit_history_public" FROM "anon";
+REVOKE SELECT ON TABLE "public"."point_events" FROM "anon";
 COMMIT;

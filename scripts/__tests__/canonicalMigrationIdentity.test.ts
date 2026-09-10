@@ -217,6 +217,30 @@ describe('STAGE-MF-08 forward-only restoration never rewrites history', () => {
     expect(name.slice(0, 14) > '20260905055633').toBe(true);
   });
 
+  it('builds a REAL conforming forward-restoration migration, not just a name', () => {
+    // Independent review: a naming helper alone leaves the ledger defect to recur,
+    // because no artifact conforms to the model. This is the artifact.
+    const built = call('buildForwardRestoration', {
+      candidateFile: '20260905055633_phase03a_contextual_profiles.sql',
+      rollbackBody: '-- PHASE-03A LOCAL CANDIDATE: FDA-026 STAGE A rollback.\nBEGIN;\nDROP FUNCTION public.foo();\nCOMMIT;',
+      at: new Date(Date.UTC(2026, 8, 10, 13, 0, 0)).toISOString(),
+      reason: 'premature cutover',
+    });
+    expect(built.filename).toBe('20260910130000_restore_phase03a_contextual_profiles.sql');
+    expect(built.version).toBe('20260910130000');
+    // It carries the rollback body...
+    expect(built.contents).toContain('DROP FUNCTION public.foo();');
+    // ...states the reason...
+    expect(built.contents).toContain('premature cutover');
+    // ...says plainly that it does not rewrite history...
+    expect(built.contents).toMatch(/NOT a deletion or rewrite/);
+    // ...and drops the "NOT AUTHORIZED FOR APPLY" candidate banner, since this file
+    // IS meant to be applied once the owner decides to roll back.
+    expect(built.contents).not.toMatch(/PHASE-03A LOCAL CANDIDATE/);
+    // The restoration must sort after what it undoes, or the ledger reads backwards.
+    expect(built.version > '20260905055633').toBe(true);
+  });
+
   it('refuses to backdate a restoration before the migration it undoes', () => {
     expect(() => forwardRestorationName(
       '20260905055633_phase03a_contextual_profiles.sql', new Date(Date.UTC(2026, 7, 1))))

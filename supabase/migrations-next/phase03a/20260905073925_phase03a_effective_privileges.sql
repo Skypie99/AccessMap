@@ -203,6 +203,25 @@ GRANT SELECT ON TABLE "public"."flag_status_history_public" TO "authenticated";
 GRANT SELECT ON TABLE "public"."flag_verifications" TO "authenticated";
 GRANT INSERT ("flag_id", "verifier_id") ON TABLE "public"."flag_verifications" TO "authenticated";
 GRANT SELECT ON TABLE "public"."flags" TO "anon";
+-- STAGE A COMPATIBILITY GRANTS — removed by 20260910120000_phase03a_fda026_stage_b_cutover.
+-- anon is the DEFAULT role for every web session and every native guest
+-- (src/screens/GuestProfile.tsx). Production grants all five of these today, and
+-- shipped Build 33 reads them without gating on a signed-in user:
+--   flag_comments               src/lib/comments.ts (four call sites)
+--   flag_photos                 listFlagPhotos(), rendered by FlagDetailModal
+--   flag_status_history_public  } security_invoker views: the grant is the only
+--   flag_edit_history_public    } thing letting anon reach them at all
+--   point_events                guest-visible activity
+-- Revoking them in Stage A does not degrade a guest to an empty list — the client
+-- call THROWS. This is the same class of defect as the is_admin retention above,
+-- found by independent review after the first version of this split shipped, and
+-- it is retained here for the same reason: the cutover is Stage B's job, not
+-- Stage A's.
+GRANT SELECT ON TABLE "public"."flag_comments" TO "anon";
+GRANT SELECT ON TABLE "public"."flag_photos" TO "anon";
+GRANT SELECT ON TABLE "public"."flag_status_history_public" TO "anon";
+GRANT SELECT ON TABLE "public"."flag_edit_history_public" TO "anon";
+GRANT SELECT ON TABLE "public"."point_events" TO "anon";
 GRANT INSERT ("user_id", "lat", "lng", "category", "severity", "description", "photo_url", "photo_alt", "context_tags", "status") ON TABLE "public"."flags" TO "anon";
 GRANT SELECT, DELETE ON TABLE "public"."flags" TO "authenticated";
 GRANT INSERT ("user_id", "lat", "lng", "category", "severity", "description", "photo_url", "photo_alt", "context_tags", "status") ON TABLE "public"."flags" TO "authenticated";
