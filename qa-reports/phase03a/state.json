@@ -1,7 +1,7 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-10T03:06:40Z",
+  "updatedUtc": "2026-09-10T03:28:35Z",
   "currentGeneration": "2026-09-09-gab4",
   "generations": [
     "2026-09-04",
@@ -26,7 +26,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Await independent v4 review; then apply the PGTAP_KIND marker fix and re-verify.",
+  "nextAction": "Await the re-review of the repaired artifact 6311691.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -138,9 +138,9 @@
     ],
     "v4Offered": false,
     "v4WithheldReason": "Sky authorized the probe, v3 and its review only. Two of the three MUST-FIX items need work that is not yet written or tested; writing v4 now would repeat the pattern of publishing untested mechanism.",
-    "FDA028_V4_STATE": "LOCAL_TESTS_PASS_UNACCEPTED",
-    "v4SourceSha": "7da4dd1c3e29e81cee2900cdac81f52fbbfe04eb",
-    "v4SourceTree": "07f0514cb5660e18ce87402816d4298a9022a295",
+    "FDA028_V4_STATE": "REPAIRED_R2_AWAITING_REREVIEW",
+    "v4SourceSha": "6311691608b131b4fdda065c4550785105b6ab74",
+    "v4SourceTree": "3df65dee8b90f3faf8690c814871b7c11b845428",
     "v4LocalResults": "62 acceptance assertions pass; 3 concurrency shapes no overshoot on ACTUAL rows; restoration + deterministic reapply clean",
     "v4BlockerClosure": {
       "BLOCKER_1_FULL_PATH": "CLOSED (pending review)",
@@ -152,9 +152,33 @@
     ],
     "v4IndependentReview": "IN_PROGRESS",
     "VAULT_IO": "UNVERIFIED_LOCALLY",
-    "IPV6_HOSTED_EVIDENCE": "OPEN"
+    "IPV6_HOSTED_EVIDENCE": "OPEN",
+    "v4IndependentReview_r1": "HOLD - 3 MUST-FIX, all reproduced by the author and repaired",
+    "v4R1Defects": [
+      {
+        "id": "REV-1",
+        "defect": "p_now was a caller-controlled unvalidated parameter on the guest entry points. One call with now()+400 days advanced the epoch 400 times, orphaning every live bucket so the next ordinary request received a fresh fully funded one.",
+        "fix": "guest entry points take NO clock and read now() inside the database; clocked *_at variants are owner-only; a test asserts no service_role-executable limiter function accepts a timestamptz",
+        "reproducedByAuthor": true
+      },
+      {
+        "id": "REV-2",
+        "defect": "NAT64 and other IPv4-embedding IPv6 forms collapsed: 64:ff9b::203.0.113.1 and ...99 both masked to 64:ff9b::/64 and shared one bucket. NAT64 is live on IPv6-only mobile carriers.",
+        "fix": "limiter.embedded_ipv4 covering ::ffff:0:0/96, 64:ff9b::/96, 64:ff9b:1::/96 and the deprecated ::/96, unwrapped before any /64 masking",
+        "reproducedByAuthor": true
+      },
+      {
+        "id": "REV-3",
+        "defect": "purge() deleted the LIVE bucket when retention_windows=0 - a value the CHECK permits - zeroing a live ledger and letting BUCKET_ALLOWANCE be exceeded outright.",
+        "fix": "strict less-than, hard-floored at the live window",
+        "reproducedByAuthor": true
+      }
+    ],
+    "v4R2Results": "78 acceptance assertions pass (was 62); 3 concurrency shapes no overshoot on actual rows; restoration + deterministic reapply clean at 16 functions; typecheck PASS",
+    "v4PgtapRegressionCleared": true,
+    "v4IndependentReview_r2": "IN_PROGRESS"
   },
-  "nextSafeAction": "Await the independent v4 review. No staging, no integration, no push.",
+  "nextSafeAction": "Await the independent re-review. No staging, no integration, no push.",
   "recommendationHashes": {
     "FDA028_RECOMMENDATION_V2.md": "f59981e0d4dd7bc1de4e3601553a0291e598bbbfedf581d22bdb13f248b55691",
     "FDA028_RECOMMENDATION.md": "19ca40329f150b384a0c2a1d37f64de7f87a7f8d5a0b79b86d4aeae93743eca3",
