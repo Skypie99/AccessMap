@@ -126,10 +126,18 @@ Two things an owner should know before deciding, both found by independent revie
   production has them.
 - The shipped `listComments()` selects `COMMENT_SELECT`, which embeds
   `users!flag_comments_user_id_fkey(display_name)`. `anon` has no SELECT on
-  `public.users` — not before Phase 03A, not after, and **not in production**. So the
-  guest comment list is **already broken today**, independently of anything here.
-  Phase 03A neither causes nor fixes it. Recorded because a reader of the row above
-  would otherwise assume Stage A restored a working guest comment list.
+  `public.users` before or after Phase 03A, so the guest comment list is broken
+  locally regardless of Stage A. Phase 03A neither causes nor fixes it. Recorded
+  because a reader of the row above would otherwise assume Stage A restored a
+  working guest comment list.
+
+  **Bound on the production half of that claim:** the committed production capture
+  records no *table-level* SELECT for `anon` on `users`, but it carries column
+  definitions only — **no column-privilege data at all** — so a column-level
+  `GRANT SELECT (display_name) TO anon` cannot be excluded from committed evidence.
+  No repo artifact creates one. Confirming production's column grants needs a
+  read-only capture that this tree does not currently contain, and that is a gap in
+  the evidence base rather than a finding about Phase 03A.
 
 **FDA-026 is OPEN, not closed.** Stage B is withheld from the apply set and needs a
 separate owner authorization carrying release-capability proof.

@@ -128,7 +128,7 @@
     },
     {
       "file": "supabase/tests/build33-compat.test.sql",
-      "sha256": "2ac794ce18ae88fb4958ec4cdce6f31d96eda6809598693fe04aa039b80a48da",
+      "sha256": "32ba1c9b08e6db2c1939ed8f42833acbc079b6d3f6e5c860f6773e66dd552c14",
       "plan": 37,
       "purpose": "STAGE-MF-06 Build 33 compatibility contract: exercises the SHIPPED query shapes, and applies Stage B inside the transaction as a negative control to prove the split is load-bearing."
     }

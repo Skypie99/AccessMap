@@ -110,10 +110,17 @@ RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.ro
 
 -- listComments() does NOT select flag_comments bare. Its COMMENT_SELECT embeds
 --   users!flag_comments_user_id_fkey(display_name)
--- and anon has no SELECT on public.users — not before Phase 03A, not after, and
--- not in production (the production capture shows anon holding DELETE/INSERT/
--- UPDATE/... on users but NOT SELECT). So the guest comment list is ALREADY broken
--- in production, independently of anything Phase 03A does.
+-- and anon has no SELECT on public.users — not before Phase 03A and not after,
+-- proven here by the assertion below.
+--
+-- On PRODUCTION the claim must be bounded, and this is the bound: the committed
+-- production capture records anon holding DELETE/INSERT/UPDATE/... on users but no
+-- table-level SELECT. That capture carries column DEFINITIONS only and no column
+-- privilege data at all, so a column-level GRANT SELECT (display_name) TO anon
+-- cannot be excluded from committed evidence. No repo artifact creates one. The
+-- honest statement is therefore: locally the guest embed raises, and production is
+-- very likely the same but is not proven so by anything in this tree.
+-- Either way Phase 03A neither causes nor fixes it.
 --
 -- An earlier version of this suite asserted `SELECT id FROM flag_comments` and
 -- labelled it "listComments() does not raise for anon". That was a paraphrase, not
