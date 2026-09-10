@@ -1,8 +1,8 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-10T13:04:38Z",
-  "currentGeneration": "2026-09-10-code-accept-int",
+  "updatedUtc": "2026-09-10T18:20:00Z",
+  "currentGeneration": "2026-09-10-stage",
   "generations": [
     "2026-09-04",
     "2026-09-04-resume",
@@ -12,11 +12,12 @@
     "2026-09-09-f28a-probe",
     "2026-09-09-gab3",
     "2026-09-09-gab4",
-    "2026-09-10-code-accept-int"
+    "2026-09-10-code-accept-int",
+    "2026-09-10-stage"
   ],
-  "task": "Final 03A CODE acceptance + controlled INT + staging packet",
-  "status": "PHASE_03A_CODE_PASS_INT_PASS_STAGING_PACKET_READY",
-  "mode": "RECOMMENDATION_AND_EVIDENCE_ONLY",
+  "task": "Phase 03A hosted staging execution (STAGE-AUTHORIZED-20260910-R1)",
+  "status": "STAGE_STEPS_1_TO_11_COMPLETE; STEP12_INDEPENDENT_ACCEPTANCE_PENDING",
+  "mode": "STAGING_MUTATION_AUTHORIZED_WITHIN_EXACT_BOUNDARIES",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
   "headShaAtCheckpoint": "5d3ed0c8544872756cb99d48c076c0edcad4c529",
@@ -27,13 +28,13 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Owner decision on the staging authorization packet.",
+  "nextAction": "STEP 12 independent staging acceptance (must not self-certify), then STEP 13 production authorization packet (generation is not authorization), then STEP 14 cleanup check (retain staging).",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
     "PHASE03A_CODE": "HOLD",
     "INT": "NOT_RUN",
-    "STAGE": "NOT_RUN",
+    "STAGE": "STEPS_1_TO_11_COMPLETE_PENDING_INDEPENDENT_ACCEPTANCE",
     "PRODUCTION": "UNTOUCHED_NOT_AUTHORIZED",
     "SAFE_TO_INTEGRATE": false,
     "MAIN_MERGE_AUTHORIZED": false,
@@ -268,5 +269,35 @@
       "event": "PAUSED_FOR_USAGE_LIMIT then RESUMED",
       "note": "Usage reset grants no new authority. Scope remains LOCAL-ONLY V4. Artifact re-verified unchanged before resuming: tree 7d7d03f7, migration hash 61aa5247..."
     }
-  ]
+  ],
+  "stage": {
+    "target": {
+      "projectRef": "ctshxbykuemeqnofqcdh",
+      "branchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+      "parentProductionProjectRef": "kldlwszpfkdmsjrjhjym",
+      "productionTouched": false
+    },
+    "PHASE03A_STAGING_IDENTITY_GATE": "PASS",
+    "PHASE02_STAGING_BASELINE": "RECONCILED (ledger 71 -> 76)",
+    "FDA028_STAGING_VAULT_SECRET": "PROVISIONED_VERIFIED (staging-only; value never printed or logged)",
+    "PHASE03A_APPLY": "ALL 8 CANDIDATES APPLIED (ledger 82)",
+    "HOSTED_PGTAP": "217/217, 0 failures, validated by 2 negative controls",
+    "HOSTED_ROLE_MATRIX": "31/31, 0 failures",
+    "FDA028_HOSTED_ACCEPTANCE": "38/38, 0 failures, deterministic",
+    "HOSTED_CONCURRENCY": "25 parallel admissions, allowance 8 -> exactly 8 admitted, 8 real rows, 8 ledger units, 0 orphans, NO OVERSHOOT",
+    "R6_1_ADVISORY_COORDINATION": "PASS (6s held domain change blocked an admission 7s, which then succeeded)",
+    "R6_2_ADVISORY_REACHABILITY": "PASS \u2014 NOT reachable from anon, authenticated, PostgREST, GraphQL or any deployed Edge Function. Raw-SQL residual recorded, not a bypass.",
+    "R6_3_ADMISSION_VS_DOMAIN_CHANGE_RACE": "PASS in BOTH directions (change waited then refused; admission waited then admitted in the new domain). No stranded rows, no orphan grants, no incorrect budget regeneration, no lost guest write, no accounting mismatch.",
+    "HOSTED_IPV6_NORMALIZATION": "PASS (24 assertions, 0 failures, 1 negative control fired)",
+    "HOSTED_IPV6_TRANSPORT": "OPEN \u2014 no AAAA on the ingest hostname (staging AND production), and no guest-ingest Edge Function exists in the accepted artifact set. Deliberately NOT simulated.",
+    "ROLLOUT_STAGE": "S3_LIMITER_PRESENT_BYPASS_OPEN (measured: two guest writes accepted while limiter.bucket and limiter.grant stayed at 0)",
+    "RESTORATION_REHEARSAL": "PASS",
+    "REAPPLY_REHEARSAL": "PASS",
+    "ROUND_TRIP_STRUCTURAL_IDENTITY": "FAIL \u2014 reapplied digest c70e119a != first-apply digest 09c42928. Deterministic across 3 cycles; 286/286 hosted assertions still pass. Recorded as MUST-FIX before any production rollback is relied upon.",
+    "INDEPENDENT_STAGING_ACCEPTANCE": "NOT_RUN",
+    "PRODUCTION_AUTHORIZATION_PACKET": "NOT_ISSUED",
+    "STAGING_CLEANUP_REQUIRED": "YES \u2014 staging retained; deletion NOT performed",
+    "structuralDigestNow": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",
+    "residue": "NONE \u2014 all synthetic probe rows removed; synthetic auth user deleted; auth.users 0, flags 0, feedback 0, limiter ledger empty."
+  }
 }

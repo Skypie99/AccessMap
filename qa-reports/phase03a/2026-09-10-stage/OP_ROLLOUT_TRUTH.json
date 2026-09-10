@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEP 10 — guest/client rollout truth",
+  "OPERATION_STATE": "VERIFIED",
+  "target": "ctshxbykuemeqnofqcdh branch 441acc38",
+  "capturedUtc": "2026-09-10",
+
+  "ROLLOUT_STAGE": "S3_LIMITER_PRESENT_BYPASS_OPEN",
+  "classifiedBy": "Direct measurement against the real hosted guest surface with the real anon key, not by reading the migration files.",
+
+  "measuredGuestSurface": {
+    "anon_INSERT_public_flags": {
+      "request": "POST /rest/v1/flags with the anon key, guest payload",
+      "result": "HTTP 201, row created with user_id NULL",
+      "meaning": "The Build 33 pre-limiter guest report path is fully functional."
+    },
+    "anon_INSERT_public_feedback": {
+      "request": "POST /rest/v1/feedback with the anon key, write-only (no Prefer: return=representation)",
+      "result": "HTTP 201",
+      "meaning": "The Build 33 guest feedback path is fully functional.",
+      "authorTestCorrection": "An earlier probe of this same path returned 42501 and I nearly recorded it as a denial. It was my probe's fault: I sent Prefer: return=representation, and anon holds column-level INSERT on feedback but NO SELECT, so the readback — not the write — was refused. Re-run write-only, the insert succeeds. Recorded because the wrong reading would have understated the open bypass."
+    },
+    "limiterLedgerAfterBothGuestWrites": {
+      "limiter_bucket_rows": 0,
+      "limiter_grant_rows": 0,
+      "meaning": "This is the decisive bypass proof. Two guest writes were accepted while the limiter ledger did not move at all. The limiter is installed and correct, and nothing in the guest path calls it."
+    }
+  },
+
+  "whatIS_enforcedToday": {
+    "forged_user_id_on_flags": "HTTP 401 / 42501 — new row violates row-level security policy",
+    "forged_status_on_flags": "HTTP 401 / 42501 — new row violates row-level security policy",
+    "forged_user_id_on_feedback": "HTTP 401 / 42501 — new row violates row-level security policy",
+    "meaning": "FDA-012's payload narrowing is live and holding on the hosted surface. A guest cannot claim ownership or pre-set a moderation status. That is a payload control, NOT a rate control."
+  },
+
+  "whatIS_NOT_enforcedToday": {
+    "perClientBudget": "NONE on the guest path. No admission call, no bucket, no grant.",
+    "remainingProtection": "Only the Phase 02 emergency triggers (global anon hourly cap, per-flag rate limit) and client-side pacing. These are backstops, never the FDA-028 contract."
+  },
+
+  "limiterReachabilityFromClients": {
+    "postgrest_exposed_schemas": ["public", "graphql_public"],
+    "limiter_schema_exposed": false,
+    "rpc_admit_guest_flag_as_anon": "HTTP 404 PGRST202",
+    "rpc_admit_guest_flag_as_authenticated": "HTTP 404 PGRST202",
+    "meaning": "The limiter cannot currently be called by any client even if a client wanted to. Routing guest traffic through it requires a server-side ingest path that does not exist in the accepted artifact set."
+  },
+
+  "theCoordinatedRolloutConstraintRestated": {
+    "constraint": "Build 33 clients — the shipped iOS build AND the pinned Vercel production web deployment — depend on the direct pre-limiter INSERT. Revoking anon INSERT closes the bypass and simultaneously breaks every already-shipped client. Retaining it keeps the bypass open.",
+    "notSolvedBy": "This step does NOT resolve that by forcing an app update or adding a minimum-version gate — both were explicitly excluded by the owner.",
+    "statusHere": "S3 is the honest, expected intermediate state: the limiter is proven present and correct on hosted infrastructure, and the cutover that makes it load-bearing is a separate owner decision with a client-compatibility plan attached.",
+    "reference": "qa-reports/phase03a/2026-09-09-final-verification/OLD_CLIENT_ROLLOUT_CONSTRAINT.md"
+  },
+
+  "stagingResidue": "NONE — both probe rows were deleted. Post-cleanup: public.flags 2 (the pre-existing staging baseline), public.feedback 0, limiter.bucket 0, limiter.grant 0.",
+  "privacyDiscipline": "Synthetic payloads only. No real user identifier, no raw network address, no secret appears in this receipt."
+}

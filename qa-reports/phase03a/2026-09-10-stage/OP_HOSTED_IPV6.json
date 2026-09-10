@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEP 8 — hosted IPv6",
+  "OPERATION_STATE": "VERIFIED",
+  "target": "ctshxbykuemeqnofqcdh branch 441acc38",
+  "capturedUtc": "2026-09-10",
+
+  "HOSTED_IPV6_NORMALIZATION": "PASS",
+  "HOSTED_IPV6_TRANSPORT_AND_INGESTION": "OPEN",
+  "headlineRule": "These are two different claims and are reported separately on purpose. The owner instruction was: do not simulate hosted IPv6 and call it proof.",
+
+  "whatWasActuallyProvenHosted": {
+    "claim": "limiter.normalize_source executes correctly over IPv6 inputs on the real hosted Postgres 17 engine against the real staged catalog.",
+    "assertionsRun": 24,
+    "realFailures": 0,
+    "negativeControlFired": 1,
+    "negativeControlMeaning": "A deliberately wrong expectation was included and was reported as a failure, so the 0 is a measurement, not a vacuous pass.",
+    "residue": "NONE — the suite ran inside one transaction that was never committed, and limiter.config was re-verified afterwards as ipv6_prefix=64, ipv4_prefix=32, window_seconds=86400, normal_allowance=5, bucket_allowance=50, enabled=true, require_public_ip=true.",
+    "coverage": [
+      "RFC 4941-style privacy addresses in one /64 group to one bucket",
+      "a different /64 is a different bucket",
+      "host bits are zeroed (network(), not host()) — the defect that made /64 grouping never group",
+      "RFC 6052 well-known NAT64 64:ff9b::/96 unwraps to the embedded IPv4",
+      "RFC 8215 local-use NAT64 64:ff9b:1::/48 unwraps to the embedded IPv4",
+      "RFC 4291 IPv4-mapped ::ffff:0:0/96 unwraps to the embedded IPv4",
+      "two distinct NAT64 clients do NOT collapse into one bucket",
+      "a NAT64-embedded PRIVATE IPv4 is refused after unwrapping, not before",
+      "fe80::/10, fc00::/7, ::1, ff00::/8 and :: are all refused",
+      "a masked /64 input is refused as not a host address",
+      "comma-joined, whitespace-bearing, empty and malformed values are refused",
+      "uppercase/expanded and compressed spellings normalise identically",
+      "ipv6_prefix is genuine configuration: 128 separates two hosts in one /64, 48 widens grouping"
+    ]
+  },
+
+  "whyTransportIsOPEN": {
+    "reason1_noAAAAOnTheIngestHostname": {
+      "measured": "dig AAAA ctshxbykuemeqnofqcdh.supabase.co -> no records. Only A records (172.64.149.246, 104.18.38.10, Cloudflare).",
+      "consequence": "No client anywhere can open an IPv6 connection to the staging API/Edge surface, because no AAAA is published for it. This is a property of the deployment, not of the test machine."
+    },
+    "reason2_theTestMachineIsNotTheLimitation": {
+      "measured": "This host has working global IPv6 egress: curl -6 to one.one.one.one returned HTTP 200 from 2606:4700:4700::1001, and the host holds 4 global-scope IPv6 addresses.",
+      "measured2": "curl -6 to the staging host connected to ::ffff:104.18.38.10 — an IPv4-mapped socket, i.e. it fell back to the A record. The connection was IPv4.",
+      "consequence": "The inability to originate hosted IPv6 is not an environment excuse. IPv6 egress was demonstrated to a different host in the same test run."
+    },
+    "reason3_noGuestIngestEdgeFunctionExists": {
+      "fact": "The accepted Phase 03A artifact set contains NO guest-ingest Edge Function. The three deployed functions are send-push-notification v6, notify-flag-status v8 and delete-account v4, none of which is a guest ingestion path.",
+      "consequence": "Even over IPv4 there is currently no hosted code path that reads cf-connecting-ip and calls the limiter. End-to-end hosted ingestion — of any address family — cannot be proven in this run, and deploying an ad-hoc function to manufacture one is outside the accepted artifact set and outside this authorization."
+    }
+  },
+
+  "productionRelevantFinding": {
+    "measured": {
+      "kldlwszpfkdmsjrjhjym.supabase.co": {"A": ["172.64.149.246", "104.18.38.10"], "AAAA": "none"},
+      "db.kldlwszpfkdmsjrjhjym.supabase.co": {"A": "none", "AAAA": "present"},
+      "ctshxbykuemeqnofqcdh.supabase.co": {"A": ["172.64.149.246", "104.18.38.10"], "AAAA": "none"},
+      "db.ctshxbykuemeqnofqcdh.supabase.co": {"A": "none", "AAAA": "present"}
+    },
+    "reading": "The client-facing API/Edge hostname is IPv4-only in DNS on BOTH staging and production. The direct database hostname is IPv6-only on both — but the limiter never observes the database connection's peer address, so that is irrelevant to guest admission.",
+    "implication": "As DNS is published today, an IPv6-only client reaches this deployment through DNS64/NAT64 or 464XLAT, so Cloudflare — and therefore cf-connecting-ip — sees an IPv4 address. The IPv6 normalization paths are DORMANT in production rather than load-bearing.",
+    "whyItStillMatters": "Dormant is not dead. If Supabase or Cloudflare later publishes an AAAA for the API hostname, cf-connecting-ip begins carrying IPv6 with no code change and no deploy. The /64 grouping then becomes load-bearing overnight. That is exactly why the normalization is proven now rather than deferred.",
+    "claimBound": "Bounded to DNS as published on 2026-09-10 and to a read-only DNS lookup. No production request was made, no production record was read, and no production object was touched."
+  },
+
+  "howToCloseItLater": "Closing HOSTED_IPV6_TRANSPORT requires two things this authorization does not grant: (a) a guest-ingest Edge Function in the accepted artifact set, and (b) an IPv6-reachable ingest hostname. Until both exist, the honest status is OPEN, and it must not be reported as PASS on the strength of the normalization result above.",
+
+  "privacyDiscipline": "Every address used in the assertions is an RFC 3849 (2001:db8::/32) or RFC 5737 (203.0.113.0/24) documentation sentinel, or a well-known reserved prefix. No real client address was captured, stored, logged or reasoned about."
+}

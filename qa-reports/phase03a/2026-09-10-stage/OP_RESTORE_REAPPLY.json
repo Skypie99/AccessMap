@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEP 11 — restoration / reapply rehearsal",
+  "OPERATION_STATE": "VERIFIED",
+  "target": "ctshxbykuemeqnofqcdh branch 441acc38 (staging only; production NOT touched)",
+  "capturedUtc": "2026-09-10",
+
+  "RESTORATION_REHEARSAL": "PASS",
+  "REAPPLY_REHEARSAL": "PASS",
+  "ROUND_TRIP_STRUCTURAL_IDENTITY": "FAIL — see divergenceFinding. Reported as a finding, not smoothed over.",
+
+  "whatWasRun": "Three full rollback -> reapply cycles against real hosted staging, using all 8 accepted rollback scripts in reverse candidate order and all 8 accepted forward candidates in forward order. Every file was sha256-verified against the accepted set before use.",
+
+  "hashGate": {
+    "20260909120000_fda028_v4_limiter.sql": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771 — matches accepted",
+    "20260909120000_fda028_v4_limiter.rollback.sql": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302 — matches accepted",
+    "allEightForwardAndAllEightRollbackHashesRecorded": true
+  },
+
+  "digests": {
+    "DIGEST_POST_APPLY_originalApply": "09c42928fd70befef680e4149b83bf89891cbaf933c6c08f5db9fb2d276d8135",
+    "DIGEST_AFTER_ROLLBACK": "2d7b9f653be76d670af4e4645ab6ffd2f8bfc3d9d6b3b80a9da0de8448f27424",
+    "DIGEST_AFTER_REAPPLY": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",
+    "digestScope": "schemas, relations, columns, functions (including body md5), policies, triggers, table grants and column grants across public, private, storage AND limiter. Broader than migrations-next/phase03a/catalog.sql, which does not cover the limiter schema.",
+    "ledgerCountUnchangedThroughout": 82
+  },
+
+  "determinism": {
+    "rollbackDigestReproduced": "2d7b9f65... observed on 2 independent rollbacks",
+    "reapplyDigestReproduced": "c70e119a... observed on 3 independent reapplies",
+    "fullJsonByteComparison": "The complete 349,583-byte structural JSON from cycle 1 and cycle 2 are byte-identical.",
+    "conclusion": "Rollback and reapply are each deterministic and the pair converges to a fixed point. Restoration is repeatable, not lucky."
+  },
+
+  "restorationDoesNotBreakShippedClients": {
+    "testedWhileFullyRolledBack": {
+      "anon_INSERT_public_flags": "HTTP 201",
+      "anon_INSERT_public_feedback": "HTTP 201",
+      "anon_SELECT_public_flags": "HTTP 200"
+    },
+    "meaning": "A production rollback would restore the pre-03A posture WITHOUT breaking Build 33 clients. That is the property that makes the rollback usable in an incident."
+  },
+
+  "behaviouralEquivalenceAfterReapply": {
+    "hosted_pgTAP_foundation_plan113": "0 failures",
+    "hosted_pgTAP_privileges_plan79": "0 failures",
+    "hosted_pgTAP_media_key_guards_plan25": "0 failures",
+    "hosted_pgTAP_total": "217/217",
+    "hosted_role_authorization_matrix_plan31": "0 failures",
+    "hosted_FDA028_acceptance_plan38": "0 failures, reproduced on 4 runs after reapply",
+    "totalHostedAssertionsPassedAfterRoundTrip": 286,
+    "vaultSecretSurvived": "fda028_limiter_epoch_key still present after the round trip (metadata only — the value was never selected, printed or logged). The limiter re-derives its epoch key from Vault after the schema is recreated, which is why the FDA-028 suite passes on a freshly reapplied schema.",
+    "conclusion": "The reapplied catalog is behaviourally equivalent on every assertion the accepted artifact set defines."
+  },
+
+  "divergenceFinding": {
+    "severity": "MUST-FIX BEFORE ANY PRODUCTION ROLLBACK IS RELIED UPON",
+    "statement": "DIGEST_AFTER_REAPPLY (c70e119a) does not equal DIGEST_POST_APPLY (09c42928). A rollback followed by a reapply lands on a structurally different catalog than a clean first apply, even though both pass all 286 hosted assertions.",
+    "whyItHappens_bestSupportedExplanation": "The accepted rollbacks are FORWARD-RESTORATION scripts, not exact inverse DDL. The posture they reconstruct is therefore not guaranteed byte-identical to the true pre-03A posture, and reapplying the forward candidates on top of an approximated baseline lands on a stable but different state. The apply MECHANISM is not the cause: DDL semantics do not depend on whether a statement arrived via the Management API or the CLI.",
+    "whyItCouldNotBeLocalisedExactly": "I hashed the original post-apply state but did NOT retain its full structural JSON, so the original cannot be diffed field-by-field. This is my error in checkpoint discipline and is recorded as such rather than hidden.",
+    "whatWasLocalised": {
+      "method": "Diffed the rolled-back posture (535,171 bytes) against the reapplied posture (349,583 bytes) to characterise what Phase 03A actually does.",
+      "phase03aAdds": "the limiter schema, 5 relations, 27 columns, 27 functions, 1 trigger, and the RESTRICTIVE policy public.flags :: 'flags authenticated insert open' (FDA-009)",
+      "phase03aRemoves": "public.flags :: flags_user_scoped (the broad ALL policy) and public.users :: 'users readable by authenticated' (FDA-026)",
+      "phase03aRewrites": "3 admin-delete policies (same names, changed definitions) on public.flags, public.flag_comments and storage.objects",
+      "phase03aNarrows": "table grants 543 -> 266 and column grants 2309 -> 1386",
+      "assessment": "Every observed difference in this direction is an intended Phase 03A effect. Nothing anomalous was found in the rolled-back-vs-reapplied comparison itself."
+    },
+    "requiredBeforeProduction": [
+      "Capture and RETAIN the full structural JSON (not just its hash) immediately before and immediately after any production apply.",
+      "Rehearse the production rollback with both JSONs retained, and identify the exact field-level delta before relying on the rollback in an incident.",
+      "Decide explicitly whether the accepted rollbacks should be tightened into exact inverses, or whether a stable-but-different restored state is acceptable given 286/286 behavioural equivalence. This is an owner decision, not mine to assume."
+    ]
+  },
+
+  "mechanismNote": "The MCP Supabase connector was invalidated partway through this step. All remaining hosted work ran through `supabase db query --file --linked --project-ref ctshxbykuemeqnofqcdh`, whose target was identity-verified against staging (ledger 82, limiter present, auth.users 0) before any further mutation. No production target was ever reachable from the linked ref.",
+
+  "stagingEndState": {
+    "phase03aApplied": true,
+    "structural_sha256": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",
+    "limiter_schema_present": 1,
+    "limiter_functions": 20,
+    "ledger_count": 82,
+    "public_flags_rows": 0,
+    "public_feedback_rows": 0,
+    "limiter_bucket_rows": 0,
+    "limiter_grant_rows": 0,
+    "vault_secret_count": 1,
+    "residue": "NONE — every synthetic probe row from R6-1, R6-3, STEP 10 and STEP 11 was removed, and the synthetic R6-2 auth user was deleted (auth.users back to 0)."
+  },
+  "productionTouched": false
+}
