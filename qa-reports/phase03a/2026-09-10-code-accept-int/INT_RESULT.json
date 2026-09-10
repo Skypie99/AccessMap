@@ -3,7 +3,7 @@
   "operationId": "P03A-INT-20260910-01",
   "OPERATION_STATE": "VERIFIED",
   "verifiedUtc": "2026-09-10",
-  "PHASE_03A_INT_GATE": "PASS_PENDING_INDEPENDENT_ACCEPTANCE",
+  "PHASE_03A_INT_GATE": "PASS",
   "mergeCommit": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
   "mergeTree": "11de0eb4cf0cbf718fe17fa8a8cab8defef21af8",
   "parents": {
@@ -54,7 +54,7 @@
     "main merge",
     "Phase 03B"
   ],
-  "independentIntAcceptance": "NOT_RUN - first attempt terminated by a usage limit before producing any verdict; no partial file exists; re-dispatch required",
+  "independentIntAcceptance": "PASS - no MUST-FIX",
   "interruption": {
     "event": "PAUSED_FOR_USAGE_LIMIT then RESUMED",
     "stateVerifiedOnResume": {
@@ -65,5 +65,26 @@
       "noUpstreamOnEitherBranch": true,
       "note": "A usage reset grants no new authority. Scope remains local CODE+INT; staging, production, push and main merge stay unauthorized."
     }
+  },
+  "independentIntAcceptanceFile": "qa-reports/phase03a/2026-09-10-code-accept-int/INDEPENDENT_INT_ACCEPTANCE.md",
+  "reviewerIndependentlyMeasured": {
+    "nothingLost": "verified TWO ways - git diff --name-status -M (0 deletions, exactly 6 R100 renames) AND a raw git ls-tree set difference that rename detection cannot mask; all 6 byte-identical by sha256 across the move",
+    "v4Survived": "all 8 pinned hashes recomputed in the TARGET worktree, exact match",
+    "build33Intact": "zero diff on release/current.json, RELEASE_IDENTITY.md, vercel.json, app.json, eas.json; 4.1.1/build 33, deploymentId HMszH26wADRRDd1CqH4UkJ8kAugQ, web sourceCommit ebf091c2 all confirmed in file content",
+    "composedProof": "rebuilt pgtap.sql from source, hash matched the enforced value, replay gate exit 0, 217/217, all proof flags true",
+    "typecheck": "PASS",
+    "contractCheck": "current",
+    "lint": "0 errors, 91 pre-existing warnings",
+    "contractGuards": "61/61 across 4 suites",
+    "fullJest": "4204 passed / 14 failed / 32 todo / 4250 total - exact match",
+    "boundaries": "main unchanged at 70b52a30, no push evidence, write-ahead log real, rollback pointer correct and sufficient",
+    "scopeCreep": "none - no Phase 03B/03C/04, FDA-020 or FDA-042 in any code file",
+    "stagingPacketVaultClaim": "verified TRUE against the migration source - write_epoch_key never calls vault.create_secret"
+  },
+  "authorCorrection_toolchainClaim": {
+    "whatIClaimed": "I reported that the pinned pgTAP ARCHIVE sha256 reproduced the contract value, presenting it as toolchain proof.",
+    "whatTheReviewerFound": "Their own download of the same URL did NOT reproduce the archive-level sha256 - GitHub codeload gzip output is not byte-stable.",
+    "correctPosition": "The archive hash is NOT a dependable invariant and should not be cited as proof. The load-bearing, enforced artifact is the GENERATED pgtap.sql, whose hash both parties reproduced bit-for-bit and which the gate script hard-checks. My claim happened to hold for my download but the underlying check is unreliable.",
+    "severity": "NOTE - no effect on any gate; the enforced hash is the generated SQL, not the archive."
   }
 }
