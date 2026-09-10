@@ -35,6 +35,32 @@ CREATE TABLE limiter.config (
   retention_windows  integer NOT NULL DEFAULT 1   CHECK (retention_windows >= 0)
 );
 INSERT INTO limiter.config (id) VALUES (true) ON CONFLICT DO NOTHING;
+-- trigger is created after limiter.bucket exists; see the end of this file.
+
+-- ------------------------------------------------- window domain guard
+-- The epoch and the window are both measured in window_seconds, so changing it
+-- re-domains the ledger. Two defects follow if that is allowed while rows exist:
+--   * revisiting a previously-used value re-seeds AGAIN, re-funding every bucket
+--     each time - repeatable, not a one-time cost;
+--   * RAISING it strands every existing row, because purge()'s cutoff is then
+--     computed in the new, numerically smaller epoch numbering and can never
+--     reach the older, larger window_ids.
+-- Rather than track every domain ever used, forbid the ambiguous state outright:
+-- window_seconds stays CONFIGURATION, but changing it is a deliberate operation
+-- that requires draining the ledger first. With an empty ledger there is nothing
+-- to re-fund and nothing to strand.
+CREATE FUNCTION limiter.guard_window_domain()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path TO 'limiter', 'pg_temp' AS $$
+BEGIN
+  IF NEW.window_seconds IS DISTINCT FROM OLD.window_seconds
+     AND EXISTS (SELECT 1 FROM limiter.bucket) THEN
+    RAISE EXCEPTION
+      'FDA028: window_seconds cannot change while limiter.bucket has rows. Drain the ledger first (DELETE FROM limiter.bucket), which resets every live budget once, deliberately.'
+      USING ERRCODE = 'P0001';
+  END IF;
+  RETURN NEW;
+END $$;
 
 -- ------------------------------------------------- IPv4-embedding prefixes
 -- Which IPv6 prefixes carry an embedded IPv4, and at which RFC 6052 length.
@@ -321,6 +347,12 @@ BEGIN
   END IF;
 
   SELECT * INTO v_state FROM limiter.key_state WHERE id FOR UPDATE;
+  -- Re-read config INSIDE the lock and recompute. Config was read before the
+  -- lock was taken, so it may have changed while this session waited; persisting
+  -- a domain marker derived from the stale read would record the wrong domain.
+  SELECT * INTO v_cfg FROM limiter.config WHERE id;
+  v_target := LEAST(limiter.window_of(p_now, v_cfg.window_seconds),
+                    limiter.window_of(now(), v_cfg.window_seconds) + 1);
 
   IF v_state.epoch < 0 OR v_state.window_seconds IS DISTINCT FROM v_cfg.window_seconds THEN
     -- First key, or a NEW EPOCH DOMAIN. Epochs measured in a different window
@@ -565,6 +597,9 @@ RETURNS integer LANGUAGE plpgsql SECURITY DEFINER
 SET search_path TO 'limiter', 'pg_temp' AS $$
 DECLARE v_cfg limiter.config%ROWTYPE; v_cutoff bigint; v_live bigint; v_n integer;
 BEGIN
+  IF p_now IS NULL OR NOT isfinite(p_now) THEN
+    RAISE EXCEPTION 'FDA028: non-finite clock' USING ERRCODE = 'P0001';
+  END IF;
   SELECT * INTO v_cfg FROM limiter.config WHERE id;
   -- STRICTLY less-than, and hard-floored at the live window. With
   -- retention_windows = 0 the previous form deleted the CURRENT window, zeroing
@@ -611,6 +646,9 @@ CREATE FUNCTION limiter.purge()
 RETURNS integer LANGUAGE sql SECURITY DEFINER SET search_path TO 'limiter', 'pg_temp' AS $$
   SELECT limiter.purge_at(now())
 $$;
+
+CREATE TRIGGER guard_window_domain BEFORE UPDATE ON limiter.config
+  FOR EACH ROW EXECUTE FUNCTION limiter.guard_window_domain();
 
 -- ------------------------------------------------------------------ privileges
 -- No precedent exists in this codebase for an Edge Function reaching Postgres as

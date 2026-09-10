@@ -8,7 +8,8 @@ BEGIN RAISE NOTICE '%  %', CASE WHEN ok THEN 'ok  ' ELSE 'FAIL' END, t;
 \set QUIET off
 
 -- Deterministic test thresholds. CONFIGURATION, not production policy.
-UPDATE limiter.config SET normal_allowance=2, bucket_allowance=6, window_seconds=60,
+DELETE FROM limiter.bucket;  -- window_seconds change requires a drained ledger
+  UPDATE limiter.config SET normal_allowance=2, bucket_allowance=6, window_seconds=60,
        require_public_ip=false, reseed_interval=3, retention_windows=0;
 
 DO $blk$

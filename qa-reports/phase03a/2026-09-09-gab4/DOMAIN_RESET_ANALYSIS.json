@@ -5,20 +5,16 @@
   "capturedUtc": "2026-09-10",
   "engine": "PostgreSQL 17.11 disposable local",
   "hostedContact": false,
-
   "mechanism": "A window_seconds change is a new epoch domain, which re-seeds the key. Every bucket_key is derived from the epoch key, so all bucket keys change and every client effectively starts a fresh bucket.",
-
   "isItAttackerReachable": {
     "verdict": "NO",
     "evidence": "Measured has_table_privilege for service_role, anon and authenticated across limiter.config, key_state, bucket, grant and translation_prefix, for SELECT/INSERT/UPDATE/DELETE. Not one privilege is held. The schema grants only USAGE plus EXECUTE on the three clockless entry points.",
     "consequence": "Triggering a domain reset requires direct database or owner access. It is an operator action, not something the app role or a guest can reach."
   },
-
   "canThePeriodicReseedResetBudgetsMidWindow": {
     "verdict": "NO",
     "reasoning": "A reseed_interval re-seed only occurs inside the ratchet loop while ADVANCING the epoch. Advancing the epoch also changes window_id, so the bucket is new regardless. A same-window re-seed is not reachable through that path."
   },
-
   "residualTradeoff": {
     "statement": "An operator who changes window_seconds mid-window resets every guest's budget once.",
     "severity": "Operator footgun, not a security defect. It grants a one-time fresh budget to everyone, including any abuser active at that moment.",
@@ -27,6 +23,13 @@
     "ownerVisible": true,
     "recommendation": "window_seconds should be treated as a rare, deliberate operational change, not a routine tuning knob. Production thresholds remain DEFERRED, so no value is being fixed here."
   },
-
-  "notAVerdict": "This analysis does not substitute for the fourth independent review, which must still run against the unchanged artifact."
+  "notAVerdict": "This analysis does not substitute for the fourth independent review, which must still run against the unchanged artifact.",
+  "AUTHOR_CORRECTION_AFTER_R4_REVIEW": {
+    "whatIGotWrong": "This file concluded the domain reset was a \"bounded, one-time operator footgun\". It was NEITHER bounded NOR one-time, and the r4 reviewer proved both.",
+    "defect1": "Revisiting a previously-used window_seconds re-seeded AGAIN each time. Reproduced by the author: one source obtained 7 distinct bucket keys and 8 units against an allowance of 2.",
+    "defect2": "RAISING window_seconds stranded every existing row permanently, because purge() computes its cutoff in the new, numerically smaller epoch numbering and can never reach the older larger window_ids. Reproduced: cutoff 20706 vs a stranded window_id of 29817134.",
+    "whyMyAnalysisMissedIt": "I examined only a single change in one direction. I did not examine revisits, and I did not examine the interaction with purge cutoffs across domains.",
+    "resolution": "Superseded by the structural fix in v4-r5: limiter.guard_window_domain refuses a window_seconds change while limiter.bucket has rows, so neither defect is reachable.",
+    "twoClaimsThatDIDHold": "Independently confirmed by the reviewer: no role holds any privilege on any limiter table, and the periodic reseed cannot reset budgets mid-window."
+  }
 }

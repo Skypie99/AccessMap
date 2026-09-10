@@ -5,6 +5,8 @@
 -- Disposable rehearsal only until a separate exact production token authorizes it.
 BEGIN;
 
+DROP TRIGGER IF EXISTS guard_window_domain ON limiter.config;
+DROP FUNCTION IF EXISTS limiter.guard_window_domain();
 DROP FUNCTION IF EXISTS limiter.purge();
 DROP FUNCTION IF EXISTS limiter.purge_at(timestamptz);
 DROP FUNCTION IF EXISTS limiter.admit_guest_feedback(text, uuid, text, text, text);

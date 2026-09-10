@@ -134,6 +134,7 @@ BEGIN
     limiter.normalize_source('2001:db8:1:2::1') LIKE 'v6:%');
 
   -- REV-3: purge must never delete the LIVE window.
+  DELETE FROM limiter.bucket;  -- window_seconds change requires a drained ledger
   UPDATE limiter.config SET retention_windows = 0, bucket_allowance = 4, normal_allowance = 2,
          window_seconds = 86400, require_public_ip = false;
   DELETE FROM limiter.bucket;
@@ -201,10 +202,12 @@ DECLARE d text; e_small bigint; e_big bigint; w1 bigint; w2 bigint; n int;
 BEGIN
   -- R3-B4 (MUST-FIX): raising window_seconds after it was ever lowered must NOT
   -- freeze the epoch. Independently found by the author and by the reviewer.
+  DELETE FROM limiter.bucket;  -- window_seconds change requires a drained ledger
   UPDATE limiter.config SET window_seconds = 60, bucket_allowance = 2,
          normal_allowance = 2, require_public_ip = false;
   PERFORM limiter.admit_guest_flag('203.0.113.220', NULL, 1,2,'ramp',3,'a');
   SELECT epoch INTO e_small FROM limiter.key_state;
+  DELETE FROM limiter.bucket;  -- window_seconds change requires a drained ledger
   UPDATE limiter.config SET window_seconds = 86400;
   PERFORM limiter.admit_guest_flag('203.0.113.220', NULL, 1,2,'ramp',3,'b');
   SELECT epoch INTO e_big FROM limiter.key_state;
@@ -215,11 +218,13 @@ BEGIN
   PERFORM pass('r3b4: the epoch is reachable by real time, not frozen far ahead',
     (SELECT epoch FROM limiter.key_state) <= limiter.window_of(now(), 86400) + 1);
   -- and lowering it again must also re-domain, not clamp
+  DELETE FROM limiter.bucket;  -- window_seconds change requires a drained ledger
   UPDATE limiter.config SET window_seconds = 60;
   PERFORM limiter.admit_guest_flag('203.0.113.221', NULL, 1,2,'ramp',3,'c');
   PERFORM pass('r3b4: lowering window_seconds also re-domains',
     (SELECT epoch FROM limiter.key_state) = limiter.window_of(now(), 60)
     AND (SELECT window_seconds FROM limiter.key_state) = 60);
+  DELETE FROM limiter.bucket;  -- window_seconds change requires a drained ledger
   UPDATE limiter.config SET window_seconds = 86400;
 
   -- R3 SHOULD-FIX: ::/96 must not "unwrap" the unspecified/loopback addresses.
@@ -263,4 +268,84 @@ BEGIN
   EXCEPTION WHEN sqlstate 'P0001' THEN
     PERFORM pass('r3: infinite clock refused (fail closed)', true);
   END;
+END $blk$;
+
+-- ===== REGRESSIONS FROM THE V4-R4 RE-REVIEW =====
+DO $blk$
+DECLARE d text; n int; keys int; units int; old_w bigint;
+BEGIN
+  DELETE FROM limiter.bucket;
+  UPDATE limiter.config SET window_seconds = 86400, bucket_allowance = 2,
+         normal_allowance = 2, require_public_ip = false, retention_windows = 0;
+
+  -- R4-1 (MUST-FIX): revisiting a window_seconds value must not re-fund buckets.
+  PERFORM limiter.admit_guest_flag('203.0.113.10', NULL, 1,2,'ramp',3,'a');
+  PERFORM limiter.admit_guest_flag('203.0.113.10', NULL, 1,2,'ramp',3,'b');
+  PERFORM pass('r4-1: exhausted as expected',
+    (SELECT a.decision FROM limiter.admit_guest_flag('203.0.113.10',NULL,1,2,'ramp',3,'c') a)
+      = 'REFUSED_BUCKET_EXHAUSTED');
+  BEGIN
+    UPDATE limiter.config SET window_seconds = 3600;
+    PERFORM pass('r4-1: window_seconds change REFUSED while the ledger has rows', false);
+  EXCEPTION WHEN sqlstate 'P0001' THEN
+    PERFORM pass('r4-1: window_seconds change REFUSED while the ledger has rows', true);
+  END;
+  PERFORM pass('r4-1: still exhausted - no re-funding possible',
+    (SELECT a.decision FROM limiter.admit_guest_flag('203.0.113.10',NULL,1,2,'ramp',3,'d') a)
+      = 'REFUSED_BUCKET_EXHAUSTED');
+  SELECT count(DISTINCT bucket_key) INTO keys FROM limiter.bucket;
+  SELECT sum(units_consumed) INTO units FROM limiter.bucket;
+  PERFORM pass('r4-1: one source still has exactly ONE bucket and <= allowance units',
+    keys = 1 AND units <= 2);
+
+  -- R4-1b: with a drained ledger the change is permitted, deliberately.
+  DELETE FROM limiter.bucket;
+  UPDATE limiter.config SET window_seconds = 3600;
+  PERFORM pass('r4-1b: change permitted once the ledger is drained',
+    (SELECT window_seconds FROM limiter.config WHERE id) = 3600);
+
+  -- R4-2 (MUST-FIX): raising window_seconds cannot strand unreachable rows,
+  -- because the ledger must be empty before the change is allowed.
+  DELETE FROM limiter.bucket;
+  UPDATE limiter.config SET window_seconds = 60;
+  PERFORM limiter.admit_guest_flag('203.0.113.20', NULL, 1,2,'ramp',3,'a');
+  SELECT window_id INTO old_w FROM limiter.bucket LIMIT 1;
+  BEGIN
+    UPDATE limiter.config SET window_seconds = 86400;
+    PERFORM pass('r4-2: raising window_seconds REFUSED while rows exist', false);
+  EXCEPTION WHEN sqlstate 'P0001' THEN
+    PERFORM pass('r4-2: raising window_seconds REFUSED while rows exist', true);
+  END;
+  PERFORM pass('r4-2: the row is still reachable by purge in its own domain',
+    limiter.window_of(now(), 60) >= old_w);
+  DELETE FROM limiter.bucket;
+  UPDATE limiter.config SET window_seconds = 86400;
+  PERFORM pass('r4-2: no stranded rows after a drained domain change',
+    NOT EXISTS (SELECT 1 FROM limiter.bucket));
+
+  -- R4-3 (SHOULD-FIX): purge_at must fail closed on a non-finite clock.
+  BEGIN
+    PERFORM limiter.purge_at('infinity'::timestamptz);
+    PERFORM pass('r4-3: purge_at rejects an infinite clock', false);
+  EXCEPTION WHEN sqlstate 'P0001' THEN
+    PERFORM pass('r4-3: purge_at rejects an infinite clock', true);
+  END;
+  BEGIN
+    PERFORM limiter.purge_at(NULL);
+    PERFORM pass('r4-3: purge_at rejects a NULL clock', false);
+  EXCEPTION WHEN sqlstate 'P0001' THEN
+    PERFORM pass('r4-3: purge_at rejects a NULL clock', true);
+  END;
+
+  -- R4-4 (SHOULD-FIX): the domain guard exists as a trigger, not just as prose.
+  PERFORM pass('r4-4: guard_window_domain trigger is installed on limiter.config',
+    EXISTS (SELECT 1 FROM pg_trigger tg JOIN pg_class c ON c.oid = tg.tgrelid
+            JOIN pg_namespace ns ON ns.oid = c.relnamespace
+            WHERE ns.nspname='limiter' AND c.relname='config'
+              AND tg.tgname='guard_window_domain' AND NOT tg.tgisinternal));
+  PERFORM pass('r4-4: a non-window config change is still allowed',
+    (SELECT bucket_allowance FROM limiter.config WHERE id) IS NOT NULL);
+  UPDATE limiter.config SET bucket_allowance = 6;
+  PERFORM pass('r4-4: bucket_allowance still tunable with rows present',
+    (SELECT bucket_allowance FROM limiter.config WHERE id) = 6);
 END $blk$;

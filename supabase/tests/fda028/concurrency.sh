@@ -4,8 +4,10 @@
 set -e
 PORT="$1"; R="$2"; N="${3:-40}"; ALLOW="${4:-10}"; OUT="$5"
 Q(){ psql -h 127.0.0.1 -p $PORT -U v -d t -tAq -c "$1"; }
-Q "update limiter.config set bucket_allowance=$ALLOW, normal_allowance=$ALLOW, window_seconds=86400, require_public_ip=false;" >/dev/null
+# Drain BEFORE touching window_seconds: the domain guard refuses a window change
+# while ledger rows exist, which is the point of it.
 Q "delete from limiter.bucket; delete from public.flags;" >/dev/null
+Q "update limiter.config set bucket_allowance=$ALLOW, normal_allowance=$ALLOW, window_seconds=86400, require_public_ip=false;" >/dev/null
 : > "$OUT"
 for i in $(seq 1 $N); do
   ( psql -h 127.0.0.1 -p $PORT -U v -d t -tAq -c \
