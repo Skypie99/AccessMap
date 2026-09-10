@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "RUN_UNIT": "FINAL_03A_CODE_ACCEPTANCE",
+  "STATUS": "CODE_FROZEN",
+  "PHASE_03A_CODE_GATE": "PASS",
+  "frozenUtc": "2026-09-10",
+  "PHASE03A_CODE_SHA": "21b2bd7a96cd69a8d8fc3ff8756b88a5fe28d912",
+  "PHASE03A_CODE_TREE": "b47f1221e8be9c57d147a80ee328359b32f66436",
+  "independentlyReviewedCommit": "5edd6455cac5fc5a42cd7e327b7a53f844a75d05",
+  "nonQaDriftReviewedToFrozen": 0,
+  "FDA028_V4_SHA": "eec51b6723d04105a7ba31bf2efd2573b95e8902",
+  "FDA028_V4_TREE": "23f352bec069522efe9a174a4551c2c484b91de2",
+  "FDA028_V4_PRESERVED": true,
+  "MIGRATION_HASHES": {
+    "20260905055629_phase03a_flag_policies.sql": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
+    "20260905055630_phase03a_open_inserts.sql": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
+    "20260905055632_phase03a_profile_updates.sql": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
+    "20260905055633_phase03a_contextual_profiles.sql": "714cee56dac78d84505898d18cddd2c24345d2b86e43434c5899f466de22d81b",
+    "20260905055635_phase03a_trigger_execute.sql": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
+    "20260905055636_phase03a_client_privileges.sql": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
+    "20260905073925_phase03a_effective_privileges.sql": "64afe7aaff43f21ecb189bea648dbfa22335a5aca46061310dacf86e73cc9928",
+    "20260909120000_fda028_v4_limiter.sql": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771"
+  },
+  "RESTORATION_HASHES": {
+    "20260905055629_phase03a_flag_policies.rollback.sql": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
+    "20260905055630_phase03a_open_inserts.rollback.sql": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
+    "20260905055632_phase03a_profile_updates.rollback.sql": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
+    "20260905055633_phase03a_contextual_profiles.rollback.sql": "c894f5bb3e337e29c09b379db2d1e2fcebc6f76ec2a331e8a891f90398b00f21",
+    "20260905055635_phase03a_trigger_execute.rollback.sql": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
+    "20260905055636_phase03a_client_privileges.rollback.sql": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
+    "20260905073925_phase03a_effective_privileges.rollback.sql": "cc71d52cddd86a81f0db4375bd20e81a53b8cffee32e3e1a4ea6f83261e0271f",
+    "20260909120000_fda028_v4_limiter.rollback.sql": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302"
+  },
+  "LIMITER_HASHES": {
+    "20260909120000_fda028_v4_limiter.sql": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771",
+    "20260909120000_fda028_v4_limiter.rollback.sql": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302"
+  },
+  "TEST_HASHES": {
+    "fda028/acceptance.sql": "5dccef0b07b9a9f0bddddfc3646a28a1a8907f0a14ae920fdc92d0f09bfc24e2",
+    "fda028/acceptance2.sql": "7283dcf8e46c459a23056486f341c10d400c714ad7f337a50582f08894d9543c",
+    "fda028/acceptance3.sql": "b60720e4cbdbda44561d2e98478b6c0e3d7fe36c05da3241a5d6438248ca6f8c",
+    "fda028/concurrency.sh": "061dfe7c019a6f7e636ef5339f6cd9ab2882340b06f2aacecadf66e29041a905",
+    "fda028/devkey.sql": "4abb7b96c36e453be3c51ca54d1d6a2fbe5e13d9a7b2dca6876ca210b0eae7ba",
+    "fda028/fixture.sql": "2186cc19d5f7c155930d0b82ba56c5f874f0593806273375544dc517abed4ca2",
+    "phase03a-foundation.test.sql": "b341500a5e3c782fdc346dd0d9a089bbcb0a58e42059a445ef22f68b5c5fce3a",
+    "phase03a-privileges.test.sql": "5c9171b3991c98eadd1bf939314dcf0694242d695f317026d8b40820249fe313",
+    "promptb_media_key_guards.test.sql": "9dff5146f431aa3c9f0cec89b106ff06935ee6900a9dd829b6eaa12466376009"
+  },
+  "CALLER_HASHES": {
+    "lib/admin.ts": "06c6aab54324ab6eabb3a922aad738c4e85e2413b2c1c0a7f7dedf0f03724025",
+    "lib/comments.ts": "c3954c25b992b55a90890e140d29614c279c15b3618ffb21a7ca6715503de26f",
+    "lib/flags.ts": "1068ac17542cc9db7671a21af50b9e8b9c64e1e068cd0af3dfa5cc63e0bec39a",
+    "lib/feedbackStore.ts": "0f090948941b2c5be90c2744066d4b8d2df3a006964acbf1229b09ccfe4c6177",
+    "screens/LeaderboardScreen.tsx": "e63cc4fc6c9b550acf411fd4e0a0623b2ea83cd4aeec427be879a26e17e8a93c",
+    "types/database.ts": "4dd807e0f38b2166f27ee9166dc174d937b003ebba5925b4310583cbb2537683"
+  },
+  "CONTRACT_MANIFEST_HASH": "86c6709387019da1e11c716967d65f5f5cf419e1a118c43e38321e3a6d3ad64d",
+  "APPLICATION_PRIVILEGES_CONTRACT_HASH": "5b5b3699c6136ac7e8c7a180adc8b539148f5c8fd76857d9942c6762e2fae836",
+  "INDEPENDENT_CODE_REVIEW": "PASS",
+  "independentReviewFile": "qa-reports/phase03a/2026-09-10-code-accept-int/INDEPENDENT_CODE_REVIEW.md",
+  "reviewerReproduced": [
+    "all 8 v4 artifact hashes",
+    "the 217/217 composed proof from a self-rebuilt pinned pgTAP",
+    "restorationExact and reapplyDeterministic",
+    "the privilege guard three ways",
+    "the Jest reuse argument",
+    "typecheck and lint"
+  ],
+  "compositionPropertyConfirmed": {
+    "finding": "FDA-012 revokes ALL on public.flags and public.feedback from PUBLIC, anon, authenticated and service_role, and re-grants service_role only SELECT(user_id) and UPDATE(user_id) on flags - never INSERT.",
+    "consequence": "service_role cannot create a guest row directly at all; the postgres-owned SECURITY DEFINER limiter function becomes its only route.",
+    "precisionCorrection": "This does NOT make the limiter the only route overall. anon and authenticated retain column-scoped INSERT on public.flags (lines 206/208), which is the deliberate transitional guest path. The direct-insert bypass therefore remains open by design until the S6 client cutover, exactly as the rollout constraint states.",
+    "verifiedByAuthor": true
+  },
+  "openForStage": {
+    "VAULT_IO": "OPEN_FOR_STAGE",
+    "IPV6_HOSTED_EVIDENCE": "OPEN_FOR_STAGE",
+    "R6_1": "CARRY_TO_STAGE",
+    "R6_2": "CARRY_TO_STAGE",
+    "R6_3": "CARRY_TO_STAGE"
+  },
+  "whatCodePassDoesNotMean": [
+    "FDA-028 or any of the seven findings is closed",
+    "staging authorized",
+    "production authorized",
+    "push or main merge authorized",
+    "Phase 03B authorized"
+  ]
+}
