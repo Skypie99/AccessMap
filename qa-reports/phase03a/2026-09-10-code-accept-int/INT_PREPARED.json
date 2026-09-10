@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "operationId": "P03A-INT-20260910-01",
-  "OPERATION_STATE": "APPLIED_NOT_VERIFIED",
+  "OPERATION_STATE": "VERIFIED",
   "preparedUtc": "2026-09-10",
   "mutationPerformed": false,
   "source": {
