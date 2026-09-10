@@ -58,9 +58,15 @@ ON CONFLICT DO NOTHING;
 -- ------------------------------------------------------------------- key state
 -- NON-SECRET epoch bookkeeping only. Key MATERIAL lives in Vault, never here.
 CREATE TABLE limiter.key_state (
-  id            boolean PRIMARY KEY DEFAULT true CHECK (id),
-  epoch         bigint  NOT NULL,
-  reseed_anchor bigint  NOT NULL
+  id             boolean PRIMARY KEY DEFAULT true CHECK (id),
+  epoch          bigint  NOT NULL,
+  reseed_anchor  bigint  NOT NULL,
+  -- The epoch counts windows of THIS length. Epochs from different window
+  -- lengths are not comparable, so the anti-backward clamp must not be applied
+  -- across a change of it. Without this marker, raising window_seconds after it
+  -- was ever lowered pins the epoch at a value real time cannot reach for tens
+  -- of thousands of years, freezing every guest in one window permanently.
+  window_seconds bigint
 );
 -- Seeded at epoch -1 (meaning "no key yet") ON PURPOSE. The row must exist from
 -- the start so SELECT ... FOR UPDATE always has a row to serialise on. Without
@@ -191,6 +197,10 @@ RETURNS inet LANGUAGE plpgsql STABLE AS $$
 DECLARE r RECORD; v4 inet;
 BEGIN
   IF family(p_addr) <> 6 THEN RETURN NULL; END IF;
+  -- The deprecated ::/96 IPv4-compatible range also contains :: and ::1, which
+  -- are not translated addresses at all. Exclude them before matching so they
+  -- can never be "unwrapped" into 0.0.0.0 / 0.0.0.1.
+  IF p_addr <<= '::/128'::inet OR p_addr <<= '::1/128'::inet THEN RETURN NULL; END IF;
   -- Longest prefix first, so a more specific translation prefix wins.
   FOR r IN SELECT prefix, plen FROM limiter.translation_prefix
            ORDER BY masklen(prefix) DESC LOOP
@@ -291,61 +301,74 @@ DECLARE
   v_key    bytea;
   v_steps  integer := 0;
 BEGIN
+  -- A non-finite or absent clock has no window. Fail closed rather than letting
+  -- floor(infinity) raise an unhandled error out of the admission path.
+  IF p_now IS NULL OR NOT isfinite(p_now) THEN
+    RAISE EXCEPTION 'FDA028: non-finite clock' USING ERRCODE = 'P0001';
+  END IF;
+
   SELECT * INTO v_cfg FROM limiter.config WHERE id;
   v_target := limiter.window_of(p_now, v_cfg.window_seconds);
 
   -- DEFENCE IN DEPTH, independent of who may call this. A caller-supplied clock
-  -- must not be able to drive the ratchet: never advance backward, and never
-  -- more than one window past real time. Without this, one far-future call
-  -- forces a global re-seed that orphans every live bucket, and one far-past
-  -- call decouples the key from the window.
+  -- must not drive the ratchet: never more than one window past real time.
   v_target := LEAST(v_target, limiter.window_of(now(), v_cfg.window_seconds) + 1);
 
-  -- Fast path: no lock while the stored epoch is already current.
+  -- Fast path: no lock while the stored epoch is current AND in the same domain.
   SELECT * INTO v_state FROM limiter.key_state WHERE id;
-  IF v_state.epoch = v_target THEN
+  IF v_state.window_seconds = v_cfg.window_seconds AND v_state.epoch = v_target THEN
     RETURN QUERY SELECT v_state.epoch, limiter.read_epoch_key(); RETURN;
   END IF;
 
-  -- Slow path: take the row lock, then RE-CHECK. Another session may have
-  -- advanced the epoch while this one waited.
   SELECT * INTO v_state FROM limiter.key_state WHERE id FOR UPDATE;
+
+  IF v_state.epoch < 0 OR v_state.window_seconds IS DISTINCT FROM v_cfg.window_seconds THEN
+    -- First key, or a NEW EPOCH DOMAIN. Epochs measured in a different window
+    -- length are meaningless here, so reset outright instead of clamping against
+    -- them. Re-seeding on a domain change is safe and strictly improves
+    -- unlinkability, since it destroys the old chain.
+    v_key := extensions.gen_random_bytes(32);
+    -- v_target, not now(): it is already clamped to at most one window past real
+    -- time, so it is always reachable, and using it keeps the seeded epoch
+    -- consistent with the clock this call was made under.
+    v_state.epoch := v_target;
+    v_state.reseed_anchor := v_state.epoch;
+    UPDATE limiter.key_state
+       SET epoch = v_state.epoch, reseed_anchor = v_state.reseed_anchor,
+           window_seconds = v_cfg.window_seconds
+     WHERE id;
+    PERFORM limiter.write_epoch_key(v_key);
+    RETURN QUERY SELECT v_state.epoch, v_key; RETURN;
+  END IF;
+
   v_target := GREATEST(v_target, v_state.epoch);   -- never ratchet backward
   IF v_state.epoch = v_target THEN
     RETURN QUERY SELECT v_state.epoch, limiter.read_epoch_key(); RETURN;
   END IF;
 
-  IF v_state.epoch < 0 THEN
-    -- First ever key for this database.
-    v_key := extensions.gen_random_bytes(32);
-    v_state.epoch := v_target;
-    v_state.reseed_anchor := v_target;
-  ELSE
-    v_key := limiter.read_epoch_key();
-    -- A caller cannot force advancement: the target epoch is a pure function of
-    -- request time. Advance forward only, never backward.
-    WHILE v_state.epoch < v_target LOOP
-      v_steps := v_steps + 1;
-      IF v_steps > v_cfg.catchup_cap THEN
-        -- Too stale to ratchet economically. Re-seeding only DESTROYS more history.
-        v_key := extensions.gen_random_bytes(32);
-        v_state.epoch := v_target;
-        v_state.reseed_anchor := v_target;
-        EXIT;
-      END IF;
-      v_state.epoch := v_state.epoch + 1;
-      IF v_state.epoch - v_state.reseed_anchor >= v_cfg.reseed_interval THEN
-        -- Periodic re-seed bounds how far an OLD leaked key can ratchet forward.
-        v_key := extensions.gen_random_bytes(32);
-        v_state.reseed_anchor := v_state.epoch;
-      ELSE
-        v_key := limiter.ratchet(v_key, v_state.epoch);
-      END IF;
-    END LOOP;
-  END IF;
+  v_key := limiter.read_epoch_key();
+  WHILE v_state.epoch < v_target LOOP
+    v_steps := v_steps + 1;
+    IF v_steps > v_cfg.catchup_cap THEN
+      v_key := extensions.gen_random_bytes(32);
+      v_state.epoch := v_target;
+      v_state.reseed_anchor := v_target;
+      EXIT;
+    END IF;
+    v_state.epoch := v_state.epoch + 1;
+    IF v_state.epoch - v_state.reseed_anchor >= v_cfg.reseed_interval THEN
+      -- Periodic re-seed bounds how far an OLD leaked key can ratchet forward.
+      v_key := extensions.gen_random_bytes(32);
+      v_state.reseed_anchor := v_state.epoch;
+    ELSE
+      v_key := limiter.ratchet(v_key, v_state.epoch);
+    END IF;
+  END LOOP;
 
   UPDATE limiter.key_state
-     SET epoch = v_state.epoch, reseed_anchor = v_state.reseed_anchor WHERE id;
+     SET epoch = v_state.epoch, reseed_anchor = v_state.reseed_anchor,
+         window_seconds = v_cfg.window_seconds
+   WHERE id;
   PERFORM limiter.write_epoch_key(v_key);
   RETURN QUERY SELECT v_state.epoch, v_key;
 END $$;

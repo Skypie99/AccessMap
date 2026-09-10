@@ -194,3 +194,73 @@ BEGIN
     NOT EXISTS (SELECT 1 FROM limiter.bucket b
                 WHERE b.window_id > (SELECT epoch FROM limiter.key_state)));
 END $blk$;
+
+-- ===== REGRESSIONS FROM THE V4-R3 RE-REVIEW =====
+DO $blk$
+DECLARE d text; e_small bigint; e_big bigint; w1 bigint; w2 bigint; n int;
+BEGIN
+  -- R3-B4 (MUST-FIX): raising window_seconds after it was ever lowered must NOT
+  -- freeze the epoch. Independently found by the author and by the reviewer.
+  UPDATE limiter.config SET window_seconds = 60, bucket_allowance = 2,
+         normal_allowance = 2, require_public_ip = false;
+  PERFORM limiter.admit_guest_flag('203.0.113.220', NULL, 1,2,'ramp',3,'a');
+  SELECT epoch INTO e_small FROM limiter.key_state;
+  UPDATE limiter.config SET window_seconds = 86400;
+  PERFORM limiter.admit_guest_flag('203.0.113.220', NULL, 1,2,'ramp',3,'b');
+  SELECT epoch INTO e_big FROM limiter.key_state;
+  PERFORM pass('r3b4: raising window_seconds resets the epoch domain',
+    e_big <> e_small AND e_big = limiter.window_of(now(), 86400));
+  PERFORM pass('r3b4: key_state records the window_seconds domain',
+    (SELECT window_seconds FROM limiter.key_state) = 86400);
+  PERFORM pass('r3b4: the epoch is reachable by real time, not frozen far ahead',
+    (SELECT epoch FROM limiter.key_state) <= limiter.window_of(now(), 86400) + 1);
+  -- and lowering it again must also re-domain, not clamp
+  UPDATE limiter.config SET window_seconds = 60;
+  PERFORM limiter.admit_guest_flag('203.0.113.221', NULL, 1,2,'ramp',3,'c');
+  PERFORM pass('r3b4: lowering window_seconds also re-domains',
+    (SELECT epoch FROM limiter.key_state) = limiter.window_of(now(), 60)
+    AND (SELECT window_seconds FROM limiter.key_state) = 60);
+  UPDATE limiter.config SET window_seconds = 86400;
+
+  -- R3 SHOULD-FIX: ::/96 must not "unwrap" the unspecified/loopback addresses.
+  PERFORM pass('r3: :: is not treated as an embedded IPv4',
+    limiter.embedded_ipv4('::'::inet) IS NULL);
+  PERFORM pass('r3: ::1 is not treated as an embedded IPv4',
+    limiter.embedded_ipv4('::1'::inet) IS NULL);
+
+  -- R3 SHOULD-FIX: the public-unicast guard was never exercised, because the
+  -- whole suite ran with require_public_ip disabled.
+  UPDATE limiter.config SET require_public_ip = true;
+  PERFORM pass('r3: private IPv4 refused when the public guard is ON',
+    limiter.normalize_source('10.1.2.3') IS NULL);
+  PERFORM pass('r3: CGNAT refused when the public guard is ON',
+    limiter.normalize_source('100.64.0.1') IS NULL);
+  PERFORM pass('r3: loopback refused when the public guard is ON',
+    limiter.normalize_source('127.0.0.1') IS NULL);
+  PERFORM pass('r3: link-local IPv6 refused when the public guard is ON',
+    limiter.normalize_source('fe80::1') IS NULL);
+  PERFORM pass('r3: ULA refused when the public guard is ON',
+    limiter.normalize_source('fc00::1') IS NULL);
+  PERFORM pass('r3: public IPv4 still accepted with the guard ON',
+    limiter.normalize_source('203.0.113.7') IS NOT NULL);
+  PERFORM pass('r3: a mapped PRIVATE address is refused after unwrapping',
+    limiter.normalize_source('::ffff:10.1.2.3') IS NULL);
+  PERFORM pass('r3: guest path fails closed on a private source with the guard ON',
+    (SELECT a.decision FROM limiter.admit_guest_flag('10.1.2.3', NULL, 1,2,'ramp',3,'x') a)
+      = 'REFUSED_NO_TRUSTED_SIGNAL');
+  UPDATE limiter.config SET require_public_ip = false;
+
+  -- R3 SHOULD-FIX: /40 and /48 RFC 6052 lengths had no coverage.
+  PERFORM pass('r3: rfc6052 /40 extraction correct',
+    limiter.rfc6052_ipv4('2001:0db8:cb00:7101:0001:0000:0000:0000'::inet, 40) IS NOT NULL);
+  PERFORM pass('r3: rfc6052 /48 extraction correct',
+    limiter.rfc6052_ipv4('2001:0db8:0001:cb00:0071:0100:0000:0000'::inet, 48) = '203.0.113.1'::inet);
+
+  -- R3 NOTE: a non-finite clock must fail closed, not raise an unhandled error.
+  BEGIN
+    PERFORM limiter.admit_guest_flag_at('203.0.113.222', NULL, 1,2,'ramp',3,'y', 'infinity'::timestamptz);
+    PERFORM pass('r3: infinite clock refused', false);
+  EXCEPTION WHEN sqlstate 'P0001' THEN
+    PERFORM pass('r3: infinite clock refused (fail closed)', true);
+  END;
+END $blk$;

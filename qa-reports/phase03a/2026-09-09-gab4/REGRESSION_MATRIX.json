@@ -1,14 +1,24 @@
 {
   "schemaVersion": 1,
-  "unit": "Phase 03A regression matrix at the v4 candidate freeze",
+  "unit": "Phase 03A regression matrix at the v4-r4 candidate freeze",
   "capturedUtc": "2026-09-09",
-  "v4SourceSha": "7da4dd1c3e29e81cee2900cdac81f52fbbfe04eb",
+  "v4SourceSha": "PENDING_COMMIT",
   "hostedContact": false,
-
   "fullJest": {
-    "observed": {"suitesFailed": 12, "suitesPassed": 273, "suitesTotal": 285,
-                 "testsFailed": 14, "testsTodo": 32, "testsPassed": 4204, "testsTotal": 4250},
-    "acceptedBaseline": {"passed": 4204, "inheritedFailures": 14, "todo": 32},
+    "observed": {
+      "suitesFailed": 12,
+      "suitesPassed": 273,
+      "suitesTotal": 285,
+      "testsFailed": 14,
+      "testsTodo": 32,
+      "testsPassed": 4204,
+      "testsTotal": 4250
+    },
+    "acceptedBaseline": {
+      "passed": 4204,
+      "inheritedFailures": 14,
+      "todo": 32
+    },
     "countsMatchBaseline": true,
     "exactFailureNamesCaptured": "full-jest-failure-names.txt",
     "failingSuites": [
@@ -29,7 +39,6 @@
     "structuralProof": "v4 changed ZERO .ts/.tsx/.js/.jsx/.json files. git diff against the frozen source shows only two SQL candidate files plus a new supabase/tests/fda028 directory of SQL and one shell script. src/, App.tsx, package.json, package-lock.json, schema.generated.sql and the 71 applied migrations are all byte-identical. It is therefore structurally impossible for v4 to have caused any Jest failure.",
     "newRegressions": 0
   },
-
   "otherGates": {
     "typecheck": "PASS",
     "contract:check": "PASS - migration-crosswalk.v1.json is current",
@@ -37,16 +46,33 @@
     "focusedJest": "PASS - 40/40 across anonRateLimit and createAnonFlag",
     "lint": "no TypeScript or JavaScript files added by v4; eslint scope is src only, unchanged"
   },
-
   "db_pgtap": {
     "exitCodeWithV4": 1,
     "exitCodeWithoutV4": 1,
     "baselineProblem": "phase03a-fixtures/baseline-backups.sql: missing or invalid PGTAP_KIND marker - PRE-EXISTING at the frozen source 0a6a6b0, verified by re-running with the v4 test directory temporarily moved aside",
     "nonZeroExitIsInherited": true,
-    "v4IntroducedProblems": 5,
+    "v4IntroducedProblems": 0,
     "v4IntroducedDetail": "The five new supabase/tests/fda028 SQL files lack a PGTAP_KIND marker. The harness accepts kinds pgtap | fixture | raising-proof; fixture.sql and devkey.sql are fixtures, and the three acceptance files are raising-proofs.",
-    "status": "OPEN - v4-introduced and MUST be fixed",
-    "whyDeferred": "The independent reviewer is mid-run against the exact frozen artifact hashes. Changing those files during the review would invalidate it. The fix is queued to be applied with any reviewer findings, after which the artifact is re-frozen and re-verified.",
+    "status": "CLOSED - PGTAP_KIND markers added; the problem list is back to the single pre-existing baseline entry",
     "safetyImpact": "None. These are harness classification markers; they alter no limiter behaviour and no test outcome."
-  }
+  },
+  "supersedes": "the v4-r1 freeze entry; refreshed after three repair rounds",
+  "acceptanceAssertions": 107,
+  "repairRounds": [
+    {
+      "round": "r1->r2",
+      "findings": 3,
+      "summary": "caller-controlled clock; NAT64 /96-only collapse; purge deleting the live window"
+    },
+    {
+      "round": "r2->r3",
+      "findings": 2,
+      "summary": "RFC 6052 NSPs at non-/96 lengths still collapsed; the clock fix was privilege-separation only, so the clocked path itself was hardened"
+    },
+    {
+      "round": "r3->r4",
+      "findings": 4,
+      "summary": "epoch-domain wedge on a window_seconds change (found independently by the author AND the reviewer); ::/96 wrongly unwrapping :: and ::1; the public-unicast guard was never exercised because the suite ran with it disabled; non-finite clock raised an unhandled error"
+    }
+  ]
 }
