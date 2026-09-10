@@ -66,7 +66,7 @@
     },
     {
       "file": "20260905073925_phase03a_effective_privileges.sql",
-      "sha256": "2f29e8f92882bfea292bf963a577c34a1489d34f398fd33514369d65d4caba41",
+      "sha256": "3e26bb1746f49887e2b416e550ec14b14b75062e4fbb04cd5ab915ed66cd91e8",
       "rollback": "rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
       "rollbackSha256": "3753ce33e975cfa1e26e25f4b3929b4c0af5e4d3a03d4e33bb74bb7796951c4d",
       "rollbackMode": "UNSAFE_BASELINE_RESTORE",
@@ -128,8 +128,8 @@
     },
     {
       "file": "supabase/tests/build33-compat.test.sql",
-      "sha256": "ca4c300e195fe4d6c87e6b9a5faf5c53ef9f29822e8e9ea6f99beebc140a9274",
-      "plan": 36,
+      "sha256": "2ac794ce18ae88fb4958ec4cdce6f31d96eda6809598693fe04aa039b80a48da",
+      "plan": 37,
       "purpose": "STAGE-MF-06 Build 33 compatibility contract: exercises the SHIPPED query shapes, and applies Stage B inside the transaction as a negative control to prove the split is load-bearing."
     }
   ],

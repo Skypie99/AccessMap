@@ -23,16 +23,36 @@
  *     who can do what. This is the acceptor's leading hypothesis for the hosted
  *     divergence and it is neutralised by comparing sets, not text.
  *
- * NOTHING structural is excluded. Grants, policies, functions, triggers, columns and
- * schemas are all compared. The only excluded fields are listed in VOLATILE_FIELDS
- * with a justification each, and excluding a field there is a deliberate, reviewable
- * act rather than a convenience.
+ * WHAT IS AND IS NOT COMPARED
+ * ---------------------------
+ * An earlier version of this header said "NOTHING structural is excluded". That was
+ * an overclaim, and a second independent review disproved it by constructing five
+ * authorization changes that produced an IDENTICAL checksum: a SECURITY DEFINER
+ * function losing its `SET search_path`, a disabled trigger, a removed trigger WHEN
+ * clause, a column default flipped to true, and FORCE ROW LEVEL SECURITY toggled.
+ * All five are now captured (proconfig, tgenabled, the full trigger definition,
+ * column defaults, relforcerowsecurity) and `triggers` counts as security-relevant.
+ *
+ * The honest statement is bounded, so state it that way:
+ *   SCOPE: the schemas in CAPTURED_SCHEMAS only. Anything outside them is invisible
+ *          to this tool by design, and that is a limit, not a guarantee.
+ *   WITHIN scope: schemas, relations (incl. RLS + FORCE RLS + ACL), columns (incl.
+ *          type, notnull, default, generated, ACL), functions (incl. security
+ *          definer, config, leakproof, body hash, ACL), policies, triggers (incl.
+ *          enabled state and full definition) and default ACLs.
+ *   EXCLUDED: only VOLATILE_FIELDS, each with a written justification.
+ *
+ * If you add a catalog surface that can carry authorization, add it here too. A
+ * checksum is only as honest as its inputs.
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
+
+/** The comparison is scoped to these schemas and nothing else. Stated, not implied. */
+export const CAPTURED_SCHEMAS = ['public', 'private', 'storage', 'limiter'];
 export const CAPTURE_TOOL = 'scripts/structural-catalog.mjs';
 
 /**
@@ -59,22 +79,26 @@ select jsonb_build_object(
       order by nspname) from pg_namespace where nspname in (select nspname from s)), '[]'::jsonb),
   'relations', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 'n', c.relname, 'kind', c.relkind, 'rls', c.relrowsecurity,
-      'owner', pg_get_userbyid(c.relowner), 'acl', c.relacl::text)
+      'owner', pg_get_userbyid(c.relowner), 'acl', c.relacl::text,
+      'forcerls', c.relforcerowsecurity)
       order by n.nspname, c.relname, c.relkind)
     from pg_class c join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in (select nspname from s) and c.relkind in ('r','v','m','S','p')), '[]'::jsonb),
   'columns', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 't', c.relname, 'c', a.attname,
       'type', format_type(a.atttypid, a.atttypmod), 'notnull', a.attnotnull,
-      'acl', a.attacl::text)
+      'acl', a.attacl::text,
+      'default', pg_get_expr(ad.adbin, ad.adrelid), 'generated', a.attgenerated)
       order by n.nspname, c.relname, a.attname)
     from pg_attribute a join pg_class c on c.oid=a.attrelid join pg_namespace n on n.oid=c.relnamespace
+      left join pg_attrdef ad on ad.adrelid=a.attrelid and ad.adnum=a.attnum
     where n.nspname in (select nspname from s) and a.attnum>0 and not a.attisdropped
       and c.relkind in ('r','v','m','p')), '[]'::jsonb),
   'functions', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 'n', p.proname, 'args', pg_get_function_identity_arguments(p.oid),
       'secdef', p.prosecdef, 'kind', p.prokind, 'body', md5(coalesce(p.prosrc,'')),
-      'acl', p.proacl::text)
+      'acl', p.proacl::text,
+      'config', array_to_string(p.proconfig, '|'), 'leakproof', p.proleakproof)
       order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid))
     from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname in (select nspname from s)), '[]'::jsonb),
@@ -86,7 +110,8 @@ select jsonb_build_object(
     from pg_policies where schemaname in (select nspname from s)), '[]'::jsonb),
   'triggers', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 't', c.relname, 'g', tg.tgname,
-      'fn', tg.tgfoid::regprocedure::text, 'type', tg.tgtype)
+      'fn', tg.tgfoid::regprocedure::text, 'type', tg.tgtype,
+      'enabled', tg.tgenabled, 'when', pg_get_triggerdef(tg.oid))
       order by n.nspname, c.relname, tg.tgname)
     from pg_trigger tg join pg_class c on c.oid=tg.tgrelid join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in (select nspname from s) and not tg.tgisinternal), '[]'::jsonb),
@@ -162,9 +187,12 @@ export function writeCapture({ outDir, label, rawCatalog, sourceSha, integration
     sourceSha: sourceSha ?? null,
     integrationSha: integrationSha ?? null,
     target: target ?? null,
+    capturedSchemas: CAPTURED_SCHEMAS,
+    scopeCaveat: 'Only the schemas above are compared. Anything outside them is invisible to this tool by design.',
     normalizationRules: [
       'every collection sorted by a stable key derived from its own content',
       'aclitem[] parsed into a sorted set so REVOKE/GRANT reordering is not reported as a difference',
+      'a NULL acl is distinguished from an explicitly empty one and never collapses into it',
     ],
     excludedVolatileFields: VOLATILE_FIELDS,
     catalog: normalized,
@@ -197,7 +225,7 @@ export function diffCaptures(a, b) {
     residuals,
     // Sections that carry authorization. A residual here is never cosmetic.
     securityRelevantSections: [...new Set(residuals.map((r) => r.section))]
-      .filter((s) => ['policies', 'functions', 'columns', 'relations', 'schemas', 'defaultAcls'].includes(s)),
+      .filter((s) => ['policies', 'functions', 'columns', 'relations', 'schemas', 'defaultAcls', 'triggers'].includes(s)),
   };
 }
 

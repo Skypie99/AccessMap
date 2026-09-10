@@ -211,7 +211,9 @@ GRANT SELECT ON TABLE "public"."flags" TO "anon";
 --   flag_photos                 listFlagPhotos(), rendered by FlagDetailModal
 --   flag_status_history_public  } security_invoker views: the grant is the only
 --   flag_edit_history_public    } thing letting anon reach them at all
---   point_events                guest-visible activity
+--   point_events                retained for production fidelity only; the sole
+--                               shipped reader is getPointEventHistory(userId) on
+--                               the AUTHENTICATED ProfileScreen, not a guest path
 -- Revoking them in Stage A does not degrade a guest to an empty list — the client
 -- call THROWS. This is the same class of defect as the is_admin retention above,
 -- found by independent review after the first version of this split shipped, and

@@ -20,7 +20,7 @@
 -- and the bounded replacements must keep working. Everything rolls back.
 BEGIN;
 SET LOCAL search_path = public, phase03a_tap, extensions;
-SELECT plan(36);
+SELECT plan(37);
 
 -- ------------------------------------------------------------------ fixtures
 INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
@@ -108,8 +108,25 @@ RESET ROLE;
 -- makes the client THROW rather than show an empty list.
 RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.role = 'anon'; SET LOCAL ROLE anon;
 
-SELECT lives_ok($$ SELECT id FROM public.flag_comments LIMIT 1 $$,
-  'B33 guest: src/lib/comments.ts listComments() does not raise for anon');
+-- listComments() does NOT select flag_comments bare. Its COMMENT_SELECT embeds
+--   users!flag_comments_user_id_fkey(display_name)
+-- and anon has no SELECT on public.users — not before Phase 03A, not after, and
+-- not in production (the production capture shows anon holding DELETE/INSERT/
+-- UPDATE/... on users but NOT SELECT). So the guest comment list is ALREADY broken
+-- in production, independently of anything Phase 03A does.
+--
+-- An earlier version of this suite asserted `SELECT id FROM flag_comments` and
+-- labelled it "listComments() does not raise for anon". That was a paraphrase, not
+-- the shipped shape, and it overclaimed — the same base-table rigor applied
+-- correctly to the two _public views a few lines above. Independent review caught
+-- it. Both halves are now asserted separately and honestly.
+SELECT lives_ok($$ SELECT id, flag_id, user_id, content, created_at FROM public.flag_comments LIMIT 1 $$,
+  'B33 guest: the flag_comments columns themselves stay readable by anon under Stage A');
+SELECT throws_ok(
+  $$ SELECT c.id, u.display_name FROM public.flag_comments c
+     LEFT JOIN public.users u ON u.id = c.user_id LIMIT 1 $$,
+  '42501', NULL,
+  'B33 guest: listComments()''s users embed raises for anon — PRE-EXISTING, not caused by Stage A');
 SELECT lives_ok($$ SELECT id FROM public.flag_photos LIMIT 1 $$,
   'B33 guest: listFlagPhotos() does not raise for anon');
 -- The two _public relations need care, and the first version of this suite got
@@ -127,8 +144,11 @@ SELECT ok(has_table_privilege('anon','public.flag_edit_history_public','SELECT')
   'B33 guest: Stage A keeps the edit-history VIEW grant that production holds');
 SELECT throws_ok($$ SELECT id FROM public.flag_edit_history_public LIMIT 1 $$, '42501', NULL,
   'B33 guest: ...same for edit history — the view grant confers nothing on its own');
-SELECT lives_ok($$ SELECT id FROM public.point_events LIMIT 1 $$,
-  'B33 guest: point_events is readable by anon');
+-- point_events is retained for production fidelity, NOT because a guest path reads
+-- it: the only shipped reader is getPointEventHistory(userId) on the authenticated
+-- ProfileScreen. Calling it "guest-visible activity" was wrong and is corrected here.
+SELECT ok(has_table_privilege('anon','public.point_events','SELECT'),
+  'B33 guest: Stage A keeps the point_events grant production holds (no shipped guest reader)');
 SELECT lives_ok($$ SELECT id FROM public.flags LIMIT 1 $$,
   'B33 guest: the map itself still loads for anon');
 

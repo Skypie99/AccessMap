@@ -71,7 +71,7 @@
       "honestStatus": "The divergence is real, stable and reproducible, and it is NOT in the privilege posture that the accepted suites assert. Beyond that it is unlocalised, and localising it requires the retained first-apply structural JSON that I failed to keep."
     }
   },
-  "mechanismNote": "The MCP Supabase connector was invalidated partway through this step. All remaining hosted work ran through `supabase db query --file --linked --project-ref ctshxbykuemeqnofqcdh`, whose target was identity-verified against staging (ledger 82, limiter present, auth.users 0) before any further mutation. No production target was ever reachable from the linked ref.",
+  "mechanismNote": "RETRACTED \u2014 see mechanismNote_RETRACTED below. The original sentence claimed no production target was ever reachable from the linked ref; that was false as written, because supabase/.temp/linked-project.json was tracked in git naming the production project. Left here as a pointer rather than silently deleted.",
   "stagingEndState": {
     "phase03aApplied": true,
     "structural_sha256": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",

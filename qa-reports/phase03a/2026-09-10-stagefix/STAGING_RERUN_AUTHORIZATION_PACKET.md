@@ -91,16 +91,45 @@ authority and is not proposed here.
 ## 5. Build 33 compatibility matrix
 
 Stage A must leave every shipped call site working. Proven by
-`supabase/tests/build33-compat.test.sql` (25 assertions), which exercises the shipped
-shapes and then applies Stage B in-transaction as a negative control.
+`supabase/tests/build33-compat.test.sql` (37 assertions), which exercises the shipped
+shapes as BOTH `authenticated` and `anon`, then applies Stage B in-transaction as a
+negative control for each half.
 
-| Shipped call site | After Stage A | After Stage B (cutover) |
+**Stage B has TWO halves.** An earlier draft of this packet described only the first,
+which would have put a decision to the owner at about half its real scope.
+
+*Authenticated half* — `public.users`:
+
+| Shipped call site | After Stage A | After Stage B |
 |---|---|---|
 | `src/lib/admin.ts:31` `select('is_admin')` | works | 42501 → shipped catch degrades to `isAdmin=false` |
 | `src/lib/flags.ts:1682` `listLeaderboard()` | all users | silently 1 row |
 | `src/lib/flags.ts:1702/1717` rank | true rank | silently always 1 |
-| comment author hydration | resolves | silently anonymous |
 | the four replacement RPCs | present, granted, unused | **still work** |
+
+*Guest (`anon`) half* — five relations. `anon` is the default role for every web
+session and native guest:
+
+| Relation | After Stage A | After Stage B | Shipped reader |
+|---|---|---|---|
+| `flag_comments` | readable | 42501 | `listComments()` base columns |
+| `flag_photos` | readable | 42501 | `listFlagPhotos()` |
+| `point_events` | readable | 42501 | none — retained for production fidelity only |
+| `flag_status_history_public` | grant kept | revoked | none reachable — see below |
+| `flag_edit_history_public` | grant kept | revoked | none reachable — see below |
+
+Two things an owner should know before deciding, both found by independent review:
+
+- The two `_public` relations are `security_invoker` views and `anon` has **never**
+  had privileges on their base tables. The view grant confers nothing on its own, so
+  these were never a working guest path. Stage A keeps the grants only because
+  production has them.
+- The shipped `listComments()` selects `COMMENT_SELECT`, which embeds
+  `users!flag_comments_user_id_fkey(display_name)`. `anon` has no SELECT on
+  `public.users` — not before Phase 03A, not after, and **not in production**. So the
+  guest comment list is **already broken today**, independently of anything here.
+  Phase 03A neither causes nor fixes it. Recorded because a reader of the row above
+  would otherwise assume Stage A restored a working guest comment list.
 
 **FDA-026 is OPEN, not closed.** Stage B is withheld from the apply set and needs a
 separate owner authorization carrying release-capability proof.
@@ -113,8 +142,9 @@ separate owner authorization carrying release-capability proof.
 2. **STAGE-MF-05** — whether to apply at all while `ROLLOUT_STAGE` is
    `S3_LIMITER_PRESENT_BYPASS_OPEN`, i.e. shipping a correct limiter that nothing yet
    calls. A legitimate choice; it must be *chosen*.
-3. **Stage B timing** — what counts as proof that no client reading `public.users`
-   directly is still in the field. "We shipped an update" is not proof.
+3. **Stage B timing** — what counts as proof that no client is still in the field
+   reading `public.users` directly **or** reading `flag_comments` / `flag_photos` as a
+   guest. Both halves gate on the same evidence. "We shipped an update" is not proof.
 4. **STAGE-MF-04** — accept the hardcoded production webhook URL in
    `20260904000400` together with the operational rule below, or require it to become
    environment-derived, which makes that adoption candidate diverge from the function
@@ -139,7 +169,7 @@ sequencing decision must sit *alongside* the bypass decision, not after it.
 
 | Test | Why |
 |---|---|
-| Hosted pgTAP, now **242** assertions | the suite set changed (+25 Build 33) and two suites were edited |
+| Hosted pgTAP, now **254** assertions | the suite set changed (+37 Build 33, authenticated *and* guest) and two suites were edited |
 | Role/authorization matrix | `public.users` grants changed (Stage A `is_admin` retention) |
 | FDA-028 hosted acceptance (38) | unchanged bytes, but re-run after any apply as a regression check |
 | Restoration + reapply | rollback semantics changed in two files |

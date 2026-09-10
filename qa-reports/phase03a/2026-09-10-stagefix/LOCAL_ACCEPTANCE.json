@@ -105,13 +105,14 @@
     "meaning": "Six rounds of accepted FDA-028 review were not reopened. No FDA-028 re-review is required by this repair."
   },
   "newTestsAdded": {
-    "supabase/tests/build33-compat.test.sql": 25,
+    "supabase/tests/build33-compat.test.sql": 37,
     "src/__tests__/projectTargetSafety.guard.test.ts": 3,
     "src/__tests__/webhookTargetCoupling.guard.test.ts": 3,
-    "scripts/__tests__/canonicalMigrationIdentity.test.ts": 19,
-    "scripts/__tests__/structuralCatalog.test.ts": 11,
-    "total": 61,
-    "note": "36 of these are Jest tests (the 25 pgTAP assertions run in the replay, not in Jest), which is why the Jest total moved by exactly 36."
+    "scripts/__tests__/canonicalMigrationIdentity.test.ts": 20,
+    "scripts/__tests__/structuralCatalog.test.ts": 20,
+    "total": 83,
+    "jestSubtotal": 46,
+    "note": "The 37 pgTAP assertions run in the replay, not in Jest. The Jest total therefore moves by 46, not 83. Round-1 numbers previously left here contradicted the corrected run below; replaced."
   },
   "testsInvalidatedByThisRepair": [
     "phase03a-foundation.test.sql: five FDA-026 assertions were realigned from the CLOSED posture to the Stage A posture (enumeration still open, is_admin still selectable). The CLOSED posture is now proven in build33-compat.test.sql's Stage B section instead, so nothing lost coverage \u2014 it moved.",

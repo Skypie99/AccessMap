@@ -157,13 +157,45 @@ describe('a capture always retains its content', () => {
     }
   });
 
-  it('excludes nothing structural — grants, policies and definitions are all captured', () => {
+  // Round-2 review constructed five authorization changes that produced an IDENTICAL
+  // checksum. Each is pinned here so none can regress silently.
+  it.each([
+    ['SECURITY DEFINER losing SET search_path', 'functions',
+      { functions: [{ n: 'f', secdef: true, config: 'search_path=' }] },
+      { functions: [{ n: 'f', secdef: true, config: '' }] }],
+    ['a trigger being disabled', 'triggers',
+      { triggers: [{ g: 't', enabled: 'O' }] }, { triggers: [{ g: 't', enabled: 'D' }] }],
+    ['a trigger WHEN clause being removed', 'triggers',
+      { triggers: [{ g: 't', when: 'CREATE TRIGGER t ... WHEN (new.is_admin) ...' }] },
+      { triggers: [{ g: 't', when: 'CREATE TRIGGER t ... ' }] }],
+    ['a column default flipped to true', 'columns',
+      { columns: [{ c: 'is_admin', default: 'false' }] },
+      { columns: [{ c: 'is_admin', default: 'true' }] }],
+    ['FORCE ROW LEVEL SECURITY toggled', 'relations',
+      { relations: [{ n: 'users', forcerls: true }] },
+      { relations: [{ n: 'users', forcerls: false }] }],
+  ])('reports %s as a security-relevant residual', (_label, section, before, after) => {
+    const a = catalogOf(before);
+    const b = catalogOf(after);
+    expect(a.checksum).not.toBe(b.checksum);
+    const d = call('diffCaptures', a, b);
+    expect(d.identical).toBe(false);
+    expect(d.securityRelevantSections).toContain(section);
+  });
+
+  it('declares its schema scope instead of implying it covers everything', () => {
+    expect(constant('CAPTURED_SCHEMAS')).toEqual(['public', 'private', 'storage', 'limiter']);
+  });
+
+  it('captures every catalog surface that can carry authorization', () => {
     const sql = constant('CATALOG_SQL');
     for (const section of ['policies', 'functions', 'columns', 'relations', 'schemas', 'triggers', 'defaultAcls']) {
       expect(sql).toContain(`'${section}'`);
     }
-    expect(sql).toContain('relacl');
-    expect(sql).toContain('attacl');
-    expect(sql).toContain('proacl');
+    // ACLs, and the five surfaces round-2 review used to hide real changes.
+    for (const field of ['relacl', 'attacl', 'proacl', 'proconfig', 'tgenabled',
+      'pg_get_triggerdef', 'pg_get_expr', 'relforcerowsecurity']) {
+      expect(sql).toContain(field);
+    }
   });
 });
