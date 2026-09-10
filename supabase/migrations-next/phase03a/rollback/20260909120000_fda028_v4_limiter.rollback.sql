@@ -17,6 +17,8 @@ DROP FUNCTION IF EXISTS limiter.read_epoch_key();
 DROP FUNCTION IF EXISTS limiter.current_epoch_key(timestamptz);
 DROP FUNCTION IF EXISTS limiter.normalize_source(text);
 DROP FUNCTION IF EXISTS limiter.embedded_ipv4(inet);
+DROP FUNCTION IF EXISTS limiter.rfc6052_ipv4(inet, integer);
+DROP FUNCTION IF EXISTS limiter.ipv6_hex(inet);
 DROP FUNCTION IF EXISTS limiter.is_public_unicast(inet);
 DROP FUNCTION IF EXISTS limiter.derive_bucket_key(bytea, text);
 DROP FUNCTION IF EXISTS limiter.ratchet(bytea, bigint);
@@ -25,6 +27,7 @@ DROP FUNCTION IF EXISTS limiter.window_of(timestamptz, integer);
 -- grant is dropped first only for clarity; the FK would cascade regardless.
 DROP TABLE IF EXISTS limiter.grant;
 DROP TABLE IF EXISTS limiter.bucket;
+DROP TABLE IF EXISTS limiter.translation_prefix;
 DROP TABLE IF EXISTS limiter.key_state;
 DROP TABLE IF EXISTS limiter.config;
 -- limiter.dev_key_material is created only by the local test fixture, never by

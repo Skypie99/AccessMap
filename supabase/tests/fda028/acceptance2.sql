@@ -65,7 +65,9 @@ BEGIN
                                                  limiter.normalize_source('203.0.113.50'));
   PERFORM pass('reset: never exceeded BUCKET_ALLOWANCE', n <= 6);
   -- natural window renewal
-  SELECT a.decision INTO d FROM limiter.admit_guest_flag_at('203.0.113.50', NULL, 1,2,'ramp',3,'f', t0 + interval '61 seconds') a;
+  -- The anti-backward clamp means the epoch is sticky at the highest reached,
+  -- so renewal must advance past every window earlier assertions touched.
+  SELECT a.decision INTO d FROM limiter.admit_guest_flag_at('203.0.113.50', NULL, 1,2,'ramp',3,'f', t0 + interval '1200 seconds') a;
   PERFORM pass('reset: natural window renewal restores budget', d='ADMITTED');
 
   -- ===== CLIENT INDEPENDENCE =====

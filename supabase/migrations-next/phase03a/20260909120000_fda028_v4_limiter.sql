@@ -36,6 +36,25 @@ CREATE TABLE limiter.config (
 );
 INSERT INTO limiter.config (id) VALUES (true) ON CONFLICT DO NOTHING;
 
+-- ------------------------------------------------- IPv4-embedding prefixes
+-- Which IPv6 prefixes carry an embedded IPv4, and at which RFC 6052 length.
+-- Seeded with the forms that are well-known or fixed by standard. An operator
+-- using a Network-Specific Prefix MUST declare it here; an undeclared NSP is
+-- indistinguishable from an ordinary network and will be masked to the IPv6
+-- prefix, collapsing distinct hosts behind that translator into one bucket.
+-- That is a fairness/lockout cost, never a limiter bypass.
+CREATE TABLE limiter.translation_prefix (
+  prefix inet PRIMARY KEY,
+  plen   integer NOT NULL CHECK (plen IN (32, 40, 48, 56, 64, 96)),
+  note   text
+);
+INSERT INTO limiter.translation_prefix (prefix, plen, note) VALUES
+  ('::ffff:0:0/96'::inet,  96, 'RFC 4291 IPv4-mapped'),
+  ('64:ff9b::/96'::inet,   96, 'RFC 6052 well-known NAT64'),
+  ('64:ff9b:1::/48'::inet, 96, 'RFC 8215 local-use NAT64'),
+  ('::/96'::inet,          96, 'RFC 4291 IPv4-compatible, deprecated')
+ON CONFLICT DO NOTHING;
+
 -- ------------------------------------------------------------------- key state
 -- NON-SECRET epoch bookkeeping only. Key MATERIAL lives in Vault, never here.
 CREATE TABLE limiter.key_state (
@@ -96,6 +115,69 @@ RETURNS bytea LANGUAGE sql IMMUTABLE AS $$
     FROM 1 FOR 16)
 $$;
 
+-- Full 32-character hex expansion of an IPv6 address. Postgres renders the
+-- compressed form, and RFC 6052 embeds the IPv4 at byte offsets that depend on
+-- the translation prefix length, so byte-accurate access is required.
+CREATE FUNCTION limiter.ipv6_hex(p_addr inet)
+RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE
+  s text; dotted text; head text; tail text;
+  h text[]; tl text[]; outp text[] := '{}'; g text; missing integer;
+BEGIN
+  IF family(p_addr) <> 6 THEN RETURN NULL; END IF;
+  s := host(p_addr);
+  -- A trailing dotted quad becomes two hex groups.
+  dotted := substring(s FROM '([0-9]{1,3}(\.[0-9]{1,3}){3})$');
+  IF dotted IS NOT NULL THEN
+    s := left(s, length(s) - length(dotted))
+      || lpad(to_hex(split_part(dotted,'.',1)::int * 256 + split_part(dotted,'.',2)::int), 4, '0')
+      || ':'
+      || lpad(to_hex(split_part(dotted,'.',3)::int * 256 + split_part(dotted,'.',4)::int), 4, '0');
+  END IF;
+  IF position('::' IN s) > 0 THEN
+    head := split_part(s, '::', 1);
+    tail := split_part(s, '::', 2);
+    h  := CASE WHEN head = '' THEN '{}'::text[] ELSE string_to_array(head, ':') END;
+    tl := CASE WHEN tail = '' THEN '{}'::text[] ELSE string_to_array(tail, ':') END;
+    missing := 8 - (coalesce(array_length(h,1),0) + coalesce(array_length(tl,1),0));
+    IF missing < 0 THEN RETURN NULL; END IF;
+    FOREACH g IN ARRAY h LOOP outp := array_append(outp, lpad(g, 4, '0')); END LOOP;
+    FOR i IN 1..missing LOOP outp := array_append(outp, '0000'); END LOOP;
+    FOREACH g IN ARRAY tl LOOP outp := array_append(outp, lpad(g, 4, '0')); END LOOP;
+  ELSE
+    FOREACH g IN ARRAY string_to_array(s, ':') LOOP outp := array_append(outp, lpad(g, 4, '0')); END LOOP;
+  END IF;
+  IF coalesce(array_length(outp,1),0) <> 8 THEN RETURN NULL; END IF;
+  RETURN lower(array_to_string(outp, ''));
+END $$;
+
+-- RFC 6052 section 2.2 byte layout. Byte 8 is the reserved 'u' octet and must be
+-- zero. Byte indices are 0-based.
+CREATE FUNCTION limiter.rfc6052_ipv4(p_addr inet, p_plen integer)
+RETURNS inet LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE hx text; idx integer[]; b integer[] := '{}'; i integer;
+BEGIN
+  hx := limiter.ipv6_hex(p_addr);
+  IF hx IS NULL THEN RETURN NULL; END IF;
+  idx := CASE p_plen
+           WHEN 32 THEN ARRAY[4,5,6,7]
+           WHEN 40 THEN ARRAY[5,6,7,9]
+           WHEN 48 THEN ARRAY[6,7,9,10]
+           WHEN 56 THEN ARRAY[7,9,10,11]
+           WHEN 64 THEN ARRAY[9,10,11,12]
+           WHEN 96 THEN ARRAY[12,13,14,15]
+           ELSE NULL END;
+  IF idx IS NULL THEN RETURN NULL; END IF;
+  -- reserved octet must be zero for every prefix length shorter than /96
+  IF p_plen < 96 AND substr(hx, 17, 2) <> '00' THEN RETURN NULL; END IF;
+  FOREACH i IN ARRAY idx LOOP
+    b := array_append(b, ('x' || substr(hx, i*2 + 1, 2))::bit(8)::integer);
+  END LOOP;
+  RETURN (b[1]::text||'.'||b[2]::text||'.'||b[3]::text||'.'||b[4]::text)::inet;
+EXCEPTION WHEN others THEN
+  RETURN NULL;
+END $$;
+
 -- Unwraps every IPv4-embedding IPv6 form this design must not collapse. Returns
 -- the embedded IPv4 as inet, or NULL when the address embeds no IPv4.
 --   ::ffff:0:0/96  RFC 4291 IPv4-mapped
@@ -105,18 +187,18 @@ $$;
 -- Masking any of these to /64 would destroy the embedded host bits and collapse
 -- unrelated subscribers into one bucket.
 CREATE FUNCTION limiter.embedded_ipv4(p_addr inet)
-RETURNS inet LANGUAGE plpgsql IMMUTABLE AS $$
-DECLARE v_base inet;
+RETURNS inet LANGUAGE plpgsql STABLE AS $$
+DECLARE r RECORD; v4 inet;
 BEGIN
   IF family(p_addr) <> 6 THEN RETURN NULL; END IF;
-  IF    p_addr <<= '::ffff:0:0/96'::inet   THEN v_base := '::ffff:0:0'::inet;
-  ELSIF p_addr <<= '64:ff9b::/96'::inet    THEN v_base := '64:ff9b::'::inet;
-  ELSIF p_addr <<= '64:ff9b:1::/96'::inet  THEN v_base := '64:ff9b:1::'::inet;
-  ELSIF p_addr <<= '::/96'::inet           THEN v_base := '::'::inet;
-  ELSE  RETURN NULL;
-  END IF;
-  RETURN '0.0.0.0'::inet + (p_addr - v_base);
-EXCEPTION WHEN others THEN
+  -- Longest prefix first, so a more specific translation prefix wins.
+  FOR r IN SELECT prefix, plen FROM limiter.translation_prefix
+           ORDER BY masklen(prefix) DESC LOOP
+    IF p_addr <<= r.prefix THEN
+      v4 := limiter.rfc6052_ipv4(p_addr, r.plen);
+      IF v4 IS NOT NULL THEN RETURN v4; END IF;
+    END IF;
+  END LOOP;
   RETURN NULL;
 END $$;
 
@@ -124,7 +206,7 @@ END $$;
 -- caller fails closed. IPv4-mapped IPv6 is unwrapped BEFORE any generic IPv6
 -- prefixing, so ::ffff:192.0.2.1 and ::ffff:192.0.2.99 cannot collapse together.
 CREATE FUNCTION limiter.normalize_source(p_raw text)
-RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
+RETURNS text LANGUAGE plpgsql STABLE AS $$
 DECLARE
   v_addr   inet;
   v_embedded inet;
@@ -212,6 +294,13 @@ BEGIN
   SELECT * INTO v_cfg FROM limiter.config WHERE id;
   v_target := limiter.window_of(p_now, v_cfg.window_seconds);
 
+  -- DEFENCE IN DEPTH, independent of who may call this. A caller-supplied clock
+  -- must not be able to drive the ratchet: never advance backward, and never
+  -- more than one window past real time. Without this, one far-future call
+  -- forces a global re-seed that orphans every live bucket, and one far-past
+  -- call decouples the key from the window.
+  v_target := LEAST(v_target, limiter.window_of(now(), v_cfg.window_seconds) + 1);
+
   -- Fast path: no lock while the stored epoch is already current.
   SELECT * INTO v_state FROM limiter.key_state WHERE id;
   IF v_state.epoch = v_target THEN
@@ -221,6 +310,7 @@ BEGIN
   -- Slow path: take the row lock, then RE-CHECK. Another session may have
   -- advanced the epoch while this one waited.
   SELECT * INTO v_state FROM limiter.key_state WHERE id FOR UPDATE;
+  v_target := GREATEST(v_target, v_state.epoch);   -- never ratchet backward
   IF v_state.epoch = v_target THEN
     RETURN QUERY SELECT v_state.epoch, limiter.read_epoch_key(); RETURN;
   END IF;
@@ -344,7 +434,9 @@ BEGIN
   END IF;
 
   SELECT epoch, epoch_key INTO v_epoch, v_key FROM limiter.current_epoch_key(p_now);
-  v_window := limiter.window_of(p_now, v_cfg.window_seconds);
+  -- The bucket window IS the epoch. Deriving it separately is what allowed a
+  -- caller-supplied clock to pair a current key with an arbitrary window.
+  v_window := v_epoch;
   v_bucket := limiter.derive_bucket_key(v_key, v_prefix);
 
   INSERT INTO limiter.bucket AS t (bucket_key, window_id) VALUES (v_bucket, v_window)

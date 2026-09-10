@@ -13,7 +13,9 @@ BEGIN
   SELECT a.out_grant INTO g1 FROM limiter.admit_guest_flag_at('203.0.113.90', NULL, 1,2,'ramp',3,'a', t0) a;
   SELECT limiter.derive_bucket_key((SELECT epoch_key FROM limiter.current_epoch_key(t0)),
                                    limiter.normalize_source('203.0.113.90')) INTO bk;
-  SELECT limiter.window_of(t0,(SELECT window_seconds FROM limiter.config WHERE id)) INTO w;
+  -- window_id IS the epoch now, so read it from the same source the
+  -- admission path used rather than recomputing it from the clock.
+  SELECT epoch INTO w FROM limiter.current_epoch_key(t0);
   PERFORM pass('lifecycle: grant exists under its bucket',
     (SELECT count(*) FROM limiter.grant WHERE grant_id=g1 AND bucket_key=bk AND window_id=w)=1);
 
@@ -148,4 +150,47 @@ BEGIN
   PERFORM pass('rev3: BUCKET_ALLOWANCE still enforced after a purge attempt', d LIKE 'REFUSED%');
   SELECT units_consumed INTO u2 FROM limiter.bucket LIMIT 1;
   PERFORM pass('rev3: never exceeded allowance', u2 <= 4);
+END $blk$;
+
+-- ===== REGRESSIONS FROM THE V4-R2 RE-REVIEW =====
+DO $blk$
+DECLARE d text; e1 bigint; e2 bigint; u int;
+BEGIN
+  -- R2-A2: RFC 6052 Network-Specific Prefixes at every standard length.
+  INSERT INTO limiter.translation_prefix (prefix, plen, note)
+    VALUES ('2001:db8:aa::/56'::inet, 56, 'test NSP') ON CONFLICT DO NOTHING;
+  PERFORM pass('r2a2: /56 NSP distinct hosts do NOT collapse',
+    limiter.normalize_source('2001:0db8:00aa:00cb:0000:7101:0000:0000')
+    <> limiter.normalize_source('2001:0db8:00aa:00cb:0000:7163:0000:0000'));
+  PERFORM pass('r2a2: /56 NSP extracts the true IPv4',
+    limiter.normalize_source('2001:0db8:00aa:00cb:0000:7101:0000:0000')
+     = limiter.normalize_source('203.0.113.1'));
+  PERFORM pass('r2a2: rfc6052 /96 extraction correct',
+    limiter.rfc6052_ipv4('64:ff9b::cb00:7101'::inet, 96) = '203.0.113.1'::inet);
+  PERFORM pass('r2a2: rfc6052 /64 extraction correct',
+    limiter.rfc6052_ipv4('2001:0db8:00aa:00bb:00cb:0071:0100:0000'::inet, 64) = '203.0.113.1'::inet);
+  PERFORM pass('r2a2: rfc6052 /32 extraction correct',
+    limiter.rfc6052_ipv4('2001:db8:cb00:7101::'::inet, 32) = '203.0.113.1'::inet);
+  PERFORM pass('r2a2: reserved u-octet must be zero',
+    limiter.rfc6052_ipv4('2001:0db8:00aa:00cb:ff00:7101:0000:0000'::inet, 56) IS NULL);
+  PERFORM pass('r2a2: hex expander round-trips a compressed address',
+    limiter.ipv6_hex('2001:db8::1'::inet) = '20010db8000000000000000000000001');
+  PERFORM pass('r2a2: hex expander handles a dotted tail',
+    limiter.ipv6_hex('::ffff:203.0.113.1'::inet) = '00000000000000000000ffffcb007101');
+  PERFORM pass('r2a2: genuine IPv6 outside every declared prefix stays v6',
+    limiter.normalize_source('2600:1f18:1:2::5') LIKE 'v6:%');
+  DELETE FROM limiter.translation_prefix WHERE prefix = '2001:db8:aa::/56'::inet;
+
+  -- R2-A1: the CLOCKED path itself must now resist an absurd clock.
+  SELECT epoch INTO e1 FROM limiter.key_state;
+  PERFORM limiter.admit_guest_flag_at('203.0.113.201', NULL, 1,2,'ramp',3,'a', now() + interval '400 days');
+  SELECT epoch INTO e2 FROM limiter.key_state;
+  PERFORM pass('r2a1: far-future clock cannot jump more than one window', e2 - e1 <= 1);
+  SELECT epoch INTO e1 FROM limiter.key_state;
+  PERFORM limiter.admit_guest_flag_at('203.0.113.202', NULL, 1,2,'ramp',3,'b', now() - interval '900 days');
+  SELECT epoch INTO e2 FROM limiter.key_state;
+  PERFORM pass('r2a1: far-past clock cannot ratchet backward', e2 >= e1);
+  PERFORM pass('r2a1: bucket window is bound to the epoch, never derived separately',
+    NOT EXISTS (SELECT 1 FROM limiter.bucket b
+                WHERE b.window_id > (SELECT epoch FROM limiter.key_state)));
 END $blk$;
