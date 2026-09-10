@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "operationId": "P03A-INT-20260910-01",
-  "OPERATION_STATE": "RUNNING",
+  "OPERATION_STATE": "APPLIED_NOT_VERIFIED",
   "preparedUtc": "2026-09-10",
   "mutationPerformed": false,
   "source": {
@@ -69,5 +69,7 @@
     "VERIFIED | FAILED | OUTCOME_UNKNOWN"
   ],
   "recoveryIfInterrupted": "Do NOT assume success or failure and do NOT reset or abort blindly. Inspect the integration worktree's actual HEAD: if it equals 5a64c917 the INT never applied; if it is a new merge commit with parents 5a64c917 and the source SHA, the INT applied and only verification remains.",
-  "runningUtc": "2026-09-10"
+  "runningUtc": "2026-09-10",
+  "mergeCommit": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
+  "appliedUtc": "2026-09-10"
 }
