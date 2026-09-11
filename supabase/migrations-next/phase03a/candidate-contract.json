@@ -74,9 +74,9 @@
   },
   {
    "file": "20260905055633_phase03a_contextual_profiles.sql",
-   "sha256": "46268d4e747f07167b112cdb186ee22a5a2228f1ff34e0fb0b3602379e6b3a8c",
+   "sha256": "526d2c47f3c6edb6c3cffff94b8bec4f3c9e4c3602a30a5e4059b14261d86bf9",
    "rollback": "rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
-   "rollbackSha256": "ce2892d86787e98ca2909136f6a760b3a8fd8debe1130334c84a662db77cfc48",
+   "rollbackSha256": "aea29d734a4e03940a85f7cb30247681fa674b3229c58d2d9f02e7e280070f5c",
    "rollbackMode": "UNSAFE_BASELINE_RESTORE",
    "applyStage": "A"
   },
@@ -98,7 +98,7 @@
   },
   {
    "file": "20260905073925_phase03a_effective_privileges.sql",
-   "sha256": "3e26bb1746f49887e2b416e550ec14b14b75062e4fbb04cd5ab915ed66cd91e8",
+   "sha256": "17970173cb28f29297a931751e9e8ca62c74366f1b83ab5cd36e536049562c20",
    "rollback": "rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
    "rollbackSha256": "3753ce33e975cfa1e26e25f4b3929b4c0af5e4d3a03d4e33bb74bb7796951c4d",
    "rollbackMode": "UNSAFE_BASELINE_RESTORE",
@@ -115,9 +115,18 @@
    "applyStage": "A"
   },
   {
-   "file": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+   "file": "20260911120000_phase03a_webhook_target_env_scoped.sql",
+   "sha256": "835887dede0463da266224df23919dac194f1dcf2d6db761976d2c423549fea3",
+   "rollback": "rollback/20260911120000_phase03a_webhook_target_env_scoped.rollback.sql",
+   "rollbackSha256": "a72bcc830dcfad2b76c029fe0cb67f1678a53acde8925fda47693340725c9123",
+   "rollbackMode": "NON_REVERSIBLE_SECURITY_REPAIR",
+   "applyStage": "A",
+   "note": "STAGE-MF-04. Its rollback restores the hardcoded production endpoint, so it is not a routine undo."
+  },
+  {
+   "file": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
    "sha256": "a21c56b588b958a261766257482a08ceefb8857dc8d9e7c11b180c7584d8b963",
-   "rollback": "rollback/20260910120000_phase03a_fda026_stage_b_cutover.rollback.sql",
+   "rollback": "rollback/20260911130000_phase03a_fda026_stage_b_cutover.rollback.sql",
    "rollbackSha256": "aa2c735230635a085b14d74d36c815a36c567d6aba05ab56ccde65d079ff3443",
    "rollbackMode": "FORWARD_RESTORE_TO_STAGE_A",
    "applyStage": "B",
@@ -129,7 +138,9 @@
     "src/lib/flags.ts:1682 listLeaderboard() -> silently returns <=1 row",
     "src/lib/flags.ts:1702/1717 getUserLeaderboardRank() -> rank silently always 1",
     "comment author hydration -> authors fall back to anonymous"
-   ]
+   ],
+   "renumberedFrom": "20260910120000",
+   "renumberReason": "STAGE-MF-04's forward correction is 20260911120000 and applies in Stage A. Stage B at 20260910120000 would then sort BEFORE an already-applied migration, producing the out-of-order ledger planApply's impossible-ordering detector correctly refuses. This candidate has never been applied anywhere, so renumbering rewrites no history; it keeps the intended end-state order coherent."
   }
  ],
  "catalogSqlSha256": "6a755828dff8f85da18255c514b8e8c8cf7efe8c6b030e45a3108c4a8f23b5fc",
@@ -198,7 +209,7 @@
  "fda026": {
   "status": "OPEN_UNTIL_STAGE_B",
   "stageA": "additive only \u2014 creates the four bounded replacement RPCs and grants them to authenticated; removes nothing",
-  "stageB": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+  "stageB": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
   "whySplit": "Neither shipped tree (f5594171 iOS, ebf091c2 web) references the replacement RPCs. Closing FDA-026 in one step breaks both, silently.",
   "doNotClaimClosedBeforeStageB": true
  }

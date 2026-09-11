@@ -6,7 +6,7 @@
 BEGIN;
 -- NOTE: this rollback no longer re-creates "users readable by authenticated" and
 -- no longer re-grants SELECT (is_admin). Stage A does not remove them -- that
--- moved to 20260910120000_phase03a_fda026_stage_b_cutover.sql, which carries its
+-- moved to 20260911130000_phase03a_fda026_stage_b_cutover.sql, which carries its
 -- own rollback. Re-creating the policy here would raise "policy already exists"
 -- and abort the whole restoration, because the policy is still present.
 ALTER POLICY "admin delete any flag" ON public.flags
