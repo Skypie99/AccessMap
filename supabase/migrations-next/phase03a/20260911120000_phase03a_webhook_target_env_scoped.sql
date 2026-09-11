@@ -63,7 +63,11 @@ BEGIN
   -- database with no target does not send.
   SELECT decrypted_secret INTO v_endpoint FROM vault.decrypted_secrets
     WHERE name = 'webhook_endpoint' LIMIT 1;
-  IF v_endpoint IS NULL OR v_endpoint !~ '^https://[a-z0-9.-]+/' THEN
+  -- Scheme + host, optional port, then either a path or nothing. The trailing "/"
+  -- used to be mandatory, so a perfectly good "https://host" read as unconfigured
+  -- and the webhook silently no-op'd -- an operator would reasonably conclude the
+  -- migration was broken. Independent review 2026-09-11, SHOULD-FIX.
+  IF v_endpoint IS NULL OR v_endpoint !~ '^https://[a-z0-9.-]+(:[0-9]+)?(/|$)' THEN
     RAISE WARNING '[notify_flag_status_webhook] no valid webhook_endpoint configured - skipping';
     RETURN NEW;
   END IF;

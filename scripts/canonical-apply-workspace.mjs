@@ -71,9 +71,53 @@ export const WORKSPACE_MARKER = '.p03a-workspace';
 export const WORKSPACE_MARKER_TYPE = 'flagstone-p03a-apply-workspace';
 export const WORKSPACE_MARKER_VERSION = 1;
 
-/** The real temp root. os.tmpdir() is itself a symlink on macOS (/var -> /private/var). */
+/**
+ * The real temp root. os.tmpdir() is itself a symlink on macOS (/var -> /private/var).
+ *
+ * Review 2026-09-11 MUST-FIX 2: this used to trust os.tmpdir() -- i.e. $TMPDIR --
+ * unconditionally, and TMPDIR is an ordinary environment variable. With
+ * TMPDIR=$HOME set, createWorkspaceDir() put a workspace directly in the user's
+ * home directory and inspectWorkspaceForDestruction() green-lit removing it. The
+ * blast radius was bounded (only a directory this module itself mkdtemp'd, carrying
+ * a valid marker, can ever be removed) but the stated invariant -- home, cwd and
+ * repositories are never touched -- was resting on an environment variable.
+ *
+ * A temp root that lives inside the home directory, inside a git repository, or at
+ * the filesystem root is refused outright. The refusal names TMPDIR, because a
+ * misconfigured environment is the realistic cause and the operator needs to know
+ * what to change.
+ */
 function tmpRoot() {
-  return fs.realpathSync(os.tmpdir());
+  const resolved = fs.realpathSync(os.tmpdir());
+  const home = safeReal(os.homedir());
+  const fsRoot = path.parse(resolved).root;
+
+  if (resolved === fsRoot) {
+    throw new Error(`Refusing to use the filesystem root as the temp root (TMPDIR=${os.tmpdir()}).`);
+  }
+  if (resolved === home || withinDir(home, resolved)) {
+    throw new Error(
+      `Refusing a temp root inside the home directory: ${resolved} (TMPDIR=${os.tmpdir()}). ` +
+      `Disposable workspaces must live in real ephemeral storage, not under $HOME.`,
+    );
+  }
+  // Walk up: a temp root anywhere inside a git repository would put disposable
+  // workspaces inside someone's working tree.
+  for (let dir = resolved; ; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, '.git'))) {
+      throw new Error(
+        `Refusing a temp root inside a git repository (${dir}): ${resolved} (TMPDIR=${os.tmpdir()}).`,
+      );
+    }
+    if (dir === path.dirname(dir)) break;
+  }
+  return resolved;
+}
+
+/** True when `child` is strictly inside `parent`, path-segment-wise. */
+function withinDir(parent, child) {
+  const rel = path.relative(parent, child);
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 /**

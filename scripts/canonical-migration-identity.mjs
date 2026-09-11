@@ -470,6 +470,8 @@ export const PROHIBITED_MECHANISMS = [
 // Guard-rail logic that cannot be run is not a guard rail.
 //
 //   node scripts/canonical-migration-identity.mjs plan   [--stage A|B] [--ledger <file.json>]
+//        --ledger accepts a bare array OR the { rows: [...] } capture shape.
+//        knownLocalVersions is derived from the tree; --known-local-versions <f.json> overrides.
 //   node scripts/canonical-migration-identity.mjs verify  --ledger <file.json> [--stage A|B]
 //   node scripts/canonical-migration-identity.mjs command --project-ref <ref> [--apply]
 //
@@ -494,14 +496,72 @@ if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(proces
       console.error('ERROR: --ledger <file.json> is required (a JSON array of {version,name} rows).');
       process.exit(2);
     }
-    return JSON.parse(fs.readFileSync(f, 'utf8'));
+    let raw;
+    try { raw = JSON.parse(fs.readFileSync(f, 'utf8')); }
+    catch (e) { console.error(`ERROR: --ledger ${f} does not parse: ${e.message}`); process.exit(2); }
+    // Accept both a bare array and the { rows: [...] } capture shape this repo
+    // actually produces -- supabase/tests/phase03a-fixtures/contaminated-staging-ledger.json
+    // is the second, and the CLI used to crash on its own project's fixture with
+    // "ledger is not iterable" rather than refusing gracefully.
+    const rows = Array.isArray(raw) ? raw : raw?.rows;
+    if (!Array.isArray(rows)) {
+      console.error(`ERROR: --ledger ${f} must be a JSON array of {version,name}, or an object with a "rows" array.`);
+      process.exit(2);
+    }
+    for (const r of rows) {
+      if (!r || typeof r.version !== 'string') {
+        console.error(`ERROR: --ledger ${f} contains a row with no string "version".`);
+        process.exit(2);
+      }
+    }
+    return rows;
+  };
+
+  /**
+   * Every version that may legitimately appear in a remote ledger, derived from the
+   * repository itself: the applied baseline, the adoption artifacts, and every
+   * declared candidate of BOTH stages.
+   *
+   * Review 2026-09-11 MUST-FIX 1: the `plan` CLI never supplied this, so a real
+   * ledger always tripped [unauditable ledger] and the phantom / wall-clock /
+   * duplicate / mismatch detectors -- the entire point of this repair -- were
+   * structurally unreachable through the documented command line. The module header
+   * says "guard-rail logic that cannot be run is not a guard rail"; by its own
+   * standard the CLI was failing. Deriving it here needs no operator flag and
+   * cannot drift from the tree.
+   */
+  const deriveKnownLocalVersions = (contract) => {
+    const versions = new Set();
+    const addDir = (rel) => {
+      const full = path.resolve(rel);
+      if (!fs.existsSync(full)) return;
+      for (const f of fs.readdirSync(full)) {
+        if (/^\d{14}_.*\.sql$/.test(f)) versions.add(f.slice(0, 14));
+      }
+    };
+    addDir(flag('baseline', 'supabase/migrations'));
+    addDir(flag('adoption', 'supabase/migrations-next'));
+    for (const m of contract.migrations ?? []) {
+      try { versions.add(canonicalIdentity(m.file).version); } catch { /* reported by planApply */ }
+    }
+    for (const a of contract.phase02Adoption?.entries ?? []) {
+      try { versions.add(canonicalIdentity(a.file).version); } catch { /* reported by planApply */ }
+    }
+    // An explicit override stays available for an operator auditing a foreign tree.
+    const override = flag('known-local-versions');
+    if (override) {
+      const fromFile = JSON.parse(fs.readFileSync(override, 'utf8'));
+      return Array.isArray(fromFile) ? fromFile : fromFile.versions;
+    }
+    return [...versions].sort();
   };
 
   if (cmd === 'plan') {
     const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
     const ledger = argv.includes('--ledger') ? readLedger() : [];
-    const res = planApply({ dir, declared: contract.migrations, ledger, stage });
-    console.log(JSON.stringify({ stage, ...res }, null, 2));
+    const knownLocalVersions = deriveKnownLocalVersions(contract);
+    const res = planApply({ dir, declared: contract.migrations, ledger, stage, knownLocalVersions });
+    console.log(JSON.stringify({ stage, knownLocalVersionCount: knownLocalVersions.length, ...res }, null, 2));
     if (!res.ok) {
       console.error(`REFUSED: ${res.refusals.length} problem(s). Nothing may be applied.`);
       process.exit(1);
