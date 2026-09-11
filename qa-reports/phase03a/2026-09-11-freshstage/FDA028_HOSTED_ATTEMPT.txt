@@ -1,0 +1,12 @@
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  ok    lifecycle: grant exists under its bucket
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  ok    lifecycle: bucket delete CASCADES the grant away
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  ok    lifecycle: no orphan grant anywhere
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  ok    lifecycle: stale grant cannot bind to a recreated bucket
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  ok    lifecycle: stale grant id was NOT resurrected
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  ok    lifecycle: recreated bucket starts from clean authority
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  ok    lifecycle: orphan grant insert REJECTED
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: NOTICE:  FAIL  lifecycle: purge removed old buckets
+psql:/private/tmp/claude-501/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/scratchpad/fda028_hosted.sql:85: ERROR:  FAILED: lifecycle: purge removed old buckets
+CONTEXT:  PL/pgSQL function pass(text,boolean) line 3 at RAISE
+SQL statement "SELECT pass('lifecycle: purge removed old buckets', n > 0)"
+PL/pgSQL function inline_code_block line 44 at PERFORM

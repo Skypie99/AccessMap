@@ -1,0 +1,46 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": "7 (finding)",
+ "bankedAt": "2026-09-11T20:31:19.815666+00:00",
+ "FDA028_HOSTED": "HOLD",
+ "finding": {
+  "id": "FDA028-SUITE-NOT-HOSTED-RUNNABLE",
+  "severity": "MATERIAL",
+  "statement": "supabase/tests/fda028/acceptance3.sql cannot run against a conforming database. It is coupled to its own local fixture in three independent ways, and the repository contains no runner for it.",
+  "couplings": [
+   {
+    "id": 1,
+    "what": "uses category 'ramp' in 24 places",
+    "why": "supabase/tests/fda028/fixture.sql creates a STAND-IN public.flags with `category text` and no constraint. The real table has flags_category_check allowing only no_ramp, broken_sidewalk, blocked_path, missing_signal, steep_grade, other.",
+    "evidence": "hosted run died at line 85: new row for relation \"flags\" violates check constraint \"flags_category_check\"",
+    "crossChecked": "the constraint is byte-identical on the OLD staging branch, so 'ramp' was never valid there either"
+   },
+   {
+    "id": 2,
+    "what": "purge_at(t0 + 600 seconds) expects buckets to be purged",
+    "why": "the real limiter.config ships window_seconds=86400 and retention_windows=1, so nothing is purgeable 600 seconds in. The suite only sets 86400 explicitly later, at line 139.",
+    "evidence": "after adapting coupling 1, the run reached 7 passing assertions then failed: FAILED: lifecycle: purge removed old buckets"
+   },
+   {
+    "id": 3,
+    "what": "line 71 does UPDATE limiter.dev_key_material SET k = NULL",
+    "why": "dev_key_material is a LOCAL FIXTURE table. fixture.sql states outright that it 'creates the dev key store the forward candidate deliberately does NOT create'.",
+    "evidence": "confirmed ABSENT on the hosted branch"
+   }
+  ],
+  "noRunner": "no npm script and no scripts/*.mjs references acceptance3.sql or fda028. run-pgtap.mjs classifies it as kind 'raising-proof', which it does not execute.",
+  "consequenceForThisRun": "a hosted FDA-028 regression cannot be established from committed artifacts, so FDA028_HOSTED is HOLD.",
+  "consequenceForTheFirstRun": "the first run recorded 'FDA-028 hosted 38/38 PASS'. Since the committed suite cannot run hosted, that result was produced by an ad-hoc variant that was never committed. Its own receipt corroborates this: it records editing the reset block mid-run. The number may well have been real, but it is NOT reproducible from the repository, which is the property that matters.",
+  "whatIDidNotDo": "I did not keep editing the suite until it went green. Two adaptations already surfaced a third coupling; tuning to a pass would have manufactured the result rather than measured it.",
+  "adaptationMade": "one, recorded: 'ramp' -> 'no_ramp', in a COPY held outside the repo. The reviewed test file and the FDA-028 candidate are byte-unchanged.",
+  "remedy": "a later CODE round should either make acceptance3.sql schema-conforming and config-aware, or add an explicit hosted runner that provisions what it needs. Until then FDA-028's hosted behaviour must be proven by named probes, not by this file."
+ },
+ "fda028HostedFactsActuallyEstablished": {
+  "VAULT_IO_STAGING": "PASS \u2014 limiter.read_epoch_key() returns 64 bytes from the real staging Vault; current_epoch_key(now()) derives a 32-byte ratcheted key at epoch 20707",
+  "limiterObjects": "schema present, 20 functions, 11 relations, guard_window_domain trigger present",
+  "config": "enabled, normal_allowance 5, bucket_allowance 50, window_seconds 86400, ipv4_prefix 32, ipv6_prefix 64, require_public_ip true, reseed_interval 7, catchup_cap 32, retention_windows 1",
+  "note": "the 254 hosted pgTAP assertions do NOT cover limiter internals; word matches there are incidental"
+ },
+ "nextOperation": "STEP 7 continued \u2014 named hosted probes for admission, no-overshoot concurrency, full-insert enforcement, fail-closed and surface isolation"
+}
