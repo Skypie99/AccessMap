@@ -131,13 +131,16 @@ Two things an owner should know before deciding, both found by independent revie
   because a reader of the row above would otherwise assume Stage A restored a
   working guest comment list.
 
-  **Bound on the production half of that claim:** the committed production capture
-  records no *table-level* SELECT for `anon` on `users`, but it carries column
-  definitions only — **no column-privilege data at all** — so a column-level
-  `GRANT SELECT (display_name) TO anon` cannot be excluded from committed evidence.
-  No repo artifact creates one. Confirming production's column grants needs a
-  read-only capture that this tree does not currently contain, and that is a gap in
-  the evidence base rather than a finding about Phase 03A.
+  **Production too, and it is evidenced.**
+  `qa-reports/phase03a/2026-09-04/preflight/expanded-privileges.json` is a read-only
+  capture of the production project and records column ACLs:
+  `{"role_name":"anon","column_name":"display_name","can_select":false}`, with no
+  table-level SELECT for `anon` on `users` either. The guest comment list is broken
+  in production today, independently of Phase 03A.
+
+  *A previous revision of this packet said the opposite — that the tree held no
+  column-privilege capture, so the production half could not be established. That was
+  an underclaim introduced while correcting an overclaim, and it is corrected here.*
 
 **FDA-026 is OPEN, not closed.** Stage B is withheld from the apply set and needs a
 separate owner authorization carrying release-capability proof.

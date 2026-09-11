@@ -113,13 +113,18 @@ RESET ROLE; SET LOCAL request.jwt.claim.sub = ''; SET LOCAL request.jwt.claim.ro
 -- and anon has no SELECT on public.users — not before Phase 03A and not after,
 -- proven here by the assertion below.
 --
--- On PRODUCTION the claim must be bounded, and this is the bound: the committed
--- production capture records anon holding DELETE/INSERT/UPDATE/... on users but no
--- table-level SELECT. That capture carries column DEFINITIONS only and no column
--- privilege data at all, so a column-level GRANT SELECT (display_name) TO anon
--- cannot be excluded from committed evidence. No repo artifact creates one. The
--- honest statement is therefore: locally the guest embed raises, and production is
--- very likely the same but is not proven so by anything in this tree.
+-- PRODUCTION too, and this IS supported by committed evidence:
+-- qa-reports/phase03a/2026-09-04/preflight/expanded-privileges.json — a read-only
+-- capture of projectRef kldlwszpfkdmsjrjhjym — records column ACLs and holds
+--   {"role_name":"anon","column_name":"display_name","can_select":false}
+-- alongside no table-level SELECT for anon on users. So the guest comment list is
+-- already broken in production as well.
+--
+-- A previous revision of this comment claimed the opposite: that no artifact in
+-- this tree carried column-privilege data, so the production half "cannot be
+-- excluded". That was an UNDERCLAIM, made while correcting an overclaim, and a
+-- third reviewer caught it. The lesson is the same in both directions: search the
+-- tree before characterising the evidence.
 -- Either way Phase 03A neither causes nor fixes it.
 --
 -- An earlier version of this suite asserted `SELECT id FROM flag_comments` and

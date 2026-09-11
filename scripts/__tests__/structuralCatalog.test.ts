@@ -187,15 +187,35 @@ describe('a capture always retains its content', () => {
     expect(constant('CAPTURED_SCHEMAS')).toEqual(['public', 'private', 'storage', 'limiter']);
   });
 
-  it('captures every catalog surface that can carry authorization', () => {
+  // Derived from the registry, not from a hardcoded list. Round 3 pointed out that
+  // the previous version asserted only that eight field names appeared in the SQL
+  // text — it passed while four real collisions existed, the same failure one
+  // generation later. A name in a query proves nothing about detection, so each
+  // registry entry now has to actually change a checksum AND be reported.
+  it.each(constant('AUTHORIZATION_SURFACES').map((s: any) => [`${s.section}.${s.field}`, s]))(
+    'detects a change to %s', (_label: string, surface: any) => {
+      const before = { [surface.section]: [{ k: 'x', [surface.field]: 'BEFORE' }] };
+      const after  = { [surface.section]: [{ k: 'x', [surface.field]: 'AFTER' }] };
+      const a = catalogOf(before);
+      const b = catalogOf(after);
+      expect(a.checksum).not.toBe(b.checksum);
+      const d = call('diffCaptures', a, b);
+      expect(d.identical).toBe(false);
+      // Every authorization-bearing section must be classed security-relevant, or a
+      // reviewer skimming securityRelevantSections would miss it.
+      expect(d.securityRelevantSections).toContain(surface.section);
+    });
+
+  it('captures every registry surface in the actual query', () => {
     const sql = constant('CATALOG_SQL');
-    for (const section of ['policies', 'functions', 'columns', 'relations', 'schemas', 'triggers', 'defaultAcls']) {
+    for (const section of ['policies','functions','columns','relations','schemas','triggers','defaultAcls','roles']) {
       expect(sql).toContain(`'${section}'`);
     }
-    // ACLs, and the five surfaces round-2 review used to hide real changes.
-    for (const field of ['relacl', 'attacl', 'proacl', 'proconfig', 'tgenabled',
-      'pg_get_triggerdef', 'pg_get_expr', 'relforcerowsecurity']) {
-      expect(sql).toContain(field);
+    // The registry is the contract; every entry must name a real captured key.
+    for (const s of constant('AUTHORIZATION_SURFACES')) {
+      expect(sql).toContain(`'${s.field}'`);
+      expect(typeof s.detects).toBe('string');
+      expect(s.detects.length).toBeGreaterThan(10);
     }
   });
 });

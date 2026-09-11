@@ -20,11 +20,21 @@
       "category": "EVIDENCE",
       "disposition": "CLOSED",
       "howClosed": "scripts/structural-catalog.mjs + 11 tests. The capture query is published in the file, so the recipe is reproducible by any reviewer. writeCapture() writes the full normalized catalog BEFORE reporting a checksum. diffCaptures() reports every residual and flags security-relevant sections.",
-      "normalizationDiscipline": "Ordering only. aclitem[] is compared as a sorted set, which neutralises the acceptor's leading hypothesis that REVOKE ALL + re-GRANT reorders entries without changing authorization. Nothing structural is excluded; only oid and planner statistics are, each with a written justification a test enforces.",
+      "normalizationDiscipline": "Ordering only. aclitem[] is compared as a sorted set, which neutralises reordering from REVOKE ALL + re-GRANT, and a NULL acl never collapses into an explicitly empty one. The comparison is BOUNDED, not total: it covers the schemas in CAPTURED_SCHEMAS and the surfaces in AUTHORIZATION_SURFACES, each of which has a behavioural collision test. Only oid and planner statistics are excluded, each with a written justification. EARLIER REVISIONS OF THIS FIELD CLAIMED 'nothing structural is excluded'. That was false, was named as a MUST-FIX twice, and is replaced rather than annotated.",
       "newEvidenceFound": "The LOCAL round trip is exact (reapplyDeterministic true, restorationExact true) both before and after this repair. The hosted 09c42928 vs c70e119a divergence therefore does NOT reproduce locally, which narrows it to something about the hosted environment or the hosted apply mechanism rather than the SQL. Stated as a narrowing, not as a diagnosis.",
       "commit": "9af0744",
       "postReviewAddition": "Fixed a real collision the reviewer was asked to construct and found: a NULL acl and an explicit '{}' both normalized to [], so a proacl moving '{}' -> NULL silently re-granted PUBLIC EXECUTE with an identical checksum. NULL now carries a distinct sentinel, the capture query no longer coalesces any acl, and four regression tests pin it. Also added a CLI (sql/capture/diff) plus npm scripts.",
-      "round2Correction": "Round-2 review constructed FIVE more collisions with unchanged checksums: a SECURITY DEFINER function losing SET search_path, a disabled trigger, a removed trigger WHEN clause, a column default flipped to true, and FORCE ROW LEVEL SECURITY toggled. All five surfaces are now captured (proconfig, tgenabled, full trigger definition, column defaults, relforcerowsecurity), triggers count as security-relevant, and the header's 'NOTHING structural is excluded' claim \u2014 which was simply false \u2014 is replaced by a bounded statement plus a declared CAPTURED_SCHEMAS scope. Five parameterised regression tests pin them."
+      "collisionsFoundByReviewAndClosed": [
+        "NULL acl vs explicit {} (round 1)",
+        "SECURITY DEFINER losing SET search_path (round 2)",
+        "disabled trigger (round 2)",
+        "removed trigger WHEN clause (round 2)",
+        "column default flipped (round 2)",
+        "FORCE ROW LEVEL SECURITY toggled (round 2)",
+        "ALTER VIEW SET (security_invoker = false) \u2014 reloptions (round 3, the sharpest: it can turn a denied anon read into a permitted one on exactly the view shape this increment\u2019s guest defence relies on)",
+        "ALTER FUNCTION OWNER TO \u2014 proowner, which changes what a SECURITY DEFINER runs as (round 3)",
+        "ALTER ROLE anon BYPASSRLS and GRANT postgres TO anon \u2014 no roles captured at all (round 3)"
+      ]
     },
     {
       "id": "STAGE-MF-03",

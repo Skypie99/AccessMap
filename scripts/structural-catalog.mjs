@@ -53,6 +53,41 @@ export const SCHEMA_VERSION = 3;
 
 /** The comparison is scoped to these schemas and nothing else. Stated, not implied. */
 export const CAPTURED_SCHEMAS = ['public', 'private', 'storage', 'limiter'];
+
+/**
+ * Every catalog surface that can carry authorization, each with the change it must
+ * be able to detect. Three review rounds found nine collisions here by naming a
+ * surface nobody had captured, so the list is now a REGISTRY rather than a comment:
+ * scripts/__tests__/structuralCatalog.test.ts derives a behavioural collision test
+ * from each entry, so adding a surface without a test fails, and a surface with a
+ * test that does not actually detect its change fails too.
+ *
+ * A previous test asserted only that eight field names appeared in the SQL text. It
+ * passed while four real collisions existed, which is the same failure one
+ * generation later. A name appearing in a query proves nothing about detection.
+ */
+export const AUTHORIZATION_SURFACES = [
+  { section: 'relations', field: 'acl',         detects: 'table/view grants' },
+  { section: 'relations', field: 'rls',         detects: 'row level security switched off' },
+  { section: 'relations', field: 'forcerls',    detects: 'FORCE ROW LEVEL SECURITY toggled' },
+  { section: 'relations', field: 'reloptions',  detects: 'ALTER VIEW SET (security_invoker = false), which can turn a denied read into a permitted one' },
+  { section: 'columns',   field: 'acl',         detects: 'column grants' },
+  { section: 'columns',   field: 'default',     detects: 'a column default flipped, e.g. is_admin to true' },
+  { section: 'functions', field: 'acl',         detects: 'EXECUTE grants' },
+  { section: 'functions', field: 'secdef',      detects: 'SECURITY DEFINER toggled' },
+  { section: 'functions', field: 'config',      detects: 'a SECURITY DEFINER losing SET search_path' },
+  { section: 'functions', field: 'owner',       detects: 'ALTER FUNCTION OWNER TO, which changes what a SECURITY DEFINER runs as' },
+  { section: 'functions', field: 'body',        detects: 'a rewritten function body' },
+  { section: 'policies',  field: 'qual',        detects: 'a policy predicate weakened' },
+  { section: 'policies',  field: 'roles',       detects: 'a policy retargeted at another role' },
+  { section: 'triggers',  field: 'enabled',     detects: 'a trigger disabled' },
+  { section: 'triggers',  field: 'when',        detects: 'a trigger WHEN clause removed' },
+  { section: 'roles',     field: 'bypassrls',   detects: 'ALTER ROLE anon BYPASSRLS' },
+  { section: 'roles',     field: 'memberof',    detects: 'GRANT postgres TO anon' },
+  { section: 'roles',     field: 'super',       detects: 'a role made superuser' },
+  { section: 'schemas',   field: 'acl',         detects: 'schema USAGE grants' },
+  { section: 'defaultAcls', field: 'acl',       detects: 'ALTER DEFAULT PRIVILEGES' },
+];
 export const CAPTURE_TOOL = 'scripts/structural-catalog.mjs';
 
 /**
@@ -80,7 +115,8 @@ select jsonb_build_object(
   'relations', coalesce((select jsonb_agg(jsonb_build_object(
       's', n.nspname, 'n', c.relname, 'kind', c.relkind, 'rls', c.relrowsecurity,
       'owner', pg_get_userbyid(c.relowner), 'acl', c.relacl::text,
-      'forcerls', c.relforcerowsecurity)
+      'forcerls', c.relforcerowsecurity,
+      'reloptions', array_to_string(c.reloptions, '|'))
       order by n.nspname, c.relname, c.relkind)
     from pg_class c join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in (select nspname from s) and c.relkind in ('r','v','m','S','p')), '[]'::jsonb),
@@ -98,7 +134,8 @@ select jsonb_build_object(
       's', n.nspname, 'n', p.proname, 'args', pg_get_function_identity_arguments(p.oid),
       'secdef', p.prosecdef, 'kind', p.prokind, 'body', md5(coalesce(p.prosrc,'')),
       'acl', p.proacl::text,
-      'config', array_to_string(p.proconfig, '|'), 'leakproof', p.proleakproof)
+      'config', array_to_string(p.proconfig, '|'), 'leakproof', p.proleakproof,
+      'owner', pg_get_userbyid(p.proowner))
       order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid))
     from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname in (select nspname from s)), '[]'::jsonb),
@@ -115,6 +152,15 @@ select jsonb_build_object(
       order by n.nspname, c.relname, tg.tgname)
     from pg_trigger tg join pg_class c on c.oid=tg.tgrelid join pg_namespace n on n.oid=c.relnamespace
     where n.nspname in (select nspname from s) and not tg.tgisinternal), '[]'::jsonb),
+  'roles', coalesce((select jsonb_agg(jsonb_build_object(
+      'n', r.rolname, 'super', r.rolsuper, 'bypassrls', r.rolbypassrls,
+      'createrole', r.rolcreaterole, 'canlogin', r.rolcanlogin, 'inherit', r.rolinherit,
+      'memberof', (select coalesce(string_agg(g.rolname, ',' order by g.rolname), '')
+                   from pg_auth_members m join pg_roles g on g.oid = m.roleid
+                   where m.member = r.oid))
+      order by r.rolname)
+    from pg_roles r
+    where r.rolname in ('anon','authenticated','service_role','authenticator','postgres')), '[]'::jsonb),
   'defaultAcls', coalesce((select jsonb_agg(jsonb_build_object(
       'owner', pg_get_userbyid(d.defaclrole), 's', coalesce(n.nspname,'GLOBAL'),
       'kind', d.defaclobjtype, 'acl', d.defaclacl::text)
@@ -188,6 +234,7 @@ export function writeCapture({ outDir, label, rawCatalog, sourceSha, integration
     integrationSha: integrationSha ?? null,
     target: target ?? null,
     capturedSchemas: CAPTURED_SCHEMAS,
+    authorizationSurfaces: AUTHORIZATION_SURFACES.map((s) => `${s.section}.${s.field}`),
     scopeCaveat: 'Only the schemas above are compared. Anything outside them is invisible to this tool by design.',
     normalizationRules: [
       'every collection sorted by a stable key derived from its own content',
@@ -225,7 +272,7 @@ export function diffCaptures(a, b) {
     residuals,
     // Sections that carry authorization. A residual here is never cosmetic.
     securityRelevantSections: [...new Set(residuals.map((r) => r.section))]
-      .filter((s) => ['policies', 'functions', 'columns', 'relations', 'schemas', 'defaultAcls', 'triggers'].includes(s)),
+      .filter((s) => ['policies', 'functions', 'columns', 'relations', 'schemas', 'defaultAcls', 'triggers', 'roles'].includes(s)),
   };
 }
 
