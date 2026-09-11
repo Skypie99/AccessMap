@@ -46,6 +46,142 @@ import path from 'node:path';
 import { canonicalIdentity, planApply, assertUnambiguousTarget, PRODUCTION_PROJECT_REF } from './canonical-migration-identity.mjs';
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
+
+// ---------------------------------------------------------------------------
+// DISPOSABLE-WORKSPACE IDENTITY
+//
+// 2026-09-11 incident: destroyWorkspace's only guard was "does <ws>/supabase/
+// config.toml exist". Every AccessMap worktree root satisfies that, because
+// config.toml is APPLICATION CONTENT, not workspace identity. A regression test
+// that called destroyWorkspace(repoRoot) expecting a refusal deleted six working
+// trees instead -- four under ~/AccessMap*, one under /private/tmp, and finally
+// the Phase 03A checkpoint-bank worktree. Committed objects survived; nothing
+// else did.
+//
+// Identity is now something a repository cannot accidentally have:
+//   - the directory is created by US, by mkdtemp, directly inside the real
+//     temp root, under a prefix nobody else uses;
+//   - it carries a marker file naming the type and schema version.
+// Both must hold, and the resolved path must still sit where we put it, before
+// one byte is removed. Every check fails closed.
+// ---------------------------------------------------------------------------
+export const WORKSPACE_PREFIX = 'flagstone-p03a-apply-';
+export const WORKSPACE_MARKER = '.p03a-workspace';
+export const WORKSPACE_MARKER_TYPE = 'flagstone-p03a-apply-workspace';
+export const WORKSPACE_MARKER_VERSION = 1;
+
+/** The real temp root. os.tmpdir() is itself a symlink on macOS (/var -> /private/var). */
+function tmpRoot() {
+  return fs.realpathSync(os.tmpdir());
+}
+
+/**
+ * Create a disposable workspace: mkdtemp directly under the real temp root, with
+ * our prefix, carrying the marker. This is the ONLY way a workspace is made --
+ * there is deliberately no caller-supplied output directory any more, because a
+ * caller-supplied directory is exactly how the repository root got passed in.
+ */
+export function createWorkspaceDir({ projectId = 'accessmap' } = {}) {
+  const ws = fs.mkdtempSync(path.join(tmpRoot(), WORKSPACE_PREFIX));
+  fs.writeFileSync(path.join(ws, WORKSPACE_MARKER), `${JSON.stringify({
+    type: WORKSPACE_MARKER_TYPE,
+    markerVersion: WORKSPACE_MARKER_VERSION,
+    createdBy: 'scripts/canonical-apply-workspace.mjs',
+    createdAt: new Date().toISOString(),
+    pid: process.pid,
+  }, null, 2)}\n`);
+  fs.mkdirSync(path.join(ws, 'supabase', 'migrations'), { recursive: true });
+  fs.writeFileSync(path.join(ws, 'supabase', 'config.toml'), `project_id = "${projectId}"\n`);
+  return ws;
+}
+
+/**
+ * Decide whether a path may be recursively removed -- WITHOUT removing anything.
+ *
+ * Exported and pure on purpose: it is how the regression suite interrogates the
+ * guard about genuinely dangerous paths (/, $HOME, cwd, a live git worktree)
+ * without ever handing one of them to the destructive call. A test must never
+ * have to risk a real tree to prove a refusal.
+ *
+ * Returns { ok, resolved, refusals[] }. ok === true only when every check passed.
+ */
+export function inspectWorkspaceForDestruction(ws) {
+  const refusals = [];
+  const no = (r) => { refusals.push(r); return { ok: false, resolved: null, refusals }; };
+
+  if (typeof ws !== 'string' || ws.trim() === '') return no('path is empty or not a string');
+  if (!path.isAbsolute(ws)) return no(`path is not absolute: ${ws}`);
+
+  // The entry itself must be a real directory, never a symlink: a symlink named
+  // like a workspace is the obvious way to aim the delete somewhere else.
+  let lst;
+  try { lst = fs.lstatSync(ws); } catch { return no(`path does not exist: ${ws}`); }
+  if (lst.isSymbolicLink()) return no(`path is a symlink: ${ws}`);
+  if (!lst.isDirectory()) return no(`path is not a directory: ${ws}`);
+
+  // Canonicalize AFTER the symlink check, so ".." traversal and any indirection
+  // in the parent chain are resolved before we decide where this really is.
+  let resolved;
+  try { resolved = fs.realpathSync(ws); } catch { return no(`path cannot be resolved: ${ws}`); }
+
+  let root;
+  try { root = tmpRoot(); } catch { return no('temp root cannot be resolved'); }
+
+  // Never-touch list. These are all outside the temp root anyway -- they are
+  // named explicitly so a refusal says WHY, and so a future change to the
+  // location rule cannot silently expose them.
+  const protectedPaths = new Map([
+    [path.parse(resolved).root, 'filesystem root'],
+    [root, 'the temp root itself'],
+    [safeReal(os.homedir()), 'home directory'],
+    [safeCwd(), 'current working directory'],
+    [safeReal(path.resolve(moduleDir(), '..')), 'this repository root'],
+  ]);
+  const hit = protectedPaths.get(resolved);
+  if (hit) return no(`refusing to remove ${hit}: ${resolved}`);
+
+  // A git repository or worktree root always carries a .git entry (a directory in
+  // a primary checkout, a file in a linked worktree). A disposable workspace never
+  // does. This is the check that would have stopped the incident outright.
+  if (fs.existsSync(path.join(resolved, '.git'))) {
+    return no(`refusing to remove a git repository or worktree: ${resolved}`);
+  }
+
+  // Location: created by us, where we create them, named how we name them.
+  if (path.dirname(resolved) !== root) {
+    return no(`outside the disposable workspace root ${root}: ${resolved}`);
+  }
+  if (!path.basename(resolved).startsWith(WORKSPACE_PREFIX)) {
+    return no(`name does not carry the workspace prefix ${WORKSPACE_PREFIX}: ${path.basename(resolved)}`);
+  }
+
+  // Marker: must be a real file (not a symlink to one), parse, and self-identify.
+  const marker = path.join(resolved, WORKSPACE_MARKER);
+  let ms;
+  try { ms = fs.lstatSync(marker); } catch { return no(`missing marker ${WORKSPACE_MARKER}`); }
+  if (!ms.isFile()) return no(`marker ${WORKSPACE_MARKER} is not a regular file`);
+  let meta;
+  try { meta = JSON.parse(fs.readFileSync(marker, 'utf8')); } catch { return no(`marker ${WORKSPACE_MARKER} does not parse`); }
+  if (!meta || typeof meta !== 'object') return no('marker is not an object');
+  if (meta.type !== WORKSPACE_MARKER_TYPE) return no(`marker type ${JSON.stringify(meta.type)} !== ${WORKSPACE_MARKER_TYPE}`);
+  if (meta.markerVersion !== WORKSPACE_MARKER_VERSION) {
+    return no(`marker version ${JSON.stringify(meta.markerVersion)} !== ${WORKSPACE_MARKER_VERSION}`);
+  }
+
+  // Shape, checked last: a workspace we built holds the materialization dir.
+  if (!fs.existsSync(path.join(resolved, 'supabase', 'migrations'))) {
+    return no('does not have the generated workspace shape (supabase/migrations)');
+  }
+
+  return { ok: true, resolved, refusals };
+}
+
+function safeReal(p) { try { return fs.realpathSync(p); } catch { return p; } }
+// process.cwd() throws if the directory was removed underneath us -- which is
+// precisely the situation this guard exists to prevent recurring.
+function safeCwd() { try { return safeReal(process.cwd()); } catch { return '\u0000none'; } }
+function moduleDir() { return path.dirname(new URL(import.meta.url).pathname); }
+
 const sqlFiles = (dir) => fs.readdirSync(dir).filter((f) => /^\d{14}_.*\.sql$/.test(f));
 
 /** Versions already applied to the target, read from the repo's canonical history. */
@@ -73,7 +209,7 @@ export function knownLocalVersions({ baselineDir, declared = [], adoptionDeclare
  */
 export function buildWorkspace({
   baselineDir, adoptionDir = null, candidateDir, declared, adoptionDeclared = [],
-  ledger = [], stage = 'A', projectId = 'accessmap', outDir = null,
+  ledger = [], stage = 'A', projectId = 'accessmap',
 }) {
   const known = knownLocalVersions({ baselineDir, declared, adoptionDeclared });
   const planned = planApply({ dir: candidateDir, declared, ledger, stage, knownLocalVersions: known });
@@ -81,10 +217,9 @@ export function buildWorkspace({
     return { ok: false, refusals: planned.refusals, workspace: null, materialized: [], ledgerAudit: planned.ledgerAudit };
   }
 
-  const ws = outDir ?? fs.mkdtempSync(path.join(os.tmpdir(), 'p03a-apply-'));
+  // Always ours, always disposable, always marked. No caller-supplied directory.
+  const ws = createWorkspaceDir({ projectId });
   const migDir = path.join(ws, 'supabase', 'migrations');
-  fs.mkdirSync(migDir, { recursive: true });
-  fs.writeFileSync(path.join(ws, 'supabase', 'config.toml'), `project_id = "${projectId}"\n`);
   const bail = (refusals) => {
     destroyWorkspace(ws);
     return { ok: false, refusals, workspace: null, materialized: [], ledgerAudit: planned.ledgerAudit };
@@ -189,17 +324,21 @@ export function expectedLedgerAfterApply({ ledgerBefore = [], wouldPush = [] }) 
     .sort((a, b) => a.version.localeCompare(b.version));
 }
 
+/**
+ * Remove a disposable workspace. Fails closed: if the guard is not unanimously
+ * satisfied, NOTHING is removed and false is returned. There is no force path,
+ * no best-effort path, and no caller-supplied override.
+ */
 export function destroyWorkspace(ws) {
-  if (!ws) return false;
-  // Only ever remove a directory we created and that still looks like a workspace.
-  if (!fs.existsSync(path.join(ws, 'supabase', 'config.toml'))) return false;
-  fs.rmSync(ws, { recursive: true, force: true });
+  const verdict = inspectWorkspaceForDestruction(ws);
+  if (!verdict.ok) return false;
+  fs.rmSync(verdict.resolved, { recursive: true, force: true });
   return true;
 }
 
 // ---------------------------------------------------------------------------
 // CLI
-//   node scripts/canonical-apply-workspace.mjs build   --ledger <f.json> [--out <dir>] [--stage A|B]
+//   node scripts/canonical-apply-workspace.mjs build   --ledger <f.json> [--stage A|B]
 //   node scripts/canonical-apply-workspace.mjs command --workspace <dir> --project-ref <ref>
 //   node scripts/canonical-apply-workspace.mjs destroy --workspace <dir>
 // Obtain the ledger READ-ONLY, e.g.
@@ -223,7 +362,7 @@ if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(proces
     const res = buildWorkspace({
       baselineDir, adoptionDir, candidateDir,
       declared: contract.migrations, adoptionDeclared: contract.phase02Adoption?.entries ?? [],
-      ledger: Array.isArray(raw) ? raw : raw.rows, stage: flag('stage', 'A'), outDir: flag('out'),
+      ledger: Array.isArray(raw) ? raw : raw.rows, stage: flag('stage', 'A'),
     });
     console.log(JSON.stringify({
       ok: res.ok, refusals: res.refusals, workspace: res.workspace, counts: res.counts,
