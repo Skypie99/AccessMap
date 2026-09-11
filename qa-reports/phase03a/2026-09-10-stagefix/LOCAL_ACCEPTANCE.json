@@ -84,17 +84,18 @@
       "notTurnedIntoAPass": "Run 1 is reported as it happened; run 2 is the reconciliation."
     },
     "runFinal_atFrozenSha": {
-      "measuredAtCommit": "a20cfc0099b0c8d939bc8fa8837ce7a16193d065 (the stagefix worktree HEAD itself; zero delta since)",
+      "measuredAtCommit": "06088bec1d9032bf7525a31a7b532d95471cb3e3 (the frozen candidate; tree clean at measurement)",
       "suitesFailed": 12,
       "suitesPassed": 277,
       "suitesTotal": 289,
       "testsFailed": 14,
       "todo": 32,
-      "testsPassed": 4270,
-      "testsTotal": 4316,
+      "testsPassed": 4272,
+      "testsTotal": 4318,
       "beyondBaseline": [],
       "inheritedNowPassing": [],
-      "reconciliation": "EXACT by failure name in BOTH directions. 4250 -> 4316 (+66) is exactly the Jest tests this repair adds (3 + 3 + 20 + 40). Todo unchanged at 32."
+      "reconciliation": "EXACT by failure name in BOTH directions. 4250 -> 4318 (+68) is exactly the Jest tests this repair adds (3 + 3 + 20 + 42). Todo unchanged at 32.",
+      "noteOnSequencing": "This run was NOT made before the round-4 fix was committed. On resume it was found that no Jest run covered 06088bec \u2014 the newest was 17:24 against a20cfc00 while 06088bec landed at 17:40:54 \u2014 so it was run before Round 5 was dispatched rather than claimed."
     }
   },
   "fda028Preservation": {
@@ -109,10 +110,10 @@
     "src/__tests__/projectTargetSafety.guard.test.ts": 3,
     "src/__tests__/webhookTargetCoupling.guard.test.ts": 3,
     "scripts/__tests__/canonicalMigrationIdentity.test.ts": 20,
-    "scripts/__tests__/structuralCatalog.test.ts": 40,
-    "total": 103,
-    "jestSubtotal": 66,
-    "note": "The 37 pgTAP assertions run in the replay, not Jest, so the Jest total moves by 66. structuralCatalog grew to 40 because 20 of them are now DERIVED from the AUTHORIZATION_SURFACES registry rather than asserted as a hardcoded name list."
+    "scripts/__tests__/structuralCatalog.test.ts": 42,
+    "total": 105,
+    "jestSubtotal": 68,
+    "note": "The 37 pgTAP assertions run in the replay, not Jest, so the Jest total moves by 68."
   },
   "testsInvalidatedByThisRepair": [
     "phase03a-foundation.test.sql: five FDA-026 assertions were realigned from the CLOSED posture to the Stage A posture (enumeration still open, is_admin still selectable). The CLOSED posture is now proven in build33-compat.test.sql's Stage B section instead, so nothing lost coverage \u2014 it moved.",
