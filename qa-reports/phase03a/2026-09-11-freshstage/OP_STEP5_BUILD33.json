@@ -1,0 +1,35 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": 5,
+ "bankedAt": "2026-09-11T20:26:22.883028+00:00",
+ "method": "shipped Build 33 query shapes executed as REAL roles (SET LOCAL ROLE inside a transaction, current_user asserted each time), against fixtures that were rolled back. Staging still holds zero application rows.",
+ "BUILD33_AUTHENTICATED_COMPATIBILITY": "PASS",
+ "authenticated": {
+  "admin.ts:31 select is_admin on own row": "returns f \u2014 NO 42501. This is the exact read whose failure silently degraded the admin UI.",
+  "listLeaderboard(): sees all users": "3 of 3 rows \u2014 does not collapse to the caller",
+  "rank": "get_my_leaderboard_rank() -> (rank 2, points 15), correct. My ad-hoc `count(*) WHERE points > 10` returned 3 because the point triggers had already moved the caller to 15 and the predicate then counted the caller itself. My query was wrong; the RPC is authoritative and the visibility that governs rank was proven by the 3-row read above.",
+  "comment-author hydration": "another account's display_name resolves",
+  "four Stage A RPCs": "all callable by authenticated \u2014 current_user_can_admin, list_public_leaderboard(50) -> 3 rows, get_my_leaderboard_rank, get_comment_author_profiles"
+ },
+ "BUILD33_ANON_COMPATIBILITY": "PASS",
+ "anon": {
+  "flags (the guest map)": "1 of 1 readable",
+  "flag_comments": "has_table_privilege = TRUE, query returns 0 rows and does NOT raise 42501",
+  "whyZeroRows": "every SELECT policy on flag_comments is {authenticated}; anon matches none, so RLS filters. Attributed to BASELINE migration 20260530192829_flag_comments.sql, NOT to Stage A \u2014 Stage A added the grant and regressed nothing.",
+  "whyThatIsTheRightDistinction": "Build 33 breaks on an ERROR, not on an empty list. The grant's absence would have produced 42501; its presence produces an empty result the client already handles.",
+  "point_events": "same shape \u2014 grant present, RLS is {authenticated}-only in the baseline",
+  "flag_photos": "0 rows, but no photo fixture existed; not a finding",
+  "listComments() users embed": "raises 'permission denied for table users' \u2014 the PRE-EXISTING failure asserted as such in build33-compat, not caused by Stage A"
+ },
+ "correctionsToMyOwnTests": [
+  "get_comment_author_profiles first returned 0 because I passed a USER id to a function whose parameter is p_comment_ids. Re-run with the comment id: returns (comment_id, 'Author').",
+  "the rank probe used a literal threshold and counted the caller itself."
+ ],
+ "stageBWithheld": "confirmed \u2014 authenticated still holds SELECT on users.is_admin and the broad read policy is still present, so the cutover has not leaked in",
+ "CARRIED_LIMITATION": "PRIVILEGE-BASELINE-DIVERGENCE (see OP_FRESH_RERUN.json). Production grants anon 109 privileges; this branch started with zero, because no baseline migration grants anon anything. So this run proves Stage A ESTABLISHES a working guest posture. It does NOT prove Stage A preserves production's posture, and 20260905073925's REVOKEs are not exercised against production's real grant set here.",
+ "stagingApplicationRowsAfterTest": 0,
+ "productionMutations": "NONE",
+ "oldStagingMutations": "NONE",
+ "nextOperation": "STEP 6 \u2014 hosted composed pgTAP and role matrix"
+}
