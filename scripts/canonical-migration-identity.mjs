@@ -49,6 +49,111 @@ export function canonicalIdentity(filename) {
 }
 
 /**
+ * STAGE-BLOCK-02. Ledger-identity refusal categories.
+ *
+ * The corrected staging rerun measured a contradiction that should have been
+ * impossible: planApply() returned ok:true against a ledger that
+ * verifyLedgerIdentity() rejected with 14 problems, and the plan it green-lit
+ * would have aborted on a real database. The cause was structural, not a typo --
+ * planApply's already-applied test was `ledger.find(r => r.version === id.version)`,
+ * an exact canonical match that never consulted the substitution logic living a
+ * hundred lines below it in this same file. Two halves of one guard rail that did
+ * not speak to each other.
+ *
+ * auditLedger() is that conversation. planApply now refuses BEFORE it plans.
+ */
+export const LEDGER_REFUSAL = {
+  PHANTOM_REMOTE_VERSION: 'phantom remote version',
+  WALL_CLOCK_SUBSTITUTION: 'wall-clock substitution',
+  DUPLICATE_CANONICAL_VERSION: 'duplicate canonical version',
+  VERSION_NAME_MISMATCH: 'canonical version/name mismatch',
+  IMPOSSIBLE_ORDERING: 'impossible ordering',
+  UNAUDITABLE_LEDGER: 'unauditable ledger',
+};
+
+/**
+ * Read-only audit of remote migration history, run BEFORE anything is planned.
+ *
+ * @param {object}   opts
+ * @param {object[]} opts.ledger             remote rows {version, name}
+ * @param {object[]} opts.declared           manifest entries {file, ...}
+ * @param {string[]} opts.knownLocalVersions every version that legitimately exists
+ *                                           locally: the applied baseline plus every
+ *                                           declared candidate, of BOTH stages.
+ *
+ * On a non-empty ledger `knownLocalVersions` is mandatory. Without it there is no
+ * way to tell a legitimate historical row from a fabricated one, and guessing is
+ * how the first run came to trust a poisoned history. Absent it, we refuse.
+ *
+ * KNOWN LIMIT, stated because it bit us: a candidate applied with NO ledger row at
+ * all -- the `db query --file` signature -- is invisible here, because the ledger
+ * has nothing to see. Two Phase 03A candidates were applied that way. This audit
+ * catches fabricated and misattributed rows; it cannot catch silence. The only
+ * defence against silence is to apply exclusively through the supported mechanism,
+ * onto a target whose history is fully accounted for.
+ */
+export function auditLedger({ ledger = [], declared = [], knownLocalVersions = null }) {
+  const problems = [];
+  const add = (category, detail) => problems.push({ category, detail });
+
+  if (ledger.length && (!knownLocalVersions || !knownLocalVersions.length)) {
+    add(LEDGER_REFUSAL.UNAUDITABLE_LEDGER,
+      `Remote history has ${ledger.length} row(s) but no known-local version set was supplied. ` +
+      `Refusing to audit a ledger in which we cannot distinguish truth from fabrication.`);
+    return { ok: false, problems };
+  }
+  const known = new Set(knownLocalVersions ?? []);
+
+  // (a) Rows the local tree cannot account for. The eleven wall-clock rows the first
+  //     staging run wrote are exactly this shape, and they are also what makes the
+  //     supported `db push` refuse outright.
+  for (const row of ledger) {
+    if (!known.has(row.version)) {
+      add(LEDGER_REFUSAL.PHANTOM_REMOTE_VERSION,
+        `ledger row ${row.version} ("${row.name ?? '<unnamed>'}") has no local artifact`);
+    }
+  }
+
+  // (b) A candidate's NAME recorded under a version that is not its canonical one:
+  //     the signature of an apply that ran but was recorded dishonestly.
+  const canonicalByName = new Map();
+  for (const d of declared) {
+    let id;
+    try { id = canonicalIdentity(d.file); } catch { continue; }
+    canonicalByName.set(id.name, id.version);
+    for (const row of ledger) {
+      if (row.name === id.name && row.version !== id.version) {
+        add(LEDGER_REFUSAL.WALL_CLOCK_SUBSTITUTION,
+          `"${row.name}" is recorded under ${row.version}; its canonical version is ${id.version}`);
+      }
+    }
+  }
+
+  // (c) One version, two rows.
+  const byVersion = new Map();
+  for (const row of ledger) {
+    const prior = byVersion.get(row.version);
+    if (prior !== undefined) {
+      add(LEDGER_REFUSAL.DUPLICATE_CANONICAL_VERSION,
+        `version ${row.version} appears more than once ("${prior}" and "${row.name}")`);
+    } else byVersion.set(row.version, row.name);
+  }
+
+  // (d) A known canonical version recorded under the wrong name.
+  for (const row of ledger) {
+    if (canonicalByName.has(row.name)) continue; // (b) owns this case
+    for (const [name, version] of canonicalByName) {
+      if (version === row.version && row.name && row.name !== name) {
+        add(LEDGER_REFUSAL.VERSION_NAME_MISMATCH,
+          `version ${row.version} is recorded as "${row.name}" but the local artifact of that version is "${name}"`);
+      }
+    }
+  }
+
+  return { ok: problems.length === 0, problems };
+}
+
+/**
  * Decide what may be pushed. Every refusal here corresponds to a way the first
  * staging run went wrong, or a way it could have gone wrong unnoticed.
  *
@@ -58,9 +163,14 @@ export function canonicalIdentity(filename) {
  * @param {object[]} opts.ledger         rows already in the remote history {version, name}
  * @param {string}   [opts.stage]        only plan candidates of this applyStage (default 'A')
  */
-export function planApply({ dir, declared, ledger, stage = 'A' }) {
+export function planApply({ dir, declared, ledger, stage = 'A', knownLocalVersions = null }) {
   const refusals = [];
   const plan = [];
+
+  // STAGE-BLOCK-02: audit remote history BEFORE planning anything. A poisoned
+  // ledger must never yield an executable plan, however clean the candidates are.
+  const audit = auditLedger({ ledger: ledger ?? [], declared, knownLocalVersions });
+  if (!audit.ok) for (const p of audit.problems) refusals.push(`[${p.category}] ${p.detail}`);
 
   const forStage = declared.filter((d) => d.applyStage === stage);
   if (!forStage.length) refusals.push(`No declared candidates for applyStage ${stage}`);
@@ -118,7 +228,25 @@ export function planApply({ dir, declared, ledger, stage = 'A' }) {
 
   // Ordering is part of correctness; these migrations are not commutative.
   plan.sort((a, b) => a.version.localeCompare(b.version));
-  return { plan, refusals, ok: refusals.length === 0 };
+
+  // Inserting into the past. If a pending candidate sorts before the newest row
+  // already applied, the resulting history reads backwards. On the contaminated
+  // staging ledger this fires independently of every other detector, because the
+  // wall-clock rows are dated AFTER the candidates they claim to be.
+  const highestApplied = (ledger ?? []).reduce((m, r) => (r.version > m ? r.version : m), '');
+  for (const p of plan) {
+    if (highestApplied && p.version < highestApplied) {
+      refusals.push(
+        `[${LEDGER_REFUSAL.IMPOSSIBLE_ORDERING}] ${p.file} (version ${p.version}) would be applied ` +
+        `after ${highestApplied}, which is already in the ledger`,
+      );
+    }
+  }
+
+  const ok = refusals.length === 0;
+  // A refused plan must not be executable. Returning candidates alongside refusals
+  // is how a caller ends up pushing anyway.
+  return { plan: ok ? plan : [], refusals, ok, ledgerAudit: audit };
 }
 
 /**
@@ -216,10 +344,52 @@ export function buildForwardRestoration({ candidateFile, rollbackBody, at, reaso
   return { filename: name, version: name.slice(0, 14), contents: `${header}\n${body}\n` };
 }
 
-/** The one supported apply command. Printed so the runbook cannot drift from the tool. */
-export function supportedApplyCommand({ projectRef, dryRun = true }) {
+/** The production project. Never a valid target for an operation that declares staging. */
+export const PRODUCTION_PROJECT_REF = 'kldlwszpfkdmsjrjhjym';
+
+/**
+ * TARGET SAFETY. The corrected rerun found `supabase projects list` reporting
+ * PRODUCTION as linked:true while the then-current apply command passed BOTH
+ * --linked and --project-ref. It resolved to the named ref -- verified empirically
+ * before use -- but safety resting on undocumented flag precedence is not safety.
+ * There is now exactly one target authority: the explicit ref.
+ */
+export function assertUnambiguousTarget(args) {
+  const a = Array.isArray(args) ? args : [];
+  const selectors = ['--linked', '--local', '--db-url', '--project-ref'].filter((f) => a.includes(f));
+  if (selectors.length > 1) {
+    throw new Error(
+      `Ambiguous target: ${selectors.join(' and ')} were all supplied. ` +
+      `Exactly one target-selection mechanism is permitted, and it must be --project-ref.`,
+    );
+  }
+  if (!a.includes('--project-ref')) {
+    throw new Error('No explicit target: --project-ref is required. --linked is never sufficient.');
+  }
+  return true;
+}
+
+/**
+ * The one supported apply command. Printed so the runbook cannot drift from the tool.
+ *
+ * @param {object}  opts
+ * @param {string}  opts.projectRef      explicit target; never inferred from link state
+ * @param {string} [opts.workdir]        isolated apply workspace (STAGE-BLOCK-03)
+ * @param {boolean}[opts.dryRun=true]
+ * @param {boolean}[opts.expectStaging=true] refuse the production ref outright
+ */
+export function supportedApplyCommand({ projectRef, workdir = null, dryRun = true, expectStaging = true }) {
   if (!projectRef) throw new Error('projectRef is required: the target must always be named explicitly');
-  return `supabase db push --linked --project-ref ${projectRef}${dryRun ? ' --dry-run' : ''}`;
+  if (expectStaging && projectRef === PRODUCTION_PROJECT_REF) {
+    throw new Error(`Refusing to build a staging command targeting the production project ${PRODUCTION_PROJECT_REF}.`);
+  }
+  const parts = ['supabase', 'db', 'push'];
+  if (workdir) parts.push('--workdir', workdir);
+  parts.push('--project-ref', projectRef);
+  if (dryRun) parts.push('--dry-run');
+  // Deliberately NO --linked. See assertUnambiguousTarget.
+  assertUnambiguousTarget(parts);
+  return parts.join(' ');
 }
 
 export const PROHIBITED_MECHANISMS = [
