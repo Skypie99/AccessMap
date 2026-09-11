@@ -552,7 +552,7 @@
         {
           "privilege": "SELECT",
           "grantee": "anon",
-          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "removedBy": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
           "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
           "provenBy": "supabase/tests/build33-compat.test.sql"
         }
@@ -696,7 +696,7 @@
         {
           "privilege": "SELECT",
           "grantee": "anon",
-          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "removedBy": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
           "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
           "provenBy": "supabase/tests/build33-compat.test.sql"
         }
@@ -798,7 +798,7 @@
         {
           "privilege": "SELECT",
           "grantee": "anon",
-          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "removedBy": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
           "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
           "provenBy": "supabase/tests/build33-compat.test.sql"
         }
@@ -936,7 +936,7 @@
         {
           "privilege": "SELECT",
           "grantee": "anon",
-          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "removedBy": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
           "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
           "provenBy": "supabase/tests/build33-compat.test.sql"
         }
@@ -1286,7 +1286,7 @@
         {
           "privilege": "SELECT",
           "grantee": "anon",
-          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "removedBy": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
           "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
           "provenBy": "supabase/tests/build33-compat.test.sql"
         }
@@ -1503,7 +1503,7 @@
           "lineEnd": 1078
         }
       ],
-      "reason": "Self row/profile fallback only; profile INSERT comes from Auth trigger owned by postgres. No email/streak column SELECT, no direct reward/system-field UPDATE, no client/service INSERT/DELETE. Keep avatar_object_key=null fallback subject to existing guard. is_admin SELECT is a DELIBERATE, TIME-BOXED STAGE A COMPATIBILITY RETENTION, not part of the secure end state: shipped Build 33 (iOS f5594171, pinned web ebf091c2) reads it at src/lib/admin.ts:31 and, without the grant, takes 42501 which the shipped catch turns into isAdmin=false \u2014 every admin silently loses the admin UI. It is revoked by 20260910120000_phase03a_fda026_stage_b_cutover once no client reading public.users directly is still in the field. FDA-026 stays OPEN until then.",
+      "reason": "Self row/profile fallback only; profile INSERT comes from Auth trigger owned by postgres. No email/streak column SELECT, no direct reward/system-field UPDATE, no client/service INSERT/DELETE. Keep avatar_object_key=null fallback subject to existing guard. is_admin SELECT is a DELIBERATE, TIME-BOXED STAGE A COMPATIBILITY RETENTION, not part of the secure end state: shipped Build 33 (iOS f5594171, pinned web ebf091c2) reads it at src/lib/admin.ts:31 and, without the grant, takes 42501 which the shipped catch turns into isAdmin=false \u2014 every admin silently loses the admin UI. It is revoked by 20260911130000_phase03a_fda026_stage_b_cutover once no client reading public.users directly is still in the field. FDA-026 stays OPEN until then.",
       "required": true,
       "columns": [
         "avatar_object_key",
@@ -1522,7 +1522,7 @@
         {
           "privilege": "SELECT (is_admin)",
           "grantee": "authenticated",
-          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "removedBy": "20260911130000_phase03a_fda026_stage_b_cutover.sql",
           "finding": "FDA-026",
           "shippedCallSite": "src/lib/admin.ts:31",
           "provenBy": "supabase/tests/build33-compat.test.sql"

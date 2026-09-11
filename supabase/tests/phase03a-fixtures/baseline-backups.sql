@@ -1,3 +1,8 @@
+-- PGTAP_KIND: fixture
+-- Added 2026-09-11: this file is a fixture exactly as baseline-extra.sql is, but
+-- carried no kind marker, so scripts/run-pgtap.mjs rejected DISCOVERY and exited
+-- before a single assertion ran -- the whole composed suite, blocked by a missing
+-- annotation on one fixture. Content is untouched.
 -- Local disposable schema/ACL model only. NEVER apply this fixture hosted.
 -- Seven captured historical backups; no rows, private values, indexes or constraints copied.
 BEGIN;

@@ -24,12 +24,15 @@
  * non-production target — belongs in the runbook, and is stated in the staging
  * rerun packet.
  */
+import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
 const ROOT = path.join(__dirname, '..', '..');
 const PRODUCTION_REF = 'kldlwszpfkdmsjrjhjym';
 const CANDIDATE = path.join(ROOT, 'supabase', 'migrations-next', '20260904000400_adopt_execute_revokes.sql');
+const CORRECTION = path.join(ROOT, 'supabase', 'migrations-next', 'phase03a',
+  '20260911120000_phase03a_webhook_target_env_scoped.sql');
 
 describe('STAGE-MF-04 — webhook target coupling is explicit, not incidental', () => {
   const sql = fs.readFileSync(CANDIDATE, 'utf8');
@@ -48,6 +51,33 @@ describe('STAGE-MF-04 — webhook target coupling is explicit, not incidental', 
     expect(body).toMatch(/IF v_secret IS NULL THEN[\s\S]*?RETURN NEW;[\s\S]*?END IF;/);
     // And the early return must come BEFORE the post, not after it.
     expect(body.indexOf('RETURN NEW;')).toBeLessThan(body.indexOf('net.http_post'));
+  });
+
+  it('is superseded by a forward correction that removes the literal entirely', () => {
+    // STAGE-MF-04. The rerun measured that this function is NOT a dormant literal:
+    // it is SECURITY DEFINER on an ENABLED trigger on public.flags, so any client
+    // that can update a flag's status runs it. Fail-closed via an absent Vault row
+    // was the only control -- an invariant maintained by absence.
+    const fix = fs.readFileSync(CORRECTION, 'utf8');
+    // The correction carries NO project-specific URL at all.
+    expect(fix).not.toContain(PRODUCTION_REF);
+    expect(fix).not.toMatch(/https:\/\/[a-z]{20}\.supabase\.co/);
+    // It reads the target from per-database config, with no default and no fallback.
+    expect(fix).toContain("WHERE name = 'webhook_endpoint'");
+    expect(fix).toMatch(/IF v_endpoint IS NULL[\s\S]*?RETURN NEW;/);
+    // Fail-closed must precede the post, for the endpoint as well as the secret.
+    const body = fix.slice(fix.indexOf('DECLARE v_secret'));
+    expect(body.indexOf('v_endpoint IS NULL')).toBeLessThan(body.indexOf('net.http_post'));
+    // And it must supersede the adoption, not precede it.
+    expect('20260911120000' > '20260904000400').toBe(true);
+  });
+
+  it('leaves the adoption candidate byte-identical, so contract truth survives', () => {
+    // Editing the adoption to remove the URL would make the repo disagree with
+    // production and defeat the whole point of adopting it.
+    const accepted = 'e8a3d880d361';
+    const actual = createHash('sha256').update(fs.readFileSync(CANDIDATE)).digest('hex');
+    expect(actual.slice(0, 12)).toBe(accepted);
   });
 
   it('enumerates every hardcoded project-specific URL in the apply set', () => {

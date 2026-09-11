@@ -1,0 +1,42 @@
+{
+ "runUnit": "PHASE03A_BLOCKERFIX_INT",
+ "OPERATION_STATE": "PREPARED",
+ "bankedAt": "2026-09-11T19:49:30.112735+00:00",
+ "codeReview": {
+  "STAGING_BLOCKER_CODE_REVIEW": "PASS",
+  "rounds": 2,
+  "r1MustFix": [
+   "the ledger detectors were unreachable through the shipped CLI (crash on the project's own fixture shape; knownLocalVersions never supplied) \u2014 CLOSED",
+   "tmpRoot() trusted $TMPDIR, so TMPDIR=$HOME placed a destroyable workspace in the home directory \u2014 CLOSED"
+  ],
+  "r1ShouldFix": [
+   "endpoint regex required a trailing slash \u2014 CLOSED without loosening what is accepted"
+  ],
+  "r2Findings": "no MUST-FIX; one minor SHOULD-FIX carried forward deliberately, see acceptedLimitations",
+  "independentlyReproducedByReviewer": [
+   "CLI tally 11 phantom / 6 wall-clock / 8 ordering = 25, plan empty",
+   "every TMPDIR bypass route probed and refused (symlink into home, /private/var symlink into home, relative, unset, filesystem root, inside a repo)",
+   "composed pgTAP 254/254 tallied from raw TAP, both pinned pgTAP hashes verified against the committed contract",
+   "full Jest 14/32/4361/4407 with the +16 delta attributed exactly",
+   "all 25 contract hashes re-verified against disk"
+  ]
+ },
+ "acceptedLimitations": [
+  "tmpRoot() throws a raw ENOENT rather than a framed refusal when TMPDIR points at a non-existent path. Fails safe \u2014 nothing is created. NOT fixed: taking a cosmetic change after a PASS would invalidate the freeze, and the same discipline was applied to the round-5 digest-collision finding earlier in this phase.",
+  "A candidate applied with NO ledger row at all is invisible to auditLedger \u2014 a ledger cannot detect silence. Documented in the module and confirmed accurate by the reviewer, who built the repro.",
+  "listComments()'s users embed raises for anon. PRE-EXISTING, asserted as such in build33-compat, not caused by Stage A."
+ ],
+ "source": {
+  "codeSha": "3ac416e2cd19c7322061efb689abc5bebcef3a83",
+  "codeTree": "99ee18fbeb72e0f31d501f749df920d30ea907de",
+  "branch": "repair/flagstone-p03a-staging-blockers-20260911"
+ },
+ "integrationTarget": {
+  "branch": "integration/flagstone-b33-convergence-20260903",
+  "headBefore": "c7dab377eb8444ed3e97d2fbd9109014464ff3b1",
+  "historicalAcceptedInt": "c9c80aa12713400345732547c88edbc71e113ede \u2014 present, must remain unamended"
+ },
+ "mechanism": "git merge --no-ff by exact SHA. No squash, no rebase, no hard reset, no force push, no main merge.",
+ "stagingMutation": "NONE",
+ "productionAuthority": "NONE"
+}

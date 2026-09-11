@@ -83,7 +83,7 @@ GRANT EXECUTE ON FUNCTION public.current_user_can_admin(),
 --   DROP POLICY "users readable by authenticated" ON public.users;
 --   REVOKE SELECT (is_admin) ON public.users FROM PUBLIC, anon, authenticated;
 --
--- They moved to 20260910120000_phase03a_fda026_stage_b_cutover.sql because
+-- They moved to 20260911130000_phase03a_fda026_stage_b_cutover.sql because
 -- applying them breaks the CURRENTLY SHIPPED clients, silently:
 --   * admin.ts reads users.is_admin and would take 42501, and the shipped code
 --     swallows that into isAdmin=false, so every admin loses the admin UI with

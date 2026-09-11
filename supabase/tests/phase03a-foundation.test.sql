@@ -105,7 +105,7 @@ SELECT ok((EXISTS(SELECT 1 FROM pg_policy WHERE polrelid='storage.objects'::regc
 RESET ROLE; SET LOCAL request.jwt.claim.sub = '30000000-0000-4000-8000-000000000001'; SET LOCAL request.jwt.claim.role = 'authenticated'; SET LOCAL ROLE authenticated;
 
 -- FDA-026 STAGE A: profile enumeration is deliberately still OPEN. Closing it is
--- 20260910120000_phase03a_fda026_stage_b_cutover, held back because shipped Build 33
+-- 20260911130000_phase03a_fda026_stage_b_cutover, held back because shipped Build 33
 -- reads public.users directly. These two assertions therefore describe the Stage A
 -- posture; the CLOSED posture is proven in supabase/tests/build33-compat.test.sql,
 -- which applies Stage B inside its own transaction and asserts the count collapses.
