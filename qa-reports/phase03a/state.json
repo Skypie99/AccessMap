@@ -1,8 +1,8 @@
 {
   "bankVersion": 1,
   "phase": "03A",
-  "updatedUtc": "2026-09-10T19:40:00Z",
-  "currentGeneration": "2026-09-10-stage",
+  "updatedUtc": "2026-09-11T04:40:00Z",
+  "currentGeneration": "2026-09-10-stagefix",
   "generations": [
     "2026-09-04",
     "2026-09-04-resume",
@@ -13,10 +13,11 @@
     "2026-09-09-gab3",
     "2026-09-09-gab4",
     "2026-09-10-code-accept-int",
-    "2026-09-10-stage"
+    "2026-09-10-stage",
+    "2026-09-10-stagefix"
   ],
-  "task": "Phase 03A hosted staging execution (STAGE-AUTHORIZED-20260910-R1)",
-  "status": "STAGE_COMPLETE_STEPS_1_TO_14; INDEPENDENT_ACCEPTANCE = ACCEPT_WITH_MANDATORY_CHANGES; 8 MUST-FIX OPEN; AWAITING OWNER",
+  "task": "Stage mandatory-fix return to CODE + re-INT (FLAGSTONE-P03A-STAGE-MANDATORY-FIX-20260910-R1)",
+  "status": "STAGEFIX PASS; INT c9c80aa1 APPLIED, VERIFIED AND INDEPENDENTLY ACCEPTED; STAGING RERUN PACKET NEXT",
   "mode": "STAGING_MUTATION_AUTHORIZED_WITHIN_EXACT_BOUNDARIES",
   "sourceSha": "0a6a6b03fd0cbe72f70f67260f6cab746e098f6a",
   "sourceTree": "857411dc733b93686d789a72e461856698bec814",
@@ -28,7 +29,7 @@
   "worktree": "/Users/skypie/AccessMap-codex/p03a-backend-foundation-20260903",
   "repositoryRemote": "Skypie99/AccessMap",
   "ownerApproval": "REQUIRED BEFORE IMPLEMENTATION",
-  "nextAction": "Owner decision. Do NOT apply to production: 8 MUST-FIX items are open, including that this set silently breaks admin and the leaderboard on every shipped Build 33 client, and that the migration ledger cannot be trusted as a record of what is applied.",
+  "nextAction": "Finalise the staging rerun packet, then STOP before any staging mutation.",
   "gatesPreserved": {
     "BACKEND_FOUNDATION_GATE": "BLOCKED",
     "PHASE_GATE": "BLOCKED",
@@ -299,9 +300,130 @@
     "STAGING_CLEANUP_REQUIRED": "YES \u2014 retained, NOT deleted; 4 of the 12 conditions fail and 2 are partial",
     "structuralDigestNow": "c70e119a775566bf3a22b103f817b181f1d596e598da25fbe5df2deebf4fc03a",
     "residue": "NONE \u2014 all synthetic probe rows removed; synthetic auth user deleted; auth.users 0, flags 0, feedback 0, limiter ledger empty.",
-    "BUILD33_COMPATIBILITY": "FAIL \u2014 MUST-FIX. Applying this set silently breaks admin (42501 on users.is_admin -> degrades to false) and the leaderboard/rank (RLS own-row-only) on every shipped Build 33 client, independently of the limiter cutover. Found by the independent acceptor, verified by the author.",
-    "COMMITTED_LINK_STATE": "FAIL \u2014 MUST-FIX. supabase/.temp/linked-project.json is tracked in git with ref = the PRODUCTION project. Not fixed here because it is a tracked non-qa file and changing it would break the frozen CODE tree identity.",
-    "LEDGER_TRUSTWORTHINESS": "FAIL \u2014 MUST-FIX. Applies recorded under wall-clock versions not canonical ones; 2 candidates have no ledger row at all; rollback never unwinds ledger rows."
+    "BUILD33_COMPATIBILITY": "RESOLVED for Stage A (STAGE-MF-06). FDA-026 is split: Stage A is additive and Stage B (20260910120000) carries the cutover and is withheld from the apply set. supabase/tests/build33-compat.test.sql exercises the shipped authenticated AND guest query shapes with a Stage B negative control for each half. FDA-026 remains OPEN until the Stage B cutover \u2014 explicitly not claimed closed.",
+    "COMMITTED_LINK_STATE": "RESOLVED by the stage-fix increment (STAGE-MF-07). supabase/.temp/ is untracked and gitignored and src/__tests__/projectTargetSafety.guard.test.ts guards it. Deliberately NOT repointed at staging, which would only swap one stale dangerous target for another. WAS: \"tracked in git with ref = the PRODUCTION project\u2026 Not fixed here\" \u2014 true when written, made false by INT c9c80aa1.",
+    "LEDGER_TRUSTWORTHINESS": "ADDRESSED by tooling (STAGE-MF-01/08): scripts/canonical-migration-identity.mjs with a CLI, plus a forward-only restoration model that never deletes or rewrites a ledger row. The defect itself remains a property of the FIRST staging run and is why that run is not production eligible."
   },
-  "openMustFixCount": 8
+  "openMustFixCount": 0,
+  "stagefix": {
+    "MUST_FIX_INVENTORY": "8 / 8 VERIFIED (reconciled: the acceptor issued 5 MUST-FIX; the 8 is the author-combined open list)",
+    "repairBranch": "repair/flagstone-p03a-stage-mandatory-fixes-20260910",
+    "repairWorktree": "/Users/skypie/AccessMap-worktrees/flagstone-p03a-stagefix-20260910",
+    "PHASE03A_STAGEFIX_CODE_SHA": "38bb76fa6ed1d4795a359f9fd54fd5390e81bb87",
+    "PHASE03A_STAGEFIX_CODE_TREE": "a3d7fa8bf3d6094c60b2b0f4ef788a44a66d6f49",
+    "closed": [
+      "STAGE-MF-01",
+      "STAGE-MF-02",
+      "STAGE-MF-06",
+      "STAGE-MF-07",
+      "STAGE-MF-08"
+    ],
+    "openByDesignOwnerDecisions": [
+      "STAGE-MF-03",
+      "STAGE-MF-04",
+      "STAGE-MF-05"
+    ],
+    "localAcceptance": "254/254 pgTAP (217 -> 242 -> 253 -> 254); all four replay gates true; Jest 14 failed / 32 todo / 4250 passed / 4296 total, EXACT in both directions",
+    "FDA028_V4_PRESERVED": "YES \u2014 both artifacts byte-identical; no FDA-028 test changed",
+    "FDA_026": "OPEN until the Stage B cutover \u2014 explicitly not claimed closed",
+    "STAGE_MANDATORY_FIX_CODE_REVIEW": "PASS (round 5; rounds 1-4 issued 5+3+3+1 MUST-FIX, all addressed)",
+    "PHASE_03A_INT_GATE": "PASS",
+    "PREVIOUS_PRODUCTION_PACKET": "SUPERSEDED_BY_STAGE_MANDATORY_FIXES",
+    "STAGING_MUTATIONS": "NONE",
+    "PRODUCTION_MUTATIONS": "NONE",
+    "STAGING_CLEANUP_SAFE": "NO",
+    "STAGING_CLEANUP_REQUIRED": "YES",
+    "reviewRound1": {
+      "verdict": "ACCEPT WITH MANDATORY CHANGES",
+      "mustFix": 5,
+      "headline": "Stage A also broke shipped GUEST (anon) reads \u2014 the same class of defect the increment exists to eliminate, missed by me because the compatibility suite never assumed the anon role.",
+      "allFiveAddressed": true
+    },
+    "supersededFreeze": "2e4a9a15dc2e271e33c2ca2dbae6a19b2cdd23d9 (round-1 freeze; superseded after review)",
+    "supersededFreezes": [
+      "2e4a9a15 (round-1)",
+      "7c96a6ea / a274b9dc (round-2)"
+    ],
+    "reviewRound2": {
+      "verdict": "ACCEPT WITH MANDATORY CHANGES",
+      "mustFix": 3,
+      "headline": "My guest assertions tested a paraphrase, not the shipped COMMENT_SELECT embed; and the capture still hid five real authorization changes while claiming it excluded nothing.",
+      "allThreeAddressed": true,
+      "reviewerUpheldMyCorrectionOfRound1": "the security_invoker view finding",
+      "roundOneItemsConfirmedClosed": [
+        "guest breakage",
+        "Jest honesty",
+        "tooling runnable",
+        "MF-04 reclassification"
+      ]
+    },
+    "selfCaughtFromReviewerStandard": "production-catalog-capture.v2.json has column definitions but NO column-privilege data, so my \"not in production\" half-claim about the guest embed was not supported. Rewritten as a bounded statement and recorded as an evidence gap in this tree.",
+    "reviewRound3": {
+      "attempt1": "TERMINATED on a session rate limit before producing output; nothing written, nothing to reconcile.",
+      "attempt2": "COMPLETE \u2014 ACCEPT WITH MANDATORY CHANGES (3)",
+      "headlinePositive": "W5 found NO THIRD INSTANCE of the core defect. Searched all three roles across tables, columns, functions, sequences, schemas, views, policies and embeds, plus the Edge Function surface: zero privilege gains. The reviewer states the privilege method is now sound.",
+      "mustFix": [
+        "I traded an overclaim for an underclaim: expanded-privileges.json IS in the tree and records anon.display_name can_select=false for the production project, so the production half of the guest-embed claim was established all along.",
+        "EIGHT_FIX_DISPOSITION.json still carried the \"nothing structural is excluded\" claim verbatim.",
+        "Four more capture collisions: reloptions (ALTER VIEW security_invoker=false), proowner, and roles (BYPASSRLS / role membership) \u2014 none captured."
+      ],
+      "allThreeAddressed": true,
+      "deeperCritiqueAccepted": "My \"captures every surface\" test was a toContain over hardcoded names \u2014 it passed while four real collisions existed, the same failure one generation later. Replaced with a declared AUTHORIZATION_SURFACES registry (20 entries) from which the suite DERIVES a behavioural collision test each."
+    },
+    "reviewPattern": "Round 1 found a functional defect (authenticated breakage). Round 2 found a functional defect (guest breakage) plus claim/capture issues. Round 3 found NO functional defect \u2014 only claim accuracy and capture completeness. The defect CLASS appears closed; what keeps surfacing is the honesty and completeness of the evidence layer.",
+    "reviewRound4": {
+      "verdict": "ACCEPT WITH MANDATORY CHANGES \u2014 1 MUST-FIX, seven of eight checks PASS",
+      "reviewedCandidate": "41f3d63113b93f589ec02aec0399b4954ff08242",
+      "mustFix": "The AUTHORIZATION_SURFACES registry claimed its derived tests make \"a surface with a test that does not actually detect its change fail too\". False: those tests feed synthetic objects to the comparator and never execute CATALOG_SQL or touch a database. Demonstrated, not argued \u2014 functions.body passed its derived test while missing a SECURITY DEFINER body inverted via BEGIN ATOMIC (prosrc empty, md5('') equal both sides); and pg_auth_members inherit_option took an anon read from denied to permitted with an identical checksum.",
+      "reviewerFraming": "Not asking for a tenth field; the durable fix is to stop claiming the property.",
+      "addressedAtCommit": "06088bec1d9032bf7525a31a7b532d95471cb3e3",
+      "howAddressed": [
+        "Withdrew the completeness claim; the header now states what the derived tests prove, what they do not, and what is knowingly uncaptured (auth, vault). A test pins that honesty.",
+        "Captured the two demonstrated gaps: pg_get_function_sqlbody, and pg_auth_members admin/inherit/set options.",
+        "Section-scoped the SQL-text check. It had matched \"owner\" and four *.acl entries anywhere in the query. The scoped version FAILED on its first run because \"roles\" is both a top-level section and a field inside policies, truncating the slice; anchored on line-initial keys. Negative control confirms it bites."
+      ],
+      "checksThatPassedOnReviewerEvidence": [
+        "X1 evidence claim",
+        "X3 stale claim removed",
+        "X4 254/254 all gates",
+        "X5 no third instance (spot-checked independently)",
+        "X6 Jest exact",
+        "X7 FDA-028 untouched"
+      ],
+      "reviewerAlsoWithdrewOwnCandidate": "One proposed collision was retracted after the reviewer found its own behavioural test invalid (superuser SET ROLE bypassed it)."
+    },
+    "completenessClaimsWithdrawn": 2,
+    "reviewRound5": {
+      "verdict": "PASS",
+      "mustFix": 0,
+      "report": "INDEPENDENT_STAGEFIX_CODE_REVIEW_R5.md",
+      "reviewedCandidate": "e89d53deb2f0f003a7626c53f6cc8222fca69c3f"
+    },
+    "PHASE03A_REVISED_INT_SHA": "c9c80aa12713400345732547c88edbc71e113ede",
+    "PHASE03A_REVISED_INT_TREE": "a3d7fa8bf3d6094c60b2b0f4ef788a44a66d6f49",
+    "independentIntAcceptance": {
+      "verdict": "ACCEPT WITH MANDATORY CHANGES -> both addressed in the acceptance commit",
+      "report": "2026-09-10-stagefix/INDEPENDENT_INT_ACCEPTANCE_R2.md",
+      "mergeFindings": "Z1-Z5 all clean: 0 paths and 0 blobs in the merge from neither parent; supabase/migrations is the SAME tree object in all three; release:verify PASS; 254/254 on the integrated tree.",
+      "mustFix1_snapshotStamp": "db:snapshot:check was GREEN on parent1 and RED on the integrated tree. Cause isolated to ONE of 87 stamp inputs \u2014 package.json, from the seven npm scripts this increment adds. Only the \"ordered inputs changed\" condition fired, never \"generated snapshot content changed\", so it was provenance staleness rather than schema divergence. Regenerated: schema.generated.sql did NOT move, only the input manifest hash and package.json's entry. db:snapshot:check now reports current, and the negative rehearsal still rejects all 9 tamper classes. It survived five review rounds because db:snapshot:check was missing from my own recorded gate list \u2014 a gap in my acceptance coverage, now closed.",
+      "mustFix2_staleStateJson": "The integrated tree carried the PRE-stagefix state.json: openMustFixCount 8, no stagefix generation or block, and a present-tense claim that the link file \"is tracked\u2026 Not fixed here\" that this very integration made false. Brought current here, per the repo convention the prior INT acceptance commit 2ef51ba set."
+    }
+  },
+  "resumeInspection_2026_09_11": {
+    "jestForCandidate06088bec": "HAD NOT COMPLETED \u2014 never started. Newest prior run was 17:24 against a20cfc00; 06088bec was committed 17:40:54. Started on resume.",
+    "candidateIsStillFrozenAt": "06088bec \u2014 no later bookkeeping commit existed; the state bank was STALE at a20cfc00 and is corrected here.",
+    "round5Dispatched": false,
+    "partialRound5Report": false,
+    "boundariesVerified": {
+      "integrationTargetHead": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4 \u2014 untouched and clean",
+      "pushed": false,
+      "remoteBranchesContainingHead": 0,
+      "mainRef": "70b52a30e9fff0f7d538509b110212bb8d872391 \u2014 unchanged",
+      "stagingMutations": "NONE",
+      "productionMutations": "NONE",
+      "fda028ForwardHash": "unchanged",
+      "fda028TestTree": "identical to the accepted CODE sha"
+    }
+  },
+  "openMustFixNote": "Was 8. All eight are dispositioned: five closed by code or tooling, three are owner decisions (STAGE-MF-03 production Vault secret, STAGE-MF-04 hardcoded webhook URL, STAGE-MF-05 applying with the guest bypass open). See 2026-09-10-stagefix/EIGHT_FIX_DISPOSITION.json."
 }
