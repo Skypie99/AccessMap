@@ -1,0 +1,65 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": 4,
+ "bankedAt": "2026-09-11T20:24:02.585628+00:00",
+ "CANONICAL_MIGRATION_APPLY": "PASS",
+ "CANONICAL_MIGRATION_IDENTITY": "PASS",
+ "mechanism": "supabase db push --workdir <marked disposable workspace> --project-ref cepayqmsoqxshsiyqnvz",
+ "prohibitedMechanismsUsed": "NONE \u2014 no --linked, no --out, no db query --file, no Management API apply, no ledger edit",
+ "plan": {
+  "ok": true,
+  "refusals": 0,
+  "stageACandidates": 9
+ },
+ "dryRun": {
+  "count": 14,
+  "canonicalOrder": true,
+  "seeds": [],
+  "roles": [],
+  "stageBWithheld": true
+ },
+ "apply": {
+  "applied": 14,
+  "errors": 0
+ },
+ "ledgerAfter": {
+  "rows": 85,
+  "expected": "71 baseline + 14 = 85",
+  "verifyResult": {
+   "passed": true,
+   "problems": []
+  },
+  "eachCandidateExactlyOnceUnderCanonicalVersion": true,
+  "phantomVersions": "NONE",
+  "wallClockSubstitutions": "NONE",
+  "orderingAscending": true
+ },
+ "objectsLanded": {
+  "stageARpcs": 4,
+  "limiterSchema": 1,
+  "limiterFunctions": 20,
+  "limiterRelations": 11,
+  "guardWindowDomainTrigger": 1,
+  "notifyFlagStatusWebhook": 1,
+  "privateSchema": 1
+ },
+ "mf04PostureLive": {
+  "noProductionUrl": true,
+  "readsEndpointConfig": true,
+  "failsClosedBeforePost": true
+ },
+ "vaultIo": {
+  "VAULT_IO_STAGING": "PASS",
+  "readEpochKeyBytes": 64,
+  "currentEpochKey": "epoch 20707, 32-byte ratcheted key derived from the 64-byte root",
+  "significance": "proves the hex-encoding correction was right \u2014 a base64 secret would have raised here"
+ },
+ "captures": {
+  "CATALOG_BASELINE": "f9cc6f95bd6fafc631eef63409a608abcd4041a3111f0edfe45bab4b14560d20",
+  "CATALOG_FIRST_APPLY": "079c2030fcb034500d7f8885f306d84491e9985eb0910d7cbc24117a4365109d"
+ },
+ "nextOperation": "STEP 5 \u2014 Build 33 compatibility against real role contexts",
+ "oldStagingMutations": "NONE",
+ "productionMutations": "NONE"
+}
