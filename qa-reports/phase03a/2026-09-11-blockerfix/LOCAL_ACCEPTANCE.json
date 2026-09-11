@@ -1,0 +1,104 @@
+{
+ "unit": "Phase 03A staging-blocker repair \u2014 local acceptance (resumed)",
+ "promptId": "FLAGSTONE-P03A-STAGING-BLOCKERS-CODE-20260911-R1",
+ "OPERATION_STATE": "VERIFIED",
+ "capturedUtc": "2026-09-11T19:29:08.860869+00:00",
+ "branch": "repair/flagstone-p03a-staging-blockers-20260911",
+ "resumedFrom": "8fe9892 (which itself resumed 73ce8c6)",
+ "WORKSPACE_DESTRUCTION_GUARD": {
+  "result": "PASS \u2014 36/36, re-run in this session",
+  "postRunCheck": "all 42 registered worktrees still present after the suite",
+  "incidentCause": "destroyWorkspace() accepted any directory holding supabase/config.toml. Every worktree root has one. A test calling destroyWorkspace(repoRoot) expecting a refusal deleted the tree instead \u2014 six runs, six losses. My bug; I had attributed it to an external sweeper, which was wrong.",
+  "nowRequires": "realpath, no symlink, directly under the temp root, the flagstone-p03a-apply- prefix, a parsing .p03a-workspace marker of the right type and version, generated shape, and explicit refusal of filesystem root, temp root, home, cwd, this repo root and anything carrying .git",
+  "testDesign": "inspectWorkspaceForDestruction() is exported and pure, so dangerous real paths are interrogated without ever being handed to the destructive call"
+ },
+ "gates": {
+  "typecheck": "PASS (exit 0)",
+  "lint": "PASS (exit 0, 0 errors, 91 warnings \u2014 matches the recorded baseline)",
+  "contract:check": "PASS \u2014 migration-crosswalk.v1.json is current",
+  "db:snapshot:check": "PASS (exit 0) \u2014 schema.generated.sql is current (87 ordered inputs, stamp v2)",
+  "db:apply:plan": "PASS \u2014 9 candidates may be applied, in canonical order",
+  "db:rollback:verify": "PASS (exit 0)",
+  "composedPgTap": "PASS \u2014 254/254, 0 failures"
+ },
+ "correctionsToThePriorRecord": [
+  "db:snapshot:check was recorded as 'STALE, exit 0'. The real exit code is 1 \u2014 it had been measured through a pipe, the project's known exit-code-masking gotcha. Regenerated; now genuinely 0.",
+  "Its 'inherited, not caused by this work' claim was CORRECT and I verified it before accepting: the accepted pre-repair tree 38bb76fa shows the same staleness, cause is package.json alone. My first reading that the MF-04 migration contributed was wrong \u2014 the phase03a candidate directory is not a stamp input.",
+  "composedPgTap was recorded NOT RUN / INVALID at discovery, with 254/254 explicitly not claimable as re-measured. It is now re-measured on this tree."
+ ],
+ "composedPgTap": {
+  "total": "254/254",
+  "failures": 0,
+  "suites": {
+   "promptb_media_key_guards": "25/25",
+   "phase03a-foundation": "113/113",
+   "phase03a-privileges": "79/79",
+   "build33-compat": "37/37"
+  },
+  "pgTapProvenance": {
+   "version": "1.3.4",
+   "sourceCommit": "968eb53a33114e83042b3bdb0c664b5b80cf8bdf",
+   "archiveSha256Verified": "78822aa24ab5119f6b1f57de1a25223e6c4a31f4df6d3ab16ca2aadd1dbdea6c \u2014 matches the pinned value",
+   "generatedSqlSha256Verified": "d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3 \u2014 byte-identical to what the prior acceptance used",
+   "installMode": "upstream_sql_load into a disposable database; NO make install; system extension dir verified unchanged before and after"
+  },
+  "unblockedBy": "a PGTAP_KIND marker on baseline-backups.sql, whose absence made run-pgtap.mjs reject discovery before any assertion ran",
+  "localProofPassed": true,
+  "privilegeProofPassed": true,
+  "restorationExact": true,
+  "reapplyDeterministic": true,
+  "privilegeGuard": "passed, 0 failures (23 relations / 2 sequences / 35 functions)",
+  "privilegeGuardRehearsal": "passed \u2014 new table, new view and new function each correctly rejected"
+ },
+ "block02": "CLOSED \u2014 auditLedger runs before planning; the real 82-row contaminated ledger is refused with 25 problems (11 phantom / 6 wall-clock / 8 ordering) and an EMPTY plan; clean baseline still plans; exactly-applied is a no-op. 28/28.",
+ "block03": "CLOSED \u2014 isolated --workdir apply workspace; canonical filenames and hashes preserved; every pending file declared and bound; repo migrations/ never written to; nothing promoted from migrations-next. Guard 36/36.",
+ "mf04": "CLOSED_FOR_STAGE \u2014 no hardcoded production URL in the candidate set; endpoint read from per-database Vault config with no default; fails closed before any network call for a missing OR malformed endpoint; adoption candidate left byte-identical. Production precondition (create webhook_endpoint BEFORE applying, or notifications stop) recorded in the migration header and carried to the packet.",
+ "targetSafety": "CLOSED \u2014 a target token is one token. Both builders validate the VALUE before the production compare, and both expose argv so an executing caller never re-tokenizes. 27 regressions.",
+ "fda028": {
+  "FDA028_V4_PRESERVED": "YES",
+  "forwardSha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771",
+  "rollbackSha256": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302",
+  "diffSinceAcceptedCodeSha": "empty"
+ },
+ "jestBaselineReconciliation": {
+  "baselineAt06088bec": {
+   "failed": 14,
+   "todo": 32,
+   "passed": 4272,
+   "total": 4318
+  },
+  "thisRun": {
+   "suitesFailed": 12,
+   "suitesPassed": 279,
+   "failed": 14,
+   "todo": 32,
+   "passed": 4345,
+   "total": 4391
+  },
+  "deltaVsPriorAcceptance": "+27 total, +27 passed \u2014 exactly targetTokenSafety.test.ts",
+  "reconcilesExactlyByName": true,
+  "beyondBaseline": [],
+  "inheritedNowPassing": [],
+  "inheritedFailuresByName": [
+   "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) \u203a fires the haptic, forwards every injected prop, adds no visual dim",
+   "Explore close targets \u203a MapScreen heat notice close controls are real 44pt targets",
+   "FV-1 \u2014 focused fields stay in their owning scroller \u203a Address Search scrolls the full body, including its focused input",
+   "T8 \u2014 one spoken voice (source contract) \u203a each triage action names its flag (category + conditional distance)",
+   "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism \u203a Recipe D \u2014 every delegate is a real, live consumer (the list drains)",
+   "TaskCard \u2014 T8: each action names its flag \u203a with a location, the label carries category THEN distance",
+   "TaskCard \u2014 T8: each action names its flag \u203a with no location, action labels are category-only (no distance)",
+   "Wave 2 \u2014 expanded modal adoption \u203a keeps Flag Detail hand-built and gives it expanded safe-area geometry",
+   "focus-in standard \u2014 every dismissable moves the SR cursor in on open \u203a every ALLOWED entry still matches exactly one live surface",
+   "map-chrome budget \u2014 the ONE persistent command bar \u203a (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8",
+   "the control now lives in the \u22ef tool sheet \u203a VoiceOver order: search, then the circles, then the sheet rows",
+   "the dismissal standard \u203a C \u00b7 every surface is still reduced-motion gated",
+   "the dismissal standard \u203a J \u00b7 focus return is wired end to end, and nothing else claims onDismiss",
+   "the privacy screen renders Sky's document, verbatim \u203a every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+  ]
+ },
+ "stagingMutations": "NONE",
+ "productionMutations": "NONE",
+ "oldStagingBranch": "RETAINED_AS_EVIDENCE, unmutated",
+ "pushes": "NONE",
+ "mainMerges": "NONE"
+}
