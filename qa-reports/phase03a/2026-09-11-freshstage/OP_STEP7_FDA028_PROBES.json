@@ -1,0 +1,62 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": 7,
+ "bankedAt": "2026-09-11T20:33:30.715265+00:00",
+ "FDA028_HOSTED": "HOLD \u2014 see OP_STEP7_FDA028_FINDING.json. The committed acceptance suite is not hosted-runnable, so a 38/38-style regression cannot be reproduced from the repository. The named probes below ARE hosted evidence and are reproducible.",
+ "FDA028_CONCURRENCY": {
+  "result": "PASS \u2014 NO OVERSHOOT",
+  "harness": "HOSTED_CONCURRENCY_PROBE.sh, banked beside this receipt (the committed concurrency.sh is local-only: it hardcodes psql -h 127.0.0.1 and uses the invalid 'ramp' category)",
+  "attempts": 25,
+  "allowance": 10,
+  "admitted": 10,
+  "refused": 15,
+  "realFlagsRowsInserted": 10,
+  "ledgerUnits": 10,
+  "grants": 10,
+  "orphans": 0,
+  "assertion": "admitted == real rows == ledger units == allowance, under genuine parallel load against the hosted database",
+  "fullPath": "admission + ledger + REAL public.flags INSERT, not a dry admission count"
+ },
+ "namedHostedProbes": {
+  "P1_limiterSurfaceIsolation": "PASS \u2014 anon USAGE false, authenticated USAGE false, service_role true",
+  "P2_entryPointGrants": "PASS \u2014 admit_guest_flag, admit_guest_feedback and purge are granted to service_role ONLY",
+  "P3_anonCannotReachLimiter": "PASS \u2014 as the real anon role: ERROR permission denied for schema limiter",
+  "P4_domainGuard": "PASS \u2014 changing window_seconds while limiter.bucket has rows raises FDA028 P0001 with the drain instruction",
+  "P5_orphanGrantRejected": "PASS \u2014 FK grant_parent_fk rejects an orphan grant insert (23503)",
+  "P6_vaultIo": "PASS \u2014 read_epoch_key 64 bytes, current_epoch_key 32-byte ratcheted key at epoch 20707"
+ },
+ "MF_04": {
+  "result": "CLOSED_FOR_STAGE",
+  "deployedFunction": "no production URL in the body; reads webhook_endpoint from config",
+  "secretGate": "with both absent, a real status UPDATE warned 'vault secret missing - skipping' and pg_net queue stayed 0",
+  "endpointGateProvenSpecifically": {
+   "why": "the first probe stopped at the SECRET gate, which is pre-existing. MF-04's actual contribution is the ENDPOINT gate, so that path had to be exercised on its own or the new code was untested.",
+   "method": "inside a transaction that was ROLLED BACK, webhook_secret was created transiently so the function would pass the secret check and reach the endpoint check. No endpoint exists, so no post was structurally possible at any point.",
+   "observed": "WARNING [notify_flag_status_webhook] no valid webhook_endpoint configured - skipping; pg_net queue 0 inside the transaction",
+   "afterRollback": "webhook_secret rows 0 \u2014 the 'never on a non-production target' invariant holds",
+   "productionRequestsSent": 0
+  }
+ },
+ "MF_05": {
+  "ROLLOUT_STAGE": "S3_LIMITER_PRESENT_BYPASS_OPEN",
+  "measured": {
+   "limiterPresent": true,
+   "limiterReachableByAnonOrAuthenticated": false,
+   "anonDirectInsertOnFlags": true,
+   "anonInsertPolicyOnFlags": true,
+   "anonInsertOnFeedback": true
+  },
+  "disposition": "OPEN_ROLLOUT_DECISION \u2014 matches the expected classification exactly; not closed, per the owner decision"
+ },
+ "stagingStateRestored": {
+  "limiterConfig": "restored byte-for-byte to the shipped values recorded before the probes",
+  "residueDrained": {
+   "flags": 0,
+   "buckets": 0,
+   "grants": 0,
+   "pgNetQueue": 0
+  }
+ },
+ "nextOperation": "STEP 9 IPv6, STEP 10 round-trip capture, STEP 11 forward recovery, STEP 12 evidence gates"
+}
