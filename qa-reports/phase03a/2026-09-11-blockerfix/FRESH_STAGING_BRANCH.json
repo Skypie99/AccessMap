@@ -1,0 +1,53 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_BRANCH",
+ "OPERATION_STATE": "VERIFIED",
+ "bankedAt": "2026-09-11T20:05:09.413104+00:00",
+ "authorizedBy": "this prompt, only after STAGING_BLOCKER_CODE_REVIEW: PASS and PHASE_03A_INT_GATE: PASS",
+ "FRESH_STAGING_PROJECT_REF": "cepayqmsoqxshsiyqnvz",
+ "FRESH_STAGING_BRANCH_ID": "4a37413a-01c2-4ab2-8bf8-a17a42a549b8",
+ "FRESH_STAGING_NAME": "flagstone-p03a-rerun-clean-20260911",
+ "FRESH_STAGING_PARENT": "kldlwszpfkdmsjrjhjym",
+ "FRESH_STAGING_WITH_DATA": false,
+ "persistent": false,
+ "isDefault": false,
+ "region": "us-west-2",
+ "status": "ACTIVE_HEALTHY",
+ "FRESH_STAGING_IDENTITY_GATE": "PASS",
+ "identityChecks": {
+  "refNotProduction": "PASS \u2014 cepayqmsoqxshsiyqnvz != kldlwszpfkdmsjrjhjym",
+  "refNotOldContaminatedStaging": "PASS \u2014 != ctshxbykuemeqnofqcdh",
+  "parentVerifiedImmediatelyBeforeCreation": "kldlwszpfkdmsjrjhjym, ACTIVE_HEALTHY",
+  "withDataFalse": "PASS \u2014 --with-data is opt-in and was omitted; the API echoed with_data:false",
+  "initialLedger": "71 rows, EXACT match to the 71 local baseline files by version \u2014 zero phantom, zero missing",
+  "noPhase03aObjects": "0 of the four Stage A RPCs present",
+  "noLimiterSchema": "absent",
+  "vaultEmpty": "0 secrets \u2014 so neither webhook_secret nor fda028_limiter_epoch_key exists",
+  "baselinePosture": "the 'users readable by authenticated' policy is PRESENT, i.e. the correct pre-Stage-A posture. The old branch had lost it, which is how the Build 33 breakage was visible there."
+ },
+ "FRESH_STAGING_MIGRATIONS_APPLIED": "NONE",
+ "workflowProvenReadOnlyAgainstThisBranch": {
+  "plan": "ok:true, 0 refusals, 9 Stage A candidates in canonical order, 86 known local versions",
+  "workspace": "built 85 files (71 baseline + 5 adoption + 9 candidates); 14 pending; 0 unaccounted",
+  "dryRun": "supabase db push --workdir <ws> --project-ref cepayqmsoqxshsiyqnvz --dry-run -> 'Would push these migrations' listing exactly those 14, in canonical order, Stage B withheld",
+  "significance": "this is the end-to-end proof that was structurally impossible on the old branch, where the same dry run refused outright on 11 phantom rows",
+  "postDryRunLedger": "still 71 rows \u2014 the dry run mutated nothing",
+  "workspaceDestroyed": true
+ },
+ "findingDuringThisStep": {
+  "id": "CLI-OUT-IGNORED",
+  "what": "canonical-apply-workspace.mjs's `build` CLI accepts --out <dir> but buildWorkspace deliberately ignores any caller-supplied outDir (that is the hardening). The flag is silently ignored rather than rejected.",
+  "howItBit": "I passed --out /tmp/p3a_ws, then aimed --workdir at /tmp/p3a_ws. It had never been created, so db push saw no local migrations and reported all 71 baseline versions as missing-locally \u2014 a confusing error with nothing actually wrong.",
+  "severity": "usability landmine in the exact operator flow this packet hands over",
+  "disposition": "NOT fixed here. The source is reviewed, integrated and independently accepted; changing it now would require a fresh CODE review and a fresh INT for a flag that nothing needs to use. The packet instead documents the correct flow: run `build`, read the `workspace` field it prints, pass THAT to --workdir. Recorded for the next CODE round: the CLI should reject --out with a message, not ignore it.",
+  "foundBy": "executor, while proving the packet's own commands"
+ },
+ "oldStagingBranch": {
+  "ref": "ctshxbykuemeqnofqcdh",
+  "ledgerRows": 82,
+  "status": "RETAINED_AS_EVIDENCE",
+  "mutations": "NONE"
+ },
+ "productionMutations": "NONE",
+ "pushes": "NONE",
+ "mainMerges": "NONE"
+}
