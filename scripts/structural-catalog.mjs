@@ -55,16 +55,34 @@ export const SCHEMA_VERSION = 3;
 export const CAPTURED_SCHEMAS = ['public', 'private', 'storage', 'limiter'];
 
 /**
- * Every catalog surface that can carry authorization, each with the change it must
- * be able to detect. Three review rounds found nine collisions here by naming a
- * surface nobody had captured, so the list is now a REGISTRY rather than a comment:
- * scripts/__tests__/structuralCatalog.test.ts derives a behavioural collision test
- * from each entry, so adding a surface without a test fails, and a surface with a
- * test that does not actually detect its change fails too.
+ * Catalog surfaces known to carry authorization, each with the change it should
+ * detect. Four review rounds found eleven collisions here, every one by naming a
+ * surface nobody had captured.
  *
- * A previous test asserted only that eight field names appeared in the SQL text. It
- * passed while four real collisions existed, which is the same failure one
- * generation later. A name appearing in a query proves nothing about detection.
+ * WHAT THE DERIVED TESTS ACTUALLY PROVE — read this before trusting the registry.
+ * scripts/__tests__/structuralCatalog.test.ts derives one test per entry, but those
+ * tests feed SYNTHETIC objects to normalizeCatalog/diffCaptures. They prove the
+ * COMPARATOR reacts to a change in a field of that name. They do NOT execute
+ * CATALOG_SQL and do NOT touch a database, so they do NOT prove the CAPTURE actually
+ * populates that field from the catalog, nor that the field is the right one.
+ *
+ * Round 4 demonstrated the gap rather than arguing it: `functions.body` is in this
+ * registry and passes its derived test, yet did not detect a SECURITY DEFINER body
+ * inverted via SQL-standard BEGIN ATOMIC, because such a body leaves pg_proc.prosrc
+ * empty and md5('') is equal on both sides. A separate escalation through
+ * pg_auth_members membership options produced an identical checksum while an anon
+ * read went from denied to permitted.
+ *
+ * So this registry is a REVIEW AID and a regression net, NOT a completeness
+ * guarantee. An earlier revision of this comment claimed it made "a surface with a
+ * test that does not actually detect its change fail too". That was false, and it is
+ * the second time a completeness claim about this file had to be withdrawn. The
+ * honest position: these are the surfaces we know about; the list is certainly
+ * incomplete; a collision is closed when someone demonstrates it.
+ *
+ * Known-uncaptured, stated rather than discovered later: schemas outside
+ * CAPTURED_SCHEMAS (notably auth and vault), and anything reachable only through
+ * catalog state this query does not read.
  */
 export const AUTHORIZATION_SURFACES = [
   { section: 'relations', field: 'acl',         detects: 'table/view grants' },
@@ -77,13 +95,14 @@ export const AUTHORIZATION_SURFACES = [
   { section: 'functions', field: 'secdef',      detects: 'SECURITY DEFINER toggled' },
   { section: 'functions', field: 'config',      detects: 'a SECURITY DEFINER losing SET search_path' },
   { section: 'functions', field: 'owner',       detects: 'ALTER FUNCTION OWNER TO, which changes what a SECURITY DEFINER runs as' },
-  { section: 'functions', field: 'body',        detects: 'a rewritten function body' },
+  { section: 'functions', field: 'body',        detects: 'a rewritten function body (prosrc)' },
+  { section: 'functions', field: 'sqlbody',     detects: 'a SQL-standard BEGIN ATOMIC body inverted, which leaves prosrc empty' },
   { section: 'policies',  field: 'qual',        detects: 'a policy predicate weakened' },
   { section: 'policies',  field: 'roles',       detects: 'a policy retargeted at another role' },
   { section: 'triggers',  field: 'enabled',     detects: 'a trigger disabled' },
   { section: 'triggers',  field: 'when',        detects: 'a trigger WHEN clause removed' },
   { section: 'roles',     field: 'bypassrls',   detects: 'ALTER ROLE anon BYPASSRLS' },
-  { section: 'roles',     field: 'memberof',    detects: 'GRANT postgres TO anon' },
+  { section: 'roles',     field: 'memberof',    detects: 'GRANT postgres TO anon, and the admin/inherit/set options on that membership' },
   { section: 'roles',     field: 'super',       detects: 'a role made superuser' },
   { section: 'schemas',   field: 'acl',         detects: 'schema USAGE grants' },
   { section: 'defaultAcls', field: 'acl',       detects: 'ALTER DEFAULT PRIVILEGES' },
@@ -135,7 +154,10 @@ select jsonb_build_object(
       'secdef', p.prosecdef, 'kind', p.prokind, 'body', md5(coalesce(p.prosrc,'')),
       'acl', p.proacl::text,
       'config', array_to_string(p.proconfig, '|'), 'leakproof', p.proleakproof,
-      'owner', pg_get_userbyid(p.proowner))
+      'owner', pg_get_userbyid(p.proowner),
+      -- prosrc is EMPTY for SQL-standard BEGIN ATOMIC bodies, so hashing it alone
+      -- misses a body inversion entirely. Round 4 demonstrated exactly that.
+      'sqlbody', md5(coalesce(pg_get_function_sqlbody(p.oid)::text, '')))
       order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid))
     from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname in (select nspname from s)), '[]'::jsonb),
@@ -155,7 +177,12 @@ select jsonb_build_object(
   'roles', coalesce((select jsonb_agg(jsonb_build_object(
       'n', r.rolname, 'super', r.rolsuper, 'bypassrls', r.rolbypassrls,
       'createrole', r.rolcreaterole, 'canlogin', r.rolcanlogin, 'inherit', r.rolinherit,
-      'memberof', (select coalesce(string_agg(g.rolname, ',' order by g.rolname), '')
+      -- Membership OPTIONS, not just membership. inherit_option in particular turns
+      -- a denied read into a permitted one without changing who is a member, and
+      -- produced an identical checksum until round 4 demonstrated it.
+      'memberof', (select coalesce(string_agg(
+                     g.rolname || ':a=' || m.admin_option || ',i=' || m.inherit_option || ',s=' || m.set_option,
+                     ',' order by g.rolname), '')
                    from pg_auth_members m join pg_roles g on g.oid = m.roleid
                    where m.member = r.oid))
       order by r.rolname)

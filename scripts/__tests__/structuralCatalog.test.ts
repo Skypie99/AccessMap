@@ -187,11 +187,13 @@ describe('a capture always retains its content', () => {
     expect(constant('CAPTURED_SCHEMAS')).toEqual(['public', 'private', 'storage', 'limiter']);
   });
 
-  // Derived from the registry, not from a hardcoded list. Round 3 pointed out that
-  // the previous version asserted only that eight field names appeared in the SQL
-  // text — it passed while four real collisions existed, the same failure one
-  // generation later. A name in a query proves nothing about detection, so each
-  // registry entry now has to actually change a checksum AND be reported.
+  // Derived from the registry. BE PRECISE ABOUT WHAT THIS PROVES: it feeds SYNTHETIC
+  // objects to the comparator, so it shows the comparator reacts to a change in a
+  // field of that name. It does NOT run CATALOG_SQL and does NOT touch a database, so
+  // it cannot show the capture actually populates the field from the catalog.
+  // Round 4 demonstrated that gap: functions.body passed this test while failing to
+  // detect a BEGIN ATOMIC body inversion. The registry is a regression net and a
+  // review aid, not a completeness guarantee, and the module header says so.
   it.each(constant('AUTHORIZATION_SURFACES').map((s: any) => [`${s.section}.${s.field}`, s]))(
     'detects a change to %s', (_label: string, surface: any) => {
       const before = { [surface.section]: [{ k: 'x', [surface.field]: 'BEFORE' }] };
@@ -206,16 +208,44 @@ describe('a capture always retains its content', () => {
       expect(d.securityRelevantSections).toContain(surface.section);
     });
 
-  it('captures every registry surface in the actual query', () => {
-    const sql = constant('CATALOG_SQL');
-    for (const section of ['policies','functions','columns','relations','schemas','triggers','defaultAcls','roles']) {
-      expect(sql).toContain(`'${section}'`);
-    }
-    // The registry is the contract; every entry must name a real captured key.
+  it('names every registry field INSIDE its own section of the query', () => {
+    // Round 4: the previous version searched the whole query, so `'owner'` and the
+    // four `*.acl` entries were satisfied by unrelated occurrences in other sections.
+    // Scope each lookup to the slice of SQL that builds that section.
+    const sql: string = constant('CATALOG_SQL');
+    const sections = ['schemas','relations','columns','functions','policies','triggers','roles','defaultAcls'];
+    // Anchor on LINE-INITIAL top-level keys. A bare indexOf is ambiguous: 'roles' is
+    // both a top-level section and a field name inside the policies object, so
+    // searching anywhere truncated the policies slice before 'qual'. Found by this
+    // test failing on its first run, which is the point of writing it this way.
+    const topLevel = (section: string) => {
+      const m = new RegExp(`^  '${section}',`, 'm').exec(sql);
+      expect(`${section} is a top-level key`).toBe(m ? `${section} is a top-level key` : `${section} NOT FOUND`);
+      return m!.index;
+    };
+    const bounds = sections.map(topLevel).sort((a, b) => a - b);
+    const sliceFor = (section: string) => {
+      const start = topLevel(section);
+      const end = bounds.find((i) => i > start) ?? sql.length;
+      return sql.slice(start, end);
+    };
     for (const s of constant('AUTHORIZATION_SURFACES')) {
-      expect(sql).toContain(`'${s.field}'`);
+      expect(`${s.section}.${s.field} present in its own section`)
+        .toBe(sliceFor(s.section).includes(`'${s.field}'`)
+          ? `${s.section}.${s.field} present in its own section`
+          : `${s.section}.${s.field} MISSING from the ${s.section} section`);
       expect(typeof s.detects).toBe('string');
       expect(s.detects.length).toBeGreaterThan(10);
     }
+  });
+
+  it('states its own limits rather than claiming completeness', () => {
+    const src = fs.readFileSync(path.join(root, 'scripts', 'structural-catalog.mjs'), 'utf8');
+    // The header must NOT promise the derived tests prove capture completeness.
+    expect(src.replace(/\s*\n\s*\*\s*/g, ' ')).toMatch(/do NOT execute CATALOG_SQL/);
+    expect(src.replace(/\s*\n\s*\*\s*/g, ' ')).toMatch(/NOT a completeness guarantee/);
+    // And it must name what is knowingly outside scope.
+    expect(src.replace(/\s*\n\s*\*\s*/g, ' ')).toMatch(/Known-uncaptured/);
+    expect(src.replace(/\s*\n\s*\*\s*/g, ' ')).toMatch(/auth and vault/);
   });
 });
