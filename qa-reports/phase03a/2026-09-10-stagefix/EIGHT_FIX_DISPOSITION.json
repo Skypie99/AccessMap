@@ -140,5 +140,22 @@
     ],
     "reviewerConfirmedMyCorrectionOfThem": "The security_invoker view correction was verified three ways and upheld.",
     "evidenceGapTheyExposed": "production-catalog-capture.v2.json carries column definitions but NO column-privilege data, so every column-level production claim in this tree rests on a different artifact. My production half of the guest-embed claim was rewritten as a bounded statement because of it."
+  },
+  "independentReviewRound5": {
+    "verdict": "PASS",
+    "mustFix": 0,
+    "report": "INDEPENDENT_STAGEFIX_CODE_REVIEW_R5.md",
+    "reviewedCandidate": "e89d53deb2f0f003a7626c53f6cc8222fca69c3f",
+    "verifiedAgainstLivePostgres": "BEGIN ATOMIC body inversion and pg_auth_members inherit_option both now move the checksum; the section-scoped SQL check was re-implemented independently and driven with three negative controls, including planting a field in the wrong section \u2014 which the old whole-file check would have passed.",
+    "shippedClientSafety": "411 grants lost, 0 gained. Sharpest check: anon colINSERT on feedback is exactly the shipped row in feedbackStore.ts, with colSELECT empty matching the code deliberately omitting .select()."
+  },
+  "carriedForwardShouldFix": {
+    "policy": "Recorded, NOT fixed. The reviewed artifact PASSED; changing source now would invalidate that PASS and start a sixth round to eliminate SHOULD-FIX observations, which the governing prompts explicitly warn against. These are carried into the staging rerun packet as named limits instead.",
+    "items": [
+      "A third claim of the withdrawn species survives: \"EXCLUDED: only VOLATILE_FIELDS\" (structural-catalog.mjs) and \"Only oid and planner statistics are excluded\" (this file). Y2(d) falsifies it. The reviewer rated it SHOULD-FIX because an explicit \"NOT a completeness guarantee\" sits two sentences away. Sweep the sentence family, not just cited instances.",
+      "SIXTH-generation collision, found and correctly classified as non-blocking: the roles subquery reads the role graph at DEPTH 1 only, so anon -> uncaptured mid role -> GRANT postgres TO mid_role takes anon from denied to reading with a BIT-IDENTICAL checksum and zero residuals. It contradicts no live claim \u2014 the module's Known-uncaptured clause covers it in advance and the packet never tells an owner that an identical checksum proves no authorization changed. The remedy is to NAME the depth-1 limit, not to patch again.",
+      "Two stale test counts in the packet (19 and 11; actual 20 and 42). Both understate.",
+      "No feedback assertion in build33-compat.test.sql, and a \"the client call THROWS\" line in 20260905073925 that overstates for flag_comments."
+    ]
   }
 }
