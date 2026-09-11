@@ -1,0 +1,42 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": 2,
+ "bankedAt": "2026-09-11T20:21:37.962818+00:00",
+ "VAULT_IO_STAGING": "PASS",
+ "secret": {
+  "name": "fda028_limiter_epoch_key",
+  "target": "cepayqmsoqxshsiyqnvz (staging only)",
+  "generation": "on-server gen_random_bytes(64); the value never left the database and was never printed, logged, or written to source or receipt",
+  "copiedFromProduction": false,
+  "productionVaultOperations": "NONE",
+  "encoding": "lowercase hex, 128 characters, no whitespace, decodes to exactly 64 bytes",
+  "totalSecretsOnBranch": 1,
+  "webhookSecretPresent": false
+ },
+ "correctionMadeBeforeItCouldBite": {
+  "what": "first provisioned base64 (89 chars \u2014 Postgres's encode(...,'base64') line-wraps at 76, so the value even carried a newline)",
+  "whyWrong": "limiter.current_epoch_key does decode(v_txt,'hex') and its rotate path writes encode(p_key,'hex'). A base64 value would have raised on first use, and the newline would have been silent key material.",
+  "howFound": "read the limiter source to check how it consumes the secret before moving on, rather than assuming any random string would do",
+  "fix": "vault.update_secret in place with encode(gen_random_bytes(64),'hex'); verified it now decodes to 64 bytes exactly as the function will decode it"
+ },
+ "clientRoleIsolation": {
+  "grantsToAnonAuthenticatedPublicOnVaultTables": 0,
+  "schemaUsage": {
+   "anon": false,
+   "authenticated": false,
+   "service_role": true
+  },
+  "empiricalAsRealRoles": "anon -> ERROR permission denied for schema vault; authenticated -> ERROR permission denied for schema vault",
+  "note": "the first empirical attempt used SET LOCAL ROLE outside a transaction, which only warns \u2014 it read as postgres and would have been a false negative. Re-run inside a transaction with current_user asserted."
+ },
+ "step3_webhook": {
+  "MF_04_stagingConfiguration": "webhook_endpoint DELIBERATELY NOT CONFIGURED",
+  "reasoning": "the accepted design fails closed when no endpoint is configured, and that is the property worth proving on staging. Configuring an endpoint merely to make a delivery test green would prove less and risk pointing a disposable branch at something real.",
+  "productionUrlHardcoded": false,
+  "productionEndpointFallback": "none \u2014 there is no default in the candidate",
+  "webhookSecretOnBranch": "absent, so the function fails closed at the secret check as well",
+  "stagingEndpointAvailableIfLaterNeeded": "the branch has its own notify-flag-status Edge Function at https://cepayqmsoqxshsiyqnvz.supabase.co/functions/v1/notify-flag-status \u2014 a staging-scoped endpoint exists and would never be production",
+  "productionRequestsSent": 0
+ }
+}
