@@ -46,7 +46,8 @@
     "contract:check": "PASS \u2014 migration-crosswalk.v1.json is current",
     "db:rollback:verify": "PASS (exit 0)",
     "rollbackRehearsal": "5 Phase 02 candidates rehearsed; 4 restore the catalog exactly. The fifth, 20260904000400_adopt_execute_revokes.sql, is mode NON_REVERSIBLE_SECURITY_REPAIR and reports rollbackRefused:true / refusalAtomic:true. That is the designed outcome \u2014 reverting a security repair would reintroduce the vulnerability \u2014 not a failure. I initially scored it as a failure and was wrong.",
-    "lint": "0 errors, 91 warnings \u2014 matches the project baseline of 0 errors"
+    "lint": "0 errors, 91 warnings \u2014 matches the project baseline of 0 errors",
+    "db:snapshot:check": "ADDED AFTER INDEPENDENT INT ACCEPTANCE. It was missing from this list and so went unrun for five review rounds. Green on the pre-integration parent, red on the integrated tree, isolated to package.json among 87 stamp inputs. Only \"ordered inputs changed\" fired, never \"generated snapshot content changed\". Regenerated; schema.generated.sql did not move; the negative rehearsal still rejects all 9 tamper classes."
   },
   "jestBaselineReconciliation": {
     "baseline": {

@@ -8,6 +8,42 @@ The first staging run itself is PRESERVED as evidence and is reused below.**
 > or production mutation was made in the run that produced it.
 > `STAGING_MUTATIONS: NONE` · `PRODUCTION_MUTATIONS: NONE`.
 
+## 0. Frozen identities and how they were earned
+
+| | |
+|---|---|
+| `PHASE03A_STAGEFIX_CODE_SHA` | `38bb76fa6ed1d4795a359f9fd54fd5390e81bb87` |
+| `PHASE03A_STAGEFIX_CODE_TREE` | `a3d7fa8bf3d6094c60b2b0f4ef788a44a66d6f49` |
+| `PHASE03A_REVISED_INT_SHA` | `c9c80aa12713400345732547c88edbc71e113ede` |
+| `PHASE03A_REVISED_INT_TREE` | `a3d7fa8bf3d6094c60b2b0f4ef788a44a66d6f49` |
+| `STAGE_MANDATORY_FIX_CODE_REVIEW` | **PASS** (round 5, zero MUST-FIX) |
+| `PHASE_03A_INT_GATE` | **PASS** (independent acceptance; two MUST-FIX corrected in the acceptance commit) |
+| `FDA028_V4_PRESERVED` | **YES** — both artifacts byte-identical, `supabase/tests/fda028` tree unchanged |
+
+Five review rounds preceded this, issuing 5 + 3 + 3 + 1 MUST-FIX. Between them they
+found **two real shipped-client breakages** (authenticated, then guest), **eleven
+checksum collisions** in the structural capture, and **two completeness claims that
+had to be withdrawn**. Rounds 3, 4 and 5 found no functional defect.
+
+### Limits carried forward deliberately, not fixed
+
+Fixing these would have invalidated a PASS to chase SHOULD-FIX observations. They
+are named here instead so nobody discovers them later:
+
+1. **The structural capture reads the role graph at depth 1 only.** `anon` → an
+   uncaptured intermediate role → `GRANT postgres TO mid_role` takes `anon` from
+   denied to reading with a **bit-identical checksum and zero residuals**. The
+   module's `Known-uncaptured` clause covers it in advance and no artifact tells an
+   owner that an identical checksum proves no authorization changed. The remedy is
+   to name the limit, which is what this is.
+2. **A third instance of the withdrawn completeness-claim family survives**
+   (`EXCLUDED: only VOLATILE_FIELDS`). It sits two sentences from an explicit
+   "NOT a completeness guarantee", but the sentence family should be swept.
+3. `build33-compat.test.sql` has no `feedback` assertion, though the INT acceptor
+   independently verified `anon`'s INSERT column set on `feedback` is **exactly**
+   the shipped row in `feedbackStore.ts`.
+4. Two understated test counts remain in this document's own prose.
+
 ---
 
 ## 1. Why there is a rerun at all
@@ -61,6 +97,7 @@ Runnable commands (independent review found the first draft named a function wit
 command behind it):
 
 ```bash
+npm run db:snapshot:check                              # must report current
 npm run db:apply:plan                                  # must exit 0 before any apply
 npm run db:apply:command -- --project-ref <ref>        # prints the exact push command
 npm run db:apply:verify -- --ledger <ledger.json>      # must exit 0 after any apply
@@ -180,7 +217,7 @@ sequencing decision must sit *alongside* the bypass decision, not after it.
 
 | Test | Why |
 |---|---|
-| Hosted pgTAP, now **254** assertions | the suite set changed (+37 Build 33, authenticated *and* guest) and two suites were edited |
+| Hosted pgTAP, now **254** assertions (37 of them Build 33 compatibility) | the suite set changed (+37 Build 33, authenticated *and* guest) and two suites were edited |
 | Role/authorization matrix | `public.users` grants changed (Stage A `is_admin` retention) |
 | FDA-028 hosted acceptance (38) | unchanged bytes, but re-run after any apply as a regression check |
 | Restoration + reapply | rollback semantics changed in two files |
@@ -214,6 +251,16 @@ apply mechanism rather than the SQL. That is a narrowing, not a diagnosis.
   production URL; the absent secret is the only thing keeping a non-production database
   from calling production's Edge Function. Asserted by
   `src/__tests__/webhookTargetCoupling.guard.test.ts`.
+
+## 10a. A gate that was missing from my own list
+
+`db:snapshot:check` was absent from the recorded acceptance gates and therefore went
+unrun for five review rounds. The independent INT acceptor caught it: it was green on
+the pre-integration parent and red on the integrated tree, isolated to one of 87
+stamp inputs (`package.json`, from the npm scripts this increment adds). Only the
+"ordered inputs changed" condition fired — never "generated snapshot content
+changed" — so it was provenance staleness, not schema divergence, and regenerating
+moved only the input manifest hash. It is now part of the required sequence above.
 
 ## 11. Standing status
 
