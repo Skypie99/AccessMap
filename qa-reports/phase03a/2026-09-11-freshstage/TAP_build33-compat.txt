@@ -1,0 +1,38 @@
+1..37
+ok 1 - B33 admin.ts: authenticated can still SELECT users.is_admin (no 42501)
+ok 2 - B33 leaderboard: the broad authenticated read policy is still present in Stage A
+ok 3 - B33 leaderboard: points remains selectable
+ok 4 - B33 leaderboard: display_name remains selectable
+ok 5 - B33 leaderboard: avatar_url remains selectable
+ok 6 - Stage A adds public.current_user_can_admin()
+ok 7 - Stage A adds public.list_public_leaderboard(integer)
+ok 8 - Stage A adds public.get_my_leaderboard_rank()
+ok 9 - Stage A adds public.get_comment_author_profiles(uuid[])
+ok 10 - Stage A grants the leaderboard replacement to authenticated
+ok 11 - Stage A grants the admin replacement to authenticated
+ok 12 - B33 admin.ts: the shipped own-row is_admin read does not raise
+ok 13 - B33 listLeaderboard: the shipped query returns all three fixture users, not just the caller
+ok 14 - B33 rank: the shipped count sees the higher-scoring user, so rank is 2 not 1
+ok 15 - B33 comment authors: another account's display_name resolves
+ok 16 - B33 guest: the flag_comments columns themselves stay readable by anon under Stage A
+ok 17 - B33 guest: listComments()'s users embed raises for anon — PRE-EXISTING, not caused by Stage A
+ok 18 - B33 guest: listFlagPhotos() does not raise for anon
+ok 19 - B33 guest: Stage A keeps the status-history VIEW grant that production holds
+ok 20 - B33 guest: ...but security_invoker still stops anon at the base table — never a guest path
+ok 21 - B33 guest: Stage A keeps the edit-history VIEW grant that production holds
+ok 22 - B33 guest: ...same for edit history — the view grant confers nothing on its own
+ok 23 - B33 guest: Stage A keeps the point_events grant production holds (no shipped guest reader)
+ok 24 - B33 guest: the map itself still loads for anon
+ok 25 - STAGE B: the is_admin column grant is gone
+ok 26 - STAGE B: the broad authenticated read policy is gone
+ok 27 - STAGE B: the shipped admin.ts read now raises 42501 — this is the silent admin-UI loss
+ok 28 - STAGE B: the shipped leaderboard query silently collapses to the caller alone
+ok 29 - STAGE B: the shipped rank count silently reports rank 1 for everyone
+ok 30 - STAGE B: another account's display_name silently disappears
+ok 31 - STAGE B: list_public_leaderboard() still returns every user after the cutover
+ok 32 - STAGE B: get_my_leaderboard_rank() still reports the true rank after the cutover
+ok 33 - STAGE B: current_user_can_admin() answers for a non-admin caller without reading is_admin
+ok 34 - STAGE B: current_user_can_admin() still returns true for the admin — capability is preserved, only the column read is closed
+ok 35 - STAGE B: guest comment reads now raise 42501 — the shipped client would throw
+ok 36 - STAGE B: guest photo reads now raise 42501
+ok 37 - STAGE B: the map still loads for anon — the cutover is targeted, not a blanket lockout

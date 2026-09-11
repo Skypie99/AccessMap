@@ -1,0 +1,46 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": 6,
+ "bankedAt": "2026-09-11T20:28:25.318063+00:00",
+ "HOSTED_PGTAP": "254/254 executed hosted, 0 failures",
+ "suites": {
+  "promptb_media_key_guards": "25/25",
+  "phase03a-foundation": "113/113",
+  "phase03a-privileges": "79/79",
+  "build33-compat": "37/37"
+ },
+ "comparisonToFirstRun": {
+  "firstRun": "217/217 across three suites",
+  "thisRun": "254/254 across four \u2014 build33-compat (37) did not exist during the first run",
+  "reconciliation": "217 + 37 = 254, exact"
+ },
+ "toolchain": {
+  "hostedPgTapVersion": "1.3.3 (Supabase-available, CREATE EXTENSION into the extensions schema)",
+  "localPinnedVersion": "1.3.4",
+  "versionDeltaRecorded": "the hosted platform offers 1.3.3 and the local pin is 1.3.4. Recorded, not glossed. The assertions used are core predicates present in both."
+ },
+ "measurementMethod": {
+  "howObtained": "direct psql, so RAW TAP was streamed per assertion and every '1..N', 'ok N' and 'not ok N' line was counted from the actual output",
+  "improvementOverFirstRun": "the first run could only use a finish()-row-count sink, because supabase db query returns just the final result set. Direct psql made per-assertion capture possible, so the count is read rather than inferred.",
+  "rawTapRetained": "TAP_*.txt alongside this receipt"
+ },
+ "negativeControls": [
+  {
+   "control": "deliberately failing assertion (plan 2, one ok(false))",
+   "result": "not ok 2 emitted + 'Looks like you failed 1 test of 2' \u2014 detected"
+  },
+  {
+   "control": "plan/run mismatch (plan 3, one assertion run)",
+   "result": "'Looks like you planned 3 tests but ran 1' \u2014 detected"
+  }
+ ],
+ "negativeControlConclusion": "both controls fired, so the four zeros are meaningful rather than vacuous",
+ "residueAfterRun": {
+  "flags": 0,
+  "users": 0,
+  "flag_comments": 0,
+  "auth.users": 0
+ },
+ "nextOperation": "STEP 7 \u2014 FDA-028 hosted regression and concurrency"
+}

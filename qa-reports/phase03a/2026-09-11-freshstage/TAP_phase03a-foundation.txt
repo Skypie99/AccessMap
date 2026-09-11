@@ -1,0 +1,114 @@
+1..113
+ok 1 - FDA009 no overlapping ALL flag policy
+ok 2 - FDA023 authenticated open INSERT restriction is restrictive
+ok 3 - FDA021 authenticated has no table-wide users UPDATE
+ok 4 - profile display_name remains writable subject to guards
+ok 5 - profile avatar_url remains writable subject to guards
+ok 6 - profile avatar_object_key remains writable subject to guards
+ok 7 - forged points has no UPDATE grant
+ok 8 - forged email has no UPDATE grant
+ok 9 - forged is_admin has no UPDATE grant
+ok 10 - forged created_at has no UPDATE grant
+ok 11 - forged streak_days has no UPDATE grant
+ok 12 - forged longest_streak_days has no UPDATE grant
+ok 13 - forged last_active_date has no UPDATE grant
+ok 14 - forged id has no UPDATE grant
+ok 15 - FDA026 Stage A: admin column still selectable for shipped Build 33 (revoked by Stage B)
+ok 16 - FDA012 flags has no client TRUNCATE
+ok 17 - FDA012 flag_comments has no client TRUNCATE
+ok 18 - FDA012 flag_photos has no client TRUNCATE
+ok 19 - FDA012 feedback has no client TRUNCATE
+ok 20 - FDA012 users has no client TRUNCATE
+ok 21 - FDA012 point_events has no client TRUNCATE
+ok 22 - FDA012 push_tokens has no client TRUNCATE
+ok 23 - client cannot setval the reward sequence
+ok 24 - FDA010 enforce_flag_photos_object_key_guard() is internal
+ok 25 - FDA010 enforce_flags_photo_object_key_guard() is internal
+ok 26 - FDA010 enforce_users_avatar_object_key_guard() is internal
+ok 27 - FDA010 handle_push_token_updated_at() is internal
+ok 28 - FDA010 set_flag_updated_at() is internal
+ok 29 - FDA010 update_flags_updated_at() is internal
+ok 30 - required RPC increment_dispute_request(uuid) remains callable
+ok 31 - required RPC increment_reopen_request(uuid) remains callable
+ok 32 - required RPC log_realtime_event(text,text) remains callable
+ok 33 - webhook verification remains service only
+ok 34 - Storage admin policy uses the private helper (catalog proof only)
+ok 35 - FDA026 Stage A: enumeration still open (closed by Stage B, proven in build33-compat)
+ok 36 - FDA026 Stage A: a known other user is still visible (closed by Stage B)
+ok 37 - FDA026 Stage A: admin enumeration still possible (refused after Stage B)
+ok 38 - FDA026 Stage A: filtering by admin column still possible (refused after Stage B)
+ok 39 - normal caller is not admin
+ok 40 - FDA021 actual points forgery refused
+ok 41 - FDA021 actual email forgery refused
+ok 42 - FDA021 actual is_admin forgery refused
+ok 43 - FDA021 actual created_at forgery refused
+ok 44 - FDA021 actual streak_days forgery refused
+ok 45 - FDA021 actual longest_streak_days forgery refused
+ok 46 - FDA021 actual last_active_date forgery refused
+ok 47 - normal profile update and returning projection succeed
+ok 48 - media-key mutation remains refused
+ok 49 - profile update persists
+ok 50 - mixed allowed/private profile patch is refused atomically
+ok 51 - mixed patch did not change the allowed column
+ok 52 - leaderboard returns top20 beyond self-only users RLS
+ok 53 - leaderboard honors smaller limit
+ok 54 - leaderboard oversized request cannot enumerate everyone
+ok 55 - negative leaderboard limit exposes nothing
+ok 56 - own rank counts strictly greater points
+ok 57 - own rank returns own points
+ok 58 - leaderboard cannot expose private admin field
+ok 59 - leaderboard cannot expose email
+ok 60 - other author byline survives self-only user visibility
+ok 61 - deleted author remains null
+ok 62 - user UUID cannot be used as author-directory lookup
+ok 63 - duplicate comment IDs do not amplify output
+ok 64 - empty author request returns no rows
+ok 65 - oversized author request refused
+ok 66 - null author request refused
+ok 67 - owner open flag INSERT succeeds
+ok 68 - trusted flag trigger still awards exactly five points
+ok 69 - normal flag edit and timestamp triggers survive ALL-policy removal
+ok 70 - authenticated verified INSERT refused
+ok 71 - authenticated resolved INSERT refused
+ok 72 - authenticated rejected INSERT refused
+ok 73 - another account cannot be selected as new flag owner
+ok 74 - own comment INSERT still succeeds
+ok 75 - comment trigger awards exactly once
+ok 76 - own comment returning embed can still resolve own name
+ok 77 - trusted media trigger still accepts ordinary photo
+ok 78 - trusted photo trigger still awards three points
+ok 79 - photo object-key forgery refused
+ok 80 - realtime RPC and its sequence still work
+ok 81 - direct trigger helper invocation refused
+ok 82 - owner direct flag DELETE succeeds
+ok 83 - owner deletion actually removed the flag
+ok 84 - unauthorized DELETE returns without leaking a row
+ok 85 - unrelated user cannot delete owner flag
+ok 86 - other profile UPDATE has no visible target
+ok 87 - admin caller is authorized through private helper
+ok 88 - admin direct flag DELETE succeeds
+ok 89 - admin deletion actually removed the flag
+ok 90 - admin direct comment DELETE survives helper migration
+ok 91 - admin comment deletion actually removed the comment
+ok 92 - missing account cannot gain admin authority
+ok 93 - missing account cannot read leaderboard
+ok 94 - missing account cannot get fabricated rank
+ok 95 - missing account cannot resolve author names
+ok 96 - anonymous open guest report remains allowed
+ok 97 - anonymous preverified report refused
+ok 98 - anonymous feedback insertion remains allowed
+ok 99 - anonymous cannot call current_user_can_admin
+ok 100 - anonymous cannot call list_public_leaderboard
+ok 101 - anonymous cannot call get_my_leaderboard_rank
+ok 102 - anonymous cannot call get_comment_author_profiles
+ok 103 - anonymous has no users enumeration
+ok 104 - trusted reward trigger updated activity date
+ok 105 - trusted reward trigger maintained the streak
+ok 106 - service has no unneeded reputation write capability
+ok 107 - service cannot enumerate reputation
+ok 108 - service has no unneeded direct flag INSERT
+ok 109 - unauthorized profile edit had no effect
+ok 110 - postgres future-table defaults deny clients
+ok 111 - postgres future-sequence defaults deny client mutation
+ok 112 - postgres future functions are not public by default
+ok 113 - future service grants require explicit review
