@@ -1,0 +1,68 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "promptId": "FLAGSTONE-P03A-FRESH-STAGING-RERUN-20260911-R1",
+ "OPERATION_STATE": "PREPARED",
+ "bankedAt": "2026-09-11T20:20:10.933190+00:00",
+ "stepsCompleted": [
+  1
+ ],
+ "nextOperation": "STEP 2 \u2014 provision the staging-only fda028_limiter_epoch_key secret",
+ "noRemoteOperationRunningOrUnknown": true,
+ "identities": {
+  "codeSha": "3ac416e2cd19c7322061efb689abc5bebcef3a83",
+  "codeTree": "99ee18fbeb72e0f31d501f749df920d30ea907de",
+  "intSha": "f2c2fbef36e88289c9c2a0663e6f26fc974e0a2a",
+  "intTree": "96d8e38b37e881fa1f4d6e39cf5e276e1f51b833",
+  "integrationHead": "26b11a9"
+ },
+ "target": {
+  "projectRef": "cepayqmsoqxshsiyqnvz",
+  "branchId": "4a37413a-01c2-4ab2-8bf8-a17a42a549b8",
+  "parent": "kldlwszpfkdmsjrjhjym",
+  "isDefault": false,
+  "persistent": false,
+  "withData": false,
+  "previewStatus": "ACTIVE_HEALTHY",
+  "refIsNotProduction": true,
+  "refIsNotOldStaging": true
+ },
+ "FRESH_STAGING_PREAPPLY_GATE": "PASS",
+ "preApplyState": {
+  "ledgerRows": 71,
+  "exactBaselineMatchByVersion": true,
+  "phantomVersions": [],
+  "missingVersions": [],
+  "phase03aRpcs": 0,
+  "limiterSchema": 0,
+  "vaultSecrets": 0,
+  "usersReadableByAuthenticatedPolicy": "PRESENT (correct pre-Stage-A posture)",
+  "authenticatedSelectOnUsersIsAdmin": "PRESENT",
+  "applicationRows": {
+   "flags": 0,
+   "users": 0
+  },
+  "pgNetQueueDepth": 0,
+  "edgeFunctions": [
+   "send-push-notification (rebuilt for this ref, v6)",
+   "notify-flag-status (v8, entrypoint still references the parent's bundle)",
+   "delete-account (v4, verify_jwt true, entrypoint still references the parent's bundle)"
+  ],
+  "edgeFunctionsExpected": "yes \u2014 a Supabase preview branch inherits its parent's functions at creation. Not an unexpected deployment; none was deployed by this run."
+ },
+ "MATERIAL_MEASUREMENT_LIMITATION": {
+  "id": "PRIVILEGE-BASELINE-DIVERGENCE",
+  "measured": "production grants anon 109 table privileges (full DELETE/INSERT/UPDATE/TRUNCATE/REFERENCES/TRIGGER/SELECT on comment_votes, feedback, flag_comments and more). This fresh branch grants anon ZERO \u2014 not one table-level or column-level privilege.",
+  "cause": "the branch is built by replaying the 71 source migrations, and NOT ONE of those 71 files grants anon anything. Production's anon privileges came from platform defaults / out-of-band changes that never entered migration history. This is the Phase 02 contract-truth gap, measured directly rather than inferred.",
+  "consequenceForThisRun": "Build 33 anon compatibility measured here tests that Stage A ESTABLISHES the guest posture from nothing. It CANNOT test that Stage A PRESERVES production's existing posture, because the branch never had it. Those are different questions and only the second governs production safety.",
+  "whyItMatters": "20260905073925_phase03a_effective_privileges.sql contains REVOKEs. On production those would narrow part of the 109 \u2014 which is the intended FDA-012 narrowing, but its Build 33 impact is NOT provable on this branch.",
+  "notTurnedIntoAPass": "BUILD33_ANON_COMPATIBILITY will be reported against what this branch can actually prove, with this limitation attached, not as a production-safety claim.",
+  "productionReadWasReadOnly": "a single information_schema.role_table_grants SELECT. No production mutation, no Vault, no webhook, no migration, no function deploy."
+ },
+ "oldStagingBranch": {
+  "ref": "ctshxbykuemeqnofqcdh",
+  "mutations": "NONE"
+ },
+ "productionMutations": "NONE",
+ "pushes": "NONE",
+ "mainMerges": "NONE"
+}
