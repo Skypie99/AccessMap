@@ -43,7 +43,8 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { canonicalIdentity, planApply, assertUnambiguousTarget, PRODUCTION_PROJECT_REF } from './canonical-migration-identity.mjs';
+import { canonicalIdentity, planApply, assertUnambiguousTarget, assertTargetToken,
+         PROJECT_REF_PATTERN, PRODUCTION_PROJECT_REF } from './canonical-migration-identity.mjs';
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 
@@ -306,13 +307,26 @@ export function buildWorkspace({
 /** The dry-run and apply commands for a materialized workspace. One target authority. */
 export function workspaceCommands({ workspace, projectRef, expectStaging = true }) {
   if (!workspace) throw new Error('workspace is required');
-  if (!projectRef) throw new Error('projectRef is required: the target must always be named explicitly');
+  // Validate the VALUES before the production compare, for the same reason
+  // supportedApplyCommand does: `===` against an unvalidated string that is then
+  // joined into a shell line is not a target check. Measured on this very
+  // function -- projectRef "kldlwszpfkdmsjrjhjym " (one trailing space) produced
+  // an executable production apply command. This is the entry point the staging
+  // packet uses, so it mattered more here than anywhere else.
+  assertTargetToken('projectRef', projectRef, { pattern: PROJECT_REF_PATTERN });
+  assertTargetToken('workspace', workspace);
   if (expectStaging && projectRef === PRODUCTION_PROJECT_REF) {
     throw new Error(`Refusing to build a staging command targeting production ${PRODUCTION_PROJECT_REF}.`);
   }
   const base = ['supabase', 'db', 'push', '--workdir', workspace, '--project-ref', projectRef];
   assertUnambiguousTarget(base);
-  return { dryRun: [...base, '--dry-run'].join(' '), apply: base.join(' ') };
+  return {
+    dryRun: [...base, '--dry-run'].join(' '),
+    apply: base.join(' '),
+    // argv is the authority for anyone who executes; the strings are for runbooks.
+    dryRunArgv: [...base, '--dry-run'],
+    applyArgv: [...base],
+  };
 }
 
 /**

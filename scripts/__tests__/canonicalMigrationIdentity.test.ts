@@ -291,7 +291,10 @@ describe('the one supported apply command', () => {
   });
 
   it('refuses to build a command with no explicit target', () => {
-    expect(() => supportedApplyCommand({})).toThrow(/target must always be named explicitly/);
+    // Wording changed with the 2026-09-11 target-token fix: the value is now
+    // validated before anything else, so the refusal names the value rather than
+    // the policy. Still a refusal, and an earlier one.
+    expect(() => supportedApplyCommand({})).toThrow(/projectRef is required/);
   });
 
   it('records both prohibited mechanisms with what was observed', () => {

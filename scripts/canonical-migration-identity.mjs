@@ -354,9 +354,51 @@ export const PRODUCTION_PROJECT_REF = 'kldlwszpfkdmsjrjhjym';
  * before use -- but safety resting on undocumented flag precedence is not safety.
  * There is now exactly one target authority: the explicit ref.
  */
+export const PROJECT_REF_PATTERN = /^[a-z]{20}$/;
+
+/**
+ * A target token is one token. Review 2026-09-11 (MUST-FIX 1) showed the whole
+ * target authority resting on `===` against an unvalidated string while the output
+ * was `parts.join(' ')` -- a shell string that re-tokenizes. A ref with a trailing
+ * space slipped past the production compare and came back out as an executable
+ * production `db push`; a ref reading "<ref> --linked" smuggled a second selector
+ * past a check that tests array membership. A ref pasted from a dashboard or read
+ * from a file routinely carries whitespace, so this was reachable by accident, not
+ * only by malice. Validate the VALUE, not just the flag list.
+ */
+export function assertTargetToken(name, value, { pattern = null } = {}) {
+  if (typeof value !== 'string' || value === '') {
+    throw new Error(`${name} is required and must be a non-empty string.`);
+  }
+  if (/\s/.test(value)) {
+    throw new Error(`${name} contains whitespace (${JSON.stringify(value)}). One token, no re-tokenization.`);
+  }
+  if (value.startsWith('-')) {
+    throw new Error(`${name} looks like a flag (${JSON.stringify(value)}), not a value.`);
+  }
+  if (pattern && !pattern.test(value)) {
+    throw new Error(`${name} ${JSON.stringify(value)} is not a valid project ref (expected ${pattern}).`);
+  }
+  return value;
+}
+
 export function assertUnambiguousTarget(args) {
   const a = Array.isArray(args) ? args : [];
-  const selectors = ['--linked', '--local', '--db-url', '--project-ref'].filter((f) => a.includes(f));
+  // Every element is inspected, not only the flag positions: a selector hidden
+  // inside a value is still a selector once the string is executed.
+  const selectorNames = ['--linked', '--local', '--db-url', '--project-ref'];
+  const seen = new Set();
+  for (const el of a) {
+    if (typeof el !== 'string') continue;
+    for (const tok of el.split(/\s+/)) if (selectorNames.includes(tok)) seen.add(tok);
+  }
+  if (seen.size > 1) {
+    throw new Error(
+      `Ambiguous target: ${[...seen].join(' and ')} were all supplied. ` +
+      `Exactly one target-selection mechanism is permitted, and it must be --project-ref.`,
+    );
+  }
+  const selectors = selectorNames.filter((f) => a.includes(f));
   if (selectors.length > 1) {
     throw new Error(
       `Ambiguous target: ${selectors.join(' and ')} were all supplied. ` +
@@ -379,7 +421,10 @@ export function assertUnambiguousTarget(args) {
  * @param {boolean}[opts.expectStaging=true] refuse the production ref outright
  */
 export function supportedApplyCommand({ projectRef, workdir = null, dryRun = true, expectStaging = true }) {
-  if (!projectRef) throw new Error('projectRef is required: the target must always be named explicitly');
+  // Validate BEFORE the production compare: an unvalidated value makes `===` a
+  // formality. See assertTargetToken.
+  assertTargetToken('projectRef', projectRef, { pattern: PROJECT_REF_PATTERN });
+  if (workdir !== null && workdir !== undefined) assertTargetToken('workdir', workdir);
   if (expectStaging && projectRef === PRODUCTION_PROJECT_REF) {
     throw new Error(`Refusing to build a staging command targeting the production project ${PRODUCTION_PROJECT_REF}.`);
   }
@@ -390,6 +435,20 @@ export function supportedApplyCommand({ projectRef, workdir = null, dryRun = tru
   // Deliberately NO --linked. See assertUnambiguousTarget.
   assertUnambiguousTarget(parts);
   return parts.join(' ');
+}
+
+/**
+ * The same command as an argv ARRAY, for callers that execute rather than print.
+ *
+ * The joined string is a runbook convenience: it re-tokenizes when a shell reads
+ * it, which is precisely the property that let a ref with a trailing space become
+ * a production `db push`. The value validation above closes that, but a caller
+ * that execs should not have to depend on it -- pass argv to execFile and no
+ * tokenization happens at all.
+ */
+export function supportedApplyArgv({ projectRef, workdir = null, dryRun = true, expectStaging = true }) {
+  const line = supportedApplyCommand({ projectRef, workdir, dryRun, expectStaging });
+  return line.split(' ');
 }
 
 export const PROHIBITED_MECHANISMS = [
