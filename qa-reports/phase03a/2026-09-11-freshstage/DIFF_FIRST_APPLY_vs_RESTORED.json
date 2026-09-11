@@ -1,0 +1,4429 @@
+{
+  "identical": false,
+  "firstChecksum": "1cb772c877a25b87f5e1870301e974a5d23e938e9ed412d2a57b8d9fa3dd45d3",
+  "secondChecksum": "d18dc1d133281b61f0fb3c5b5de571bdac8d536b9f9d3ca9a1f70b7482eec663",
+  "residualCount": 255,
+  "residuals": [
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "allowance",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "grant",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "bucket_allowance",
+        "default": "50",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "bucket_key",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "bucket",
+        "type": "bytea"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "bucket_key",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "grant",
+        "type": "bytea"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "catchup_cap",
+        "default": "32",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "enabled",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "epoch",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "key_state",
+        "type": "bigint"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "grant_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "grant",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "grants_issued",
+        "default": "0",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "bucket",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "id",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "id",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "key_state",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "ipv4_prefix",
+        "default": "32",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "ipv6_prefix",
+        "default": "64",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "normal_allowance",
+        "default": "5",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "note",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "limiter",
+        "t": "translation_prefix",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "plen",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "translation_prefix",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "prefix",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "translation_prefix",
+        "type": "inet"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "require_public_ip",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "reseed_anchor",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "key_state",
+        "type": "bigint"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "reseed_interval",
+        "default": "7",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "retention_windows",
+        "default": "1",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "units_consumed",
+        "default": "0",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "bucket",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "units_consumed",
+        "default": "0",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "grant",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "window_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "bucket",
+        "type": "bigint"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "window_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "grant",
+        "type": "bigint"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "window_seconds",
+        "default": "86400",
+        "generated": "",
+        "notnull": true,
+        "s": "limiter",
+        "t": "config",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "window_seconds",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "limiter",
+        "t": "key_state",
+        "type": "bigint"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres",
+          "service_role=rw/postgres"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres"
+        ],
+        "c": "body",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "feedback",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres"
+        ],
+        "c": "category",
+        "default": "'idea'::feedback_category",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "feedback",
+        "type": "feedback_category"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres"
+        ],
+        "c": "contact_email",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "feedback",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres"
+        ],
+        "c": "lat",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "double precision"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres"
+        ],
+        "c": "lng",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "double precision"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres"
+        ],
+        "c": "platform",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "feedback",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=a/postgres"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "feedback",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=aw/postgres"
+        ],
+        "c": "category",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=aw/postgres"
+        ],
+        "c": "context_tags",
+        "default": "'{}'::text[]",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "text[]"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=aw/postgres"
+        ],
+        "c": "description",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=aw/postgres"
+        ],
+        "c": "photo_alt",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=aw/postgres"
+        ],
+        "c": "photo_url",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=aw/postgres"
+        ],
+        "c": "severity",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "smallint"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=a/postgres",
+          "authenticated=aw/postgres"
+        ],
+        "c": "status",
+        "default": "'open'::text",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "comment_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "comment_votes",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "content",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_comments",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_comments",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_verifications",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "user_id",
+        "default": "auth.uid()",
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flag_comments",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "verifier_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_verifications",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=a/postgres"
+        ],
+        "c": "voter_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "comment_votes",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=ar/postgres"
+        ],
+        "c": "changed_fields",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "text[]"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=ar/postgres"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=ar/postgres"
+        ],
+        "c": "new_values",
+        "default": "'{}'::jsonb",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "jsonb"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=ar/postgres"
+        ],
+        "c": "old_values",
+        "default": "'{}'::jsonb",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "jsonb"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres",
+          "service_role=r/postgres"
+        ],
+        "c": "token",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "push_tokens",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres",
+          "service_role=r/postgres"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "push_tokens",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "alt_text",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "bulk_watch_alerts",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "flag_status_updates",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "nearby_flags",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "platform",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "push_tokens",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "position",
+        "default": "0",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "url",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=aw/postgres"
+        ],
+        "c": "watched_flag_updates",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=rw/postgres"
+        ],
+        "c": "avatar_object_key",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "users",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=rw/postgres"
+        ],
+        "c": "avatar_url",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "users",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=rw/postgres"
+        ],
+        "c": "display_name",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "users",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "alt_text",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "body",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "feedback",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "bulk_watch_alerts",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "category",
+        "default": "'idea'::feedback_category",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "feedback",
+        "type": "feedback_category"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "category",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "comment_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "comment_votes",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "contact_email",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "feedback",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "content",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_comments",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "context_tags",
+        "default": "'{}'::text[]",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "text[]"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "description",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_comments",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_verifications",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "flag_status_updates",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "lat",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "double precision"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "lng",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "double precision"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "nearby_flags",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "photo_alt",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "photo_url",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "platform",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "feedback",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "platform",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "push_tokens",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "position",
+        "default": "0",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "integer"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "severity",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "smallint"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "status",
+        "default": "'open'::text",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flags",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "token",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "push_tokens",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "url",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_photos",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "user_id",
+        "default": "auth.uid()",
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flag_comments",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "feedback",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "flags",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "user_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "push_tokens",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "verifier_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_verifications",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "voter_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "comment_votes",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "<no-explicit-acl:postgres-default-applies>"
+        ],
+        "c": "watched_flag_updates",
+        "default": "true",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "notification_preferences",
+        "type": "boolean"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres"
+        ],
+        "c": "avatar_object_key",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "users",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres"
+        ],
+        "c": "avatar_url",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "users",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres"
+        ],
+        "c": "changed_fields",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "text[]"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres"
+        ],
+        "c": "display_name",
+        "default": null,
+        "generated": "",
+        "notnull": false,
+        "s": "public",
+        "t": "users",
+        "type": "text"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres"
+        ],
+        "c": "flag_id",
+        "default": null,
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "uuid"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres"
+        ],
+        "c": "new_values",
+        "default": "'{}'::jsonb",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "jsonb"
+      }
+    },
+    {
+      "section": "columns",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres"
+        ],
+        "c": "old_values",
+        "default": "'{}'::jsonb",
+        "generated": "",
+        "notnull": true,
+        "s": "public",
+        "t": "flag_edit_history",
+        "type": "jsonb"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "kind": "r",
+        "owner": "postgres",
+        "s": "public"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "kind": "r",
+        "owner": "postgres",
+        "s": "storage"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=rwU/postgres"
+        ],
+        "kind": "S",
+        "owner": "postgres",
+        "s": "public"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=rwU/postgres"
+        ],
+        "kind": "S",
+        "owner": "postgres",
+        "s": "storage"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "s": "GLOBAL"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "s": "public"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "s": "storage"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "kind": "r",
+        "owner": "postgres",
+        "s": "public"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "kind": "r",
+        "owner": "postgres",
+        "s": "storage"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=rwU/postgres",
+          "authenticated=rwU/postgres",
+          "postgres=rwU/postgres",
+          "service_role=rwU/postgres"
+        ],
+        "kind": "S",
+        "owner": "postgres",
+        "s": "public"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=rwU/postgres",
+          "authenticated=rwU/postgres",
+          "postgres=rwU/postgres",
+          "service_role=rwU/postgres"
+        ],
+        "kind": "S",
+        "owner": "postgres",
+        "s": "storage"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "s": "public"
+      }
+    },
+    {
+      "section": "defaultAcls",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "kind": "f",
+        "owner": "postgres",
+        "s": "storage"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "5d424b53e7d3e220fa10e423c21d9dea",
+        "config": "search_path=\"\"",
+        "kind": "f",
+        "leakproof": false,
+        "n": "get_my_leaderboard_rank",
+        "owner": "postgres",
+        "s": "private",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "8221459325518c904d6081b75c3528ee",
+        "config": "search_path=\"\"",
+        "kind": "f",
+        "leakproof": false,
+        "n": "get_my_leaderboard_rank",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "a1974a8affe2eef33a5cc7b76690f7d9",
+        "config": "search_path=\"\"",
+        "kind": "f",
+        "leakproof": false,
+        "n": "current_user_can_admin",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "p_comment_ids uuid[]",
+        "body": "12b07fb31753795a9d8aae99cbb782bf",
+        "config": "search_path=\"\"",
+        "kind": "f",
+        "leakproof": false,
+        "n": "get_comment_author_profiles",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "p_comment_ids uuid[]",
+        "body": "58d061207ade408f360a6d18452b9e1e",
+        "config": "search_path=\"\"",
+        "kind": "f",
+        "leakproof": false,
+        "n": "get_comment_author_profiles",
+        "owner": "postgres",
+        "s": "private",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "p_event text, p_channel text",
+        "body": "43988569c93d6078e76019d66dbdb2f7",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "log_realtime_event",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "p_flag_id uuid",
+        "body": "5bcd91b784605261be7ac24b4ffebb93",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "increment_reopen_request",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "p_flag_id uuid",
+        "body": "c2d42f3f0c6d2688a3e1efdbc5e68bad",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "increment_dispute_request",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "p_limit integer",
+        "body": "5df8795b15c90f47d8f1330c385869ce",
+        "config": "search_path=\"\"",
+        "kind": "f",
+        "leakproof": false,
+        "n": "list_public_leaderboard",
+        "owner": "postgres",
+        "s": "private",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres"
+        ],
+        "args": "p_limit integer",
+        "body": "7049414230539ee84793705cd5ccb966",
+        "config": "search_path=\"\"",
+        "kind": "f",
+        "leakproof": false,
+        "n": "list_public_leaderboard",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "c3d2427619d11c6dfb3a4a6a228ecf50",
+        "config": "search_path=limiter, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "purge",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_source_raw text, p_grant uuid, p_category text, p_body text, p_platform text",
+        "body": "17e1a65dbe78301cf0ad8ec4a6f4d89c",
+        "config": "search_path=limiter, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "admit_guest_feedback",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_source_raw text, p_grant uuid, p_lat double precision, p_lng double precision, p_category text, p_severity integer, p_description text",
+        "body": "4a56435f5a0fc7cfb0753e61b92091a0",
+        "config": "search_path=limiter, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "admit_guest_flag",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "1c4318bee4240d4113d86fad7eb15623",
+        "config": "search_path=public, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "set_flag_updated_at",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "1c4318bee4240d4113d86fad7eb15623",
+        "config": "search_path=public, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "update_flags_updated_at",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "2250c10b825946c2575e94bac0dbe17b",
+        "config": "search_path=public, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_push_token_updated_at",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "28c75f88ed02f73db6ebac2e2f68f3eb",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_photo_added",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "28ed897bf769d577932c3a48638be2d8",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_comment_vote_added",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "354dc70d0f04f094994d1dcf3b3cde05",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_comment_added",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "3987bc3df6a0932a1515e7eb759de440",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_flag_creation_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "492fd3e0ec81aeaf9c0022349d7fe9f0",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flags_photo_object_key_guard",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "5837cc9ba01ad6963da47f022138fa21",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_insert_history",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "5b4a4aa14108b2966c94facf0f57ac68",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_users_avatar_object_key_guard",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "5c4d41930b8b18affd014d3b7c52a356",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flag_status_only_for_non_owner",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "751bb963080acaf605c9df591990e958",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_submitted",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "795eb2acf6f1d2e86acddb1eb89746a8",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_feedback_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "8136dd793c2aefddd9da39cef971b0be",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_dispute_reset",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "868fe6ebcdf992d83ed3c84e5e3a34b2",
+        "config": "search_path=limiter, extensions, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "read_epoch_key",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "88ac8108bb35c31cd6bafa8c5384aebd",
+        "config": "search_path=public, vault, net",
+        "kind": "f",
+        "leakproof": false,
+        "n": "notify_flag_status_webhook",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "890a0213772f7c043df93dd161f29e32",
+        "config": "search_path=limiter, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "guard_window_domain",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "89261cf39b799928ded43dddb720adbf",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flag_photos_object_key_guard",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "8df45ca769a6b48544d4a5579951f2d8",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "domain_lock_key",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "9f502b0fdc86f4f8e2c8034d24148a1d",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_point_event_streak",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "a160ff2d665c947377f62d531aa13d8c",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_new_user",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "b68a49b42d4e9c20d64dcb298ea278d8",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_reopen_reset",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "c36dd0fb35317ddcd47afce9200c24d3",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flag_status_transition",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "d249fb1aebcefa0ba0fa208889e2096d",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_global_anon_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "e1e55324d053c3d68cc5c8c3c6498dbb",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_status_change",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "",
+        "body": "f6af5e556a77efeda28760a5996f7fb3",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_flag_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_addr inet, p_plen integer",
+        "body": "b9dd477d32817d5184c839adac3ab055",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "rfc6052_ipv4",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_addr inet",
+        "body": "747381caab299bec15a09cea406bf187",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "embedded_ipv4",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_addr inet",
+        "body": "7da4fb5f347706ee75a9b9cf986bd382",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "ipv6_hex",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_addr inet",
+        "body": "bfe2e8682b8ef867244c65cdced8ea37",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "is_public_unicast",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_at timestamp with time zone, p_window_seconds integer",
+        "body": "b4597bac7875e50108e51f6631b011d6",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "window_of",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_epoch_key bytea, p_prefix text",
+        "body": "ff16181ce5509177f3fa46a65013b2fa",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "derive_bucket_key",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_key bytea, p_next_epoch bigint",
+        "body": "aecafcc131450545d3d286a4849ccc49",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "ratchet",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_key bytea",
+        "body": "0cf4c0820e00bae72d0ebb595c51a236",
+        "config": "search_path=limiter, extensions, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "write_epoch_key",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_now timestamp with time zone",
+        "body": "778354027a98f0560414b32168dfc0d7",
+        "config": "search_path=limiter, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "purge_at",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_now timestamp with time zone",
+        "body": "a548d3e7b5ee187e976249ac47349489",
+        "config": "search_path=limiter, extensions, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "current_epoch_key",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_raw text",
+        "body": "3196939c806a9b5119200e072732c56e",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "normalize_source",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_source_raw text, p_grant uuid, p_category text, p_body text, p_platform text, p_now timestamp with time zone",
+        "body": "c0478ed72a1f2e463b528359e23620e4",
+        "config": "search_path=limiter, public, extensions, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "admit_guest_feedback_at",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_source_raw text, p_grant uuid, p_lat double precision, p_lng double precision, p_category text, p_severity integer, p_description text, p_now timestamp with time zone",
+        "body": "32ad566e88d41f1223b63ec78c0ba351",
+        "config": "search_path=limiter, public, extensions, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "admit_guest_flag_at",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "p_source_raw text, p_grant uuid, p_now timestamp with time zone",
+        "body": "5f45f3881ebed7493d439d63401db13f",
+        "config": "search_path=limiter, extensions, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "admit_at",
+        "owner": "postgres",
+        "s": "limiter",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "1c4318bee4240d4113d86fad7eb15623",
+        "config": "search_path=public, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "set_flag_updated_at",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "1c4318bee4240d4113d86fad7eb15623",
+        "config": "search_path=public, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "update_flags_updated_at",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "2250c10b825946c2575e94bac0dbe17b",
+        "config": "search_path=public, pg_temp",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_push_token_updated_at",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "492fd3e0ec81aeaf9c0022349d7fe9f0",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flags_photo_object_key_guard",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "5b4a4aa14108b2966c94facf0f57ac68",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_users_avatar_object_key_guard",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "89261cf39b799928ded43dddb720adbf",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flag_photos_object_key_guard",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_event text, p_channel text",
+        "body": "43988569c93d6078e76019d66dbdb2f7",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "log_realtime_event",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_flag_id uuid",
+        "body": "5bcd91b784605261be7ac24b4ffebb93",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "increment_reopen_request",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "authenticated=X/postgres",
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "p_flag_id uuid",
+        "body": "c2d42f3f0c6d2688a3e1efdbc5e68bad",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "increment_dispute_request",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "28c75f88ed02f73db6ebac2e2f68f3eb",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_photo_added",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "28ed897bf769d577932c3a48638be2d8",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_comment_vote_added",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "354dc70d0f04f094994d1dcf3b3cde05",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_comment_added",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "3987bc3df6a0932a1515e7eb759de440",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_flag_creation_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "4c586206fec9b3610854de90b2e1505a",
+        "config": "search_path=public, vault, net",
+        "kind": "f",
+        "leakproof": false,
+        "n": "notify_flag_status_webhook",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "5837cc9ba01ad6963da47f022138fa21",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_insert_history",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "5c4d41930b8b18affd014d3b7c52a356",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flag_status_only_for_non_owner",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "751bb963080acaf605c9df591990e958",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_submitted",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "795eb2acf6f1d2e86acddb1eb89746a8",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_feedback_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "8136dd793c2aefddd9da39cef971b0be",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_dispute_reset",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "9f502b0fdc86f4f8e2c8034d24148a1d",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_point_event_streak",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "a160ff2d665c947377f62d531aa13d8c",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_new_user",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "b68a49b42d4e9c20d64dcb298ea278d8",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_reopen_reset",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "c36dd0fb35317ddcd47afce9200c24d3",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "enforce_flag_status_transition",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "d249fb1aebcefa0ba0fa208889e2096d",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_global_anon_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "e1e55324d053c3d68cc5c8c3c6498dbb",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "handle_flag_status_change",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "args": "",
+        "body": "f6af5e556a77efeda28760a5996f7fb3",
+        "config": "search_path=public",
+        "kind": "f",
+        "leakproof": false,
+        "n": "check_flag_rate_limit",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": true,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "functions",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "postgres=X/postgres"
+        ],
+        "args": "t text, ok boolean",
+        "body": "3a6489f095ece32639fc626860ffb5b6",
+        "config": null,
+        "kind": "f",
+        "leakproof": false,
+        "n": "pass",
+        "owner": "postgres",
+        "s": "public",
+        "secdef": false,
+        "sqlbody": "d41d8cd98f00b204e9800998ecf8427e"
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-first",
+      "entry": {
+        "cmd": "DELETE",
+        "p": "admin delete any comment",
+        "permissive": "PERMISSIVE",
+        "qual": "( SELECT private.current_user_is_admin() AS current_user_is_admin)",
+        "roles": "{authenticated}",
+        "s": "public",
+        "t": "flag_comments",
+        "withcheck": ""
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-first",
+      "entry": {
+        "cmd": "DELETE",
+        "p": "admin delete any flag",
+        "permissive": "PERMISSIVE",
+        "qual": "( SELECT private.current_user_is_admin() AS current_user_is_admin)",
+        "roles": "{authenticated}",
+        "s": "public",
+        "t": "flags",
+        "withcheck": ""
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-first",
+      "entry": {
+        "cmd": "DELETE",
+        "p": "flag-photos admin delete",
+        "permissive": "PERMISSIVE",
+        "qual": "((bucket_id = 'flag-photos'::text) AND ( SELECT private.current_user_is_admin() AS current_user_is_admin))",
+        "roles": "{authenticated}",
+        "s": "storage",
+        "t": "objects",
+        "withcheck": ""
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-first",
+      "entry": {
+        "cmd": "INSERT",
+        "p": "flags authenticated insert open",
+        "permissive": "RESTRICTIVE",
+        "qual": "",
+        "roles": "{authenticated}",
+        "s": "public",
+        "t": "flags",
+        "withcheck": "(status = 'open'::text)"
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-second",
+      "entry": {
+        "cmd": "ALL",
+        "p": "flags_user_scoped",
+        "permissive": "PERMISSIVE",
+        "qual": "(user_id = auth.uid())",
+        "roles": "{public}",
+        "s": "public",
+        "t": "flags",
+        "withcheck": "(user_id = auth.uid())"
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-second",
+      "entry": {
+        "cmd": "DELETE",
+        "p": "admin delete any comment",
+        "permissive": "PERMISSIVE",
+        "qual": "( SELECT users.is_admin\n   FROM users\n  WHERE (users.id = ( SELECT auth.uid() AS uid)))",
+        "roles": "{authenticated}",
+        "s": "public",
+        "t": "flag_comments",
+        "withcheck": ""
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-second",
+      "entry": {
+        "cmd": "DELETE",
+        "p": "admin delete any flag",
+        "permissive": "PERMISSIVE",
+        "qual": "( SELECT users.is_admin\n   FROM users\n  WHERE (users.id = ( SELECT auth.uid() AS uid)))",
+        "roles": "{authenticated}",
+        "s": "public",
+        "t": "flags",
+        "withcheck": ""
+      }
+    },
+    {
+      "section": "policies",
+      "side": "only-in-second",
+      "entry": {
+        "cmd": "DELETE",
+        "p": "flag-photos admin delete",
+        "permissive": "PERMISSIVE",
+        "qual": "((bucket_id = 'flag-photos'::text) AND ( SELECT users.is_admin\n   FROM users\n  WHERE (users.id = ( SELECT auth.uid() AS uid))))",
+        "roles": "{authenticated}",
+        "s": "storage",
+        "t": "objects",
+        "withcheck": ""
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "point_events",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "v",
+        "n": "flag_edit_history_public",
+        "owner": "postgres",
+        "reloptions": "security_invoker=true",
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "v",
+        "n": "flag_status_history_public",
+        "owner": "postgres",
+        "reloptions": "security_invoker=true",
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=r/postgres",
+          "authenticated=rd/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_comments",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=r/postgres",
+          "authenticated=rd/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_photos",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "anon=r/postgres",
+          "authenticated=rd/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flags",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_verifications",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=r/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "notification_preferences",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=rd/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "comment_votes",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=rd/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "feedback",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "authenticated=rd/postgres",
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "push_tokens",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "bucket",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "limiter"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "config",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "limiter"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_edit_history",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_status_history",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "grant",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "limiter"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "key_state",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "limiter"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "realtime_subscribe_log",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "translation_prefix",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "limiter"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "users",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "v",
+        "n": "users_self_email",
+        "owner": "postgres",
+        "reloptions": "security_invoker=true",
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=rwU/postgres"
+        ],
+        "forcerls": false,
+        "kind": "S",
+        "n": "point_events_id_seq",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=rwU/postgres"
+        ],
+        "forcerls": false,
+        "kind": "S",
+        "n": "realtime_subscribe_log_id_seq",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "comment_votes",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "feedback",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_comments",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_photos",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_verifications",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flags",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "notification_preferences",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "point_events",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "push_tokens",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "realtime_subscribe_log",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "v",
+        "n": "flag_edit_history_public",
+        "owner": "postgres",
+        "reloptions": "security_invoker=true",
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "v",
+        "n": "flag_status_history_public",
+        "owner": "postgres",
+        "reloptions": "security_invoker=true",
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "v",
+        "n": "users_self_email",
+        "owner": "postgres",
+        "reloptions": "security_invoker=true",
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=awdDxtm/postgres",
+          "authenticated=awdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_edit_history",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=awdDxtm/postgres",
+          "authenticated=awdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "flag_status_history",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=awdDxtm/postgres",
+          "authenticated=awdDxtm/postgres",
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "forcerls": false,
+        "kind": "r",
+        "n": "users",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": true,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=rwU/postgres",
+          "authenticated=rwU/postgres",
+          "postgres=rwU/postgres",
+          "service_role=rwU/postgres"
+        ],
+        "forcerls": false,
+        "kind": "S",
+        "n": "point_events_id_seq",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "relations",
+      "side": "only-in-second",
+      "entry": {
+        "acl": [
+          "anon=rwU/postgres",
+          "authenticated=rwU/postgres",
+          "postgres=rwU/postgres",
+          "service_role=rwU/postgres"
+        ],
+        "forcerls": false,
+        "kind": "S",
+        "n": "realtime_subscribe_log_id_seq",
+        "owner": "postgres",
+        "reloptions": null,
+        "rls": false,
+        "s": "public"
+      }
+    },
+    {
+      "section": "schemas",
+      "side": "only-in-first",
+      "entry": {
+        "acl": [
+          "postgres=UC/postgres",
+          "service_role=U/postgres"
+        ],
+        "n": "limiter",
+        "owner": "postgres"
+      }
+    },
+    {
+      "section": "triggers",
+      "side": "only-in-first",
+      "entry": {
+        "enabled": "O",
+        "fn": "limiter.guard_window_domain()",
+        "g": "guard_window_domain",
+        "s": "limiter",
+        "t": "config",
+        "type": 19,
+        "when": "CREATE TRIGGER guard_window_domain BEFORE UPDATE ON limiter.config FOR EACH ROW EXECUTE FUNCTION limiter.guard_window_domain()"
+      }
+    }
+  ],
+  "securityRelevantSections": [
+    "columns",
+    "defaultAcls",
+    "functions",
+    "policies",
+    "relations",
+    "schemas",
+    "triggers"
+  ]
+}
