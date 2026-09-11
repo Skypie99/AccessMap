@@ -1,0 +1,57 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": 12,
+ "bankedAt": "2026-09-11T21:17:42.076917+00:00",
+ "gates": {
+  "typecheck": "PASS (exit 0)",
+  "lint": "PASS (exit 0, 0 errors)",
+  "contract:check": "PASS",
+  "db:snapshot:check": "PASS (87 ordered inputs, stamp v2)",
+  "db:apply:plan": "PASS (9 candidates, canonical order)",
+  "db:rollback:verify": "PASS",
+  "release:verify": "PASS"
+ },
+ "guardSuites": {
+  "result": "157/157 across 7 suites",
+  "covers": [
+   "canonical migration identity incl. the contaminated-ledger fixture",
+   "workspace destruction guard (36)",
+   "target token safety (27)",
+   "review R1 regressions (16)",
+   "structural catalog",
+   "webhook target coupling",
+   "tracked project target safety"
+  ]
+ },
+ "WORKSPACE_DESTRUCTION_GUARD": "PASS",
+ "CREDENTIAL_GUARD": "KNOWN_FALSE_POSITIVE",
+ "credentialGuard": {
+  "status": "test C FAILS, and is reported as failing rather than called PASS",
+  "offender": "qa-reports/phase03a/state.json:428",
+  "whatItActuallyIs": "STAGE-MF-03, STAGE-MF-04, STAGE-MF-05 \u2014 finding identifiers, each 11 characters with an uppercase letter, a digit and a hyphen, which is exactly the detector's credential shape",
+  "inherited": "YES \u2014 present on the integration lineage before this staging run and before the INT merge; proven earlier by reproducing it at c7dab37 in a detached probe",
+  "notSuppressed": "no reviewed source was changed to silence it during this run, per the standing instruction",
+  "separateQuestion_didThisRunIntroduceARealCredential": "NO",
+  "howThatWasChecked": {
+   "scope": "all 49 files this run changed since the INT merge f2c2fbef",
+   "patterns": [
+    "JWT",
+    "postgres:// URL carrying a password",
+    "sb_secret/sb_publishable key",
+    "128-hex limiter key",
+    "long base64 secret"
+   ],
+   "hits": 0,
+   "note": "40-char git SHAs, 64-char artifact sha256 digests and 32-char function-body md5s were excluded deliberately \u2014 they are identity digests, not secrets. My first scan counted them and reported 794 false hits; tightened before drawing any conclusion.",
+   "secretValueInTree": "the provisioned fda028_limiter_epoch_key value appears in ZERO tracked files and ZERO receipt files, checked by grepping the live value"
+  }
+ },
+ "limiterKeySelfManagement": {
+  "observed": "the Vault secret is now 64 hex chars / 32 bytes, not the 128 hex / 64 bytes I provisioned",
+  "cause": "limiter.write_epoch_key does vault.update_secret(id, encode(p_key,'hex')). When the round trip destroyed and re-created the limiter, it reseeded and overwrote the root in place \u2014 the migration's own comment says update_secret OVERWRITES so the prior key value is destroyed.",
+  "significance": "not a defect. It independently demonstrates the Vault WRITE path works hosted, not just the read path, and that key material survives a full destroy/recreate cycle.",
+  "currentState": "key_state epoch -1 / reseed_anchor -1 (freshly seeded); read_epoch_key() returns 32 bytes"
+ },
+ "nextOperation": "STEP 13 \u2014 independent stage review"
+}
