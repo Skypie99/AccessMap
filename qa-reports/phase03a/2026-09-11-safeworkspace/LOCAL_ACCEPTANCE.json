@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "unit": "Phase 03A staging-blocker repair - safe-resume local acceptance",
+  "OPERATION_STATE": "VERIFIED_WITH_ONE_RECORDED_GAP",
+  "capturedUtc": "2026-09-11",
+  "worktree": "/Users/skypie/AccessMap-worktrees/flagstone-p03a-safeworkspace-20260911",
+  "branch": "repair/flagstone-p03a-staging-blockers-20260911",
+  "resumedFrom": "73ce8c64f8596c23463b6a7922bec4615a4e593e",
+  "nodeModulesProvenance": "symlink to AccessMap-worktrees/flagstone-b33-convergence-20260903/node_modules -- package.json AND package-lock.json byte-identical to this tree (1aacaa52059e / 458e6ced6141). The first donor tried (d1f4-source-repair-r3) predates @maplibre/maplibre-gl-leaflet and produced one phantom typecheck error; that was an environment mismatch, not a source defect, and is recorded rather than hidden.",
+  "workspaceDestructionGuard": {
+    "result": "PASS - 36/36",
+    "suite": "scripts/__tests__/canonicalApplyWorkspaceGuard.test.ts",
+    "commit": "1d2aa4d22156d055d7ef57a131c8e5e6b2ede1f3",
+    "rule": "No real repository, worktree, home, cwd or filesystem root is ever passed to the destructive call. Dangerous real paths are interrogated with inspectWorkspaceForDestruction(), which removes nothing; only disposable temp fixtures reach destroyWorkspace().",
+    "coverage": [
+      "valid destroy + bystander survival",
+      "double-destroy refusal",
+      "repo-shaped fixture refused",
+      "wrong prefix",
+      "nested below temp root",
+      "subdirectory of a workspace",
+      "malformed marker",
+      "wrong marker type",
+      "wrong marker version",
+      "marker is an array",
+      "marker is a symlink",
+      "missing generated shape",
+      "8 degenerate arguments",
+      "non-existent path",
+      "filesystem root",
+      "home in 3 representations",
+      "cwd",
+      "temp root itself",
+      "every registered git worktree",
+      ".git as directory",
+      ".git as file",
+      "symlink to a workspace",
+      "symlink to a repo",
+      "traversal out of a workspace",
+      "traversal onto a repo-shaped sibling",
+      "outDir now ignored by buildWorkspace"
+    ],
+    "negativeControls": [
+      "The old predicate (config.toml present => delete) returns true for a repo-shaped temp fixture where the new guard refuses.",
+      "The old predicate returns true for THIS WORKTREE -- proven by read-only existsSync, with no destructive call anywhere -- where the new guard refuses with a git-worktree reason. The defect that deleted six trees, reproduced without risking anything."
+    ],
+    "postRunCheck": "every directory in `git worktree list` still present after the suite"
+  },
+  "gates": {
+    "typecheck": "PASS (tsc --noEmit, exit 0, no output)",
+    "lint": "PASS (0 errors, 91 warnings - matches the recorded project baseline)",
+    "contract:check": "PASS - migration-crosswalk.v1.json is current",
+    "db:rollback:verify": "PASS (exit 0). 71 applied, 5 candidates, temp destroyed, global PostgreSQL unchanged. Four candidates UNSAFE_BASELINE_RESTORE - contract met; 20260904000400_adopt_execute_revokes.sql NON_REVERSIBLE_SECURITY_REPAIR - contract met, the designed outcome.",
+    "db:replay:next": "PASS (exit 0)",
+    "db:snapshot:check": "STALE, exit 0 - inherited, reproduced unchanged from the pre-repair state; not caused by this work and not turned into a pass",
+    "db:apply:plan": "PASS - 9 candidates may be applied, in canonical order; refusals [], ledgerAudit ok",
+    "composedPgTap": "NOT RUN - BLOCKED. See blockedGates."
+  },
+  "blockedGates": {
+    "composedPgTap": {
+      "command": "npm run db:pgtap",
+      "exit": 1,
+      "status": "INVALID at discovery - no assertion ever ran",
+      "cause": "supabase/tests/phase03a-fixtures/baseline-backups.sql carries no PGTAP_KIND marker. scripts/run-pgtap.mjs validates discovery first and exits 1 on any problem (line 47), before executing a single suite.",
+      "preExisting": "YES - the file was added 2026-09-05 by 0a6a6b0 'fix(db): constrain Phase 03A application privileges', is untouched by all four repair commits and by this one, and its sibling baseline-extra.sql does carry the marker. The 2026-09-10 stage-fix acceptance recorded this same finding under environmentLimitationsNotTurnedIntoPasses.",
+      "consequence": "The 254/254 composed figure carried forward from 2026-09-10 is NOT re-measured here and must not be claimed as re-measured.",
+      "fix": "one line - a PGTAP_KIND marker on that fixture - but it is outside this prompt's scope and belongs to whoever owns that fixture."
+    }
+  },
+  "jestBaselineReconciliation": {
+    "recordedBaselineAt06088bec": {
+      "suitesFailed": 12,
+      "suitesPassed": 277,
+      "suitesTotal": 289,
+      "testsFailed": 14,
+      "todo": 32,
+      "testsPassed": 4272,
+      "testsTotal": 4318
+    },
+    "thisRunAtHead": {
+      "suitesFailed": 12,
+      "suitesPassed": 278,
+      "suitesTotal": 290,
+      "testsFailed": 14,
+      "todo": 32,
+      "testsPassed": 4318,
+      "testsTotal": 4364
+    },
+    "delta": "+46 total, +46 passed, failures unchanged at 14 in 12 suites, todo unchanged at 32.",
+    "deltaAccountedFor": "+36 canonicalApplyWorkspaceGuard.test.ts (new, this commit) and +10 from the four repair commits already on the branch (canonicalMigrationIdentity 20 -> 28, webhookTargetCoupling 3 -> 5). 36 + 10 = 46, exact.",
+    "beyondBaseline": [],
+    "inheritedNowPassing": [],
+    "inheritedFailuresByName": [
+      "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) \u203a fires the haptic, forwards every injected prop, adds no visual dim",
+      "Explore close targets \u203a MapScreen heat notice close controls are real 44pt targets",
+      "FV-1 \u2014 focused fields stay in their owning scroller \u203a Address Search scrolls the full body, including its focused input",
+      "T8 \u2014 one spoken voice (source contract) \u203a each triage action names its flag (category + conditional distance)",
+      "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism \u203a Recipe D \u2014 every delegate is a real, live consumer (the list drains)",
+      "TaskCard \u2014 T8: each action names its flag \u203a with a location, the label carries category THEN distance",
+      "TaskCard \u2014 T8: each action names its flag \u203a with no location, action labels are category-only (no distance)",
+      "Wave 2 \u2014 expanded modal adoption \u203a keeps Flag Detail hand-built and gives it expanded safe-area geometry",
+      "focus-in standard \u2014 every dismissable moves the SR cursor in on open \u203a every ALLOWED entry still matches exactly one live surface",
+      "map-chrome budget \u2014 the ONE persistent command bar \u203a (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8",
+      "the control now lives in the \u22ef tool sheet \u203a VoiceOver order: search, then the circles, then the sheet rows",
+      "the dismissal standard \u203a C \u00b7 every surface is still reduced-motion gated",
+      "the dismissal standard \u203a J \u00b7 focus return is wired end to end, and nothing else claims onDismiss",
+      "the privacy screen renders Sky's document, verbatim \u203a every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+    ],
+    "note": "All 14 are src/ UI and a11y source-contract guards. None touches migration tooling, the workspace helper, or anything the four repair commits or this commit modified."
+  },
+  "block02Verification": {
+    "auditBeforePlanning": "auditLedger() is defined at canonical-migration-identity.mjs:95 and invoked at :172; the plan is returned at :249. The audit runs before plan acceptance, as claimed.",
+    "contaminatedFixtureRows": 82,
+    "refusalTally": {
+      "phantom remote version": 11,
+      "wall-clock substitution": 6,
+      "impossible ordering": 8,
+      "total": 25
+    },
+    "refusedPlanIsEmpty": "planApply ok:false, plan length 0 - a dirty ledger cannot produce an executable plan",
+    "narrativeMatch": "EXACT (11 phantom / 6 wall-clock / ordering violations present, 82 rows)"
+  },
+  "block03Verification": {
+    "cliWorkdirSupport": "supabase 2.116.0; the global flag --workdir <string> 'path to a Supabase project directory' is present",
+    "cleanLedgerBuild": {
+      "ok": true,
+      "baseline": 71,
+      "adoption": 5,
+      "candidate": 9,
+      "total": 85,
+      "wouldPush": 14,
+      "plan": 9,
+      "unaccountedPending": 0
+    },
+    "canonicalFilenamesPreserved": true,
+    "adoptionArtifacts": "5 declared in candidate-contract.json, 5 materialized, each bound to its declared hash at materialization",
+    "targeting": "db push --workdir <ws> --project-ref <ref> [--dry-run]; --linked absent; a production project-ref raises rather than building a command",
+    "narrativeReconciliation": "The narrative recorded 8 candidates / total 84 / wouldPush 13. This tree measures 9 / 85 / 14. The difference is the MF-04 forward migration 20260911120000_phase03a_webhook_target_env_scoped.sql, added to the candidate set AFTER that figure was taken. Git is the truth; the figures are reconciled, not contradictory."
+  },
+  "mf04Verification": {
+    "hardcodedProductionUrl": "NONE in the live SQL of the candidate set",
+    "endpointSource": "vault.decrypted_secrets name = 'webhook_endpoint'",
+    "failsClosed": "missing secret -> RAISE WARNING + RETURN NEW before any net.http_post; missing or non-https endpoint -> same. No network call is reachable without configuration.",
+    "clientRoleProtection": "the migration asserts vault secret tables are unreachable by client role(s) and raises STAGE-MF-04 otherwise",
+    "guardTests": "webhookTargetCoupling 5/5, projectTargetSafety 3/3"
+  },
+  "fda028Preservation": {
+    "FDA028_V4_PRESERVED": "YES",
+    "forwardSha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771 (matches the recorded value)",
+    "rollbackSha256": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302 (matches the recorded value)",
+    "diffSinceAcceptedCodeSha": "empty over supabase/tests/fda028/ and the limiter migration"
+  },
+  "stagingMutations": "NONE",
+  "productionMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE"
+}
