@@ -203,6 +203,27 @@ GRANT SELECT ON TABLE "public"."flag_status_history_public" TO "authenticated";
 GRANT SELECT ON TABLE "public"."flag_verifications" TO "authenticated";
 GRANT INSERT ("flag_id", "verifier_id") ON TABLE "public"."flag_verifications" TO "authenticated";
 GRANT SELECT ON TABLE "public"."flags" TO "anon";
+-- STAGE A COMPATIBILITY GRANTS — removed by 20260910120000_phase03a_fda026_stage_b_cutover.
+-- anon is the DEFAULT role for every web session and every native guest
+-- (src/screens/GuestProfile.tsx). Production grants all five of these today, and
+-- shipped Build 33 reads them without gating on a signed-in user:
+--   flag_comments               src/lib/comments.ts (four call sites)
+--   flag_photos                 listFlagPhotos(), rendered by FlagDetailModal
+--   flag_status_history_public  } security_invoker views: the grant is the only
+--   flag_edit_history_public    } thing letting anon reach them at all
+--   point_events                retained for production fidelity only; the sole
+--                               shipped reader is getPointEventHistory(userId) on
+--                               the AUTHENTICATED ProfileScreen, not a guest path
+-- Revoking them in Stage A does not degrade a guest to an empty list — the client
+-- call THROWS. This is the same class of defect as the is_admin retention above,
+-- found by independent review after the first version of this split shipped, and
+-- it is retained here for the same reason: the cutover is Stage B's job, not
+-- Stage A's.
+GRANT SELECT ON TABLE "public"."flag_comments" TO "anon";
+GRANT SELECT ON TABLE "public"."flag_photos" TO "anon";
+GRANT SELECT ON TABLE "public"."flag_status_history_public" TO "anon";
+GRANT SELECT ON TABLE "public"."flag_edit_history_public" TO "anon";
+GRANT SELECT ON TABLE "public"."point_events" TO "anon";
 GRANT INSERT ("user_id", "lat", "lng", "category", "severity", "description", "photo_url", "photo_alt", "context_tags", "status") ON TABLE "public"."flags" TO "anon";
 GRANT SELECT, DELETE ON TABLE "public"."flags" TO "authenticated";
 GRANT INSERT ("user_id", "lat", "lng", "category", "severity", "description", "photo_url", "photo_alt", "context_tags", "status") ON TABLE "public"."flags" TO "authenticated";
@@ -218,6 +239,17 @@ GRANT INSERT ("user_id", "token", "platform") ON TABLE "public"."push_tokens" TO
 GRANT UPDATE ("user_id", "token", "platform") ON TABLE "public"."push_tokens" TO "authenticated";
 GRANT SELECT ("token", "user_id") ON TABLE "public"."push_tokens" TO "service_role";
 GRANT SELECT ("id", "display_name", "avatar_url", "avatar_object_key", "points", "created_at") ON TABLE "public"."users" TO "authenticated";
+-- STAGE A COMPATIBILITY GRANT — removed by 20260910120000_phase03a_fda026_stage_b_cutover.
+-- is_admin is deliberately absent from the secure-end-state list above. It is
+-- re-granted here for one reason only: shipped Build 33 (iOS f5594171, pinned web
+-- ebf091c2) reads it directly at src/lib/admin.ts:31, and without the grant that
+-- read returns 42501, which the shipped catch turns into isAdmin=false. The admin
+-- UI then disappears with no error shown to the admin.
+--
+-- This line is the WHOLE of the is_admin compatibility retention. Stage B revokes
+-- exactly it, and public.current_user_can_admin() (Stage A) is the replacement:
+-- it answers a boolean about the CALLER without exposing anyone's flag.
+GRANT SELECT ("is_admin") ON TABLE "public"."users" TO "authenticated";
 GRANT UPDATE ("display_name", "avatar_url", "avatar_object_key") ON TABLE "public"."users" TO "authenticated";
 GRANT EXECUTE ON FUNCTION "private".current_user_is_admin() TO "authenticated";
 GRANT EXECUTE ON FUNCTION "private".get_comment_author_profiles(uuid[]) TO "authenticated";

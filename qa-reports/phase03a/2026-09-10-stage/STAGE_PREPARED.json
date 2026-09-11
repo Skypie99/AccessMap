@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "RUN_UNIT": "PHASE03A_HOSTED_STAGING_EXECUTION",
+  "OPERATION_STATE": "PREPARED",
+  "preparedUtc": "2026-09-10",
+  "authorizationReference": "FLAGSTONE-P03A-STAGE-AUTHORIZED-20260910-R1 — staging mutation authorized within exact boundaries; production, push, main merge, App Store, Phase 03B all NOT authorized",
+
+  "PHASE03A_STAGING_IDENTITY_GATE": "PASS",
+  "identityVerification": {
+    "stagingProjectRef": "ctshxbykuemeqnofqcdh",
+    "stagingBranchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+    "stagingBranchName": "flagstone-p03a-staging-20260905",
+    "parentProductionProjectRef": "kldlwszpfkdmsjrjhjym",
+    "stagingRefNotEqualProductionRef": true,
+    "isDefault": false,
+    "persistent": false,
+    "withData": false,
+    "previewProjectStatus": "ACTIVE_HEALTHY",
+    "isDevelopmentBranch": true,
+    "studioArchiveUsed": false,
+    "verifiedFreshly": "2026-09-10, not copied from the packet"
+  },
+
+  "acceptedInputGatesVerifiedInGit": {
+    "PHASE03A_CODE_SHA": "21b2bd7a96cd69a8d8fc3ff8756b88a5fe28d912",
+    "PHASE03A_CODE_TREE": "b47f1221e8be9c57d147a80ee328359b32f66436",
+    "codeTreeMatches": true,
+    "ACCEPTED_INTEGRATION_SHA": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
+    "ACCEPTED_INTEGRATION_TREE": "11de0eb4cf0cbf718fe17fa8a8cab8defef21af8",
+    "integrationTreeMatches": true,
+    "integrationWorktreeHeadEqualsAccepted": true,
+    "integrationWorktreeClean": true,
+    "FDA028_V4_SOURCE_SHA": "eec51b6723d04105a7ba31bf2efd2573b95e8902"
+  },
+
+  "stagingBaselinePreState": {
+    "capturedUtc": "2026-09-10",
+    "migrationLedgerCount": 71,
+    "migrationLedgerMax": "20260830130000",
+    "matchesAcceptedPhase02Baseline": true,
+    "limiterSchemaPresent": 0,
+    "privateSchemaPresent": 0,
+    "publicBaseTables": 13,
+    "publicFunctions": 25,
+    "publicPolicies": 44,
+    "userTriggers": 30,
+    "vaultSecretCount": 0,
+    "disposableStateProof": {"auth_users": 0, "flags_rows": 0, "feedback_rows": 0, "storage_objects": 0},
+    "noProductionDataCopied": true,
+    "edgeFunctions": [
+      {"slug": "send-push-notification", "version": 6, "verify_jwt": false, "sha256": "0434671ed6ad9f62e8e5a94a200f8caad3d2771e8cbb3a0053229874a1595be8"},
+      {"slug": "notify-flag-status", "version": 8, "verify_jwt": false, "sha256": "633db2d2ae659ffc03d4758be2538253413c65c54a4f9b66ca8d3057c0ba7a0e"},
+      {"slug": "delete-account", "version": 4, "verify_jwt": true, "sha256": "9edfdaf21ee036632b47a10438f0d7e0d6b97f19c62b3f6cb57884dd68abdb34"}
+    ],
+    "privacyDiscipline": "Only counts, object names and structural facts captured. No secrets, no raw Auth records, no user identifiers, no raw network addresses."
+  },
+
+  "phase02CandidatePreconditionAnalysis": {
+    "method": "Each candidate's precondition probed directly against staging rather than assumed from history.",
+    "20260904000000_adopt_private_admin_helper": {"required": true, "evidence": "private schema absent; private.current_user_is_admin does not exist"},
+    "20260904000100_drop_duplicate_status_triggers": {"required": true, "evidence": "both trigger_flag_status_change and on_flag_status_change present on public.flags (2 of 2)"},
+    "20260904000200_adopt_d1sa_containment": {"required": true, "evidence": "the live storage.objects policies lack the profile-existence EXISTS clause the candidate adds"},
+    "20260904000300_adopt_live_insert_throttles": {"required": true, "evidence": "only 1 of the 3 insert throttle triggers present; check_global_anon_rate_limit and check_flag_rate_limit absent"},
+    "20260904000400_adopt_execute_revokes": {"required": true, "evidence": "check_flag_creation_rate_limit is still EXECUTE-able by anon and authenticated"},
+    "conclusion": "All five remain required. This was verified, not inherited from the historical claim."
+  },
+
+  "phase03aPreconditionsObserved": {
+    "fda009_flags_anon_insert_policy_present": 1,
+    "fda026_broad_users_readable_policy_present": 1,
+    "note": "Both are the pre-Phase-03A states the candidates are designed to change, consistent with an unmodified baseline."
+  },
+
+  "plannedOperationSequence": [
+    "OP-02-1..5  apply the five accepted Phase 02 adoption candidates in order",
+    "OP-VAULT    provision the staging-only fda028_limiter_epoch_key",
+    "OP-03A-1..8 apply the eight accepted Phase 03A candidates in packet order",
+    "OP-TEST     hosted pgTAP, role/RLS/REST/RPC matrix, FDA-028 hosted acceptance, R6 residual attacks",
+    "OP-REHEARSE restoration then reapply",
+    "OP-REVIEW   independent staging acceptance",
+    "OP-PACKET   production authorization packet"
+  ],
+  "writeAheadStates": ["PREPARED","RUNNING","APPLIED_NOT_VERIFIED","VERIFIED | FAILED | OUTCOME_UNKNOWN"],
+  "recoveryRule": "On any interruption: do NOT blindly retry. Inspect actual staging state (ledger count, object presence) and reconcile against the last banked operation record before continuing.",
+  "prohibitions": ["production mutation","push","main merge","app build","App Store","Vercel production","Phase 03B","historical migration rewrite","staging deletion without verified owner cleanup authority"]
+}

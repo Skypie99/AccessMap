@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEP 2 — Phase 02 baseline reconciliation",
+  "OPERATION_STATE": "VERIFIED",
+  "PHASE02_STAGING_BASELINE": "RECONCILED",
+  "capturedUtc": "2026-09-10",
+  "target": "ctshxbykuemeqnofqcdh (branch 441acc38) — production kldlwszpfkdmsjrjhjym NOT touched",
+
+  "operations": [
+    {"op":"OP-02-1","candidate":"20260904000000_adopt_private_admin_helper.sql","sha256":"1d504c3ad05c0b31052715406059071301a51f4359ef35ce85c92cb61202fbf7",
+     "preState":"private schema absent","postVerified":"private schema + current_user_is_admin present; anon EXECUTE false; authenticated EXECUTE true; users-update-own-row policy present","ledger":"71->72"},
+    {"op":"OP-02-2","candidate":"20260904000100_drop_duplicate_status_triggers.sql","sha256":"9771e7c5df363b139e8bcd9e9f9e58b15e6c2f59eebb4523a330a774fc18db49",
+     "preState":"2 handle_flag_status_change triggers","postVerified":"exactly 1; the migration's own guard would have raised otherwise","ledger":"72->73"},
+    {"op":"OP-02-3","candidate":"20260904000200_adopt_d1sa_containment.sql","sha256":"fbc986296aee71109639ad833d4c75422c28bbefa4fddfefe51f29eeaf03dfb6",
+     "preState":"storage policies lacked the profile-existence clause","postVerified":"both storage policies now carry it; increment_reopen/dispute present and revoked from anon; enforce_flag_status_transition not executable by authenticated","ledger":"73->74"},
+    {"op":"OP-02-4","candidate":"20260904000300_adopt_live_insert_throttles.sql","sha256":"b346b2c7775543c9a268098c0956812b7ad9a9ddf49680202fe846073d4ef776",
+     "preState":"1 of 3 throttle triggers","postVerified":"all 3 present","ledger":"74->75"},
+    {"op":"OP-02-5","candidate":"20260904000400_adopt_execute_revokes.sql","sha256":"e8a3d880d361e5d6be96c8b30709a9b1b3d8a8d94e6d23175342db41bb20cf13",
+     "preState":"check_flag_creation_rate_limit executable by anon/authenticated","postVerified":"every named function revoked from both anon and authenticated; the migration's own leak guard passed","ledger":"75->76"}
+  ],
+
+  "finalState": {"ledgerCount":76,"throttleTriggers":3,"allClientExecuteRevoked":true,"vaultSecrets":0},
+
+  "materialObservation_ledgerVersioning": {
+    "issue": "The MCP apply_migration tool assigns its OWN ledger version at apply time. The five candidates were recorded as 20260910161947, 20260910162019, 20260910162034, 20260910162114 and 20260910162139 - NOT their source filename versions 202609040000xx.",
+    "impact": "Content and ORDER are correct and verified; only the recorded version strings differ from the candidate filenames.",
+    "consequenceForProduction": "A production apply must NOT use this mechanism if exact version parity with the repository filenames is required. The production packet must specify the Supabase CLI (or an equivalent exact-version path) so the applied ledger versions match the accepted artifacts. Recorded rather than papered over."
+  },
+
+  "safetyObservation_productionWebhookUrl": {
+    "finding": "public.notify_flag_status_webhook, created by candidate 5, hardcodes the PRODUCTION url https://kldlwszpfkdmsjrjhjym.supabase.co/functions/v1/notify-flag-status.",
+    "whyItIsInertHere": "The function returns early with a warning when no 'webhook_secret' exists in vault.decrypted_secrets. Staging has ZERO vault secrets, verified before and after.",
+    "standingConstraint": "A 'webhook_secret' MUST NOT be created in staging. Doing so would make a staging flag status change POST to PRODUCTION. Only fda028_limiter_epoch_key is authorized for provisioning.",
+    "verifiedAfterApply": {"vault_secrets": 0, "webhook_secret_present": 0}
+  },
+
+  "prohibitionsRespected": {"productionMutations":"NONE","pushes":"NONE","mainMerges":"NONE","historicalMigrationRewrite":"NONE","studioArchive":"UNTOUCHED"}
+}

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEPS 6-7 — hosted role/authorization matrix and FDA-028 hosted acceptance",
+  "OPERATION_STATE": "VERIFIED",
+  "capturedUtc": "2026-09-10",
+  "target": "ctshxbykuemeqnofqcdh branch 441acc38 — all suites run inside begin/rollback, no residue",
+
+  "roleMatrix": {
+    "result": "31/31 PASS, 0 failures",
+    "covers": {
+      "FDA-009": "legacy flags_user_scoped policy confirmed gone",
+      "FDA-010": "anon and authenticated cannot EXECUTE set_flag_updated_at, update_flags_updated_at, the avatar key guard, or check_flag_rate_limit",
+      "FDA-012": "service_role has NO table INSERT on flags or feedback; anon no UPDATE on users; authenticated no TRUNCATE",
+      "FDA-021": "authenticated cannot UPDATE points, is_admin, email, streak_days or created_at; CAN still UPDATE display_name and avatar_url; cannot READ is_admin",
+      "FDA-023": "RESTRICTIVE open-status insert policy present",
+      "FDA-026": "broad users-readable policy gone; anon cannot call the leaderboard or comment-author RPCs; authenticated can; service_role not granted the contextual rank RPC",
+      "TRANSITIONAL_DELETE": "unauthorized user CANNOT delete another user's flag; owner CAN delete own; admin CAN delete any — all executed as real roles via set local role + jwt claims",
+      "FDA-028_surface": "anon and authenticated have no USAGE on the limiter schema; service_role does"
+    },
+    "authorTestBugFoundAndFixed": {
+      "assertion": "'FDA-012 service_role retains needed SELECT on flags'",
+      "whatWentWrong": "I asserted has_table_privilege(service_role,'flags','SELECT'). FDA-012 grants only COLUMN-level SELECT(user_id), and has_table_privilege is false for a column-only grant. The assertion was wrong, NOT the system.",
+      "correctedTo": "column-scoped SELECT(user_id) and UPDATE(user_id) present AND table-wide SELECT absent — which is exactly the intended contract"
+    }
+  },
+
+  "fda028Hosted": {
+    "result": "38/38 PASS, 0 failures, DETERMINISTIC across 4 consecutive runs",
+    "VAULT_IO": "PASS — limiter.current_epoch_key read the REAL staging Vault, returned 32 bytes, seeded key_state from epoch -1 and recorded the 86400 domain. Exactly one limiter secret; webhook_secret still absent.",
+    "TRUSTED_SIGNAL_dbContract": "PASS — public IPv4 accepted; null, empty, multi-valued, malformed and private-when-guarded all refused; IPv4-mapped and NAT64 well-known prefix both unwrap to the IPv4 namespace; genuine IPv6 stays in the v6 namespace and groups by /64",
+    "FULL_INSERT_ENFORCEMENT": "PASS — an admitted call wrote a REAL public.flags row with guest shape; a refused call wrote NOTHING",
+    "RESET_CONTINUITY": "PASS — grant exhausts, discarding state yields a new envelope, the underlying bucket KEEPS the spend (3 not 1), repeated resets terminate and never exceed BUCKET_ALLOWANCE",
+    "TWO_CLIENT_ISOLATION": "PASS — clients on different networks admitted independently",
+    "BUCKET_GRANT_LIFECYCLE": "PASS — no orphan grants; a direct orphan insert is REJECTED by the FK (23503)",
+    "DOMAIN_GUARD": "PASS — a window_seconds change while the ledger has rows RAISES P0001",
+    "BYPASS_TRUTH": "anon RETAINS direct column INSERT on public.flags (open by design pre-cutover); service_role has NO direct INSERT so the limiter is its only route; anon cannot reach the limiter schema",
+    "SECRET_LEAKAGE": "PASS — admission output contains no 32+ character hex run, so no key or bucket material surfaces"
+  },
+
+  "flakinessFoundAndResolved": {
+    "observed": "The FDA-028 suite returned 1 failure, then 0, then 0 — non-deterministic.",
+    "handling": "Not averaged away. The suite was re-run repeatedly with per-assertion capture until the failure was caught in the act.",
+    "rootCause": "MY TEST, not the limiter. The reset block selected 'the current grant' with `order by grant_id desc`, but grant_id is a RANDOM UUID, so it sometimes picked a different client's grant.",
+    "fix": "The reset block now uses the grant the admission call actually RETURNED, captured in a DO block.",
+    "afterFix": "0 failures on 4 consecutive runs.",
+    "significance": "No limiter defect was involved. Recorded because a flaky hosted result must be explained, not smoothed over."
+  },
+
+  "measurementIntegrity": "Every count uses the same finish()-based sink that was validated earlier with two negative controls (a failing assertion and a plan mismatch both produce non-zero)."
+}

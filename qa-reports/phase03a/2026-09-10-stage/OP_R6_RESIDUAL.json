@@ -1,0 +1,184 @@
+{
+  "operation": "STEP9_R6_RESIDUAL_ATTACKS",
+  "state": "VERIFIED",
+  "target": {
+    "projectRef": "ctshxbykuemeqnofqcdh",
+    "branchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+    "parentProductionProjectRef": "kldlwszpfkdmsjrjhjym"
+  },
+  "productionTouched": false,
+  "writeAheadNote": "R6-2 authenticated probe requires ONE synthetic auth user created via the staging Auth admin API. Synthetic only. Removal is recorded as a required follow-up in this same file. If interrupted after creation, resume by deleting the recorded synthetic user id; do not blind-retry creation.",
+  "syntheticAuthUser": {
+    "created": true,
+    "id": "81fe3bdc-df2d-454a-b712-2dfe6131a485",
+    "emailDomain": "flagstone-staging.invalid",
+    "deleted": false,
+    "note": "Created 2026-09-10T16:41:43Z. First attempt aborted on a shell-variable error AFTER creation; resumed by resetting the password on this exact existing user rather than blind-recreating."
+  },
+  "r6_1": {
+    "state": "COMPLETE",
+    "measurement": "A 6-second held config-domain-change transaction blocked a concurrent admission for 7s; the admission then succeeded. Post-release admission latency 3s. idle-in-transaction sessions afterwards: 0.",
+    "configRestoredTo": {
+      "window_seconds": 86400,
+      "normal_allowance": 5,
+      "bucket_allowance": 50
+    },
+    "observationCarriedForward": "R6-1's restore left limiter.key_state.window_seconds at 3600 while limiter.config.window_seconds was 86400. The bucket ledger was empty (the guard requires that), so nothing was stranded, and the next admission re-anchored key_state to the config domain automatically via the window_seconds marker path. Confirmed in R6-3 Direction A: key_state moved 3600/496960 -> 86400/20706 on the first admission, with stranded_rows = 0."
+  },
+  "r6_2": {
+    "state": "COMPLETE",
+    "question": "Can anon or authenticated acquire the limiter advisory coordination key through exposed application interfaces? Does any normal Edge/service path expose a generic arbitrary-SQL/advisory-lock primitive?",
+    "verdict": "NOT_REACHABLE_FROM_ANY_APPLICATION_INTERFACE",
+    "rawCatalogResidualAcknowledged": {
+      "fact": "pg_catalog.pg_advisory_xact_lock / _shared are EXECUTE-able by PUBLIC, therefore by anon and authenticated, at the catalog level.",
+      "notRevoked": "Deliberate. These are platform-managed PostgreSQL primitives; revoking them globally to produce a prettier catalog was explicitly out of scope and would be a platform-wide change, not a Flagstone-owned surface.",
+      "whyItIsNotAnExploitPath": "Catalog EXECUTE privilege is only reachable by a caller that can already submit arbitrary SQL. No such caller exists on the application surface (evidence below)."
+    },
+    "catalogEvidence": {
+      "anon_usage_on_limiter_schema": false,
+      "authenticated_usage_on_limiter_schema": false,
+      "advisory_functions_in_exposed_schemas": 0,
+      "client_callable_public_or_graphql_functions_referencing_advisory_or_limiter_or_dynamic_EXECUTE": 0
+    },
+    "liveApplicationSurfaceEvidence": {
+      "endpoint": "https://ctshxbykuemeqnofqcdh.supabase.co",
+      "exposedSchemasReportedByPostgREST": [
+        "public",
+        "graphql_public"
+      ],
+      "anon": {
+        "rpc_pg_advisory_lock": "HTTP 404 PGRST202",
+        "rpc_pg_advisory_xact_lock": "HTTP 404 PGRST202",
+        "rpc_pg_advisory_lock_shared": "HTTP 404 PGRST202",
+        "rpc_domain_lock_key": "HTTP 404 PGRST202",
+        "rpc_admit_at": "HTTP 404 PGRST202",
+        "rpc_admit_guest_flag": "HTTP 404 PGRST202",
+        "GET_limiter_key_state_via_Accept_Profile": "HTTP 406 PGRST106 Invalid schema: limiter",
+        "GET_limiter_config_via_Accept_Profile": "HTTP 406 PGRST106 Invalid schema: limiter",
+        "rpc_with_Content_Profile_limiter": "HTTP 406 PGRST106 Invalid schema: limiter"
+      },
+      "authenticated": {
+        "jwtProof": "real password-grant JWT, role=authenticated, aal1, is_anonymous=false",
+        "rpc_pg_advisory_lock": "HTTP 404 PGRST202",
+        "rpc_pg_advisory_xact_lock": "HTTP 404 PGRST202",
+        "rpc_domain_lock_key": "HTTP 404 PGRST202",
+        "rpc_admit_at": "HTTP 404 PGRST202",
+        "rpc_admit_guest_flag": "HTTP 404 PGRST202",
+        "GET_limiter_key_state": "HTTP 406 PGRST106 Invalid schema: limiter",
+        "GET_limiter_bucket": "HTTP 406 PGRST106 Invalid schema: limiter"
+      },
+      "positiveControl": {
+        "request": "GET /rest/v1/flags?select=id&limit=1 with the authenticated JWT",
+        "result": "HTTP 200 with a real row",
+        "whyItMatters": "Proves the credential and the API surface were live, so the 404/406 results above are genuine refusals rather than a dead token or an unreachable host."
+      }
+    },
+    "edgeFunctionSurfaceEvidence": {
+      "deployedFunctions": [
+        "send-push-notification v6",
+        "notify-flag-status v8",
+        "delete-account v4"
+      ],
+      "method": "Source of all three read from the hosted deployment and inspected for a caller-controlled SQL string, function name, or lock key.",
+      "send-push-notification": "Fixed .from('push_tokens').select('token').eq('user_id', ...). Shared-secret gated; fails closed when SEND_PUSH_SECRET is unset. No dynamic SQL.",
+      "notify-flag-status": "Fixed .from('push_tokens').select('token').eq('user_id', ...) plus one fixed RPC name (verify_webhook_secret). Vault-secret gated. No dynamic SQL.",
+      "delete-account": "verify_jwt=true; fixed .from('flags').update({user_id:null}).eq('user_id', <caller's own JWT id>) then admin deleteUser. No dynamic SQL.",
+      "conclusion": "No deployed Edge Function accepts a caller-supplied SQL statement, function name, or advisory-lock key. There is no generic arbitrary-SQL/advisory-lock primitive on the Edge surface."
+    },
+    "residualStated": "The advisory key is acquirable only by a principal holding a direct SQL session (service_role via the Management API, or the postgres/owner role). That is the same trust level that can already read and write limiter tables directly, so it grants no additional capability. It is NOT reachable from anon, authenticated, PostgREST, GraphQL, or any deployed Edge Function.",
+    "judgment": "Effective application reachability: NONE. Recorded as a bounded raw-SQL residual, not as a bypass."
+  },
+  "r6_3": {
+    "state": "COMPLETE",
+    "directionA": "COMPLETE \u2014 admission-then-change: change waited, then refused",
+    "directionB": "COMPLETE \u2014 change-then-admission: admission waited, then admitted in the new domain",
+    "verdict": "PASS in both directions. No stranded rows, no orphan grants, no incorrect budget regeneration, no lost guest write, no accounting mismatch."
+  },
+  "r6_3_directionA": {
+    "scenario": "Admission commits DURING a concurrent authorized config-domain change (admission first, change second).",
+    "sessionA": "BEGIN; limiter.admit_guest_flag('203.0.113.61', ...); pg_sleep(6); COMMIT;",
+    "sessionB": "started ~1.5s later: BEGIN; DELETE FROM limiter.bucket; UPDATE limiter.config SET window_seconds=3600; COMMIT;",
+    "measured": {
+      "A_wall_seconds": 8.32,
+      "B_wall_seconds": 6.81,
+      "A_exit": 0,
+      "B_exit": 1
+    },
+    "B_outcome": "WAITED then REFUSED",
+    "B_error": "P0001 FDA028: window_seconds cannot change while limiter.bucket has rows. Drain the ledger first ... (CONTEXT: guard_window_domain() line 11 at RAISE)",
+    "whyThisIsTheLoadBearingProof": "B had already DELETEd every bucket row visible in its own snapshot before the UPDATE. Detection alone would therefore have passed. B blocked 6.8s on the EXCLUSIVE domain lock until A committed, and the guard's EXISTS re-read AFTER acquiring the lock saw A's newly committed row and refused. This is the exact interleaving that defeated the detection-only v3 design at a measured 30/30.",
+    "postStateVerified": {
+      "cfg_window_seconds": 86400,
+      "keystate_window_seconds": 86400,
+      "keystate_epoch": 20706,
+      "buckets": 1,
+      "distinct_windows": 1,
+      "grants": 1,
+      "orphan_grants": 0,
+      "stranded_rows": 0,
+      "bucket_units": 1,
+      "grant_units": 1,
+      "grants_issued": 1,
+      "r63_flags": 1,
+      "flags_total": "2 -> 3"
+    },
+    "assertions": {
+      "no_old_domain_row_stranded": "PASS (stranded_rows = 0)",
+      "config_waits_or_refuses_as_designed": "PASS (waited 6.8s, then refused P0001; config unchanged)",
+      "no_budget_regenerated_incorrectly": "PASS (bucket_units 1 = grant_units 1 = one admitted request; grants_issued 1)",
+      "no_accepted_guest_write_disappears": "PASS (A's public.flags row present; flags_total 2 -> 3)",
+      "no_accounting_mismatch": "PASS (bucket_units = grant_units = r63_flags = 1; orphan_grants 0)"
+    }
+  },
+  "r6_3_directionB": {
+    "scenario": "An admission arrives DURING an authorized config-domain change that is still holding the lock (change first, admission second).",
+    "sessionB2": "BEGIN; DELETE FROM limiter.bucket; UPDATE limiter.config SET window_seconds=3600; pg_sleep(6); COMMIT;",
+    "sessionA2": "started ~1.5s later: limiter.admit_guest_flag('203.0.113.62', ...)",
+    "measured": {
+      "B2_wall_seconds": 8.52,
+      "A2_wall_seconds": 7.01,
+      "B2_exit": 0,
+      "A2_exit": 0
+    },
+    "A2_outcome": "WAITED 7.0s on the SHARE domain lock, then ADMITTED with remaining=4 in the NEW domain",
+    "postStateVerified": {
+      "cfg_window_seconds": 3600,
+      "keystate_window_seconds": 3600,
+      "keystate_epoch": 496960,
+      "buckets": 1,
+      "distinct_windows": 1,
+      "grants": 1,
+      "orphan_grants": 0,
+      "stranded_rows": 0,
+      "bucket_units": 1,
+      "grant_units": 1,
+      "grants_issued": 1,
+      "r63_flags": 2,
+      "flags_total": 4
+    },
+    "assertions": {
+      "no_old_domain_row_stranded": "PASS (stranded_rows = 0; distinct_windows = 1, all in the new domain)",
+      "config_waits_or_refuses_as_designed": "PASS (the change succeeded because it drained first; the concurrent admission waited rather than reading the old domain)",
+      "no_budget_regenerated_incorrectly": "PASS (remaining=4 of normal_allowance 5 \u2014 exactly one unit consumed, no re-funding; bucket_units 1 = grant_units 1)",
+      "no_accepted_guest_write_disappears": "PASS and this is the sharp one \u2014 B2's deliberate ledger drain cascaded limiter.grant but did NOT touch public.flags. Direction A's already-accepted guest row survived: r63_flags 1 -> 2, flags_total 3 -> 4.",
+      "no_accounting_mismatch": "PASS (bucket_units = grant_units = grants_issued = 1 for the single post-change admission; orphan_grants 0)"
+    },
+    "designPointConfirmed": "A domain change costs exactly one deliberate ledger reset of live BUDGETS. It never costs an accepted guest WRITE. Budget state and application data are structurally separate."
+  },
+  "stagingRestoredAfterR6_3": {
+    "method": "Restoring window_seconds to 86400 is itself a deliberate domain change, so the ledger was drained first \u2014 the same documented operation, exercised a third time.",
+    "endState": {
+      "cfg_window_seconds": 86400,
+      "normal_allowance": 5,
+      "bucket_allowance": 50,
+      "enabled": true,
+      "keystate_window_seconds": 86400,
+      "keystate_epoch": 20706,
+      "buckets": 0,
+      "grants": 0,
+      "r63_flags": 0,
+      "flags_total": 2
+    },
+    "note": "flags_total 2 is the pre-R6-3 staging baseline; every synthetic r63 row was removed. key_state and config agree, so staging is not left in a mixed-domain state."
+  }
+}

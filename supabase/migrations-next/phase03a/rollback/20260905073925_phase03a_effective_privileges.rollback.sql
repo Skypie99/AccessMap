@@ -457,6 +457,15 @@ GRANT SELECT ("display_name") ON TABLE "public"."users" TO "authenticated";
 GRANT UPDATE ("display_name") ON TABLE "public"."users" TO "authenticated";
 GRANT SELECT ("id") ON TABLE "public"."users" TO "authenticated";
 GRANT SELECT ("points") ON TABLE "public"."users" TO "authenticated";
+-- Restores the pre-Phase-03A is_admin read. This line is NEW in the stage-fix
+-- increment and it closes a latent coupling: before the FDA-026 Stage A/B split,
+-- this rollback did not restore is_admin either, and exact restoration only held
+-- because 20260905055633's rollback happened to re-grant it. Once that statement
+-- moved to the Stage B rollback, restoration silently stopped being exact
+-- (restorationExact flipped True -> False in the local replay). A rollback must
+-- restore what its own forward migration changed rather than depend on a
+-- neighbour, so the grant is restored here.
+GRANT SELECT ("is_admin") ON TABLE "public"."users" TO "authenticated";
 GRANT SELECT ON SEQUENCE "public"."point_events_id_seq" TO "anon";
 GRANT USAGE ON SEQUENCE "public"."point_events_id_seq" TO "anon";
 GRANT SELECT ON SEQUENCE "public"."realtime_subscribe_log_id_seq" TO "anon";

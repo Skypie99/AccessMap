@@ -479,8 +479,18 @@
         "grantOption": false
       },
       "anon": {
-        "tablePrivileges": [],
-        "columnPrivileges": {},
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "SELECT": [
+            "content",
+            "created_at",
+            "flag_id",
+            "id",
+            "user_id"
+          ]
+        },
         "grantOption": false
       },
       "authenticated": {
@@ -537,6 +547,15 @@
         "flag_id",
         "id",
         "user_id"
+      ],
+      "stageACompatibilityRetentions": [
+        {
+          "privilege": "SELECT",
+          "grantee": "anon",
+          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
+          "provenBy": "supabase/tests/build33-compat.test.sql"
+        }
       ]
     },
     {
@@ -624,8 +643,19 @@
         "grantOption": false
       },
       "anon": {
-        "tablePrivileges": [],
-        "columnPrivileges": {},
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "SELECT": [
+            "changed_fields",
+            "created_at",
+            "flag_id",
+            "id",
+            "new_values",
+            "old_values"
+          ]
+        },
         "grantOption": false
       },
       "authenticated": {
@@ -661,6 +691,15 @@
         "id",
         "new_values",
         "old_values"
+      ],
+      "stageACompatibilityRetentions": [
+        {
+          "privilege": "SELECT",
+          "grantee": "anon",
+          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
+          "provenBy": "supabase/tests/build33-compat.test.sql"
+        }
       ]
     },
     {
@@ -676,8 +715,20 @@
         "grantOption": false
       },
       "anon": {
-        "tablePrivileges": [],
-        "columnPrivileges": {},
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "SELECT": [
+            "alt_text",
+            "created_at",
+            "flag_id",
+            "id",
+            "object_key",
+            "position",
+            "url"
+          ]
+        },
         "grantOption": false
       },
       "authenticated": {
@@ -742,6 +793,15 @@
         "object_key",
         "position",
         "url"
+      ],
+      "stageACompatibilityRetentions": [
+        {
+          "privilege": "SELECT",
+          "grantee": "anon",
+          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
+          "provenBy": "supabase/tests/build33-compat.test.sql"
+        }
       ]
     },
     {
@@ -825,8 +885,18 @@
         "grantOption": false
       },
       "anon": {
-        "tablePrivileges": [],
-        "columnPrivileges": {},
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "SELECT": [
+            "created_at",
+            "flag_id",
+            "from_status",
+            "id",
+            "to_status"
+          ]
+        },
         "grantOption": false
       },
       "authenticated": {
@@ -861,6 +931,15 @@
         "from_status",
         "id",
         "to_status"
+      ],
+      "stageACompatibilityRetentions": [
+        {
+          "privilege": "SELECT",
+          "grantee": "anon",
+          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
+          "provenBy": "supabase/tests/build33-compat.test.sql"
+        }
       ]
     },
     {
@@ -1139,8 +1218,19 @@
         "grantOption": false
       },
       "anon": {
-        "tablePrivileges": [],
-        "columnPrivileges": {},
+        "tablePrivileges": [
+          "SELECT"
+        ],
+        "columnPrivileges": {
+          "SELECT": [
+            "created_at",
+            "delta",
+            "event_type",
+            "flag_id",
+            "id",
+            "user_id"
+          ]
+        },
         "grantOption": false
       },
       "authenticated": {
@@ -1191,6 +1281,15 @@
         "flag_id",
         "id",
         "user_id"
+      ],
+      "stageACompatibilityRetentions": [
+        {
+          "privilege": "SELECT",
+          "grantee": "anon",
+          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "reason": "anon is the default role for every web session and native guest; production grants this today and shipped Build 33 reads it without gating on a signed-in user.",
+          "provenBy": "supabase/tests/build33-compat.test.sql"
+        }
       ]
     },
     {
@@ -1351,12 +1450,13 @@
         "tablePrivileges": [],
         "columnPrivileges": {
           "SELECT": [
-            "id",
-            "display_name",
-            "avatar_url",
             "avatar_object_key",
-            "points",
-            "created_at"
+            "avatar_url",
+            "created_at",
+            "display_name",
+            "id",
+            "is_admin",
+            "points"
           ],
           "UPDATE": [
             "display_name",
@@ -1403,7 +1503,7 @@
           "lineEnd": 1078
         }
       ],
-      "reason": "Self row/profile fallback only; profile INSERT comes from Auth trigger owned by postgres. No email/is_admin/streak column SELECT, no direct reward/system-field UPDATE, no client/service INSERT/DELETE. Keep avatar_object_key=null fallback subject to existing guard.",
+      "reason": "Self row/profile fallback only; profile INSERT comes from Auth trigger owned by postgres. No email/streak column SELECT, no direct reward/system-field UPDATE, no client/service INSERT/DELETE. Keep avatar_object_key=null fallback subject to existing guard. is_admin SELECT is a DELIBERATE, TIME-BOXED STAGE A COMPATIBILITY RETENTION, not part of the secure end state: shipped Build 33 (iOS f5594171, pinned web ebf091c2) reads it at src/lib/admin.ts:31 and, without the grant, takes 42501 which the shipped catch turns into isAdmin=false \u2014 every admin silently loses the admin UI. It is revoked by 20260910120000_phase03a_fda026_stage_b_cutover once no client reading public.users directly is still in the field. FDA-026 stays OPEN until then.",
       "required": true,
       "columns": [
         "avatar_object_key",
@@ -1417,6 +1517,16 @@
         "longest_streak_days",
         "points",
         "streak_days"
+      ],
+      "stageACompatibilityRetentions": [
+        {
+          "privilege": "SELECT (is_admin)",
+          "grantee": "authenticated",
+          "removedBy": "20260910120000_phase03a_fda026_stage_b_cutover.sql",
+          "finding": "FDA-026",
+          "shippedCallSite": "src/lib/admin.ts:31",
+          "provenBy": "supabase/tests/build33-compat.test.sql"
+        }
       ]
     },
     {

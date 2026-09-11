@@ -36,3 +36,12 @@ coverage/
 # Never commit; EAS runs prebuild on clean workers before each build.
 /ios
 /android
+
+# Supabase CLI per-machine link state. NEVER track this: `linked-project.json`
+# records whichever project the last `supabase link` selected, so committing it
+# ships a target selector. It was committed by accident in cd9d143 and was found
+# during Phase 03A staging naming the PRODUCTION project — meaning a fresh clone
+# carried a production target with no staging override. Repointing it at staging
+# would only swap one stale dangerous target for another; the target must be
+# named explicitly on every command instead (`--project-ref <ref>`).
+supabase/.temp/

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "operationId": "P03A-INT-20260910-01",
+  "OPERATION_STATE": "VERIFIED",
+  "verifiedUtc": "2026-09-10",
+  "PHASE_03A_INT_GATE": "PASS",
+  "mergeCommit": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
+  "mergeTree": "11de0eb4cf0cbf718fe17fa8a8cab8defef21af8",
+  "parents": {
+    "parent1_preIntegrationTarget": "5a64c9174ae5d9d5a94ed543bc4663216df67e7f",
+    "parent2_phase03aCodeSource": "cee5f8e48f436bee9be72abe870b3606b1d40088"
+  },
+  "mechanic": "git merge --no-ff <exact SHA> executed in the integration worktree. No squash, rebase, reset, cherry-pick, force or global ours/theirs. No push. No main merge.",
+  "rollbackPointer": "git -C /Users/skypie/AccessMap-worktrees/flagstone-b33-convergence-20260903 reset --hard 5a64c917 restores the exact pre-INT state; the source branch is an independent complete copy.",
+  "verification": {
+    "treeEqualsSourceTree": true,
+    "conflictsRecorded": 0,
+    "conflictDecisions": "NONE REQUIRED - the target was a strict ancestor and the merge-tree forecast predicted no conflicts, which the execution confirmed.",
+    "workingTreeClean": true,
+    "filesChangedTargetToMerge": 299,
+    "nonQaFilesChanged": 104,
+    "renamesPreserved": 6,
+    "appliedMigrationsAfterInt": 71,
+    "phase03aCandidatesAfterInt": 8,
+    "fda028V4HashAfterInt": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771 (matches the accepted artifact exactly)"
+  },
+  "postIntCompositionQa": {
+    "phase03aFullProofOnMergedTree": "PASS (exit 0) - 217/217 assertions, privilege guard, restorationExact, reapplyDeterministic",
+    "rollbackContractsMet": 5,
+    "typecheck": "PASS",
+    "contractCheck": "PASS - migration-crosswalk.v1.json current",
+    "lint": "0 errors",
+    "phase03aContractJest": "PASS - 4 suites, 61 tests (canonicalMigrationSource, contractManifest, migrationLineage, phase03aReplay guards)",
+    "fullJest": "PASS on the MERGED tree: 4,204 passed / 14 failed / 32 todo - an exact match to the accepted baseline. 12 failing suites, all inherited UI/a11y/geometry/copy guards."
+  },
+  "build33AndReleaseControlPreservation": {
+    "releaseCurrentJsonChangedByInt": 0,
+    "releaseIdentityDocChanged": 0,
+    "vercelAppEasJsonChanged": 0,
+    "appVersionBuild": "4.1.1 / 33",
+    "appSourceCommit": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+    "webDeploymentId": "HMszH26wADRRDd1CqH4UkJ8kAugQ",
+    "webSourceCommit": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+    "conclusion": "Build 33 release control and the frozen web deployment identity are untouched by the integration."
+  },
+  "renameReconciliation": {
+    "count": 6,
+    "detail": "Six files moved from supabase/migrations/ to supabase/nonmanaged/proposed/ as R100 renames, byte-identical, reclassifying never-applied MOD1/MOD1R moderation and one reconciliation migration from applied to proposed. This brings the stale integration branch into line with the accepted Phase 02 baseline of exactly 71 applied migrations. No content lost."
+  },
+  "notAuthorizedAndNotDone": [
+    "staging mutation",
+    "production",
+    "push",
+    "main merge",
+    "Phase 03B"
+  ],
+  "independentIntAcceptance": "PASS - no MUST-FIX",
+  "interruption": {
+    "event": "PAUSED_FOR_USAGE_LIMIT then RESUMED",
+    "stateVerifiedOnResume": {
+      "integrationHead": "7c43c07e69f74db4d65aa4ea329f419b6c715fb4",
+      "parentsIntact": true,
+      "workingTreeClean": true,
+      "mainUnchanged": "70b52a30e9fff0f7d538509b110212bb8d872391",
+      "noUpstreamOnEitherBranch": true,
+      "note": "A usage reset grants no new authority. Scope remains local CODE+INT; staging, production, push and main merge stay unauthorized."
+    }
+  },
+  "independentIntAcceptanceFile": "qa-reports/phase03a/2026-09-10-code-accept-int/INDEPENDENT_INT_ACCEPTANCE.md",
+  "reviewerIndependentlyMeasured": {
+    "nothingLost": "verified TWO ways - git diff --name-status -M (0 deletions, exactly 6 R100 renames) AND a raw git ls-tree set difference that rename detection cannot mask; all 6 byte-identical by sha256 across the move",
+    "v4Survived": "all 8 pinned hashes recomputed in the TARGET worktree, exact match",
+    "build33Intact": "zero diff on release/current.json, RELEASE_IDENTITY.md, vercel.json, app.json, eas.json; 4.1.1/build 33, deploymentId HMszH26wADRRDd1CqH4UkJ8kAugQ, web sourceCommit ebf091c2 all confirmed in file content",
+    "composedProof": "rebuilt pgtap.sql from source, hash matched the enforced value, replay gate exit 0, 217/217, all proof flags true",
+    "typecheck": "PASS",
+    "contractCheck": "current",
+    "lint": "0 errors, 91 pre-existing warnings",
+    "contractGuards": "61/61 across 4 suites",
+    "fullJest": "4204 passed / 14 failed / 32 todo / 4250 total - exact match",
+    "boundaries": "main unchanged at 70b52a30, no push evidence, write-ahead log real, rollback pointer correct and sufficient",
+    "scopeCreep": "none - no Phase 03B/03C/04, FDA-020 or FDA-042 in any code file",
+    "stagingPacketVaultClaim": "verified TRUE against the migration source - write_epoch_key never calls vault.create_secret"
+  },
+  "authorCorrection_toolchainClaim": {
+    "whatIClaimed": "I reported that the pinned pgTAP ARCHIVE sha256 reproduced the contract value, presenting it as toolchain proof.",
+    "whatTheReviewerFound": "Their own download of the same URL did NOT reproduce the archive-level sha256 - GitHub codeload gzip output is not byte-stable.",
+    "correctPosition": "The archive hash is NOT a dependable invariant and should not be cited as proof. The load-bearing, enforced artifact is the GENERATED pgtap.sql, whose hash both parties reproduced bit-for-bit and which the gate script hard-checks. My claim happened to hold for my download but the underlying check is unreliable.",
+    "severity": "NOTE - no effect on any gate; the enforced hash is the generated SQL, not the archive."
+  }
+}

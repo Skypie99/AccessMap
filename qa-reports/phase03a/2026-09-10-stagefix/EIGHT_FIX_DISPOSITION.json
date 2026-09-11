@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "unit": "Eight-fix disposition matrix",
+  "capturedUtc": "2026-09-10",
+  "repairBranch": "repair/flagstone-p03a-stage-mandatory-fixes-20260910",
+  "items": [
+    {
+      "id": "STAGE-MF-01",
+      "title": "Migration apply mechanism destroys canonical identity",
+      "category": "TOOLING",
+      "disposition": "CLOSED",
+      "howClosed": "scripts/canonical-migration-identity.mjs + 19 tests. planApply() refuses non-canonical filenames, undeclared applyStage, duplicate versions, hash mismatch, missing files and a version held under a different name; it skips genuinely-applied candidates and orders the plan canonically. verifyLedgerIdentity() is the read-only post-apply check. supportedApplyCommand() names `supabase db push --linked --project-ref <ref>` as the ONE mechanism and refuses to build a command without an explicit target.",
+      "proof": "Run against the ACTUAL staging ledger rows the tool returns 14 problems \u2014 six ledgerless applies plus wall-clock substitutions \u2014 and against a correct ledger it passes. Run against the real manifest it produces a clean, ordered 8-candidate Stage A plan.",
+      "commit": "4c093fd",
+      "postReviewAddition": "Added a CLI (plan/verify/command) plus npm scripts db:apply:plan / db:apply:verify / db:apply:command. The reviewer's point stood: the packet told an operator to make planApply() return ok:true and no command existed to do it. Verified: `plan` exits 0 on the real manifest; `verify` exits 1 against the real staging ledger rows."
+    },
+    {
+      "id": "STAGE-MF-02",
+      "title": "Round-trip structural identity unlocalisable; original JSON not retained",
+      "category": "EVIDENCE",
+      "disposition": "CLOSED",
+      "howClosed": "scripts/structural-catalog.mjs + 11 tests. The capture query is published in the file, so the recipe is reproducible by any reviewer. writeCapture() writes the full normalized catalog BEFORE reporting a checksum. diffCaptures() reports every residual and flags security-relevant sections.",
+      "normalizationDiscipline": "Ordering only. aclitem[] compares as a sorted set (neutralising REVOKE ALL + re-GRANT reordering) and a NULL acl never collapses into an explicitly empty one. Scope is BOUNDED and declared: CAPTURED_SCHEMAS (public, private, storage, limiter) and the AUTHORIZATION_SURFACES registry. Only oid and planner statistics are excluded, each with a written justification.\n\nWHAT THE REGISTRY TESTS PROVE, precisely: they feed SYNTHETIC objects to the comparator, so they show the COMPARATOR reacts to a change in a field of that name. They do NOT execute CATALOG_SQL or touch a database, so they do NOT prove the CAPTURE populates that field. Round 4 demonstrated the gap: functions.body passed its derived test while failing to detect a BEGIN ATOMIC body inversion. The registry is a regression net and a review aid, NOT a completeness guarantee. Known-uncaptured: schemas outside CAPTURED_SCHEMAS, notably auth and vault.\n\nTWO completeness claims about this file have now had to be withdrawn \u2014 'nothing structural is excluded' (rounds 2 and 3) and 'a surface whose test does not detect its change fails too' (round 4). The pattern is the lesson: do not assert completeness about a capture; assert what was demonstrated.",
+      "newEvidenceFound": "The LOCAL round trip is exact (reapplyDeterministic true, restorationExact true) both before and after this repair. The hosted 09c42928 vs c70e119a divergence therefore does NOT reproduce locally, which narrows it to something about the hosted environment or the hosted apply mechanism rather than the SQL. Stated as a narrowing, not as a diagnosis.",
+      "commit": "9af0744",
+      "postReviewAddition": "Fixed a real collision the reviewer was asked to construct and found: a NULL acl and an explicit '{}' both normalized to [], so a proacl moving '{}' -> NULL silently re-granted PUBLIC EXECUTE with an identical checksum. NULL now carries a distinct sentinel, the capture query no longer coalesces any acl, and four regression tests pin it. Also added a CLI (sql/capture/diff) plus npm scripts.",
+      "collisionsFoundByReviewAndClosed": [
+        "NULL acl vs explicit {} (round 1)",
+        "SECURITY DEFINER losing SET search_path (round 2)",
+        "disabled trigger (round 2)",
+        "removed trigger WHEN clause (round 2)",
+        "column default flipped (round 2)",
+        "FORCE ROW LEVEL SECURITY toggled (round 2)",
+        "ALTER VIEW SET (security_invoker = false) \u2014 reloptions (round 3, the sharpest: it can turn a denied anon read into a permitted one on exactly the view shape this increment\u2019s guest defence relies on)",
+        "ALTER FUNCTION OWNER TO \u2014 proowner, which changes what a SECURITY DEFINER runs as (round 3)",
+        "ALTER ROLE anon BYPASSRLS and GRANT postgres TO anon \u2014 no roles captured at all (round 3)",
+        "SQL-standard BEGIN ATOMIC body inversion \u2014 prosrc is empty for such bodies so md5(prosrc) matched; now also hashes pg_get_function_sqlbody (round 4)",
+        "pg_auth_members membership OPTIONS (inherit_option) \u2014 turned a denied anon read into a permitted one with an identical checksum; options now captured (round 4)"
+      ]
+    },
+    {
+      "id": "STAGE-MF-03",
+      "title": "Production Vault secret must be provisioned separately by the owner",
+      "category": "CONFIG / OWNER DECISION",
+      "disposition": "OPEN \u2014 BY DESIGN, OWNER ACTION",
+      "whyNotClosedInCode": "There is nothing to fix in source. limiter.current_epoch_key reads vault.secrets by the name fda028_limiter_epoch_key; production needs that secret to exist before the limiter can derive a key. Creating it is a production Vault change, which this run is explicitly not authorized to make and which should not be delegated to an agent.",
+      "carriedInto": "STAGING_RERUN_AUTHORIZATION_PACKET as a precondition, with the standing prohibition on copying the staging secret.",
+      "sourceModificationRequired": false
+    },
+    {
+      "id": "STAGE-MF-04",
+      "title": "An apply-set candidate hardcodes the PRODUCTION webhook URL",
+      "category": "CODE",
+      "disposition": "OPEN \u2014 OWNER DECISION",
+      "howClosed": "src/__tests__/webhookTargetCoupling.guard.test.ts. The coupling is asserted, the fail-closed early return is asserted to precede the http_post, and every hardcoded project-specific URL in the apply set is enumerated so a new one must be justified.",
+      "whyTheSqlWasNotChanged": "20260904000400 is an ADOPTION candidate: its purpose is to make the repo match the function production actually has. Rewriting the URL would make the repo disagree with production and defeat the Phase 02 contract-truth premise. The hazard was never the URL by itself \u2014 it was that the coupling was undocumented and unasserted. That is what changed.",
+      "residualOperationalRule": "Never create webhook_secret on a non-production target. Stated in the packet; it is what keeps a non-production database inert.",
+      "commit": "9af0744",
+      "reclassifiedAfterReview": "I marked this CLOSED. The independent reviewer was right that it did not meet the acceptance proof I myself wrote for it: 'a test proving the trigger cannot aim a non-production database at the production Edge Function, OR an explicit recorded owner decision'. The guard I shipped asserts the coupling EXISTS and that the fail-closed early return still precedes the http_post \u2014 valuable, and it makes the hazard impossible to change silently \u2014 but it does not prove the trigger cannot fire, and no owner decision is recorded. Reclassified rather than argued.",
+      "whatTheGuardActuallyDelivers": "The coupling is now asserted and enumerated, so it cannot drift or be edited away unnoticed. The residual control remains operational: webhook_secret must never exist on a non-production target.",
+      "ownerDecisionRequired": "Accept the coupling with the operational rule, or require the URL to become environment-derived \u2014 which would make this adoption candidate diverge from the function production actually has, and needs an explicit Phase 02 contract-truth exception."
+    },
+    {
+      "id": "STAGE-MF-05",
+      "title": "Applying with the guest bypass still open must be a chosen decision",
+      "category": "ROLLOUT / OWNER DECISION",
+      "disposition": "OPEN \u2014 BY DESIGN, OWNER DECISION",
+      "whyNotClosedInCode": "S3_LIMITER_PRESENT_BYPASS_OPEN is a true and correctly-stated description of the system, not a defect to patch. Closing the bypass means routing guest ingest through the limiter, which needs a server-side ingest path that does not exist in the accepted artifact set and would itself break shipped clients. The decision is whether to apply a correct limiter that nothing yet calls.",
+      "carriedInto": "STAGING_RERUN_AUTHORIZATION_PACKET, placed alongside the Build 33 sequencing decision rather than after it \u2014 which is what the acceptor asked for.",
+      "sourceModificationRequired": false
+    },
+    {
+      "id": "STAGE-MF-06",
+      "title": "Phase 03A silently breaks shipped Build 33 authenticated reads",
+      "category": "CODE + ROLLOUT",
+      "disposition": "CLOSED",
+      "howClosed": "FDA-026 split into Stage A (additive, applies) and Stage B (cutover, withheld). New suite supabase/tests/build33-compat.test.sql exercises the shipped query shapes and applies Stage B inside its own transaction as a negative control. replay-phase03a.mjs now requires an explicit applyStage on every candidate and applies only Stage A.",
+      "twoDefectsFoundOnlyByRunningIt": [
+        "The split was incomplete: 20260905073925 independently revokes is_admin via REVOKE ALL and re-grants a list omitting it, so moving the FDA-026 revoke alone left admin.ts still broken. Stage A now carries one labelled compatibility grant, registered in the privilege allowlist with its removal migration named.",
+        "Exact restoration silently broke (restorationExact true -> false): 073925's rollback never restored is_admin and exactness had been holding only because 055633's rollback compensated. Each rollback now restores what its own forward migration changed.",
+        "THIRD defect, found by independent review after I froze: Stage A also revoked anon SELECT on flag_comments, flag_photos, flag_status_history_public, flag_edit_history_public and point_events. anon is the DEFAULT role for every web session and native guest, production grants all five today, and shipped Build 33 reads flag_comments and flag_photos without gating on a signed-in user \u2014 so the client THROWS rather than showing an empty list. My compatibility suite never assumed the anon role, which is the same structural blind spot that let 217 hosted assertions pass while every shipped client broke. All five moved to Stage B; six guest assertions and a guest negative control added."
+      ],
+      "fda026Status": "OPEN until the Stage B cutover. Explicitly NOT claimed closed.",
+      "commit": "a0e4050",
+      "authorCorrectionToTheReviewer": "The reviewer described all five as real data loss and said the grant was the only gate for the two _public relations. That is right for flag_comments, flag_photos and point_events. It is NOT right for flag_status_history_public and flag_edit_history_public: those are security_invoker views, and anon has never had privileges on their base tables \u2014 before Phase 03A or after \u2014 so the view grant confers nothing on its own and they were never a working guest path. Stage A keeps the view grants for fidelity with production, and the suite now asserts the honest behaviour: the grant is present AND the read still stops at the base table.",
+      "round2Correction": "Round-2 review found my guest assertions tested a PARAPHRASE, not the shipped shape: I asserted `SELECT id FROM flag_comments` under the label 'listComments() does not raise for anon', while the shipped COMMENT_SELECT embeds users!flag_comments_user_id_fkey(display_name), which anon cannot read. Both halves are now asserted separately, and the guest comment list is recorded as ALREADY broken locally independent of Phase 03A. Also corrected the point_events justification: its only shipped reader is authenticated, so it is retained for production fidelity, not for a guest path."
+    },
+    {
+      "id": "STAGE-MF-07",
+      "title": "Tracked CLI link artifact names the PRODUCTION project",
+      "category": "CODE",
+      "disposition": "CLOSED",
+      "howClosed": "supabase/.temp/ untracked and gitignored; src/__tests__/projectTargetSafety.guard.test.ts asserts no tracked link state, that the ignore covers files the CLI writes later, and that no tracked machine-readable selector carries the production ref.",
+      "deliberateChoice": "NOT repointed at staging. The prompt and my own reading agree that would swap one stale dangerous target for another; the target is named explicitly on every command instead.",
+      "negativeControl": "Re-tracking the file fails all three assertions.",
+      "commit": "235743a"
+    },
+    {
+      "id": "STAGE-MF-08",
+      "title": "Rollback does not unwind or reconcile the migration ledger",
+      "category": "TOOLING",
+      "disposition": "CLOSED",
+      "howClosed": "forwardRestorationName() in scripts/canonical-migration-identity.mjs implements the forward-only model: a restoration is a NEW migration with a later canonical version, never a deleted or rewritten row, and the function refuses to backdate one before the migration it undoes.",
+      "whyForwardOnly": "Deleting ledger rows in production is history rewriting. Under this model the ledger reads as a truthful history \u2014 applied, then deliberately undone, then re-applied \u2014 rather than the fiction that the original never ran, which is exactly the state the acceptor found after the staging rollbacks.",
+      "commit": "4c093fd",
+      "postReviewAddition": "The reviewer noted this delivered only a naming helper, leaving the ledger defect to recur. Added buildForwardRestoration(), which emits a real conforming forward migration from a candidate's rollback body, and a `restore` CLI subcommand. Demonstrated on the Stage B cutover."
+    }
+  ],
+  "summary": {
+    "closedByCodeOrTooling": [
+      "STAGE-MF-01",
+      "STAGE-MF-02",
+      "STAGE-MF-06",
+      "STAGE-MF-07",
+      "STAGE-MF-08"
+    ],
+    "openByDesignAsOwnerDecisions": [
+      "STAGE-MF-03",
+      "STAGE-MF-04",
+      "STAGE-MF-05"
+    ],
+    "note": "Five closed by code or tooling; three are owner decisions with no source change that would close them. STAGE-MF-04 moved from CLOSED to OPEN after independent review showed it had not met the acceptance proof I wrote for it."
+  },
+  "independentReviewRound1": {
+    "verdict": "ACCEPT WITH MANDATORY CHANGES",
+    "mustFixIssued": 5,
+    "allAddressed": true,
+    "report": "INDEPENDENT_STAGEFIX_CODE_REVIEW.md"
+  },
+  "independentReviewRound2": {
+    "verdict": "ACCEPT WITH MANDATORY CHANGES",
+    "mustFixIssued": 3,
+    "allAddressed": true,
+    "report": "INDEPENDENT_STAGEFIX_CODE_REVIEW_R2.md",
+    "roundOneItemsConfirmedClosed": [
+      "guest breakage",
+      "Jest honesty",
+      "tooling runnable",
+      "STAGE-MF-04 reclassification"
+    ],
+    "reviewerConfirmedMyCorrectionOfThem": "The security_invoker view correction was verified three ways and upheld.",
+    "evidenceGapTheyExposed": "production-catalog-capture.v2.json carries column definitions but NO column-privilege data, so every column-level production claim in this tree rests on a different artifact. My production half of the guest-embed claim was rewritten as a bounded statement because of it."
+  },
+  "independentReviewRound5": {
+    "verdict": "PASS",
+    "mustFix": 0,
+    "report": "INDEPENDENT_STAGEFIX_CODE_REVIEW_R5.md",
+    "reviewedCandidate": "e89d53deb2f0f003a7626c53f6cc8222fca69c3f",
+    "verifiedAgainstLivePostgres": "BEGIN ATOMIC body inversion and pg_auth_members inherit_option both now move the checksum; the section-scoped SQL check was re-implemented independently and driven with three negative controls, including planting a field in the wrong section \u2014 which the old whole-file check would have passed.",
+    "shippedClientSafety": "411 grants lost, 0 gained. Sharpest check: anon colINSERT on feedback is exactly the shipped row in feedbackStore.ts, with colSELECT empty matching the code deliberately omitting .select()."
+  },
+  "carriedForwardShouldFix": {
+    "policy": "Recorded, NOT fixed. The reviewed artifact PASSED; changing source now would invalidate that PASS and start a sixth round to eliminate SHOULD-FIX observations, which the governing prompts explicitly warn against. These are carried into the staging rerun packet as named limits instead.",
+    "items": [
+      "A third claim of the withdrawn species survives: \"EXCLUDED: only VOLATILE_FIELDS\" (structural-catalog.mjs) and \"Only oid and planner statistics are excluded\" (this file). Y2(d) falsifies it. The reviewer rated it SHOULD-FIX because an explicit \"NOT a completeness guarantee\" sits two sentences away. Sweep the sentence family, not just cited instances.",
+      "SIXTH-generation collision, found and correctly classified as non-blocking: the roles subquery reads the role graph at DEPTH 1 only, so anon -> uncaptured mid role -> GRANT postgres TO mid_role takes anon from denied to reading with a BIT-IDENTICAL checksum and zero residuals. It contradicts no live claim \u2014 the module's Known-uncaptured clause covers it in advance and the packet never tells an owner that an identical checksum proves no authorization changed. The remedy is to NAME the depth-1 limit, not to patch again.",
+      "Two stale test counts in the packet (19 and 11; actual 20 and 42). Both understate.",
+      "No feedback assertion in build33-compat.test.sql, and a \"the client call THROWS\" line in 20260905073925 that overstates for flag_comments."
+    ]
+  }
+}

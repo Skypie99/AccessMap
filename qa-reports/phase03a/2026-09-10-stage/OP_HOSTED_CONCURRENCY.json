@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEP 9 — hosted concurrency (re-run and banked after the independent acceptor found no receipt)",
+  "OPERATION_STATE": "VERIFIED",
+  "target": "ctshxbykuemeqnofqcdh branch 441acc38",
+  "capturedUtc": "2026-09-10",
+
+  "provenance": "The independent staging acceptor's MUST-FIX 3 was correct: PRODUCTION_AUTHORIZATION_PACKET.md section 4 asserted a hosted concurrency result with NO banked receipt behind it. The original hosted run did happen, but its only evidence was an ephemeral scratchpad, and the nearest banked artifact (2026-09-09-gab4/V4EF_LOCAL_RESULTS.json) is explicitly hostedContact:false with different shapes (40/10, 60/25, 30/1). Rather than argue the point, the test was RE-RUN against real hosted staging and is banked here. The packet row is now backed by this receipt.",
+
+  "method": {
+    "sessions": 25,
+    "parallelism": "25 genuinely concurrent `supabase db query` sessions against hosted staging, launched together and awaited",
+    "source": "one single simulated source (198.51.100.77, an RFC 5737 documentation address), so all 25 contend for ONE bucket",
+    "config": {"normal_allowance": 8, "bucket_allowance": 8, "window_seconds": 86400, "require_public_ip": true},
+    "entryPoint": "limiter.admit_guest_flag — the REAL path, which performs the guest public.flags INSERT inside the same transaction as the admission decision"
+  },
+
+  "results": {
+    "sessions_launched": 25,
+    "ADMITTED": 8,
+    "REFUSED_BUCKET_EXHAUSTED": 17,
+    "real_public_flags_rows_written": 8,
+    "bucket_units_consumed": 8,
+    "grant_units_consumed": 8,
+    "grants": 8,
+    "orphan_grants": 0,
+    "allowance": 8,
+    "OVERSHOOT": false
+  },
+
+  "whyThisIsTheRightMeasurement": "It counts ACTUAL public.flags rows, not merely ledger units. A ledger-only count would pass even if admission and the guest write could be separated. 8 admissions, 8 ledger units and 8 real rows agreeing exactly is what proves the write is inside the protected transaction.",
+  "significance": "Under real hosted contention the allowance is exact, not approximate. 25 concurrent callers racing one bucket of 8 produced 8 — not 9, not 18. An earlier design iteration overshot 18 against an allowance of 10 because initial key seeding raced; that defect is closed and this is the hosted confirmation.",
+
+  "stagingResidue": "NONE — the 8 hc2- rows and the limiter ledger were removed after measurement, and limiter.config was restored to the recorded staging values.",
+  "productionTouched": false
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "unit": "STEP 5 — hosted pgTAP",
+  "OPERATION_STATE": "VERIFIED",
+  "HOSTED_PGTAP": "217/217 executed hosted, 0 failures",
+  "capturedUtc": "2026-09-10",
+  "target": "ctshxbykuemeqnofqcdh branch 441acc38",
+
+  "toolchain": {
+    "hostedPgTapVersion": "1.3.3 (Supabase-available, installed into the extensions schema for this run)",
+    "localPinnedVersion": "1.3.4",
+    "versionDeltaRecorded": "The hosted platform offers 1.3.3; the local pin was 1.3.4. Recorded rather than glossed. The assertions used are core pgTAP predicates present in both."
+  },
+
+  "suites": [
+    {"file":"promptb_media_key_guards.test.sql","sha256Prefix":"9dff5146f431aa3c","planDeclared":25,"finishFailureRows":0},
+    {"file":"phase03a-foundation.test.sql","planDeclared":113,"finishFailureRows":0},
+    {"file":"phase03a-privileges.test.sql","planDeclared":79,"finishFailureRows":0}
+  ],
+  "totalPlanned": 217,
+  "totalFailures": 0,
+
+  "howTheCountWasObtainedHonestly": {
+    "transportLimitation": "supabase db query returns only the final result set, so raw per-assertion TAP lines could not be streamed back.",
+    "whatWasChanged": "ONLY the result sink: `select * from finish();` was rewritten to `select count(*) as finish_failure_rows from finish();`, plus a leading `set search_path = public, extensions, pg_temp;` because hosted pgTAP lives in the extensions schema. NO assertion, plan, fixture or rollback was altered. Exactly one finish sink was rewritten per suite, verified programmatically.",
+    "whyZeroMeansAllPassed": "pgTAP's finish() emits rows only for failing assertions OR a plan/run mismatch. Zero rows therefore proves both that every declared assertion ran and that none failed.",
+    "negativeControlsRun": [
+      {"control":"a deliberately failing assertion (plan 2, one ok(false))","finishFailureRows":1},
+      {"control":"plan/run mismatch (plan 3, only 2 assertions run)","finishFailureRows":1}
+    ],
+    "negativeControlConclusion": "Both controls returned non-zero, proving the measurement genuinely detects failure and plan mismatch. The three zeros are therefore meaningful, not vacuous."
+  },
+
+  "stagingResidue": "NONE — every suite runs inside begin/…/rollback, so no fixture rows persist.",
+  "claimDiscipline": "217/217 is reported because 217 hosted assertions genuinely executed against the real staged catalog, not because the local run produced that number."
+}
