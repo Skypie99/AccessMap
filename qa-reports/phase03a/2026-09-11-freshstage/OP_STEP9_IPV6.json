@@ -1,0 +1,47 @@
+{
+ "runUnit": "PHASE03A_FRESH_STAGING_RERUN",
+ "OPERATION_STATE": "VERIFIED",
+ "step": 9,
+ "bankedAt": "2026-09-11T21:10:47.760707+00:00",
+ "headlineRule": "normalization and transport are two different claims and are reported separately on purpose. The standing owner instruction is: do not simulate hosted IPv6 and call it proof.",
+ "IPV6_NORMALIZATION": "PASS",
+ "normalization": {
+  "assertionsPlanned": 25,
+  "realAssertions": 24,
+  "realFailures": 0,
+  "negativeControlFired": 1,
+  "negativeControlMeaning": "assertion 25 deliberately claims two different IPv4 addresses share a bucket. It was reported as 'not ok', so the 24 passes are a measurement rather than a vacuous run.",
+  "coverage": [
+   "public-unicast classification for IPv4 and IPv6, rejecting RFC1918, loopback, link-local and unique-local",
+   "IPv4-mapped ::ffff: unwrapping",
+   "NAT64 well-known prefix 64:ff9b:: unwrapping, and RFC6052 /96 extraction",
+   "a genuine IPv6 address has no embedded IPv4",
+   "NO DUAL-FAMILY BYPASS: an IPv4-mapped address buckets identically to the bare IPv4",
+   "NO NAT64 BYPASS: a NAT64-translated address buckets identically to the IPv4",
+   "/64 grouping \u2014 same prefix shares a bucket, different prefix does not",
+   "IPv4 /32 keeps distinct addresses distinct",
+   "refusal of NULL, empty, malformed, multi-valued XFF-style, private IPv4 and link-local IPv6"
+  ],
+  "executedAgainst": "the real hosted Postgres 17 engine and the real staged catalog on cepayqmsoqxshsiyqnvz",
+  "residue": "NONE \u2014 the suite ran inside one transaction that was rolled back"
+ },
+ "IPV6_TRANSPORT": "OPEN",
+ "whyTransportIsOpen": {
+  "reason1_noAAAAOnTheIngestHostname": {
+   "measured": "dig AAAA cepayqmsoqxshsiyqnvz.supabase.co -> 0 records. Only A: 172.64.149.246, 104.18.38.10 (Cloudflare).",
+   "consequence": "no client anywhere can open an IPv6 connection to this staging surface, because no AAAA is published for it. A property of the deployment, not of the test."
+  },
+  "reason2_theTestMachineIsNotTheLimitation": {
+   "measured": "curl -6 https://one.one.one.one/ returned HTTP 200 from 2606:4700:4700::1001; this host holds 2 global-scope IPv6 addresses.",
+   "measured2": "curl -6 to the staging host connected to ::ffff:104.18.38.10 \u2014 an IPv4-mapped socket, i.e. it fell back to the A record. The connection was IPv4.",
+   "consequence": "the inability to originate hosted IPv6 is not an environment excuse: IPv6 egress was demonstrated to a different host in the same run."
+  },
+  "reason3_noGuestIngestFunctionExists": {
+   "measured": "the branch deploys send-push-notification v6, notify-flag-status v8 and delete-account v4. No function source reads cf-connecting-ip.",
+   "consequence": "even over IPv4 there is no hosted code path that reads a trusted client address and calls the limiter, so end-to-end hosted ingestion of ANY address family cannot be proven here."
+  },
+  "notSimulated": "no synthetic IPv6 transport was constructed and no such claim is made"
+ },
+ "reproducesFirstRun": "the first run recorded the same three reasons on the old branch. Independently re-measured here on the fresh branch rather than carried over.",
+ "nextOperation": "STEP 10 \u2014 round-trip structural capture"
+}

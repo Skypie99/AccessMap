@@ -1,0 +1,30 @@
+1..25
+ok 1 - IPv4 public unicast accepted
+ok 2 - IPv4 RFC1918 is not public
+ok 3 - IPv4 loopback is not public
+ok 4 - IPv6 global unicast accepted
+ok 5 - IPv6 loopback is not public
+ok 6 - IPv6 link-local is not public
+ok 7 - IPv6 unique-local is not public
+ok 8 - IPv4-mapped ::ffff: unwraps to the IPv4 address
+ok 9 - NAT64 well-known prefix unwraps to the embedded IPv4
+ok 10 - RFC6052 /96 extraction returns the embedded IPv4
+ok 11 - a genuine IPv6 address has no embedded IPv4
+ok 12 - IPv4 normalizes to a non-null key
+ok 13 - IPv6 normalizes to a non-null key
+ok 14 - an IPv4-mapped address buckets identically to the bare IPv4 -- no dual-family bypass
+ok 15 - a NAT64-translated address buckets identically to the IPv4 -- no NAT64 bypass
+ok 16 - two addresses in one /64 share a bucket
+ok 17 - addresses in different /64s do NOT share a bucket
+ok 18 - IPv4 /32 keeps distinct addresses in distinct buckets
+ok 19 - NULL source refused
+ok 20 - empty source refused
+ok 21 - malformed source refused
+ok 22 - multi-valued XFF-style header refused rather than silently taking one
+ok 23 - private IPv4 refused while require_public_ip is on
+ok 24 - link-local IPv6 refused while require_public_ip is on
+not ok 25 - NEGATIVE CONTROL (must FAIL): two different IPv4s must not share a bucket
+# Failed test 25: "NEGATIVE CONTROL (must FAIL): two different IPv4s must not share a bucket"
+#         have: v4:203.0.113.9/32
+#         want: v4:198.51.100.1/32
+# Looks like you failed 1 test of 25
