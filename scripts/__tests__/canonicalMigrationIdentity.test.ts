@@ -39,6 +39,7 @@ const canonicalIdentity = (f: string) => call('canonicalIdentity', f);
 const planApply = (o: unknown) => call('planApply', o);
 const verifyLedgerIdentity = (o: unknown) => call('verifyLedgerIdentity', o);
 const supportedApplyCommand = (o: unknown) => call('supportedApplyCommand', o);
+const assertUnambiguousTarget = (a: unknown) => call('assertUnambiguousTarget', a);
 const PROHIBITED_MECHANISMS = constant('PROHIBITED_MECHANISMS');
 const forwardRestorationName = (f: string, at: Date) => call('forwardRestorationName', f, at.toISOString());
 
@@ -135,9 +136,24 @@ describe('planApply refuses the failure modes measured on staging', () => {
       dir,
       declared: [{ file: '20260905055629_flag_policies.sql', sha256: a, applyStage: 'A' }],
       ledger: [{ version: '20260905055629', name: 'flag_policies' }],
+      knownLocalVersions: ['20260905055629'],
     });
     expect(ok).toBe(true);
     expect(plan).toEqual([]);
+  });
+
+  it('refuses to audit a non-empty ledger with no known-local version set', () => {
+    // STAGE-BLOCK-02. Without it there is no way to tell a legitimate historical
+    // row from a fabricated one, and guessing is how the first run came to trust a
+    // poisoned history. Fail closed rather than assume.
+    const a = write('20260905055629_flag_policies.sql', '-- a');
+    const { ok, refusals } = planApply({
+      dir,
+      declared: [{ file: '20260905055629_flag_policies.sql', sha256: a, applyStage: 'A' }],
+      ledger: [{ version: '20260905055629', name: 'flag_policies' }],
+    });
+    expect(ok).toBe(false);
+    expect(refusals.join()).toMatch(/unauditable ledger/);
   });
 
   it('refuses when the ledger holds that version under a different name', () => {
@@ -146,6 +162,7 @@ describe('planApply refuses the failure modes measured on staging', () => {
       dir,
       declared: [{ file: '20260905055629_flag_policies.sql', sha256: a, applyStage: 'A' }],
       ledger: [{ version: '20260905055629', name: 'something_else' }],
+      knownLocalVersions: ['20260905055629'],
     });
     expect(refusals.join()).toMatch(/different name/);
   });
@@ -249,11 +266,28 @@ describe('STAGE-MF-08 forward-only restoration never rewrites history', () => {
 });
 
 describe('the one supported apply command', () => {
-  it('always names the target explicitly and defaults to a dry run', () => {
+  it('names exactly one target and defaults to a dry run', () => {
+    // CHANGED from the accepted candidate, deliberately. It used to emit
+    // `--linked --project-ref <ref>`. The corrected rerun found `projects list`
+    // reporting PRODUCTION as linked:true, so that command's safety rested on
+    // undocumented flag precedence -- which did favour --project-ref, verified
+    // empirically, but a precedence is not a guarantee. One authority now.
     expect(supportedApplyCommand({ projectRef: 'ctshxbykuemeqnofqcdh' }))
-      .toBe('supabase db push --linked --project-ref ctshxbykuemeqnofqcdh --dry-run');
+      .toBe('supabase db push --project-ref ctshxbykuemeqnofqcdh --dry-run');
     expect(supportedApplyCommand({ projectRef: 'ctshxbykuemeqnofqcdh', dryRun: false }))
-      .toBe('supabase db push --linked --project-ref ctshxbykuemeqnofqcdh');
+      .toBe('supabase db push --project-ref ctshxbykuemeqnofqcdh');
+    expect(supportedApplyCommand({ projectRef: 'ctshxbykuemeqnofqcdh' })).not.toMatch(/--linked/);
+  });
+
+  it('refuses to build a staging command aimed at production', () => {
+    expect(() => supportedApplyCommand({ projectRef: 'kldlwszpfkdmsjrjhjym' })).toThrow(/production project/);
+  });
+
+  it('refuses an ambiguous command carrying two target selectors', () => {
+    expect(() => assertUnambiguousTarget(['--linked', '--project-ref', 'x'])).toThrow(/Ambiguous target/);
+    expect(() => assertUnambiguousTarget(['--db-url', 'x', '--project-ref', 'y'])).toThrow(/Ambiguous target/);
+    expect(() => assertUnambiguousTarget(['--linked'])).toThrow(/No explicit target/);
+    expect(assertUnambiguousTarget(['--project-ref', 'x'])).toBe(true);
   });
 
   it('refuses to build a command with no explicit target', () => {
@@ -264,5 +298,79 @@ describe('the one supported apply command', () => {
     expect(PROHIBITED_MECHANISMS).toHaveLength(2);
     expect(PROHIBITED_MECHANISMS.every((m: { verdict: string }) => m.verdict === 'PROHIBITED for production')).toBe(true);
     expect(JSON.stringify(PROHIBITED_MECHANISMS)).toMatch(/20260910161947/);
+  });
+});
+
+describe('STAGE-BLOCK-02 — the real contaminated staging ledger must be refused', () => {
+  // The permanent negative fixture: the actual ledger of the first staging run.
+  // planApply() once returned ok:true against this while verifyLedgerIdentity()
+  // returned 14 problems on the very same input, and the plan it green-lit would
+  // have aborted on a real database. This is the regression proving the two halves
+  // of the guard rail now speak to each other.
+  const fixture = JSON.parse(fs.readFileSync(
+    path.join(root, 'supabase/tests/phase03a-fixtures/contaminated-staging-ledger.json'), 'utf8'));
+  const contaminated = fixture.rows as { version: string; name: string }[];
+  const contract = JSON.parse(fs.readFileSync(
+    path.join(root, 'supabase/migrations-next/phase03a/candidate-contract.json'), 'utf8'));
+  const candDir = path.join(root, 'supabase/migrations-next/phase03a');
+  const baselineVersions = fs.readdirSync(path.join(root, 'supabase/migrations'))
+    .filter((f) => /^\d{14}_.*\.sql$/.test(f)).map((f) => f.slice(0, 14));
+  const known = [
+    ...baselineVersions,
+    ...contract.phase02Adoption.entries.map((e: { file: string }) => e.file.slice(0, 14)),
+    ...contract.migrations.map((m: { file: string }) => m.file.slice(0, 14)),
+  ];
+  const stageA = contract.migrations.filter((m: { applyStage: string }) => m.applyStage === 'A');
+  const run = (ledger: unknown) =>
+    planApply({ dir: candDir, declared: contract.migrations, ledger, stage: 'A', knownLocalVersions: known });
+
+  it('REFUSES it, and returns no executable plan', () => {
+    const res = run(contaminated);
+    expect(res.ok).toBe(false);
+    // A refused plan must be empty. Returning candidates alongside refusals is how
+    // a caller ends up pushing anyway.
+    expect(res.plan).toEqual([]);
+  });
+
+  it('fires three independent detectors and finds all eleven phantom rows', () => {
+    const { refusals } = run(contaminated);
+    const joined = refusals.join('\n');
+    expect(refusals.filter((r: string) => r.includes('phantom remote version'))).toHaveLength(11);
+    expect(refusals.filter((r: string) => r.includes('wall-clock substitution'))).toHaveLength(6);
+    expect(joined).toMatch(/impossible ordering/);
+    // Any one of the three alone would have stopped it.
+    expect(joined).toContain('20260910161947');
+    expect(joined).toContain('20260905055629');
+  });
+
+  it('still plans correctly against the clean baseline a fresh branch will have', () => {
+    const res = run(baselineVersions.map((v) => ({ version: v, name: 'baseline' })));
+    expect(res.ok).toBe(true);
+    expect(res.refusals).toEqual([]);
+    expect(res.plan).toHaveLength(stageA.length);
+    const versions = res.plan.map((p: { version: string }) => p.version);
+    expect(versions).toEqual([...versions].sort());
+    expect(res.plan.map((p: { name: string }) => p.name)).not.toContain('phase03a_fda026_stage_b_cutover');
+  });
+
+  it('treats an exactly-applied canonical set as a satisfied no-op', () => {
+    const res = run([
+      ...baselineVersions.map((v) => ({ version: v, name: 'baseline' })),
+      ...stageA.map((m: { file: string }) => ({ version: m.file.slice(0, 14), name: m.file.slice(15, -4) })),
+    ]);
+    expect(res.ok).toBe(true);
+    expect(res.plan).toEqual([]);
+  });
+
+  it('refuses a candidate that would be inserted before an already-applied version', () => {
+    const a = write('20260905055629_flag_policies.sql', '-- a');
+    const { ok, refusals } = planApply({
+      dir,
+      declared: [{ file: '20260905055629_flag_policies.sql', sha256: a, applyStage: 'A' }],
+      ledger: [{ version: '20260906000000', name: 'something_later' }],
+      knownLocalVersions: ['20260905055629', '20260906000000'],
+    });
+    expect(ok).toBe(false);
+    expect(refusals.join()).toMatch(/impossible ordering/);
   });
 });
