@@ -1,0 +1,91 @@
+{
+ "runUnit": "PHASE03A_BLOCKERFIX_INT",
+ "OPERATION_STATE": "VERIFIED",
+ "bankedAt": "2026-09-11T19:54:05.125572+00:00",
+ "mergeSha": "f2c2fbef36e88289c9c2a0663e6f26fc974e0a2a",
+ "mergeTree": "96d8e38b37e881fa1f4d6e39cf5e276e1f51b833",
+ "parents": {
+  "integration": "c7dab377eb8444ed3e97d2fbd9109014464ff3b1",
+  "candidate": "6d5beb0d653a059642783f81db1454f4c007b0bd",
+  "reviewedCandidateIdentity": "3ac416e2cd19c7322061efb689abc5bebcef3a83",
+  "candidateDeltaFromReviewed": "one receipt file; no source, test, script or migration byte differs"
+ },
+ "mechanism": "git merge --no-ff by exact SHA. No squash, rebase, reset, force push or main merge.",
+ "composition": {
+  "sameTreeObjectAsCandidate": [
+   "scripts",
+   "supabase/migrations-next",
+   "supabase/tests",
+   "supabase/migrations"
+  ],
+  "pathsDifferingFromBothParents": 0,
+  "historicalIdentitiesIntact": [
+   "38bb76fa (accepted CODE)",
+   "c9c80aa1 (accepted INT)",
+   "29aac71d (INT acceptance)"
+  ],
+  "fda028ForwardSha256InIntegratedTree": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771"
+ },
+ "gatesOnIntegratedTree": {
+  "typecheck": "PASS",
+  "lint": "PASS (0 errors)",
+  "contract:check": "PASS",
+  "db:snapshot:check": "PASS",
+  "db:apply:plan": "PASS (9 candidates, canonical order)",
+  "db:rollback:verify": "PASS",
+  "release:verify": "PASS",
+  "composedPgTap": "254/254, 0 failures",
+  "localProofPassed": true,
+  "restorationExact": true,
+  "reapplyDeterministic": true
+ },
+ "jestReconciliation": {
+  "note": "An INT gate must be measured against the INTEGRATION lineage's own baseline, not the CODE branch's. The two differ by one test, for a reason worth stating rather than hiding.",
+  "integrationBaselineAt_c7dab37": {
+   "suitesFailed": 13,
+   "failed": 15,
+   "todo": 32,
+   "passed": 4271,
+   "total": 4318
+  },
+  "integratedTree": {
+   "suitesFailed": 13,
+   "failed": 15,
+   "todo": 32,
+   "passed": 4360,
+   "total": 4407
+  },
+  "newFailuresIntroducedByTheMerge": [],
+  "failuresFixedByTheMerge": [],
+  "reconcilesExactlyByName": true,
+  "failingByName": [
+   "BP11 / T3 \u2014 tab bar: haptic-only + forwards a11y (source contract) \u203a fires the haptic, forwards every injected prop, adds no visual dim",
+   "Explore close targets \u203a MapScreen heat notice close controls are real 44pt targets",
+   "FV-1 \u2014 focused fields stay in their owning scroller \u203a Address Search scrolls the full body, including its focused input",
+   "T8 \u2014 one spoken voice (source contract) \u203a each triage action names its flag (category + conditional distance)",
+   "THE KEYBOARD CLASS \u2014 every input-hosting surface carries a mechanism \u203a Recipe D \u2014 every delegate is a real, live consumer (the list drains)",
+   "TaskCard \u2014 T8: each action names its flag \u203a with a location, the label carries category THEN distance",
+   "TaskCard \u2014 T8: each action names its flag \u203a with no location, action labels are category-only (no distance)",
+   "Wave 2 \u2014 expanded modal adoption \u203a keeps Flag Detail hand-built and gives it expanded safe-area geometry",
+   "focus-in standard \u2014 every dismissable moves the SR cursor in on open \u203a every ALLOWED entry still matches exactly one live surface",
+   "map-chrome budget \u2014 the ONE persistent command bar \u203a (c) chromeBandPx is the bar height alone, and the bar hugs safe-area + 8",
+   "no credentials in tree \u203a C \u00b7 no tracked file carries a credential-shaped literal next to account language",
+   "the control now lives in the \u22ef tool sheet \u203a VoiceOver order: search, then the circles, then the sheet rows",
+   "the dismissal standard \u203a C \u00b7 every surface is still reduced-motion gated",
+   "the dismissal standard \u203a J \u00b7 focus return is wired end to end, and nothing else claims onDismiss",
+   "the privacy screen renders Sky's document, verbatim \u203a every policy paragraph is present in PRIVACY_SECTIONS, in order and verbatim"
+  ]
+ },
+ "inheritedIntegrationOnlyFailure": {
+  "test": "no credentials in tree \u203a C \u00b7 no tracked file carries a credential-shaped literal next to account language",
+  "offender": "qa-reports/phase03a/state.json:428",
+  "provenPreExisting": "reproduced at c7dab37 in a detached probe worktree BEFORE this merge; state.json is byte-identical pre- and post-merge and the guard test is identical on both parents",
+  "whyItDoesNotFailOnTheCodeBranch": "the CODE branch carries a 306-line state.json; the integration branch's is 429 lines and contains the offending line. The merge correctly kept the integration copy.",
+  "whatTheValueActuallyIs": "STAGE-MF-03, STAGE-MF-04, STAGE-MF-05 \u2014 my own MUST-FIX identifiers. Eleven characters, uppercase, a digit and a hyphen, which is exactly the detector's credential shape. A FALSE POSITIVE, not a credential.",
+  "whyItStillMatters": "a permanently red credential guard is a broken gate: a real credential landing next to account language would now be indistinguishable from this noise. The guard has an allowlist mechanism designed for exactly this. Left unfixed here because it is inherited, out of this prompt's scope, and touching reviewed source after a CODE-review PASS would invalidate the freeze. Flagged for the owner."
+ },
+ "stagingMutations": "NONE",
+ "productionMutations": "NONE",
+ "pushes": "NONE",
+ "mainMerges": "NONE"
+}
