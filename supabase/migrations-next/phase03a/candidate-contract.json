@@ -161,7 +161,7 @@
   },
   {
    "file": "supabase/tests/phase03a-foundation.test.sql",
-   "sha256": "9cda3618b9768470a8467ecf078ff26342ea12627681648b5e7a309ce48fd19c",
+   "sha256": "43d90430843618c0cdc660d41aedff3acf49c4a81b3a431842932e49fdedc50f",
    "plan": 113
   },
   {
@@ -195,12 +195,15 @@
  ],
  "localBaselineBackups": {
   "file": "supabase/tests/phase03a-fixtures/baseline-backups.sql",
-  "sha256": "1ccfe89ba366d3b12a38b18c365f075f84d295fe184d0fa7e10bad81cf576e83",
-  "scope": "Local schema/ACL-only model of seven known production backup tables; no rows. Optional exact known objects in clean hosted branches; never create them with this fixture hosted."
+  "sha256": "8399d12cf8b91bb1f69a42a67cd73a993de58c08fe649cb1a9aa80c25c2d76d6",
+  "scope": "Local schema/ACL-only model of seven known production backup tables; no rows. Optional exact known objects in clean hosted branches; never create them with this fixture hosted.",
+  "notes": [
+   "Hash updated 2026-09-11: a PGTAP_KIND marker was added so scripts/run-pgtap.mjs discovery accepts this fixture. SQL content unchanged."
+  ]
  },
  "privilegeGuard": {
   "allowlist": "application-privileges.v1.json",
-  "allowlistSha256": "0947b994a379cddfc638e704aa5b4d658de4b132446a34ba53d1c4b955608cce",
+  "allowlistSha256": "7bea80a1b1d063aa5383af285f81d6435e4e1817a346bb084d99b47bc21d3ef0",
   "query": "effective-privileges.sql",
   "querySha256": "21ef4203d91547f3afea8fb20f477420f4284a3dc806193af7761a330833b650"
  },
