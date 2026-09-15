@@ -1,0 +1,177 @@
+{
+  "operationState": "PREPARED",
+  "runUnit": "P03A_PRODUCTION_APPLY",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "sourceIdentity": {
+    "head": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+    "tree": "657f1b6ce01d3fdbb27102b5aa33616c918feade"
+  },
+  "authorization": {
+    "promptId": "FLAGSTONE-P03A-PRODUCTION-APPLY-VERIFY-20260914-R1",
+    "dryRunEvidenceCommit": "c9c3ece64d30bc6154521bc3c8d9812754fa673b",
+    "dryRunEvidenceTree": "1a10dea5debd950036eaa618c3a9c362afdbc663",
+    "scope": "EXACT_STAGE_A_APPLY_ONLY"
+  },
+  "preLedger": {
+    "rowCount": 71,
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b"
+  },
+  "expectedPostLedger": {
+    "rowCount": 85,
+    "orderedSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec"
+  },
+  "expectedCatalogDelta": [
+    {
+      "version": "20260904000000",
+      "expectedCatalogEffect": "Adopt the existing private admin helper and its policy predicate in migration history; expected production effect is idempotent."
+    },
+    {
+      "version": "20260904000100",
+      "expectedCatalogEffect": "Adopt removal of the duplicate status trigger; expected production effect is idempotent."
+    },
+    {
+      "version": "20260904000200",
+      "expectedCatalogEffect": "Adopt the live D1S-A policy, function, and grant containment; expected production effect is idempotent."
+    },
+    {
+      "version": "20260904000300",
+      "expectedCatalogEffect": "Adopt the live insert-throttle functions and triggers; expected production effect is idempotent."
+    },
+    {
+      "version": "20260904000400",
+      "expectedCatalogEffect": "Adopt hardened function definitions and direct EXECUTE revocations; expected production effect is idempotent."
+    },
+    {
+      "version": "20260905055629",
+      "expectedCatalogEffect": "Remove the obsolete flags_user_scoped policy while preserving explicit policies."
+    },
+    {
+      "version": "20260905055630",
+      "expectedCatalogEffect": "Add restrictive open-status INSERT policies for flags and feedback caller paths."
+    },
+    {
+      "version": "20260905055632",
+      "expectedCatalogEffect": "Narrow authenticated users-table UPDATE privileges to the shipped profile fields."
+    },
+    {
+      "version": "20260905055633",
+      "expectedCatalogEffect": "Add current_user_can_admin, leaderboard, rank, and comment-author profile RPCs while retaining the private admin helper."
+    },
+    {
+      "version": "20260905055635",
+      "expectedCatalogEffect": "Revoke client EXECUTE on exact trigger-only functions."
+    },
+    {
+      "version": "20260905055636",
+      "expectedCatalogEffect": "Remove client maintenance capabilities and set explicit default privileges for new application objects."
+    },
+    {
+      "version": "20260905073925",
+      "expectedCatalogEffect": "Apply the complete effective-privilege allowlist, including known optional backup objects when present."
+    },
+    {
+      "version": "20260909120000",
+      "expectedCatalogEffect": "Create the FDA-028 limiter schema, configuration, key state, bucket/grant lifecycle, and admission functions."
+    },
+    {
+      "version": "20260911120000",
+      "expectedCatalogEffect": "Replace the hardcoded webhook target with the required environment-scoped webhook_endpoint lookup."
+    }
+  ],
+  "forwardRecoveryReference": "qa-reports/phase03a/2026-09-15-final-owner-decisions/FINAL_PRODUCTION_AUTHORIZATION_PACKET.md section 6",
+  "recoveryExecutionAuthorized": false,
+  "stopConditions": [
+    "target, source, hash, plan, ledger, catalog, prerequisite, exclusion, or credential-gate mismatch before mutation",
+    "ambiguous, incomplete, timed-out, or disconnected apply response becomes OUTCOME_UNKNOWN and must not be retried",
+    "partial apply or unexplained post-apply drift becomes HOLD; no ledger repair or recovery without new authorization"
+  ],
+  "applyArgv": [
+    "supabase",
+    "db",
+    "push",
+    "--workdir",
+    "/private/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03a-apply-z0MzlK",
+    "--project-ref",
+    "kldlwszpfkdmsjrjhjym",
+    "--skip-vault"
+  ],
+  "pending": [
+    {
+      "file": "20260904000000_adopt_private_admin_helper.sql",
+      "version": "20260904000000",
+      "sha256": "1d504c3ad05c0b31052715406059071301a51f4359ef35ce85c92cb61202fbf7"
+    },
+    {
+      "file": "20260904000100_drop_duplicate_status_triggers.sql",
+      "version": "20260904000100",
+      "sha256": "9771e7c5df363b139e8bcd9e9f9e58b15e6c2f59eebb4523a330a774fc18db49"
+    },
+    {
+      "file": "20260904000200_adopt_d1sa_containment.sql",
+      "version": "20260904000200",
+      "sha256": "fbc986296aee71109639ad833d4c75422c28bbefa4fddfefe51f29eeaf03dfb6"
+    },
+    {
+      "file": "20260904000300_adopt_live_insert_throttles.sql",
+      "version": "20260904000300",
+      "sha256": "b346b2c7775543c9a268098c0956812b7ad9a9ddf49680202fe846073d4ef776"
+    },
+    {
+      "file": "20260904000400_adopt_execute_revokes.sql",
+      "version": "20260904000400",
+      "sha256": "e8a3d880d361e5d6be96c8b30709a9b1b3d8a8d94e6d23175342db41bb20cf13"
+    },
+    {
+      "file": "20260905055629_phase03a_flag_policies.sql",
+      "version": "20260905055629",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa"
+    },
+    {
+      "file": "20260905055630_phase03a_open_inserts.sql",
+      "version": "20260905055630",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071"
+    },
+    {
+      "file": "20260905055632_phase03a_profile_updates.sql",
+      "version": "20260905055632",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187"
+    },
+    {
+      "file": "20260905055633_phase03a_contextual_profiles.sql",
+      "version": "20260905055633",
+      "sha256": "526d2c47f3c6edb6c3cffff94b8bec4f3c9e4c3602a30a5e4059b14261d86bf9"
+    },
+    {
+      "file": "20260905055635_phase03a_trigger_execute.sql",
+      "version": "20260905055635",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9"
+    },
+    {
+      "file": "20260905055636_phase03a_client_privileges.sql",
+      "version": "20260905055636",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063"
+    },
+    {
+      "file": "20260905073925_phase03a_effective_privileges.sql",
+      "version": "20260905073925",
+      "sha256": "17970173cb28f29297a931751e9e8ca62c74366f1b83ab5cd36e536049562c20"
+    },
+    {
+      "file": "20260909120000_fda028_v4_limiter.sql",
+      "version": "20260909120000",
+      "sha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771"
+    },
+    {
+      "file": "20260911120000_phase03a_webhook_target_env_scoped.sql",
+      "version": "20260911120000",
+      "sha256": "9165f87e3571325fc847de5b08ca33aa9266e8786cee613be0cf61a06f4fbf6b"
+    }
+  ],
+  "stageBIncluded": false,
+  "recoveryFilesIncluded": false,
+  "seedsIncluded": false,
+  "rolesIncluded": false,
+  "vaultSync": "SKIPPED",
+  "mutationExecuted": false
+}

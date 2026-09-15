@@ -1,0 +1,111 @@
+{
+  "mode": "PRODUCTION_PLAN_ONLY",
+  "ok": true,
+  "refusals": [],
+  "workspace": "/private/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03a-apply-z0MzlK",
+  "counts": {
+    "baseline": 71,
+    "adoption": 5,
+    "candidate": 9,
+    "total": 85
+  },
+  "productionLedgerAudit": {
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+    "expectedIdentityCount": 86
+  },
+  "pending": [
+    {
+      "file": "20260904000000_adopt_private_admin_helper.sql",
+      "version": "20260904000000",
+      "sha256": "1d504c3ad05c0b31052715406059071301a51f4359ef35ce85c92cb61202fbf7"
+    },
+    {
+      "file": "20260904000100_drop_duplicate_status_triggers.sql",
+      "version": "20260904000100",
+      "sha256": "9771e7c5df363b139e8bcd9e9f9e58b15e6c2f59eebb4523a330a774fc18db49"
+    },
+    {
+      "file": "20260904000200_adopt_d1sa_containment.sql",
+      "version": "20260904000200",
+      "sha256": "fbc986296aee71109639ad833d4c75422c28bbefa4fddfefe51f29eeaf03dfb6"
+    },
+    {
+      "file": "20260904000300_adopt_live_insert_throttles.sql",
+      "version": "20260904000300",
+      "sha256": "b346b2c7775543c9a268098c0956812b7ad9a9ddf49680202fe846073d4ef776"
+    },
+    {
+      "file": "20260904000400_adopt_execute_revokes.sql",
+      "version": "20260904000400",
+      "sha256": "e8a3d880d361e5d6be96c8b30709a9b1b3d8a8d94e6d23175342db41bb20cf13"
+    },
+    {
+      "file": "20260905055629_phase03a_flag_policies.sql",
+      "version": "20260905055629",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa"
+    },
+    {
+      "file": "20260905055630_phase03a_open_inserts.sql",
+      "version": "20260905055630",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071"
+    },
+    {
+      "file": "20260905055632_phase03a_profile_updates.sql",
+      "version": "20260905055632",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187"
+    },
+    {
+      "file": "20260905055633_phase03a_contextual_profiles.sql",
+      "version": "20260905055633",
+      "sha256": "526d2c47f3c6edb6c3cffff94b8bec4f3c9e4c3602a30a5e4059b14261d86bf9"
+    },
+    {
+      "file": "20260905055635_phase03a_trigger_execute.sql",
+      "version": "20260905055635",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9"
+    },
+    {
+      "file": "20260905055636_phase03a_client_privileges.sql",
+      "version": "20260905055636",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063"
+    },
+    {
+      "file": "20260905073925_phase03a_effective_privileges.sql",
+      "version": "20260905073925",
+      "sha256": "17970173cb28f29297a931751e9e8ca62c74366f1b83ab5cd36e536049562c20"
+    },
+    {
+      "file": "20260909120000_fda028_v4_limiter.sql",
+      "version": "20260909120000",
+      "sha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771"
+    },
+    {
+      "file": "20260911120000_phase03a_webhook_target_env_scoped.sql",
+      "version": "20260911120000",
+      "sha256": "9165f87e3571325fc847de5b08ca33aa9266e8786cee613be0cf61a06f4fbf6b"
+    }
+  ],
+  "command": {
+    "mode": "PRODUCTION_PLAN_ONLY",
+    "target": "kldlwszpfkdmsjrjhjym",
+    "nonMutating": true,
+    "applyAvailable": false,
+    "dryRunArgv": [
+      "supabase",
+      "db",
+      "push",
+      "--workdir",
+      "/private/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03a-apply-z0MzlK",
+      "--project-ref",
+      "kldlwszpfkdmsjrjhjym",
+      "--dry-run",
+      "--skip-vault"
+    ],
+    "dryRun": "supabase db push --workdir /private/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03a-apply-z0MzlK --project-ref kldlwszpfkdmsjrjhjym --dry-run --skip-vault"
+  },
+  "sourceIdentity": {
+    "head": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+    "tree": "657f1b6ce01d3fdbb27102b5aa33616c918feade"
+  },
+  "productionApplyAvailable": false
+}
