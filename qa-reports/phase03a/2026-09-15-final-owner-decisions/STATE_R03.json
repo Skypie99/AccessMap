@@ -1,0 +1,23 @@
+{
+  "promptId": "FLAGSTONE-P03A-FINAL-OWNER-DECISIONS-20260914-R1",
+  "checkpoint": "R03_POLICY_PROPOSAL_FROZEN",
+  "status": "READY_FOR_FINAL_PACKET_GENERATION",
+  "mf05Recommendation": "ACCEPT_S3_LIMITER_PRESENT_BYPASS_OPEN_FOR_STAGE_A",
+  "mf05OwnerApproved": false,
+  "productionPolicy": {
+    "normalAllowance": 5,
+    "bucketAllowance": 50,
+    "windowSeconds": 86400,
+    "ipv4Prefix": 32,
+    "ipv6Prefix": 64,
+    "retentionWindows": 1,
+    "reseedInterval": 7,
+    "catchupCap": 32,
+    "status": "READY_FOR_OWNER_APPROVAL",
+    "ownerApproved": false
+  },
+  "productionMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "phase03bStarted": false
+}
