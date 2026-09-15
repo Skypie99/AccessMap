@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "runUnit": "P03A_PRODUCTION_CLOSURE",
+  "status": "READY",
+  "targetProject": "kldlwszpfkdmsjrjhjym",
+  "authorizedRepairSource": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+  "authorizedRepairTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade",
+  "frozenProductionEvidenceCommit": "17dfe0c076817ac519ab0afea0962192b7499b22",
+  "frozenProductionEvidenceTree": "56807dc4cff6b1617906c024e25a3f2731a506e5",
+  "independentReviewSha256": "5a7ffe32a80fda5fef7743018cdc37fd936f6fcd7ab2f4f6ce1232c0dedc32e6",
+  "productionApply": "PASS",
+  "productionGate": "PASS",
+  "phase03aClosure": "READY",
+  "findings": {
+    "FDA-009": "CLOSED",
+    "FDA-010": "CLOSED",
+    "FDA-012": "OPEN_PLATFORM_DEFAULT_PRIVILEGE_RESIDUAL",
+    "FDA-021": "CLOSED",
+    "FDA-023": "CLOSED",
+    "FDA-026": "OPEN_STAGE_B_CUTOVER_REQUIRED",
+    "FDA-028": "OPEN_S3_BYPASS_RESIDUAL"
+  },
+  "mf05": "S3_LIMITER_PRESENT_BYPASS_OPEN",
+  "ipv6Normalization": "PASS",
+  "ipv6Transport": "OPEN",
+  "stageBIncluded": false,
+  "productionForwardRecovery": "READY_NOT_AUTHORIZED",
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "phase03bStarted": false,
+  "mainMergeAuthorized": false,
+  "nextSafeAction": "Sky reviews and separately authorizes the exact main merge packet, or holds"
+}
