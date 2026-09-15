@@ -1,0 +1,48 @@
+{
+  "project": {
+    "id": "kldlwszpfkdmsjrjhjym",
+    "ref": "kldlwszpfkdmsjrjhjym",
+    "name": "Accessable City App",
+    "region": "us-west-2",
+    "status": "ACTIVE_HEALTHY",
+    "databaseVersion": "17.6.1.121"
+  },
+  "capturedAtUtc": "2026-09-15T05:55:46.781Z",
+  "transactionReadOnly": "on",
+  "applicationRowsRead": false,
+  "credentialValuesReturned": false,
+  "ledger": {
+    "rowCount": 71,
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b"
+  },
+  "prerequisites": {
+    "mf03": {
+      "rowCount": 1,
+      "nonempty": true,
+      "shapeValid": true
+    },
+    "mf04": {
+      "rowCount": 1,
+      "nonempty": true,
+      "shapeValid": true
+    }
+  },
+  "limiterSchemaPresent": false,
+  "productionSafeAggregates": {
+    "flagsTotal": 21,
+    "flagsGuestTotal": 12,
+    "flagsGuestLast24h": 0,
+    "flagsGuestLast7d": 0,
+    "flagsGuestLast30d": 12,
+    "flagsGuestDailyMax90d": 12,
+    "flagsGuestDailyP95ObservedDays90d": 12,
+    "flagsGuestHourlyMax90d": 12,
+    "feedbackTotal": 6,
+    "feedbackGuestTotal": 2,
+    "feedbackGuestLast30d": 0,
+    "feedbackGuestDailyMax90d": 2
+  },
+  "scope": "Aggregate counts only. No personal identifiers, raw IPs, coordinates, user content, application-row identifiers, endpoint values, or secret values were selected or returned.",
+  "productionMutations": "NONE"
+}

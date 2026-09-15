@@ -1,0 +1,33 @@
+{
+  "promptId": "FLAGSTONE-P03A-FINAL-OWNER-DECISIONS-20260914-R1",
+  "checkpoint": "R02_PRODUCTION_INSPECTION_COMPLETE",
+  "status": "READY_FOR_POLICY_PROPOSAL_FREEZE",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "projectIdentityVerified": true,
+  "transactionReadOnly": "on",
+  "applicationRowsRead": false,
+  "credentialValuesReturned": false,
+  "mf03": "SATISFIED",
+  "mf04": "SATISFIED",
+  "productionLedger": {
+    "rowCount": 71,
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+    "exactAcceptedMatch": true
+  },
+  "productionCatalog": {
+    "canonicalSha256": "2c0bacf76c71924ffd8543852dc830f593058b8cb67a1016871f55908dae0443",
+    "structuralSha256": "1c4cdbc441d3747f56109955c7b31840720d4cd09373572d961e9638fcc255c8",
+    "exactAcceptedMatch": true
+  },
+  "pendingStageA": {
+    "count": 14,
+    "hashesVerified": true,
+    "versionsAbsentFromProduction": true
+  },
+  "stageBIncluded": false,
+  "productionMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "phase03bStarted": false
+}
