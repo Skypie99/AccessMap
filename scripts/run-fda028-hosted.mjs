@@ -2,8 +2,11 @@
 /**
  * FDA-028 explicit-target hosted acceptance runner.
  *
- * This runner has one authorized database target. It never reads linked-project
- * state, never accepts a database URL, and never renders Vault material.
+ * This runner has one authorized database target. It never reads persisted
+ * linked-project state, never accepts a database URL, and never renders Vault
+ * material. Supabase CLI 2.116.0 requires its --linked transport mode together
+ * with the explicit --project-ref; the project token never comes from local
+ * link state.
  */
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -316,6 +319,7 @@ export function assertAllowedStderr(stderr) {
     .split(/\r?\n/)
     .filter((line) => line.trim())
     .filter((line) => line !== 'Connecting to remote database...')
+    .filter((line) => line !== 'Initialising login role...')
     .filter((line) => !/^A new version of Supabase CLI is available: v\d+\.\d+\.\d+ \(currently installed v\d+\.\d+\.\d+\)$/.test(line))
     .filter((line) => !/^We recommend updating regularly for new features and bug fixes: https:\/\/supabase\.com\/docs\/guides\/cli\/getting-started#updating-the-supabase-cli$/.test(line));
   if (remaining.length) throw new Error('Supabase CLI emitted unexpected stderr');
@@ -360,11 +364,17 @@ function writeRaw(receiptDir, name, result) {
   safeWrite(path.join(receiptDir, `${name}.stderr.txt`), redactDiagnostic(result.stderr));
 }
 
+export function buildDbQueryArgs(projectRef, relativeFile, root = ROOT) {
+  if (projectRef !== EXPECTED_PROJECT_REF) throw new Error('Refusing non-fresh database query target');
+  if (!Object.values(HOSTED_FILES).includes(relativeFile)) throw new Error('Refusing unrecognized hosted SQL file');
+  return [
+    'db', 'query', '--linked', '--project-ref', projectRef,
+    '--file', path.join(root, relativeFile), '--output-format', 'json',
+  ];
+}
+
 function dbQuery(projectRef, relativeFile) {
-  return command('supabase', [
-    'db', 'query', '--project-ref', projectRef,
-    '--file', path.join(ROOT, relativeFile), '--output-format', 'json',
-  ]);
+  return command('supabase', buildDbQueryArgs(projectRef, relativeFile));
 }
 
 function main(argv) {

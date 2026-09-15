@@ -12,6 +12,7 @@ import {
   assertPreflightState,
   assertReviewedArtifacts,
   assertSuccessfulEvidence,
+  buildDbQueryArgs,
   executeProtocol,
   extractState,
   parseArgs,
@@ -154,6 +155,21 @@ test('requires one explicit value for every runner argument', () => {
   assert.throws(() => validateReviewedSha('HEAD'), /canonical token/);
 });
 
+test('builds only the CLI-required explicit fresh-project remote command', () => {
+  assert.deepEqual(
+    buildDbQueryArgs(fresh, 'supabase/tests/fda028/hosted-state.sql', '/repo'),
+    [
+      'db', 'query', '--linked', '--project-ref', fresh,
+      '--file', '/repo/supabase/tests/fda028/hosted-state.sql', '--output-format', 'json',
+    ],
+  );
+  assert.throws(
+    () => buildDbQueryArgs('kldlwszpfkdmsjrjhjym', 'supabase/tests/fda028/hosted-state.sql', '/repo'),
+    /non-fresh database query target/,
+  );
+  assert.throws(() => buildDbQueryArgs(fresh, 'arbitrary.sql', '/repo'), /unrecognized hosted SQL file/);
+});
+
 test('binds every executable hosted artifact to the reviewed Git commit', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fda028-reviewed-'));
   try {
@@ -274,7 +290,7 @@ test('requires the exact successful Supabase state envelope', () => {
 test('allows only measured CLI stderr lines', () => {
   assert.equal(assertAllowedStderr(''), true);
   assert.equal(assertAllowedStderr(
-    'Connecting to remote database...\n' +
+    'Initialising login role...\n' +
     'A new version of Supabase CLI is available: v2.117.0 (currently installed v2.116.0)\n' +
     'We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli\n',
   ), true);
