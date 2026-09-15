@@ -1,0 +1,12 @@
+
+> accessmap@4.1.1 db:rollback:verify
+> node scripts/replay-migrations.mjs --with-next --local-only --verify-rollbacks
+
+PHASE-02B rev2 replay: LOCAL_REPLAY_ONLY
+Applied migrations: 71; candidates: 5
+Temp destroyed: true; global PostgreSQL unchanged: true
+Rollback 20260904000000_adopt_private_admin_helper.sql: UNSAFE_BASELINE_RESTORE — contract met
+Rollback 20260904000100_drop_duplicate_status_triggers.sql: UNSAFE_BASELINE_RESTORE — contract met
+Rollback 20260904000200_adopt_d1sa_containment.sql: UNSAFE_BASELINE_RESTORE — contract met
+Rollback 20260904000300_adopt_live_insert_throttles.sql: UNSAFE_BASELINE_RESTORE — contract met
+Rollback 20260904000400_adopt_execute_revokes.sql: NON_REVERSIBLE_SECURITY_REPAIR — contract met

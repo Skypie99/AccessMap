@@ -1,0 +1,1 @@
+OK: every candidate has exactly one ledger row under its canonical version.

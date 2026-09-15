@@ -1,0 +1,32 @@
+
+> accessmap@4.1.1 db:fda028:hosted:test
+> node --test scripts/__tests__/fda028HostedHarness.test.mjs
+
+✔ accepts only the exact fresh staging target pairing (1.38875ms)
+✔ requires one explicit value for every runner argument (0.2215ms)
+✔ builds only the CLI-required explicit fresh-project remote command (2.843083ms)
+✔ binds every executable hosted artifact to the reviewed Git commit (298.58775ms)
+✔ accepts only the exact structured main rollback evidence (0.619875ms)
+✔ rejects hosted HTTP, body, SQLSTATE, and context wrapper drift (0.254708ms)
+✔ rejects extra JSON records, keys, and arbitrary nested payloads (0.36325ms)
+✔ rejects plan, numbering, description, type, and result drift (0.472584ms)
+✔ requires the exact deliberate negative rollback evidence (0.260333ms)
+✔ requires the exact successful Supabase state envelope (0.476291ms)
+✔ allows only measured CLI stderr lines (0.323583ms)
+✔ verifies cleanup after a passing suite (0.382666ms)
+✔ still verifies cleanup after a failing suite (0.243625ms)
+✔ rejects proof commands that exit zero and still verifies cleanup (0.137167ms)
+✔ turns residual contamination into a failure (0.733125ms)
+✔ hosted proofs are one rollback-enforced prepared statement each (0.731375ms)
+✔ main proof freezes 31 per-assertion records in its rollback payload (0.132667ms)
+✔ hosted SQL uses the real schema, constraint, timing, and roles (0.394375ms)
+✔ hosted SQL does not write fixture key material or create helpers (0.195ms)
+✔ state proof records Vault shape without returning secret material (0.557416ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 407.718167

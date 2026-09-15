@@ -1,0 +1,5 @@
+
+> accessmap@4.1.1 db:snapshot:check
+> node scripts/check-schema-snapshot.mjs
+
+schema.generated.sql is current (87 ordered inputs, stamp v2).

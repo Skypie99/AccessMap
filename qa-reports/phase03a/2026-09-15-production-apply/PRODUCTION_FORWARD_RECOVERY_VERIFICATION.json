@@ -1,0 +1,231 @@
+{
+  "status": "PASS",
+  "artifactCount": 24,
+  "allHashesMatch": true,
+  "allVersionsUnused": true,
+  "nonRestorableSecurityCrossings": [
+    {
+      "candidate": "20260904000400_adopt_execute_revokes.sql",
+      "candidateSha256": "e8a3d880d361e5d6be96c8b30709a9b1b3d8a8d94e6d23175342db41bb20cf13",
+      "classification": "NON_REVERSIBLE_SECURITY_REPAIR",
+      "reason": "Baseline restoration would republish a retired credential literal and re-open trigger-only SECURITY DEFINER functions.",
+      "disposition": "No production restoration artifact prepared; the accepted rollback is an explicit refusal.",
+      "recoveryMode": "FORWARD_CORRECTION_OR_APPLICATION_CONTAINMENT_ONLY",
+      "triggerResponse": [
+        "stop the affected production operation and preserve exact ledger/catalog evidence",
+        "do not restore the retired credential, trigger execution grants, or hardcoded endpoint",
+        "Sky selects application/release containment or authorizes a newly reviewed correcting migration for the observed defect",
+        "assign the correcting migration a fresh version proven unused immediately before any separately authorized operation"
+      ]
+    },
+    {
+      "candidate": "20260911120000_phase03a_webhook_target_env_scoped.sql",
+      "candidateSha256": "9165f87e3571325fc847de5b08ca33aa9266e8786cee613be0cf61a06f4fbf6b",
+      "classification": "NON_REVERSIBLE_SECURITY_REPAIR",
+      "reason": "STAGE-MF-04. Its rollback restores the hardcoded production endpoint, so it is not a routine undo.",
+      "disposition": "No production restoration artifact prepared because restoring the hardcoded production endpoint is not a routine or safe undo.",
+      "recoveryMode": "FORWARD_CORRECTION_OR_APPLICATION_CONTAINMENT_ONLY",
+      "triggerResponse": [
+        "stop the affected production operation and preserve exact ledger/catalog evidence",
+        "do not restore the retired credential, trigger execution grants, or hardcoded endpoint",
+        "Sky selects application/release containment or authorizes a newly reviewed correcting migration for the observed defect",
+        "assign the correcting migration a fresh version proven unused immediately before any separately authorized operation"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "kind": "restore",
+      "version": "20260916001100",
+      "file": "20260916001100_restore_adopt_private_admin_helper.sql",
+      "expectedSha256": "a77bd26a4bbd1519d9c704b25d448f3b59dc2dd3fabbc8966c5b3987d241dbfd",
+      "actualSha256": "a77bd26a4bbd1519d9c704b25d448f3b59dc2dd3fabbc8966c5b3987d241dbfd",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000000",
+      "file": "20260917000000_reapply_adopt_private_admin_helper.sql",
+      "expectedSha256": "4bbe1474c3686d3236a96268d63cfb18bc03993e45d3358ba5a32c9d48ff6803",
+      "actualSha256": "4bbe1474c3686d3236a96268d63cfb18bc03993e45d3358ba5a32c9d48ff6803",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916001000",
+      "file": "20260916001000_restore_drop_duplicate_status_triggers.sql",
+      "expectedSha256": "e53b7e90f97460e21c7e4bebae3dcdd4771dc3caa6411a377f34f297c94d7f3d",
+      "actualSha256": "e53b7e90f97460e21c7e4bebae3dcdd4771dc3caa6411a377f34f297c94d7f3d",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000100",
+      "file": "20260917000100_reapply_drop_duplicate_status_triggers.sql",
+      "expectedSha256": "95312a74435f4c552240d2a0182eff6f3753fe6a4bd9f92bb97fbf64a43ea6fa",
+      "actualSha256": "95312a74435f4c552240d2a0182eff6f3753fe6a4bd9f92bb97fbf64a43ea6fa",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000900",
+      "file": "20260916000900_restore_adopt_d1sa_containment.sql",
+      "expectedSha256": "9cd2d51d4e69cfacc3da122144a4069c0e7ca33fd864bd97fbc593d66d866d97",
+      "actualSha256": "9cd2d51d4e69cfacc3da122144a4069c0e7ca33fd864bd97fbc593d66d866d97",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000200",
+      "file": "20260917000200_reapply_adopt_d1sa_containment.sql",
+      "expectedSha256": "3eafc3a7f1feb87c5d562f33e2458df951ce493269f0379f7f5a2efbb3df773c",
+      "actualSha256": "3eafc3a7f1feb87c5d562f33e2458df951ce493269f0379f7f5a2efbb3df773c",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000800",
+      "file": "20260916000800_restore_adopt_live_insert_throttles.sql",
+      "expectedSha256": "0c438210b56240fcc363ae9e77291d63a493c65bec2b52c6c0ec44064dce6088",
+      "actualSha256": "0c438210b56240fcc363ae9e77291d63a493c65bec2b52c6c0ec44064dce6088",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000300",
+      "file": "20260917000300_reapply_adopt_live_insert_throttles.sql",
+      "expectedSha256": "3ad95a6c4fa4ad902d76b28cb615b69790ba6b98a60f632ede728cc75b2d00f2",
+      "actualSha256": "3ad95a6c4fa4ad902d76b28cb615b69790ba6b98a60f632ede728cc75b2d00f2",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000700",
+      "file": "20260916000700_restore_phase03a_flag_policies.sql",
+      "expectedSha256": "616fff5909f0d392f4ff2ac75ad62040711736912328f30e825c5c4d1e532caa",
+      "actualSha256": "616fff5909f0d392f4ff2ac75ad62040711736912328f30e825c5c4d1e532caa",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000400",
+      "file": "20260917000400_reapply_phase03a_flag_policies.sql",
+      "expectedSha256": "51d9c026ef0c5f031e2ac8e322cd714fd383c0539af5219242590a7f19bdc703",
+      "actualSha256": "51d9c026ef0c5f031e2ac8e322cd714fd383c0539af5219242590a7f19bdc703",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000600",
+      "file": "20260916000600_restore_phase03a_open_inserts.sql",
+      "expectedSha256": "2c5735df67803d3ae4f96ffa6999ced66aed7aaf6f4d0a49a2a4d5517825acbb",
+      "actualSha256": "2c5735df67803d3ae4f96ffa6999ced66aed7aaf6f4d0a49a2a4d5517825acbb",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000500",
+      "file": "20260917000500_reapply_phase03a_open_inserts.sql",
+      "expectedSha256": "cc785dafbaaa881c2dc1efa45eeaa5bf42ceeb9058310c1118aa3f803be15674",
+      "actualSha256": "cc785dafbaaa881c2dc1efa45eeaa5bf42ceeb9058310c1118aa3f803be15674",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000500",
+      "file": "20260916000500_restore_phase03a_profile_updates.sql",
+      "expectedSha256": "9de75a4ac3aca00f4d95dca493bd21b9a717e0089c9e17987105e38dc1b87f64",
+      "actualSha256": "9de75a4ac3aca00f4d95dca493bd21b9a717e0089c9e17987105e38dc1b87f64",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000600",
+      "file": "20260917000600_reapply_phase03a_profile_updates.sql",
+      "expectedSha256": "1c0285b19a085df43171a28fab72141c913ff87542b14a5599be44eb1b2f7862",
+      "actualSha256": "1c0285b19a085df43171a28fab72141c913ff87542b14a5599be44eb1b2f7862",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000400",
+      "file": "20260916000400_restore_phase03a_contextual_profiles.sql",
+      "expectedSha256": "fad594808bf926ff56f21209681dfd40e9e6dc68c45e78cefefbdeece3fcc5ae",
+      "actualSha256": "fad594808bf926ff56f21209681dfd40e9e6dc68c45e78cefefbdeece3fcc5ae",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000700",
+      "file": "20260917000700_reapply_phase03a_contextual_profiles.sql",
+      "expectedSha256": "4ab6942066217ff014f1d6d5fd2466d969e0eab87e2defb2d2881358d8d45637",
+      "actualSha256": "4ab6942066217ff014f1d6d5fd2466d969e0eab87e2defb2d2881358d8d45637",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000300",
+      "file": "20260916000300_restore_phase03a_trigger_execute.sql",
+      "expectedSha256": "784bfc7d6aba09574e7124b093bdb207c174997a2f8d8854428a9b22a5c6d68a",
+      "actualSha256": "784bfc7d6aba09574e7124b093bdb207c174997a2f8d8854428a9b22a5c6d68a",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000800",
+      "file": "20260917000800_reapply_phase03a_trigger_execute.sql",
+      "expectedSha256": "a923d812939d8de814138277875e111fe199affe222659d69f498014f63ab6d8",
+      "actualSha256": "a923d812939d8de814138277875e111fe199affe222659d69f498014f63ab6d8",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000200",
+      "file": "20260916000200_restore_phase03a_client_privileges.sql",
+      "expectedSha256": "63deacc24533b9d4631f2fdff850a52fff09c9d3f95b6d5aa4e218a8942bdeb3",
+      "actualSha256": "63deacc24533b9d4631f2fdff850a52fff09c9d3f95b6d5aa4e218a8942bdeb3",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917000900",
+      "file": "20260917000900_reapply_phase03a_client_privileges.sql",
+      "expectedSha256": "4e2f7dcd1f17f4e7b875601114f55675f097fc3e7a57be270999f90ce8e52eeb",
+      "actualSha256": "4e2f7dcd1f17f4e7b875601114f55675f097fc3e7a57be270999f90ce8e52eeb",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000100",
+      "file": "20260916000100_restore_phase03a_effective_privileges.sql",
+      "expectedSha256": "518d4dcd7a3098204378b4f9605539c33b42301ddb636b51e8457eb881144ece",
+      "actualSha256": "518d4dcd7a3098204378b4f9605539c33b42301ddb636b51e8457eb881144ece",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917001000",
+      "file": "20260917001000_reapply_phase03a_effective_privileges.sql",
+      "expectedSha256": "da2caf361ae749ad047ae785bfd51c95bf3d01e1db7b172b688854f67fede79a",
+      "actualSha256": "da2caf361ae749ad047ae785bfd51c95bf3d01e1db7b172b688854f67fede79a",
+      "pass": true
+    },
+    {
+      "kind": "restore",
+      "version": "20260916000000",
+      "file": "20260916000000_restore_fda028_v4_limiter.sql",
+      "expectedSha256": "cbf127cd99b787f2d96ead0254dd911a932c0fab8b0d4f0e1ccd98bb276dad85",
+      "actualSha256": "cbf127cd99b787f2d96ead0254dd911a932c0fab8b0d4f0e1ccd98bb276dad85",
+      "pass": true
+    },
+    {
+      "kind": "reapply",
+      "version": "20260917001100",
+      "file": "20260917001100_reapply_fda028_v4_limiter.sql",
+      "expectedSha256": "c695da25cdb7298652ba594130d6d05df769d2a08b65bab7261d378afc26658f",
+      "actualSha256": "c695da25cdb7298652ba594130d6d05df769d2a08b65bab7261d378afc26658f",
+      "pass": true
+    }
+  ],
+  "recoveryExecutionAuthorized": false
+}

@@ -1,0 +1,99 @@
+{
+  "status": "PASS",
+  "capturedAtUtc": "2026-09-15T07:28:28.629492Z",
+  "sourceSha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+  "sourceTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade",
+  "sourceCodeDiffFromAuthorizedRepair": false,
+  "gates": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "99302d614b6238161bc1e74f01a7096aa8984067bcf276263d4a0ee315e9a7c7",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "7b2c3ae52eb93f3668fe3895ad0b09b7cabc0ed9460c246d32a19c8e273357b6",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "contractCheck": {
+      "command": "npm run contract:check",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "fa461ad274e528cabfe1247889036e394ffcb0071fa213d44f9aba156e018e0a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "schemaSnapshot": {
+      "command": "npm run db:snapshot:check",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "6c02c36c6dab131fc6181df7bbf83c736bbb2bec7503fa0ae3176ecfc8535e37",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "canonicalPlan": {
+      "command": "npm run db:apply:plan",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "6cd331a808d24d033568ddfffdf1871aa39149198350fe5f474d7f78e0ab9a25",
+      "stderrSha256": "b518a341138682f1e403d59f30f86b30ffcc4238244c698c23ead5e317a3a3fc"
+    },
+    "canonicalVerify": {
+      "command": "node scripts/canonical-migration-identity.mjs verify --ledger qa-reports/phase03a/2026-09-15-production-apply/PRODUCTION_LEDGER_POST_APPLY.json --stage A",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "fb230741c698e7331a06d1fccf636d868f7447dda8b9a27c9490e19490f8aa81",
+      "stderrSha256": "52e0b6fdede35d4dc53f3ec06354c3b840ed5182fcb22c2d803216a03356110d"
+    },
+    "rollbackForwardRecovery": {
+      "command": "npm run db:rollback:verify",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "6304d53b0b772a7d4ab351ded957b0a4b207f49794a81e9837d1225d75c582f6",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "releaseVerify": {
+      "command": "npm run release:verify",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "1c34baa0af6f35e5a5a89aa820bbc396118d820c7ff54a3d6cc3ba03c94a8d25",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fda028HarnessUnit": {
+      "command": "npm run db:fda028:hosted:test",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "f3af6dfa202acac7aa77dcb8011654fa68456d69bd3a7115f7b34d760a32aeb5",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "focusedGuards": {
+      "command": "npx jest --runInBand <11 focused suites>",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "2b497606e5af0ea3e735d1c7a7dfb410172d096882160d9125fc294f3e69ed8a"
+    },
+    "credential": {
+      "command": "npm test -- --runInBand src/__tests__/noCredentialsInTree.guard.test.ts",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "fd9cb49cb637e1d88c7a6386b425bab65813b016367034057c43fde723e54bc4",
+      "stderrSha256": "066fff3108a59e1e3f22d8f836d031f3efc5ff37caf880732c32e0ea650270a3"
+    },
+    "gitDiffCheck": {
+      "command": "git diff --check",
+      "exit": 0,
+      "status": "PASS",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "focusedGuardSuites": 11,
+  "focusedGuardTests": 234,
+  "credentialSuites": 1,
+  "credentialTests": 10,
+  "fda028HarnessTests": 20,
+  "hostedBehaviorInvokedByLocalGates": false
+}

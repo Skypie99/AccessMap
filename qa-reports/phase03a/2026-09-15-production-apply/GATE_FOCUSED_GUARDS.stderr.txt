@@ -1,0 +1,23 @@
+watchman warning:  Recrawled this watch 15 times, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/skypie/AccessMap-codex/flagstone-p03a-takeover-20260914' ; watchman watch-project '/Users/skypie/AccessMap-codex/flagstone-p03a-takeover-20260914'`
+
+PASS scripts/__tests__/releaseTools.test.ts (19.158 s)
+PASS src/__tests__/releaseScripts.guard.test.ts
+PASS src/__tests__/migrationLineage.guard.test.ts
+PASS src/__tests__/contractManifest.guard.test.ts
+PASS src/__tests__/canonicalMigrationSource.guard.test.ts
+PASS src/__tests__/webhookTargetCoupling.guard.test.ts
+PASS src/__tests__/projectTargetSafety.guard.test.ts
+PASS scripts/__tests__/canonicalApplyWorkspaceGuard.test.ts
+PASS src/__tests__/noCredentialsInTree.guard.test.ts
+PASS scripts/__tests__/canonicalMigrationIdentity.test.ts
+PASS scripts/__tests__/targetTokenSafety.test.ts
+
+Test Suites: 11 passed, 11 total
+Tests:       234 passed, 234 total
+Snapshots:   0 total
+Time:        29.611 s
+Ran all test suites matching /scripts\/__tests__\/canonicalMigrationIdentity.test.ts|scripts\/__tests__\/canonicalApplyWorkspaceGuard.test.ts|scripts\/__tests__\/targetTokenSafety.test.ts|scripts\/__tests__\/releaseTools.test.ts|src\/__tests__\/canonicalMigrationSource.guard.test.ts|src\/__tests__\/contractManifest.guard.test.ts|src\/__tests__\/migrationLineage.guard.test.ts|src\/__tests__\/projectTargetSafety.guard.test.ts|src\/__tests__\/releaseScripts.guard.test.ts|src\/__tests__\/webhookTargetCoupling.guard.test.ts|src\/__tests__\/noCredentialsInTree.guard.test.ts/i.
