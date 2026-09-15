@@ -7,6 +7,7 @@ DO $proof$
 DECLARE
   v_constraint text;
   v_invalid_category boolean := false;
+  v_purged integer;
   v_result jsonb;
 BEGIN
   SET LOCAL statement_timeout = '60s';
@@ -241,9 +242,10 @@ BEGIN
     'no_ramp', 3, 'fda028-hosted-purge', c.old_at
   ) a;
 
+  v_purged := limiter.purge_at((SELECT live_at FROM fda028_clock));
   INSERT INTO fda028_assertion (description, passed) VALUES
     ('timing: purge removes retained-old bucket and cascades its grant',
-      limiter.purge_at((SELECT live_at FROM fda028_clock)) > 0
+      v_purged > 0
       AND (SELECT count(*) = 0 FROM limiter.grant));
 
   GRANT INSERT ON TABLE fda028_result TO service_role;

@@ -410,6 +410,8 @@ test('hosted SQL uses the real schema, constraint, timing, and roles', () => {
   assert.match(sql, /v_constraint = 'flags_category_check'/);
   assert.match(sql, /limiter\.admit_guest_flag_at\(/);
   assert.match(sql, /SELECT window_seconds FROM limiter\.config WHERE id/);
+  assert.match(sql, /v_purged := limiter\.purge_at\([\s\S]*\('timing: purge removes retained-old bucket and cascades its grant',[\s\S]*v_purged > 0/);
+  assert.doesNotMatch(sql, /limiter\.purge_at\([^;]+\)\s*>\s*0\s+AND/);
   assert.match(sql, /SET LOCAL ROLE service_role;[\s\S]*limiter\.admit_guest_flag\(/);
   assert.match(sql, /RESET ROLE;[\s\S]*runtime: service_role executes the clockless entry point/);
 });
