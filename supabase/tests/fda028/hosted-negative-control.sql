@@ -1,9 +1,24 @@
--- PGTAP_KIND: pgtap
+-- PGTAP_KIND: raising-proof
 -- PGTAP_EXECUTION: authorized-staging-only
--- This deliberate assertion failure proves the hosted runner cannot report a
--- green result merely because the SQL command itself exited zero.
-BEGIN;
-SELECT plan(1);
-SELECT ok(false, 'FDA028 deliberate runner negative control');
-SELECT * FROM finish();
-ROLLBACK;
+-- One prepared statement. The required exception both carries the deliberately
+-- failing assertion and proves that the statement was rolled back.
+DO $proof$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := jsonb_build_object(
+    'version', 1,
+    'kind', 'negative',
+    'plan', 1,
+    'assertions', jsonb_build_array(jsonb_build_object(
+      'number', 1,
+      'description', 'FDA028 deliberate runner negative control',
+      'passed', false
+    ))
+  );
+
+  RAISE EXCEPTION USING
+    ERRCODE = 'P0001',
+    MESSAGE = 'FDA028_ROLLBACK_NEGATIVE|' || v_result::text;
+END
+$proof$;
