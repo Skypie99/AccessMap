@@ -1,0 +1,66 @@
+{
+  "status": "PASS",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "sourceIdentity": {
+    "head": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+    "tree": "657f1b6ce01d3fdbb27102b5aa33616c918feade"
+  },
+  "commandShape": {
+    "dryRun": true,
+    "skipVault": true,
+    "explicitProjectRef": true,
+    "applyAvailable": false
+  },
+  "checks": {
+    "exit_zero": true,
+    "dry_run_true": true,
+    "not_up_to_date": true,
+    "migrations_exact": true,
+    "migration_count": true,
+    "no_seeds": true,
+    "no_roles": true,
+    "message_finished": true,
+    "stage_b_absent": true,
+    "recovery_absent": true,
+    "workspace_destroy_exit_zero": true,
+    "workspace_destroy_confirmed": true,
+    "workspace_absent": true
+  },
+  "pendingCount": 14,
+  "migrations": [
+    "20260904000000_adopt_private_admin_helper.sql",
+    "20260904000100_drop_duplicate_status_triggers.sql",
+    "20260904000200_adopt_d1sa_containment.sql",
+    "20260904000300_adopt_live_insert_throttles.sql",
+    "20260904000400_adopt_execute_revokes.sql",
+    "20260905055629_phase03a_flag_policies.sql",
+    "20260905055630_phase03a_open_inserts.sql",
+    "20260905055632_phase03a_profile_updates.sql",
+    "20260905055633_phase03a_contextual_profiles.sql",
+    "20260905055635_phase03a_trigger_execute.sql",
+    "20260905055636_phase03a_client_privileges.sql",
+    "20260905073925_phase03a_effective_privileges.sql",
+    "20260909120000_fda028_v4_limiter.sql",
+    "20260911120000_phase03a_webhook_target_env_scoped.sql"
+  ],
+  "productionApplyExecuted": false,
+  "stageBIncluded": false,
+  "recoveryFilesIncluded": false,
+  "workspaceDestroyed": true,
+  "productionMutations": "NONE",
+  "receiptFiles": {
+    "PRODUCTION_DRY_RUN_PLAN.json": "5626a32402ecb4b711f2d94f6b6f51ccb534481154314626bf7084a90ab08e1f",
+    "PRODUCTION_DRY_RUN_PLAN.stderr.txt": "9b6a3e76252e8586b18a3d52cd8951e8c1e871d1e8120172861bf50f37e928f5",
+    "PRODUCTION_DRY_RUN_PLAN.exit.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "PRODUCTION_DRY_RUN_PLAN_VALIDATION.json": "a4177f4c865249d87f284acb1148c0baac7a85d7bafcaaee38f0f644156fdb87",
+    "PRODUCTION_DRY_RUN.stdout.txt": "c26ed763e4fdadef59630a6087285d2a587c5bbbb2e35449c0697abff6160479",
+    "PRODUCTION_DRY_RUN.stderr.txt": "6f16eeb7ef9a185f6225c84bd83f93667428399b6e36b2285ddb62150f2e3150",
+    "PRODUCTION_DRY_RUN.exit.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "PRODUCTION_DRY_RUN_WORKSPACE_DESTROY.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "PRODUCTION_DRY_RUN_WORKSPACE_DESTROY.stderr.txt": "7f2fb9c38400b2c5b1c14daf1b7d819793da8dbb33b309b28268f92df16a53d3",
+    "PRODUCTION_DRY_RUN_WORKSPACE_DESTROY.exit.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "PRODUCTION_DRY_RUN_POST_RECONCILIATION.json": "9d063c924ecbb64d393e2c4a8b3d5493e52a6e366bb2255fc46fcc9dfbdf941c",
+    "PRODUCTION_COMPARATOR_V3_DRYRUN_PREFLIGHT.json": "ea1fbbd6beb961266dbe0a909fc7fdb8548d2adacc0a85ee0353f7133a2cade8",
+    "PRODUCTION_COMPARATOR_V3_DRYRUN_POST.json": "9d9d08fd8af100aee1a4f11197f06b23947f38bdd73fdb4a9b8de0e9795db819"
+  }
+}

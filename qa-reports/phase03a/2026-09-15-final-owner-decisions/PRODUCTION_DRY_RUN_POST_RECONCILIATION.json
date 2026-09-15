@@ -1,0 +1,24 @@
+{
+  "capturedAtUtc": "2026-09-15T06:45:25.467Z",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "transactionReadOnly": "on",
+  "applicationRowsRead": false,
+  "credentialValuesReturned": false,
+  "ledger": {
+    "rowCount": 71,
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b"
+  },
+  "mf03": {
+    "rowCount": 1,
+    "nonempty": true,
+    "shapeValid": true
+  },
+  "mf04": {
+    "rowCount": 1,
+    "nonempty": true,
+    "shapeValid": true
+  },
+  "limiterSchemaPresent": false,
+  "productionMutations": "NONE"
+}

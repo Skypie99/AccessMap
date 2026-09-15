@@ -1,0 +1,13 @@
+{
+  "state": "RUNNING",
+  "operation": "PRODUCTION_DRY_RUN_ONLY",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "sourceSha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+  "sourceTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade",
+  "pendingCount": 14,
+  "dryRun": true,
+  "skipVault": true,
+  "stageBIncluded": false,
+  "recoveryFilesIncluded": false,
+  "applyAuthorized": false
+}

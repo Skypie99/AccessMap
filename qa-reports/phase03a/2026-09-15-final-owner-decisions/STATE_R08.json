@@ -1,0 +1,33 @@
+{
+  "checkpoint": "R08_PRODUCTION_DRY_RUN_BANKED_PRE_REVIEW",
+  "status": "PENDING_INDEPENDENT_DRY_RUN_REVIEW",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "sourceSha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+  "sourceTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade",
+  "dryRunExit": 0,
+  "dryRunResult": true,
+  "pendingCount": 14,
+  "pendingExact": true,
+  "stageBIncluded": false,
+  "recoveryFilesIncluded": false,
+  "seedsIncluded": false,
+  "rolesIncluded": false,
+  "productionApplyExecuted": false,
+  "outcomeUnknown": false,
+  "workspaceDestroyed": true,
+  "isolatedGitWorktreeRemoved": true,
+  "postRunReconciliation": {
+    "ledgerRows": 71,
+    "ledgerOrderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+    "catalogCanonicalSha256": "2c0bacf76c71924ffd8543852dc830f593058b8cb67a1016871f55908dae0443",
+    "catalogStructuralSha256": "1c4cdbc441d3747f56109955c7b31840720d4cd09373572d961e9638fcc255c8",
+    "mf03": "SATISFIED",
+    "mf04": "SATISFIED",
+    "limiterSchemaPresent": false
+  },
+  "productionMutations": "NONE",
+  "productionAuthorized": false,
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "phase03bStarted": false
+}

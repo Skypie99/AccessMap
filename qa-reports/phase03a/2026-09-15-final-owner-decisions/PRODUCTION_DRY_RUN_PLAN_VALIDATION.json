@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "checks": {
+    "ok": true,
+    "target": true,
+    "non_mutating": true,
+    "apply_unavailable": true,
+    "source": true,
+    "pending_exact": true,
+    "pending_14": true,
+    "stage_b_absent": true,
+    "recovery_absent": true,
+    "dry_run": true,
+    "skip_vault": true,
+    "explicit_ref": true,
+    "no_ambiguous_selector": true,
+    "workspace_exists": true
+  },
+  "workspace": "/private/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03a-apply-r8eVEH",
+  "pendingCount": 14
+}
