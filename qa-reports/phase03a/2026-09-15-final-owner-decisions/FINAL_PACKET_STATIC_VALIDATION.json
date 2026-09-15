@@ -1,0 +1,20 @@
+{
+  "packetSha256": "b930bf7b005b740b3f78914f570e7725e19389d33e040b6b5e854905867fe40a",
+  "checks": {
+    "stage_a_count": true,
+    "stage_a_versions_and_hashes_present": true,
+    "stage_a_file_hashes_current": true,
+    "stage_b_excluded": true,
+    "recovery_entry_count": true,
+    "restore_versions_and_hashes_present": true,
+    "reapply_versions_and_hashes_present": true,
+    "mf03_satisfied": true,
+    "mf04_satisfied": true,
+    "mf05_framed": true,
+    "policy_values_present": true,
+    "phrase_dry_run_only": true,
+    "phrase_apply_excluded": true,
+    "production_not_authorized": true
+  },
+  "status": "PASS"
+}
