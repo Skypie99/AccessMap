@@ -1,0 +1,10 @@
+{
+  "checkpoint": "A01_PRE_APPLY_PREPARED",
+  "runUnit": "P03A_PRODUCTION_APPLY",
+  "status": "PREPARED",
+  "target": "kldlwszpfkdmsjrjhjym",
+  "authorizedMigrations": 14,
+  "productionAuthority": "EXACT_STAGE_A_APPLY_ONLY",
+  "productionMutationExecuted": false,
+  "nextOperation": "Regenerate and validate the exact 14-file target-explicit plan, bank write-ahead PREPARED and RUNNING state, then execute once."
+}

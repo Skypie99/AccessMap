@@ -1,0 +1,41 @@
+{
+  "capturedAtUtc": "2026-09-15T07:07:52.897Z",
+  "runUnit": "P03A_PRODUCTION_APPLY",
+  "status": "PREPARED",
+  "target": "kldlwszpfkdmsjrjhjym",
+  "sourceSha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+  "sourceTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade",
+  "dryRunEvidenceCommit": "c9c3ece64d30bc6154521bc3c8d9812754fa673b",
+  "dryRunEvidenceTree": "1a10dea5debd950036eaa618c3a9c362afdbc663",
+  "transactionReadOnly": "on",
+  "ledger": {
+    "rowCount": 71,
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+    "matchesReviewedDryRun": true
+  },
+  "comparator": {
+    "version": 3,
+    "exactMatchToReviewedDryRun": true,
+    "canonicalSha256": "906c4d2fde681321f8897380b1d21114db25aabd8b3937b8040a6b233649c8f8"
+  },
+  "authorizedMigrations": 14,
+  "stageBIncluded": false,
+  "recoveryFilesIncluded": false,
+  "seedsIncluded": false,
+  "rolesIncluded": false,
+  "vaultSync": "SKIPPED",
+  "mf03": {
+    "rowCount": 1,
+    "shapeValid": true,
+    "status": "SATISFIED"
+  },
+  "mf04": {
+    "rowCount": 1,
+    "shapeValid": true,
+    "status": "SATISFIED"
+  },
+  "limiterSchemaPresent": false,
+  "priorOperationState": "NONE",
+  "productionAuthority": "EXACT_STAGE_A_APPLY_ONLY"
+}
