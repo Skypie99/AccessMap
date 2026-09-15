@@ -175,7 +175,7 @@
   "vaultSync": "SKIPPED",
   "mutationExecuted": false,
   "runningBankedAtUtc": "2026-09-15T07:11:30.079534Z",
-  "preparedEvidenceCommit": "88beffa79339153a302657193352e185d11f02ba",
+  "preparedEvidenceCommit": "88beffac7ff011609652daf7c2e6b16f63214b20",
   "immediateProjectIdentityVerified": true,
   "immediateLedgerCount": 71,
   "immediateLedgerLatestVersion": "20260830130000",
