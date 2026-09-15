@@ -1,0 +1,29 @@
+{
+  "checkpoint": "R07_PRE_PRODUCTION_DRY_RUN",
+  "status": "PREPARED",
+  "authorizationScope": "ONE_TARGET_EXPLICIT_PRODUCTION_DRY_RUN_ONLY",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "repairSha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+  "repairTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade",
+  "packetSha256": "b930bf7b005b740b3f78914f570e7725e19389d33e040b6b5e854905867fe40a",
+  "mf05OwnerDecision": "ACCEPT_S3_LIMITER_PRESENT_BYPASS_OPEN_FOR_STAGE_A",
+  "productionPolicy": {
+    "normalAllowance": 5,
+    "bucketAllowance": 50,
+    "windowSeconds": 86400,
+    "ipv4Prefix": 32,
+    "ipv6Prefix": 64,
+    "retentionWindows": 1,
+    "reseedInterval": 7,
+    "catchupCap": 32
+  },
+  "pendingStageA": 14,
+  "stageBIncluded": false,
+  "recoveryFilesIncluded": false,
+  "skipVaultRequired": true,
+  "productionApplyAuthorized": false,
+  "productionMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "phase03bStarted": false
+}
