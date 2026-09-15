@@ -124,6 +124,9 @@ describe('production evidence and pending-set binding', () => {
       expect(result.plan.map((entry: { sha256: string }) => entry.sha256))
         .toEqual(retainedEvidence.entries.map((entry: { sha256: string }) => entry.sha256));
       expect(result.plan.every((entry: { file: string }) => !/stage_b_cutover/i.test(entry.file))).toBe(true);
+      expect(result.productionLedgerAudit.orderedSha256)
+        .toBe(retainedEvidence.productionPreApplyContract.ledgerOrderedSha256);
+      expect(result.productionLedgerAudit.expectedIdentityCount).toBe(86);
       expect(result.productionApplyAvailable).toBe(false);
     } finally {
       destroy(result.workspace);
@@ -132,15 +135,32 @@ describe('production evidence and pending-set binding', () => {
 
   it('refuses a phantom ledger version before a workspace survives', () => {
     const ledger = retainedLedger.map((row: unknown) => ({ ...(row as object) }));
-    ledger[10] = { name: 'fabricated_wall_clock_row', version: '20260914121212' };
+    ledger[10] = { name: 'fabricated_wall_clock_row', version: '20260528180520' };
     const evidence = structuredClone(retainedEvidence);
     // Keep the retained contract internally consistent so the ledger auditor,
     // rather than the earlier capture-consistency check, proves the phantom.
-    evidence.productionPreApplyContract.ledgerLatest = '20260914121212';
+    evidence.productionPreApplyContract.ledgerOrderedSha256 = invoke(
+      MOD, 'orderedLedgerSha256', ledger,
+    ).value.digest;
     const result = build(evidence, ledger).value;
     expect(result.ok).toBe(false);
     expect(result.workspace).toBeNull();
     expect(result.refusals.join('\n')).toMatch(/phantom remote version|wall-clock substitution|impossible ordering/);
+  });
+
+  it.each([
+    ['baseline name', (ledger: any[]) => { ledger[0].name = 'altered_baseline_name'; }],
+    ['row preserving count/latest', (ledger: any[]) => { ledger[10].name = 'altered_row_name'; }],
+    ['row order', (ledger: any[]) => { [ledger[0], ledger[1]] = [ledger[1], ledger[0]]; }],
+    ['duplicate row', (ledger: any[]) => { ledger[10] = { ...ledger[9] }; }],
+  ])('refuses an altered production ledger: %s', (_label, alter) => {
+    const ledger = retainedLedger.map((row: unknown) => ({ ...(row as object) }));
+    alter(ledger);
+    const result = build(retainedEvidence, ledger).value;
+    expect(result.ok).toBe(false);
+    expect(result.workspace).toBeNull();
+    expect(result.command).toBeNull();
+    expect(result.refusals.join('\n')).toMatch(/ledger|digest|canonical order/i);
   });
 
   it('does not reapply an exact canonical migration already recorded in the ledger', () => {
@@ -151,6 +171,9 @@ describe('production evidence and pending-set binding', () => {
     evidence.pendingCount = evidence.entries.length;
     evidence.productionPreApplyContract.ledgerRows = ledger.length;
     evidence.productionPreApplyContract.ledgerLatest = applied.version;
+    evidence.productionPreApplyContract.ledgerOrderedSha256 = invoke(
+      MOD, 'orderedLedgerSha256', ledger,
+    ).value.digest;
     const called = build(evidence, ledger);
     expect(called.ok).toBe(true);
     try {
@@ -160,6 +183,24 @@ describe('production evidence and pending-set binding', () => {
     } finally {
       destroy(called.value.workspace);
     }
+  });
+
+  it('refuses an already-applied adoption version under the wrong name', () => {
+    const applied = retainedEvidence.entries[0];
+    const ledger = [...retainedLedger, { name: 'altered_adoption_name', version: applied.version }];
+    const evidence = structuredClone(retainedEvidence);
+    evidence.entries = evidence.entries.slice(1);
+    evidence.pendingCount = evidence.entries.length;
+    evidence.productionPreApplyContract.ledgerRows = ledger.length;
+    evidence.productionPreApplyContract.ledgerLatest = applied.version;
+    evidence.productionPreApplyContract.ledgerOrderedSha256 = invoke(
+      MOD, 'orderedLedgerSha256', ledger,
+    ).value.digest;
+    const result = build(evidence, ledger).value;
+    expect(result.ok).toBe(false);
+    expect(result.workspace).toBeNull();
+    expect(result.command).toBeNull();
+    expect(result.refusals.join('\n')).toMatch(/expected "adopt_private_admin_helper"/);
   });
 
   it('refuses candidate/object mismatch and a tampered manifest hash', () => {

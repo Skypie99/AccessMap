@@ -1,0 +1,65 @@
+{
+  "runUnit": "P03A_PRODUCTION_PREREQUISITE_REPAIRS",
+  "checkpoint": "R03_SOURCE_FROZEN",
+  "status": "INDEPENDENT_CODE_REVIEW_RUNNING",
+  "repairSource": {
+    "sha": "3a0235395b484fdbdf2aee9023ee5ab976fe648e",
+    "tree": "2e2b9698c251e71b9a7fdcff42e76ab2f84b13aa",
+    "branch": "codex/flagstone-p03a-takeover-20260914"
+  },
+  "completedRepairUnits": {
+    "productionPlanTooling": "PASS",
+    "credentialGate": "PASS"
+  },
+  "productionPlanCli": {
+    "mode": "PRODUCTION_PLAN_ONLY",
+    "pendingCount": 14,
+    "stageBIncluded": false,
+    "productionApplyAvailable": false,
+    "workspaceDestroyed": true,
+    "receipts": [
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_CLI.json",
+        "sha256": "234b226eb88e94be298499e35588784d6c7b13ea7c7907f59503c34c3ad6b3e8"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_CLI_STDERR.txt",
+        "sha256": "9b6a3e76252e8586b18a3d52cd8951e8c1e871d1e8120172861bf50f37e928f5"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_CLI_EXIT.txt",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_WORKSPACE_DESTROY_STDOUT.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_WORKSPACE_DESTROY_STDERR.txt",
+        "sha256": "7f2fb9c38400b2c5b1c14daf1b7d819793da8dbb33b309b28268f92df16a53d3"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_WORKSPACE_DESTROY_EXIT.txt",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      }
+    ]
+  },
+  "productionLedgerIdentity": {
+    "rows": 71,
+    "latest": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b"
+  },
+  "protectedBytes": {
+    "fda028LimiterChanged": false,
+    "phase03aMigrationSqlChanged": false
+  },
+  "nextOperation": "Await independent code review of the exact frozen repair; only after PASS, run the bounded read-only production re-preflight.",
+  "operationState": {
+    "running": "INDEPENDENT_CODE_REVIEW",
+    "outcomeUnknown": false
+  },
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE"
+}

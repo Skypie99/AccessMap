@@ -49,6 +49,71 @@ import { canonicalIdentity, planApply, assertUnambiguousTarget, assertTargetToke
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 
+/** Match the production SQL capture's ordered ledger digest exactly. */
+export function orderedLedgerSha256(ledger) {
+  if (!Array.isArray(ledger)) throw new Error('production ledger must be an array');
+  const rows = ledger.map((row, index) => {
+    if (!row || typeof row !== 'object') throw new Error(`ledger row ${index + 1} is not an object`);
+    if (typeof row.version !== 'string' || !/^\d{14}$/.test(row.version)) {
+      throw new Error(`ledger row ${index + 1} has a non-canonical version`);
+    }
+    if (typeof row.name !== 'string' || row.name.length === 0 || /[\t\r\n]/.test(row.name)) {
+      throw new Error(`ledger row ${index + 1} has an invalid name`);
+    }
+    return { version: row.version, name: row.name };
+  });
+  const sorted = [...rows].sort(
+    (a, b) => a.version.localeCompare(b.version) || a.name.localeCompare(b.name),
+  );
+  const canonicalOrder = rows.every(
+    (row, index) => row.version === sorted[index].version && row.name === sorted[index].name,
+  );
+  const digest = sha256(sorted.map((row) => `${row.version}\t${row.name}\n`).join(''));
+  return { digest, canonicalOrder };
+}
+
+/**
+ * Build the complete local version/name identity map. Historical baseline name
+ * drift is taken from the canonical crosswalk; new artifacts use their exact
+ * filename identity.
+ */
+export function expectedLedgerIdentities({ baselineDir, declared = [], adoptionDeclared = [] }) {
+  const crosswalkPath = path.join(path.dirname(baselineDir), 'contract', 'migration-crosswalk.v1.json');
+  if (!fs.existsSync(crosswalkPath)) throw new Error(`migration crosswalk is missing: ${crosswalkPath}`);
+  const crosswalk = JSON.parse(fs.readFileSync(crosswalkPath, 'utf8'));
+  const applied = new Map(
+    (crosswalk.entries ?? []).filter((entry) => entry.status === 'APPLIED')
+      .map((entry) => [entry.version, entry.ledgerName]),
+  );
+  const expected = new Map();
+  for (const file of sqlFiles(baselineDir)) {
+    const id = canonicalIdentity(file);
+    const ledgerName = applied.get(id.version);
+    if (typeof ledgerName !== 'string' || ledgerName.length === 0) {
+      throw new Error(`${file}: no applied ledgerName in migration crosswalk`);
+    }
+    expected.set(id.version, ledgerName);
+  }
+  for (const entry of [...adoptionDeclared, ...declared]) {
+    const id = canonicalIdentity(entry.file);
+    if (expected.has(id.version)) throw new Error(`${entry.file}: duplicate known ledger version ${id.version}`);
+    expected.set(id.version, id.name);
+  }
+  return Object.fromEntries([...expected].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+export function auditProductionLedgerNames({ ledger, baselineDir, declared, adoptionDeclared }) {
+  const expected = expectedLedgerIdentities({ baselineDir, declared, adoptionDeclared });
+  const problems = [];
+  for (const row of ledger) {
+    const name = expected[row.version];
+    if (name !== undefined && row.name !== name) {
+      problems.push(`ledger version ${row.version} is named ${JSON.stringify(row.name)}; expected ${JSON.stringify(name)}`);
+    }
+  }
+  return { ok: problems.length === 0, problems, expectedIdentityCount: Object.keys(expected).length };
+}
+
 // ---------------------------------------------------------------------------
 // DISPOSABLE-WORKSPACE IDENTITY
 //
@@ -463,10 +528,17 @@ export function validateProductionPlanEvidence({
     if (contract?.ledgerRows !== ledger.length) {
       refusals.push(`production evidence says ${contract?.ledgerRows} ledger rows but capture has ${ledger.length}`);
     }
-    const latest = ledger.length ? [...ledger].sort((a, b) => a.version.localeCompare(b.version)).at(-1)?.version : null;
-    if (contract?.ledgerLatest !== latest) {
-      refusals.push(`production evidence latest version ${contract?.ledgerLatest} does not match capture ${latest}`);
-    }
+    try {
+      const actualLedger = orderedLedgerSha256(ledger);
+      if (!actualLedger.canonicalOrder) refusals.push('production ledger rows are not in canonical order');
+      if (actualLedger.digest !== contract?.ledgerOrderedSha256) {
+        refusals.push('production ledger ordered digest does not match the evidence contract');
+      }
+      const latest = ledger.length ? ledger.at(-1).version : null;
+      if (contract?.ledgerLatest !== latest) {
+        refusals.push(`production evidence latest version ${contract?.ledgerLatest} does not match capture ${latest}`);
+      }
+    } catch (e) { refusals.push(e.message); }
   }
   if (evidence.stageB?.included !== false) {
     refusals.push('Stage B must be explicitly excluded from a production plan');
@@ -514,6 +586,15 @@ export function buildProductionPlan({
   if (!validated.ok) {
     return { ok: false, refusals: validated.refusals, workspace: null, plan: [], command: null };
   }
+  let identityAudit;
+  try {
+    identityAudit = auditProductionLedgerNames({ ledger, baselineDir, declared, adoptionDeclared });
+  } catch (e) {
+    return { ok: false, refusals: [e.message], workspace: null, plan: [], command: null };
+  }
+  if (!identityAudit.ok) {
+    return { ok: false, refusals: identityAudit.problems, workspace: null, plan: [], command: null };
+  }
   const built = buildWorkspace({
     baselineDir, adoptionDir, candidateDir, declared, adoptionDeclared,
     ledger, stage: 'A', projectId,
@@ -546,6 +627,10 @@ export function buildProductionPlan({
     plan: actual,
     counts: built.counts,
     ledgerAudit: built.ledgerAudit,
+    productionLedgerAudit: {
+      orderedSha256: orderedLedgerSha256(ledger).digest,
+      expectedIdentityCount: identityAudit.expectedIdentityCount,
+    },
     command,
     sourceIdentity: { head: sourceHead, tree: sourceTree },
     productionApplyAvailable: false,
@@ -680,6 +765,7 @@ if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(proces
     console.log(JSON.stringify({
       mode: 'PRODUCTION_PLAN_ONLY', ok: res.ok, refusals: res.refusals,
       workspace: res.workspace, counts: res.counts,
+      productionLedgerAudit: res.productionLedgerAudit,
       pending: res.plan?.map((p) => ({ file: p.file, version: p.version, sha256: p.sha256 })),
       command: res.command, sourceIdentity: res.sourceIdentity, productionApplyAvailable: false,
     }, null, 2));

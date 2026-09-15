@@ -21,13 +21,11 @@
  * past the diff gate once still cannot stay. The two are complementary: the
  * hook stops arrival, this stops residence.
  *
- * WHY COMMENTS ARE NOT STRIPPED FROM .md AND .sql. The house idiom
- * (cf. dismissalStandard.guard.test.ts) blanks comments so prose never matches.
- * That is exactly backwards for a credential scan: half of THIS repo's actual
- * leak lived in a `--` SQL comment, and the other half in markdown prose. So
- * comment-stripping is applied only to executable source (.ts/.tsx/.js/.jsx),
- * where a real credential would appear in code and a mention in a code comment
- * is discussion. Docs and SQL are scanned raw, on purpose.
+ * WHY HIGH-CONFIDENCE DETECTORS SCAN RAW TEXT. Half of this repo's actual leak
+ * lived in a comment. Credentials in source comments still reside in the tree,
+ * and regex comment stripping also mistakes `//` inside URL strings for a
+ * comment opener. Login-proximity heuristics may use stripped source; explicit
+ * secret/password labels and known credential formats always scan raw text.
  *
  * ANTI-SELF-MATCH. Every detector string is assembled at runtime from fragments
  * and this file is excluded from the census, so the sweep cannot match itself
@@ -65,8 +63,8 @@ const labelled = () => new RegExp(`\\b(${L1}|${L2}|${L3})\\b["'\`\\s]{0,3}[:|=]\
 const columnLabel = () => new RegExp(`^\\s*(${L1}|${L2}|${L3}|${L4})\\s*$`, 'i');
 
 /**
- * Non-login secret labels — webhook secrets, API keys, bearer/auth tokens,
- * service-role keys.
+ * High-confidence labels — passwords, webhook secrets, API keys, bearer/auth
+ * tokens, service-role keys.
  *
  * Detectors 1 and 2 only fire near review/demo ACCOUNT language, so this whole
  * class sat outside the guard by construction: a rotated webhook secret could
@@ -80,7 +78,7 @@ const secretLabelled = () =>
     // between `_` and a letter — which would blind this to `webhook_secret`,
     // `SUPABASE_SERVICE_ROLE_KEY`, `MY_API_KEY`, `client_secret`: the dominant
     // real-world env-var shape, and the one this repo's own .env.example uses.
-    `(?<![A-Za-z0-9])(${L4}|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|` +
+    `(?<![A-Za-z0-9])(${L1}|${L2}|${L3}|${L4}|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|` +
       `service[_-]?role[_-]?key|private[_-]?key|webhook[_-]?${L4}|client[_-]?${L4}|` +
       `${L4}[_-]?key|${L4}key|access[_-]?key(?:[_-]?id)?|bearer)` +
       `(?![A-Za-z0-9])["'\`\\s]{0,3}([:|=,])\\s*["'\`]?([^\\s"'\`]+)`,
@@ -316,6 +314,7 @@ function scan(files: string[]): Finding[] {
     const rel = path.relative(REPO, file);
     const scanned = isSource(file) ? stripComments(text) : text;
     const lines = scanned.split('\n');
+    const rawLines = text.split('\n');
 
     const relevant = (i: number) =>
       lines
@@ -351,11 +350,11 @@ function scan(files: string[]): Finding[] {
       }
     }
 
-    // Detector 3 — a non-login secret label followed by a value, anywhere in
-    // the tree. Deliberately NOT gated on account language, and it accepts long
-    // hex, so a rotated-but-committed webhook secret or API key is a finding
-    // instead of a silent pass.
-    lines.forEach((line, i) => {
+    // Detector 3 — a high-confidence password/secret label followed by a value,
+    // anywhere in the raw tree. Deliberately NOT gated on account language, and
+    // it accepts long hex, so source comments and content after a URL cannot
+    // become preprocessing blind spots.
+    rawLines.forEach((line, i) => {
       for (const m of line.matchAll(secretLabelled())) {
         if (isFindingIdProseMatch(m, line)) continue;
         const shape = shapeOf(m[3], { allowLongHex: true });
@@ -364,7 +363,7 @@ function scan(files: string[]): Finding[] {
     });
 
     // Detector 4 — recognisable credential FORMATS, no label required.
-    lines.forEach((line, i) => {
+    rawLines.forEach((line, i) => {
       for (const { name, re } of FORMAT_DETECTORS) {
         for (const m of line.matchAll(re())) {
           // Test the MATCH, not the line. Suppressing a whole line on any
@@ -588,10 +587,12 @@ describe('no credentials in tree', () => {
       try {
         fs.writeFileSync(file, fixture.text);
         const findings = scan([file]);
-        expect(findings).toHaveLength(1);
-        const output = findingMessage(findings[0]);
-        expect(output).toContain('credential-shaped value');
-        expect(output.includes(synthetic)).toBe(false);
+        expect(findings.length).toBeGreaterThanOrEqual(1);
+        for (const finding of findings) {
+          const output = findingMessage(finding);
+          expect(output).toContain('credential-shaped value');
+          expect(output.includes(synthetic)).toBe(false);
+        }
       } finally {
         fs.rmSync(file, { force: true });
       }
@@ -600,6 +601,28 @@ describe('no credentials in tree', () => {
     const digest = ['0a1b2c3d4e5f6789', '0a1b2c3d4e5f6789', '0a1b2c3d4e5f6789', '0a1b2c3d4e5f6789'].join('');
     expect(digest).toHaveLength(64);
     expect(shapeOf(digest)).toBeNull();
+  });
+
+  it('B6 · raw source scanning catches password, URL-tail, and comment credentials', () => {
+    const synthetic = ['Source', String(2026), 'Credential', '!'].join('');
+    const cases = [
+      `DATABASE_${L1.toUpperCase()}=${synthetic}\n`,
+      `const u = 'https://example.com'; const api_key = '${synthetic}';\n`,
+      `// api_key=${synthetic}\n`,
+    ];
+    for (const [index, body] of cases.entries()) {
+      const file = path.join(REPO, 'src', `.credential-guard-source-${process.pid}-${index}.ts`);
+      try {
+        fs.writeFileSync(file, body);
+        const findings = scan([file]);
+        expect(findings).toHaveLength(1);
+        const output = findingMessage(findings[0]);
+        expect(output).toContain('credential-shaped value');
+        expect(output.includes(synthetic)).toBe(false);
+      } finally {
+        fs.rmSync(file, { force: true });
+      }
+    }
   });
 
   it('C · no tracked file carries a credential-shaped literal next to account language', () => {

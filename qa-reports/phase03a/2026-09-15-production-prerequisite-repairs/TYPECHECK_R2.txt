@@ -1,0 +1,3 @@
+
+> accessmap@4.1.1 typecheck
+> tsc --noEmit
