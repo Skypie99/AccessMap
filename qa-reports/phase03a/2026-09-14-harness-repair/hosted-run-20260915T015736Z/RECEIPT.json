@@ -1,0 +1,121 @@
+{
+  "receiptVersion": 1,
+  "runUnit": "FDA028_HOSTED_HARNESS_REPAIR",
+  "generatedAtUtc": "2026-09-15T01:58:33.084Z",
+  "status": "HOLD",
+  "target": {
+    "id": "4a37413a-01c2-4ab2-8bf8-a17a42a549b8",
+    "projectRef": "cepayqmsoqxshsiyqnvz",
+    "verification": "explicit exact tokens plus accepted database ledger and contract",
+    "productionContact": false
+  },
+  "source": {
+    "sha": "735fca2ecf540164d6e7c3d7739356377963ce4d",
+    "tree": "feae2e98525e0d98e19a16237a5d937cb08a6644"
+  },
+  "reviewedSha": "f7fecc01fc7e13b3590becb5fb928e98f6eb2283",
+  "acceptedIntegrationSha": "9a0af4c88b5b00898e405992cfd44ba7dfd689fc",
+  "expectedLedger": {
+    "count": 103,
+    "latest": "20260913080000",
+    "sha256": "9c7301f4e0880905a84b1e27a9360afc229034042506d1b651700643fc0c8316"
+  },
+  "artifactSha256": {
+    "supabase/tests/fda028/hosted-state.sql": "744f14f8371c03c557062547e0499581972556a07c4e5a0b1643670e69b06fc7",
+    "supabase/tests/fda028/hosted-negative-control.sql": "bade8a9a26677e8b76296ba75a5490fb1178ae98c3e292c35f499d880d5f36e0",
+    "supabase/tests/fda028/hosted-acceptance.sql": "ba864a0ff9cccfdd27a9a160c82255d2ae9f25ac9e2bf0057cf071c571f70918",
+    "scripts/run-fda028-hosted.mjs": "77eedbc4550e6418f68dd74ac9ff9b3f200d59f4021f5c3cf88e169cd04c2980"
+  },
+  "negativeControl": null,
+  "hostedAcceptance": null,
+  "cleanup": "PASS",
+  "preState": {
+    "buckets": 0,
+    "config": {
+      "bucket_allowance": 50,
+      "catchup_cap": 32,
+      "enabled": true,
+      "id": true,
+      "ipv4_prefix": 32,
+      "ipv6_prefix": 64,
+      "normal_allowance": 5,
+      "require_public_ip": true,
+      "reseed_interval": 7,
+      "retention_windows": 1,
+      "window_seconds": 86400
+    },
+    "dev_key_material_exists": false,
+    "flags": 0,
+    "function_contract": {
+      "clocked_flag": true,
+      "clockless_flag": true,
+      "purge": true,
+      "purge_at": true
+    },
+    "grants": 0,
+    "helpers": 0,
+    "key_state": {
+      "epoch": -1,
+      "id": true,
+      "reseed_anchor": -1,
+      "window_seconds": null
+    },
+    "ledger_count": 103,
+    "ledger_latest": "20260913080000",
+    "ledger_sha256": "9c7301f4e0880905a84b1e27a9360afc229034042506d1b651700643fc0c8316",
+    "queued_http": 0,
+    "vault_key_bytes": 32,
+    "vault_secret_rows": 1
+  },
+  "postState": {
+    "buckets": 0,
+    "config": {
+      "bucket_allowance": 50,
+      "catchup_cap": 32,
+      "enabled": true,
+      "id": true,
+      "ipv4_prefix": 32,
+      "ipv6_prefix": 64,
+      "normal_allowance": 5,
+      "require_public_ip": true,
+      "reseed_interval": 7,
+      "retention_windows": 1,
+      "window_seconds": 86400
+    },
+    "dev_key_material_exists": false,
+    "flags": 0,
+    "function_contract": {
+      "clocked_flag": true,
+      "clockless_flag": true,
+      "purge": true,
+      "purge_at": true
+    },
+    "grants": 0,
+    "helpers": 0,
+    "key_state": {
+      "epoch": -1,
+      "id": true,
+      "reseed_anchor": -1,
+      "window_seconds": null
+    },
+    "ledger_count": 103,
+    "ledger_latest": "20260913080000",
+    "ledger_sha256": "9c7301f4e0880905a84b1e27a9360afc229034042506d1b651700643fc0c8316",
+    "queued_http": 0,
+    "vault_key_bytes": 32,
+    "vault_secret_rows": 1
+  },
+  "failure": "Supabase proof error code did not match the measured CLI contract",
+  "command": [
+    "node",
+    "scripts/run-fda028-hosted.mjs",
+    "--project-ref",
+    "cepayqmsoqxshsiyqnvz",
+    "--branch-id",
+    "4a37413a-01c2-4ab2-8bf8-a17a42a549b8",
+    "--reviewed-sha",
+    "f7fecc01fc7e13b3590becb5fb928e98f6eb2283",
+    "--receipt-dir",
+    "qa-reports/phase03a/2026-09-14-harness-repair/hosted-run-20260915T015736Z"
+  ]
+}
