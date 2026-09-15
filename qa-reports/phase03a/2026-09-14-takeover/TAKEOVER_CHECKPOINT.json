@@ -1,0 +1,138 @@
+{
+  "promptId": "FLAGSTONE-P03A-CODEX-TAKEOVER-20260914-R1",
+  "runUnit": "CODEX_P03A_TAKEOVER",
+  "status": "PREPARED",
+  "modelTransfer": "CLAUDE_TO_CODEX",
+  "bankedAtUtc": "2026-09-14",
+  "currentAuthoritativeLineage": {
+    "branch": "integration/flagstone-b33-convergence-20260903",
+    "head": "9a0af4c88b5b00898e405992cfd44ba7dfd689fc",
+    "tree": "4e9d6aefc16cb8bce877dc6e0097b61ade8e22c5",
+    "latestVerifiedStageStep": 12
+  },
+  "takeoverWorktree": {
+    "path": "/Users/skypie/AccessMap-codex/flagstone-p03a-takeover-20260914",
+    "branch": "codex/flagstone-p03a-takeover-20260914",
+    "basedOn": "9a0af4c88b5b00898e405992cfd44ba7dfd689fc"
+  },
+  "acceptedCode": {
+    "sha": "3ac416e2cd19c7322061efb689abc5bebcef3a83",
+    "tree": "99ee18fbeb72e0f31d501f749df920d30ea907de"
+  },
+  "acceptedIntegration": {
+    "sha": "f2c2fbef36e88289c9c2a0663e6f26fc974e0a2a",
+    "tree": "96d8e38b37e881fa1f4d6e39cf5e276e1f51b833"
+  },
+  "gitReconciliation": {
+    "mainSha": "70b52a30e9fff0f7d538509b110212bb8d872391",
+    "mainTree": "847f39f6d8e5d7feb28af0f5da823034ce19f848",
+    "originMainSha": "70b52a30e9fff0f7d538509b110212bb8d872391",
+    "originMainTree": "847f39f6d8e5d7feb28af0f5da823034ce19f848",
+    "mainOriginDivergence": "0/0",
+    "acceptedIntegrationReachableFromMain": false,
+    "acceptedCodeOrIntegrationPublishedOnRemote": false,
+    "pushesByTakeover": "NONE",
+    "mainMergesByTakeover": "NONE"
+  },
+  "freshStaging": {
+    "projectRef": "cepayqmsoqxshsiyqnvz",
+    "branchId": "4a37413a-01c2-4ab2-8bf8-a17a42a549b8",
+    "parentProjectRef": "kldlwszpfkdmsjrjhjym",
+    "withData": false,
+    "previewStatus": "ACTIVE_HEALTHY",
+    "migrationLedgerRows": 103,
+    "limiterSchemaPresent": true,
+    "flagsRows": 0,
+    "usersRows": 0,
+    "vaultSecretRows": 1,
+    "completedHttpResponseRows": 0,
+    "readOnlyReverifiedOn": "2026-09-14"
+  },
+  "oldStaging": {
+    "projectRef": "ctshxbykuemeqnofqcdh",
+    "branchId": "441acc38-d71c-4a87-883e-61ff87e0c52e",
+    "migrationLedgerRows": 82,
+    "migrationLedgerMax": "20260910162409",
+    "mutationsByTakeover": "NONE",
+    "readOnlyReverifiedOn": "2026-09-14"
+  },
+  "evidenceArtifacts": {
+    "freshRerunReceipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_FRESH_RERUN.json",
+      "sha256": "f84a18213072501808898efaa748c4b02cfdf70ac2269e6ffb8c3fce87c96b0e"
+    },
+    "step4Receipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP4_APPLY.json",
+      "sha256": "6c3b480d01bc913517c46295df487b64ff1dc99936d3b0b5456cceb10d355b5b"
+    },
+    "step5Receipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP5_BUILD33.json",
+      "sha256": "ccce9bfb4f736d0a14ff9a9a1c6e9d86e766305710e398d83c12598191a328ef"
+    },
+    "step6Receipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP6_PGTAP.json",
+      "sha256": "c45f7051f7507a84217cf75905fae0f546c1e140567170c2dcbd9a49931fb4eb"
+    },
+    "step7FindingReceipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP7_FDA028_FINDING.json",
+      "sha256": "7766392296e2d11dcd6a27923d9644b53103c26db06d16921dea20b0addc73d2"
+    },
+    "step7ProbesReceipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP7_FDA028_PROBES.json",
+      "sha256": "ecc78f337f7bfbc328c345f9e7418a189f58f3045eb606993099893b38f5d0f4"
+    },
+    "step9Receipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP9_IPV6.json",
+      "sha256": "213792f5a61c83a0d037eab54edda7cd23b97d063d59e1b2441bdaa18886dd3a"
+    },
+    "step10And11Receipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP10_11_ROUNDTRIP.json",
+      "sha256": "6f12797c70f5f5e12fbe1d7ecf6ca55e7ad896648561f8733397f0b6ba314cf5"
+    },
+    "step12Receipt": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/OP_STEP12_GATES.json",
+      "sha256": "68e55a49d60f82b43132fef11da8e96bc9d5404d7c7e1bf49d9613bb64aeca83"
+    },
+    "firstApplyCapture": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/CATALOG_FIRST_APPLY.json",
+      "catalogChecksum": "1cb772c877a25b87f5e1870301e974a5d23e938e9ed412d2a57b8d9fa3dd45d3"
+    },
+    "restoredCapture": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/CATALOG_RESTORED.json",
+      "catalogChecksum": "d18dc1d133281b61f0fb3c5b5de571bdac8d536b9f9d3ca9a1f70b7482eec663"
+    },
+    "reapplyCapture": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/CATALOG_REAPPLY_CLEAN.json",
+      "catalogChecksum": "1cb772c877a25b87f5e1870301e974a5d23e938e9ed412d2a57b8d9fa3dd45d3"
+    },
+    "roundTripLedger": {
+      "path": "qa-reports/phase03a/2026-09-11-freshstage/LEDGER_AFTER_ROUNDTRIP.json",
+      "rows": 103,
+      "sha256": "0e0dd5cc3d6fc41a76537703a5e867486c10906903b71f594e2a14015ed70c90"
+    },
+    "forwardRecoveryDirectory": "qa-reports/phase03a/2026-09-11-freshstage/forward-recovery/"
+  },
+  "operationState": {
+    "running": [],
+    "appliedNotVerified": [],
+    "outcomeUnknown": [],
+    "noRemoteOperationRunningOrUnknown": true
+  },
+  "independentStageReview": {
+    "state": "PARTIAL",
+    "freshStageReportFound": false,
+    "oldStageReportRejectedForThisGate": "qa-reports/phase03a/2026-09-10-stage/INDEPENDENT_STAGING_ACCEPTANCE.md targets ctshxbykuemeqnofqcdh and cannot accept the fresh branch",
+    "partialTranscript": "/Users/skypie/.claude/projects/-Users-skypie/0b4e32a4-48d3-4c49-9023-eb92290e4f07/subagents/agent-ab7d5b27a74a10a6f.jsonl",
+    "partialTranscriptEndedAt": "2026-09-11T14:22:17-0700",
+    "termination": "usage limit before report or verdict"
+  },
+  "boundary": {
+    "productionMutations": "NONE IN PHASE 03A RECEIPTS; NO PRODUCTION CONTACT BY THIS TAKEOVER",
+    "oldStagingMutations": "NONE",
+    "credentialMaterialPrinted": false,
+    "phase03BStarted": false,
+    "productionAuthorized": false,
+    "mainMergeAuthorized": false
+  },
+  "nextOperation": "Resume one independent Step 13 review against the frozen Step 12 evidence, preserving the partial reviewer transcript and performing read-only checks only."
+}
