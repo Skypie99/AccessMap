@@ -85,6 +85,23 @@ function proofEnvelope(prefix, value, mutateEnvelope) {
   return JSON.stringify(envelope);
 }
 
+function hostedProofEnvelope(prefix, value, { mutateBody, mutateEnvelope } = {}) {
+  const body = {
+    message: `Failed to run sql query: ERROR:  P0001: ${prefix}${JSON.stringify(value)}\n` +
+      'CONTEXT:  PL/pgSQL function inline_code_block line 16 at RAISE\n',
+  };
+  mutateBody?.(body);
+  const envelope = {
+    _tag: 'Error',
+    error: {
+      code: 'LegacyDbQueryUnexpectedStatusError',
+      message: `unexpected status 400: ${JSON.stringify(body)}`,
+    },
+  };
+  mutateEnvelope?.(envelope);
+  return JSON.stringify(envelope);
+}
+
 function stateEnvelope(state = validState(), mutateEnvelope) {
   const envelope = { boundary, rows: [{ fda028_state: state }], warning };
   mutateEnvelope?.(envelope);
@@ -208,6 +225,32 @@ test('accepts only the exact structured main rollback evidence', () => {
     assertSuccessfulEvidence(proofEnvelope('FDA028_ROLLBACK_RESULT|', value), 2),
     { plan: 2, passed: 2, failed: 0, assertions: value.assertions },
   );
+  assert.deepEqual(
+    assertSuccessfulEvidence(hostedProofEnvelope('FDA028_ROLLBACK_RESULT|', value), 2),
+    { plan: 2, passed: 2, failed: 0, assertions: value.assertions },
+  );
+});
+
+test('rejects hosted HTTP, body, SQLSTATE, and context wrapper drift', () => {
+  const value = payload('main', 2);
+  const cases = [
+    () => hostedProofEnvelope('FDA028_ROLLBACK_RESULT|', value, {
+      mutateEnvelope: (x) => { x.error.message = x.error.message.replace('status 400', 'status 500'); },
+    }),
+    () => hostedProofEnvelope('FDA028_ROLLBACK_RESULT|', value, {
+      mutateBody: (x) => { x.extra = true; },
+    }),
+    () => hostedProofEnvelope('FDA028_ROLLBACK_RESULT|', value, {
+      mutateBody: (x) => { x.message = x.message.replace('P0001', 'XX000'); },
+    }),
+    () => hostedProofEnvelope('FDA028_ROLLBACK_RESULT|', value, {
+      mutateBody: (x) => { x.message = x.message.replace('line 16', 'line 0'); },
+    }),
+    () => hostedProofEnvelope('FDA028_ROLLBACK_RESULT|', value, {
+      mutateBody: (x) => { x.message += 'unexpected'; },
+    }),
+  ];
+  for (const make of cases) assert.throws(() => assertSuccessfulEvidence(make(), 2));
 });
 
 test('rejects extra JSON records, keys, and arbitrary nested payloads', () => {
@@ -261,6 +304,12 @@ test('rejects plan, numbering, description, type, and result drift', () => {
 test('requires the exact deliberate negative rollback evidence', () => {
   assert.deepEqual(
     assertNegativeControl(proofEnvelope('FDA028_ROLLBACK_NEGATIVE|', payload('negative', 1, false))),
+    { plan: 1, passed: 0, failed: 1, detected: true },
+  );
+  assert.deepEqual(
+    assertNegativeControl(hostedProofEnvelope(
+      'FDA028_ROLLBACK_NEGATIVE|', payload('negative', 1, false),
+    )),
     { plan: 1, passed: 0, failed: 1, detected: true },
   );
   const passed = payload('negative', 1, true);

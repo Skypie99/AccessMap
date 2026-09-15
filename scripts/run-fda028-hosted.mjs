@@ -110,15 +110,35 @@ export function parseRollbackEvidence(raw, { prefix, kind, expectedPlan }) {
   assertExactKeys(envelope, ['_tag', 'error'], 'Supabase proof envelope');
   if (envelope._tag !== 'Error') throw new Error('Supabase proof envelope tag was not Error');
   assertExactKeys(envelope.error, ['code', 'message'], 'Supabase proof error');
-  if (envelope.error.code !== 'LegacyDbQueryExecError') {
-    throw new Error('Supabase proof error code did not match the measured CLI contract');
-  }
-  const messagePrefix = `failed to execute query: error: ${prefix}`;
-  if (typeof envelope.error.message !== 'string' || !envelope.error.message.startsWith(messagePrefix)) {
-    throw new Error('Supabase proof error message did not carry the required rollback marker');
+  if (typeof envelope.error.message !== 'string') throw new Error('Supabase proof error message was not text');
+  let payloadText;
+  if (envelope.error.code === 'LegacyDbQueryExecError') {
+    const messagePrefix = `failed to execute query: error: ${prefix}`;
+    if (!envelope.error.message.startsWith(messagePrefix)) {
+      throw new Error('Supabase direct proof error did not carry the required rollback marker');
+    }
+    payloadText = envelope.error.message.slice(messagePrefix.length);
+  } else if (envelope.error.code === 'LegacyDbQueryUnexpectedStatusError') {
+    const statusPrefix = 'unexpected status 400: ';
+    if (!envelope.error.message.startsWith(statusPrefix)) {
+      throw new Error('Supabase hosted proof status did not match the measured HTTP contract');
+    }
+    let hosted;
+    try { hosted = JSON.parse(envelope.error.message.slice(statusPrefix.length)); }
+    catch { throw new Error('Supabase hosted proof body was not valid JSON'); }
+    assertExactKeys(hosted, ['message'], 'Supabase hosted proof body');
+    const messagePrefix = `Failed to run sql query: ERROR:  P0001: ${prefix}`;
+    const contextPattern = /\nCONTEXT:  PL\/pgSQL function inline_code_block line [1-9][0-9]* at RAISE\n$/;
+    if (typeof hosted.message !== 'string' || !hosted.message.startsWith(messagePrefix)
+        || !contextPattern.test(hosted.message)) {
+      throw new Error('Supabase hosted proof message did not match the measured rollback contract');
+    }
+    payloadText = hosted.message.slice(messagePrefix.length).replace(contextPattern, '');
+  } else {
+    throw new Error('Supabase proof error code did not match a measured CLI contract');
   }
   let payload;
-  try { payload = JSON.parse(envelope.error.message.slice(messagePrefix.length)); }
+  try { payload = JSON.parse(payloadText); }
   catch { throw new Error('Supabase rollback evidence payload was not valid JSON'); }
   assertExactKeys(payload, ['version', 'kind', 'plan', 'assertions'], 'Rollback evidence payload');
   if (payload.version !== 1 || payload.kind !== kind || payload.plan !== expectedPlan) {
