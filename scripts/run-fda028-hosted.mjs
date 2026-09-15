@@ -110,13 +110,57 @@ export function parseTap(raw) {
   return { plans, ok, notOk };
 }
 
+function assertTapEnvelope(raw, { allowExpectedNegativeDiagnostics = false } = {}) {
+  const original = String(raw).trim();
+  if (!original) throw new Error('TAP output was empty');
+  const jsonFramed = original.startsWith('{') || original.startsWith('[');
+  if (jsonFramed) {
+    let parsed;
+    try { parsed = JSON.parse(original); }
+    catch { throw new Error('Supabase TAP output was not one valid JSON document'); }
+    let reportedError = false;
+    walk(parsed, (candidate) => {
+      for (const key of ['error', 'errors', 'warning', 'warnings']) {
+        if (Object.hasOwn(candidate, key) && candidate[key]) reportedError = true;
+      }
+    });
+    if (reportedError) throw new Error('Supabase TAP output contained an error object');
+  } else {
+    const allowed = /^(?:1\.\.\d+|(?:not )?ok\s+\d+\s*-\s*[^\r\n]+)$/i;
+    const expectedNegativeDiagnostic = /^# (?:Failed test 1: "FDA028 deliberate runner negative control"|Looks like you failed 1 test of 1)$/;
+    const unexpected = original.replaceAll('\\n', '\n').split(/\r?\n/)
+      .map((line) => line.trim()).filter(Boolean)
+      .filter((line) => !allowed.test(line)
+        && !(allowExpectedNegativeDiagnostics && expectedNegativeDiagnostic.test(line)));
+    if (unexpected.length) throw new Error('TAP output contained an unexpected stdout record');
+  }
+  const text = original.replaceAll('\\n', '\n');
+  if (/\bBail out!/i.test(text)) throw new Error('TAP output emitted a bailout');
+  if (/1\.\.\d+[^\r\n]*#\s*(?:SKIP|TODO)\b/i.test(text)
+      || /\bok\s+\d+[^\r\n]*#\s*(?:SKIP|TODO)\b/i.test(text)) {
+    throw new Error('TAP output emitted a skipped or TODO plan/assertion');
+  }
+  if (/(?:^|\n)\s*(?:---|\.\.\.)\s*(?:\n|$)/m.test(text)) {
+    throw new Error('TAP output emitted unexpected YAML diagnostics');
+  }
+  const comments = [...text.matchAll(/(?:^|\n)\s*(#\s+[^\r\n]+)/gm)].map((match) => match[1].trim());
+  const expectedNegativeDiagnostic = /^# (?:Failed test 1: "FDA028 deliberate runner negative control"|Looks like you failed 1 test of 1)$/;
+  if (comments.some((comment) => !allowExpectedNegativeDiagnostics || !expectedNegativeDiagnostic.test(comment))) {
+    throw new Error('TAP output emitted an unexpected diagnostic comment');
+  }
+  if (/\b(?:WARNING|ERROR|FATAL|PANIC|NOTICE):/i.test(text)) {
+    throw new Error('TAP output contained an unexpected diagnostic record');
+  }
+}
+
 function assertOnePlan(tap) {
-  const unique = [...new Set(tap.plans)];
-  if (unique.length !== 1) throw new Error(`Expected one TAP plan, found ${JSON.stringify(unique)}`);
-  return unique[0];
+  if (tap.plans.length !== 1) throw new Error(`Expected one TAP plan, found ${JSON.stringify(tap.plans)}`);
+  if (tap.plans[0] <= 0) throw new Error('TAP plan must contain at least one assertion');
+  return tap.plans[0];
 }
 
 export function assertNegativeControl(raw) {
+  assertTapEnvelope(raw, { allowExpectedNegativeDiagnostics: true });
   const tap = parseTap(raw);
   const plan = assertOnePlan(tap);
   if (plan !== 1 || tap.ok.length !== 0 || tap.notOk.length !== 1 || tap.notOk[0].number !== 1) {
@@ -128,20 +172,11 @@ export function assertNegativeControl(raw) {
   return { plan, passed: 0, failed: 1, detected: true };
 }
 
-export function assertSuccessfulTap(raw) {
-  const text = String(raw).replaceAll('\\n', '\n');
-  if (/\bBail out!/i.test(text)) throw new Error('Hosted suite emitted a TAP bailout');
-  if (/\bok\s+\d+[^\r\n]*#\s*(?:SKIP|TODO)\b/i.test(text)) {
-    throw new Error('Hosted suite emitted a skipped or TODO assertion');
-  }
-  if (/(?:^|\n)\s*(?:---|\.\.\.)\s*(?:\n|$)/m.test(text)) {
-    throw new Error('Hosted suite emitted unexpected TAP diagnostics');
-  }
-  if (/(?:^|\n)\s*#\s+[^\r\n]+/m.test(text)) {
-    throw new Error('Hosted suite emitted an unexpected TAP diagnostic comment');
-  }
+export function assertSuccessfulTap(raw, expectedPlan = 39) {
+  assertTapEnvelope(raw);
   const tap = parseTap(raw);
   const plan = assertOnePlan(tap);
+  if (plan !== expectedPlan) throw new Error(`Hosted suite plan mismatch: expected ${expectedPlan}, received ${plan}`);
   const numbers = tap.ok.map((x) => x.number).sort((a, b) => a - b);
   if (tap.notOk.length) throw new Error(`Hosted suite reported ${tap.notOk.length} failing assertion(s)`);
   if (tap.ok.length !== plan || numbers.some((number, index) => number !== index + 1)) {

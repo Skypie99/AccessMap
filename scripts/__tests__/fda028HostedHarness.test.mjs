@@ -58,8 +58,8 @@ function protocol(mode) {
   const state = validState();
   const post = mode === 'cleanup-fail' ? { ...state, flags: 1 } : state;
   const suite = mode === 'suite-fail'
-    ? '1..1\nnot ok 1 - forced suite failure\n'
-    : '1..2\nok 1 - one\nok 2 - two\n';
+    ? `1..39\nnot ok 1 - forced suite failure\n${Array.from({ length: 38 }, (_, i) => `ok ${i + 2} - pass`).join('\n')}\n`
+    : `1..39\n${Array.from({ length: 39 }, (_, i) => `ok ${i + 1} - pass`).join('\n')}\n`;
   const events = [];
   try {
     const value = executeProtocol({
@@ -143,8 +143,8 @@ test('binds every executable hosted artifact to the reviewed Git commit', () => 
   }
 });
 
-test('accepts a complete ordered TAP plan', () => {
-  assert.deepEqual(assertSuccessfulTap('1..2\nok 1 - one\nok 2 - two\n'), {
+test('accepts a complete ordered TAP plan of the required size', () => {
+  assert.deepEqual(assertSuccessfulTap('1..2\nok 1 - one\nok 2 - two\n', 2), {
     plan: 2,
     passed: 2,
     failed: 0,
@@ -157,21 +157,24 @@ test('accepts a complete ordered TAP plan', () => {
 
 test('parses TAP rows from JSON-formatted Supabase query output', () => {
   const raw = JSON.stringify([{ plan: '1..2' }, { ok: 'ok 1 - one' }, { ok: 'ok 2 - two' }]);
-  assert.equal(assertSuccessfulTap(raw).passed, 2);
+  assert.equal(assertSuccessfulTap(raw, 2).passed, 2);
 });
 
 test('rejects TAP failures, omissions, and duplicate numbering', () => {
-  assert.throws(() => assertSuccessfulTap('1..2\nok 1 - one\nnot ok 2 - two\n'), /failing assertion/);
-  assert.throws(() => assertSuccessfulTap('1..2\nok 1 - one\n'), /accounting mismatch/);
-  assert.throws(() => assertSuccessfulTap('1..2\nok 1 - one\nok 1 - duplicate\n'), /accounting mismatch/);
+  assert.throws(() => assertSuccessfulTap('1..2\nok 1 - one\nnot ok 2 - two\n', 2), /failing assertion/);
+  assert.throws(() => assertSuccessfulTap('1..2\nok 1 - one\n', 2), /accounting mismatch/);
+  assert.throws(() => assertSuccessfulTap('1..2\nok 1 - one\nok 1 - duplicate\n', 2), /accounting mismatch/);
 });
 
 test('rejects skipped, TODO, bailout, and diagnostic TAP paths', () => {
-  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - skipped # SKIP unavailable\n'), /skipped or TODO/);
-  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - later # TODO repair\n'), /skipped or TODO/);
-  assert.throws(() => assertSuccessfulTap('1..1\nBail out! unavailable\n'), /bailout/);
-  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - one\n  ---\n  message: bad\n  ...\n'), /diagnostics/);
-  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - one\n# unexpected diagnostic\n'), /diagnostic comment/);
+  assert.throws(() => assertSuccessfulTap('1..0 # SKIP unavailable\n'), /unexpected stdout|skipped or TODO/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - skipped # SKIP unavailable\n', 1), /skipped or TODO/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - later # TODO repair\n', 1), /skipped or TODO/);
+  assert.throws(() => assertSuccessfulTap('1..1\nBail out! unavailable\n', 1), /unexpected stdout|bailout/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - one\n  ---\n  message: bad\n  ...\n', 1), /unexpected stdout|diagnostics/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - one\n# unexpected diagnostic\n', 1), /unexpected stdout|diagnostic comment/);
+  assert.throws(() => assertSuccessfulTap('WARNING: partial result\n1..1\nok 1 - one\n', 1), /unexpected stdout/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - wrong frozen plan\n'), /plan mismatch/);
 });
 
 test('rejects unexpected CLI stderr and allows only the version notice', () => {
@@ -189,6 +192,22 @@ test('requires the exact deliberate negative control', () => {
     { plan: 1, passed: 0, failed: 1, detected: true },
   );
   assert.throws(() => assertNegativeControl('1..1\nok 1 - accidental pass\n'), /not detected/);
+  assert.throws(
+    () => assertNegativeControl('1..1\nnot ok 1 - FDA028 deliberate runner negative control\nBail out! lost\n'),
+    /unexpected stdout|bailout/,
+  );
+  assert.throws(
+    () => assertNegativeControl('1..1\nnot ok 1 - FDA028 deliberate runner negative control\n  ---\n  message: bad\n  ...\n'),
+    /unexpected stdout|diagnostics/,
+  );
+  assert.deepEqual(
+    assertNegativeControl(
+      '1..1\nnot ok 1 - FDA028 deliberate runner negative control\n' +
+      '# Failed test 1: "FDA028 deliberate runner negative control"\n' +
+      '# Looks like you failed 1 test of 1\n',
+    ),
+    { plan: 1, passed: 0, failed: 1, detected: true },
+  );
 });
 
 test('extracts and validates nested Supabase state output', () => {
