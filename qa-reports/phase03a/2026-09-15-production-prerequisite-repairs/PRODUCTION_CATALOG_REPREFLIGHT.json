@@ -1,0 +1,2811 @@
+{
+  "project_id": "kldlwszpfkdmsjrjhjym",
+  "project_ref": "kldlwszpfkdmsjrjhjym",
+  "project_name": "Accessable City App",
+  "region": "us-west-2",
+  "status": "ACTIVE_HEALTHY",
+  "database_version": "17.6.1.121",
+  "views": [
+    {
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "view_name": "flag_edit_history_public",
+      "schema_name": "public",
+      "definition_sha256": "8ac4d1ef218d3738f6414fa9d22b18a5eb95475fcf5f175bbf4fe24c5c5d7dd4"
+    },
+    {
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "view_name": "flag_status_history_public",
+      "schema_name": "public",
+      "definition_sha256": "ec830bbc29827267d94b7e9bf0eec8fc63ff49404e2ae7fc41d11d5387c6be49"
+    }
+  ],
+  "ledger": {
+    "rows": [
+      {
+        "name": "accessmap_schema",
+        "version": "20260523020620"
+      },
+      {
+        "name": "accessmap_security_hardening",
+        "version": "20260523021433"
+      },
+      {
+        "name": "rls_initplan_rewrite_and_non_owner_status_update",
+        "version": "20260523093244"
+      },
+      {
+        "name": "data_layer_hardening",
+        "version": "20260523202748"
+      },
+      {
+        "name": "set_flag_updated_at_search_path",
+        "version": "20260523203409"
+      },
+      {
+        "name": "feedback_table",
+        "version": "20260524211752"
+      },
+      {
+        "name": "flag_context_tags",
+        "version": "20260524211803"
+      },
+      {
+        "name": "flag_status_history",
+        "version": "20260524211825"
+      },
+      {
+        "name": "2026-05-25_flag_edit_rls",
+        "version": "20260527043142"
+      },
+      {
+        "name": "2026-05-25_push_tokens",
+        "version": "20260528101406"
+      },
+      {
+        "name": "d1_flags_rls",
+        "version": "20260528180513"
+      },
+      {
+        "name": "d3_flag_status_trigger",
+        "version": "20260528180527"
+      },
+      {
+        "name": "data_layer_hardening",
+        "version": "20260528230556"
+      },
+      {
+        "name": "rls_initplan_and_non_owner_status_update",
+        "version": "20260528230609"
+      },
+      {
+        "name": "flag_edit_rls_replacement_idempotent",
+        "version": "20260528230627"
+      },
+      {
+        "name": "status_update_trigger",
+        "version": "20260528230637"
+      },
+      {
+        "name": "2026_05_27_users_email_privacy",
+        "version": "20260529021624"
+      },
+      {
+        "name": "2026_05_25_push_tokens_complete",
+        "version": "20260529021646"
+      },
+      {
+        "name": "d3_status_trigger_unblocks_marker_clustering",
+        "version": "20260529043740"
+      },
+      {
+        "name": "d1_flag_edit_rls_fix",
+        "version": "20260529043753"
+      },
+      {
+        "name": "push_tokens_table_fix",
+        "version": "20260529043805"
+      },
+      {
+        "name": "email_privacy_closes_pii_exposure",
+        "version": "20260529043812"
+      },
+      {
+        "name": "d3_status_update_trigger",
+        "version": "20260529050514"
+      },
+      {
+        "name": "d4_realtime_flags_filtered_broadcast",
+        "version": "20260529053642"
+      },
+      {
+        "name": "d6_flag_edit_history",
+        "version": "20260529060837"
+      },
+      {
+        "name": "2026_05_25_flag_edit_history_table",
+        "version": "20260529063432"
+      },
+      {
+        "name": "2026_05_27_users_email_privacy",
+        "version": "20260529084003"
+      },
+      {
+        "name": "2026_05_23_status_update_trigger_proposal",
+        "version": "20260529084007"
+      },
+      {
+        "name": "2026_05_23_rls_initplan_and_non_owner_status_update",
+        "version": "20260529084113"
+      },
+      {
+        "name": "2026_05_28_d4_realtime_flags_filtered",
+        "version": "20260529084118"
+      },
+      {
+        "name": "2026_05_23_data_layer_hardening_fix",
+        "version": "20260529084136"
+      },
+      {
+        "name": "2026_05_25_flag_edit_rls_replacement_fix",
+        "version": "20260529084138"
+      },
+      {
+        "name": "latlong_range_constraint",
+        "version": "20260529175048"
+      },
+      {
+        "name": "notification_preferences",
+        "version": "20260529175840"
+      },
+      {
+        "name": "anon_flags_select",
+        "version": "20260529175842"
+      },
+      {
+        "name": "notify_flag_status_webhook_trigger",
+        "version": "20260529181141"
+      },
+      {
+        "name": "function_search_path_hardening",
+        "version": "20260529192005"
+      },
+      {
+        "name": "status_update_trigger_d3",
+        "version": "20260529192027"
+      },
+      {
+        "name": "users_email_privacy",
+        "version": "20260529192040"
+      },
+      {
+        "name": "flag_creation_rate_limit",
+        "version": "20260530064949"
+      },
+      {
+        "name": "flag_creation_rate_limit_hardened",
+        "version": "20260530192824"
+      },
+      {
+        "name": "flag_comments_table",
+        "version": "20260530192829"
+      },
+      {
+        "name": "flag_reopen_requests",
+        "version": "20260530193228"
+      },
+      {
+        "name": "fix_flag_comments_default_user_id",
+        "version": "20260531015433"
+      },
+      {
+        "name": "flag_reopen_requests",
+        "version": "20260531015456"
+      },
+      {
+        "name": "flag_photos_junction",
+        "version": "20260531025237"
+      },
+      {
+        "name": "trust_score_system",
+        "version": "20260531202835"
+      },
+      {
+        "name": "account_deletion_cascade",
+        "version": "20260601081834"
+      },
+      {
+        "name": "anon_flag_reporting_photo_fix",
+        "version": "20260601081846"
+      },
+      {
+        "name": "drop_duplicate_index_flags",
+        "version": "20260602045352"
+      },
+      {
+        "name": "add_covering_indexes_foreign_keys",
+        "version": "20260602045356"
+      },
+      {
+        "name": "flags_policy_consolidation_20260601",
+        "version": "20260602053139"
+      },
+      {
+        "name": "restore_flags_auth_user_only_triage_unblock_20260601",
+        "version": "20260602053522"
+      },
+      {
+        "name": "flags_close_nonowner_delete_and_fix_triage_20260601",
+        "version": "20260602060359"
+      },
+      {
+        "name": "reconcile_oob_verify_webhook_secret_for_replay_20260829",
+        "version": "20260603002420"
+      },
+      {
+        "name": "admin_role",
+        "version": "20260603002810"
+      },
+      {
+        "name": "sr009_flag_verifications_null_safe_20260727",
+        "version": "20260727075327"
+      },
+      {
+        "name": "fork2_oa_actor_guard_null_safe_plus_status_history_20260727",
+        "version": "20260727075349"
+      },
+      {
+        "name": "a4_3_owner_edit_subquery_alias_fix_20260727",
+        "version": "20260727075512"
+      },
+      {
+        "name": "sr024_flag_photos_anon_explicit_20260727",
+        "version": "20260727075530"
+      },
+      {
+        "name": "sr018_verify_webhook_secret_revoke_20260727",
+        "version": "20260727075547"
+      },
+      {
+        "name": "a2_1_nonowner_revert_context_tags_20260727",
+        "version": "20260727075605"
+      },
+      {
+        "name": "a2_2_feedback_anon_throttle_20260727",
+        "version": "20260727075623"
+      },
+      {
+        "name": "sr001_admin_delete_comment_20260727",
+        "version": "20260727075638"
+      },
+      {
+        "name": "a4_1_status_history_view_grant_fix_20260727",
+        "version": "20260727075651"
+      },
+      {
+        "name": "rls_initplan_consolidated_20260727",
+        "version": "20260727075749"
+      },
+      {
+        "name": "fork5_w1_dispute_counter_20260727",
+        "version": "20260727075821"
+      },
+      {
+        "name": "sr050_admin_delete_flag_photo_20260729",
+        "version": "20260729053159"
+      },
+      {
+        "name": "flag_status_transition_guard",
+        "version": "20260819204409"
+      },
+      {
+        "name": "photo_alt_text",
+        "version": "20260819214410"
+      },
+      {
+        "name": "promptb_media_key_read_contract",
+        "version": "20260830130000"
+      }
+    ],
+    "row_count": 71,
+    "first_version": "20260523020620",
+    "latest_version": "20260830130000",
+    "ordered_sha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b"
+  },
+  "policies": [
+    {
+      "cmd": "DELETE",
+      "qual": "(( SELECT auth.uid() AS uid) = voter_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "comment_votes",
+      "with_check": null,
+      "policy_name": "comment_votes delete own",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "comment_votes",
+      "with_check": "(( SELECT auth.uid() AS uid) = voter_id)",
+      "policy_name": "comment_votes insert own",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(voter_id = ( SELECT auth.uid() AS uid))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "comment_votes",
+      "with_check": null,
+      "policy_name": "comment_votes readable",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((user_id IS NOT NULL) AND (user_id = ( SELECT auth.uid() AS uid)))",
+      "roles": [
+        "public"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "feedback",
+      "with_check": null,
+      "policy_name": "feedback_delete_own",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "public"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "feedback",
+      "with_check": "((user_id IS NULL) OR (user_id = ( SELECT auth.uid() AS uid)))",
+      "policy_name": "feedback_insert_self_or_anon",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "roles": [
+        "public"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "feedback",
+      "with_check": null,
+      "policy_name": "feedback_select_maintainer",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((user_id IS NOT NULL) AND (user_id = ( SELECT auth.uid() AS uid)))",
+      "roles": [
+        "public"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "feedback",
+      "with_check": null,
+      "policy_name": "feedback_select_own",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "( SELECT users.is_admin\n   FROM users\n  WHERE (users.id = ( SELECT auth.uid() AS uid)))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_comments",
+      "with_check": null,
+      "policy_name": "admin delete any comment",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_comments",
+      "with_check": null,
+      "policy_name": "flag_comments: authenticated read",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "(user_id = ( SELECT auth.uid() AS uid))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_comments",
+      "with_check": null,
+      "policy_name": "flag_comments: own delete",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_comments",
+      "with_check": "(user_id = ( SELECT auth.uid() AS uid))",
+      "policy_name": "flag_comments: own insert",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_edit_history",
+      "with_check": "(( SELECT auth.uid() AS uid) = ( SELECT flags.user_id\n   FROM flags\n  WHERE (flags.id = flag_edit_history.flag_id)))",
+      "policy_name": "flag_edit_history insert by flag owner",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_edit_history",
+      "with_check": null,
+      "policy_name": "flag_edit_history select by maintainer",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_edit_history",
+      "with_check": null,
+      "policy_name": "flag_edit_history select via public view",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_photos",
+      "with_check": "((POSITION(((('/flag-photos/'::text || (( SELECT auth.uid() AS uid))::text) || '/'::text)) IN (url)) > 0) AND (EXISTS ( SELECT 1\n   FROM users account\n  WHERE (account.id = ( SELECT auth.uid() AS uid)))) AND (EXISTS ( SELECT 1\n   FROM flags flag\n  WHERE ((flag.id = flag_photos.flag_id) AND (flag.user_id = ( SELECT auth.uid() AS uid))))))",
+      "policy_name": "flag_photos: authenticated insert",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_photos",
+      "with_check": null,
+      "policy_name": "flag_photos: authenticated read",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM flags f\n  WHERE ((f.id = flag_photos.flag_id) AND (f.user_id IS NOT NULL) AND (f.user_id = ( SELECT auth.uid() AS uid)))))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_photos",
+      "with_check": null,
+      "policy_name": "flag_photos: flag owner delete",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM flags f\n  WHERE ((f.id = flag_photos.flag_id) AND (f.user_id IS NOT NULL) AND (f.user_id = ( SELECT auth.uid() AS uid)))))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_photos",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM flags f\n  WHERE ((f.id = flag_photos.flag_id) AND (f.user_id IS NOT NULL) AND (f.user_id = ( SELECT auth.uid() AS uid)))))",
+      "policy_name": "flag_photos: flag owner update",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_status_history",
+      "with_check": "false",
+      "policy_name": "flag_status_history no direct insert",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_status_history",
+      "with_check": null,
+      "policy_name": "flag_status_history readable by maintainer",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_status_history",
+      "with_check": null,
+      "policy_name": "flag_status_history readable via public view",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_verifications",
+      "with_check": "((( SELECT auth.uid() AS uid) = verifier_id) AND (verifier_id IS DISTINCT FROM ( SELECT f.user_id\n   FROM flags f\n  WHERE (f.id = flag_verifications.flag_id))))",
+      "policy_name": "flag_verifications own insert",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(verifier_id = ( SELECT auth.uid() AS uid))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flag_verifications",
+      "with_check": null,
+      "policy_name": "flag_verifications readable",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "( SELECT users.is_admin\n   FROM users\n  WHERE (users.id = ( SELECT auth.uid() AS uid)))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": null,
+      "policy_name": "admin delete any flag",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "anon"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": "((user_id IS NULL) AND (photo_url IS NULL) AND (status = 'open'::text))",
+      "policy_name": "flags anon insert",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "(( SELECT auth.uid() AS uid) = user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": null,
+      "policy_name": "flags delete own",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": "(( SELECT auth.uid() AS uid) = user_id)",
+      "policy_name": "flags insert own",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "((( SELECT auth.uid() AS uid) = user_id) AND (status = 'open'::text))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": "((( SELECT auth.uid() AS uid) = user_id) AND (lat = ( SELECT f.lat\n   FROM flags f\n  WHERE (f.id = flags.id))) AND (lng = ( SELECT f.lng\n   FROM flags f\n  WHERE (f.id = flags.id))) AND (user_id = ( SELECT f.user_id\n   FROM flags f\n  WHERE (f.id = flags.id))) AND (created_at = ( SELECT f.created_at\n   FROM flags f\n  WHERE (f.id = flags.id))) AND (status = ( SELECT f.status\n   FROM flags f\n  WHERE (f.id = flags.id))))",
+      "policy_name": "flags owner edit open",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "anon"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": null,
+      "policy_name": "flags readable by anon",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": null,
+      "policy_name": "flags readable by authenticated",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM users account\n  WHERE (account.id = ( SELECT auth.uid() AS uid))))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM users account\n  WHERE (account.id = ( SELECT auth.uid() AS uid))))",
+      "policy_name": "flags status update by any authenticated",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(user_id = auth.uid())",
+      "roles": [
+        "public"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "flags",
+      "with_check": "(user_id = auth.uid())",
+      "policy_name": "flags_user_scoped",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(( SELECT auth.uid() AS uid) = user_id)",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "point_events",
+      "with_check": null,
+      "policy_name": "point_events owner select",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(( SELECT auth.uid() AS uid) = id)",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "users",
+      "with_check": null,
+      "policy_name": "users own row full select",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "users",
+      "with_check": null,
+      "policy_name": "users readable by authenticated",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(( SELECT auth.uid() AS uid) = id)",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "users",
+      "with_check": "((( SELECT auth.uid() AS uid) = id) AND (NOT (is_admin IS DISTINCT FROM ( SELECT private.current_user_is_admin() AS current_user_is_admin))))",
+      "policy_name": "users update own row",
+      "schema_name": "public"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'flag-photos'::text) AND ( SELECT users.is_admin\n   FROM users\n  WHERE (users.id = ( SELECT auth.uid() AS uid))))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "objects",
+      "with_check": null,
+      "policy_name": "flag-photos admin delete",
+      "schema_name": "storage"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "objects",
+      "with_check": "((bucket_id = 'flag-photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid)) AND (EXISTS ( SELECT 1\n   FROM users account\n  WHERE (account.id = ( SELECT auth.uid() AS uid)))))",
+      "policy_name": "flag-photos auth upload",
+      "schema_name": "storage"
+    },
+    {
+      "cmd": "DELETE",
+      "qual": "((bucket_id = 'flag-photos'::text) AND ((storage.foldername(name))[1] = ( SELECT (auth.uid())::text AS uid)) AND (EXISTS ( SELECT 1\n   FROM users account\n  WHERE (account.id = ( SELECT auth.uid() AS uid)))))",
+      "roles": [
+        "authenticated"
+      ],
+      "permissive": "PERMISSIVE",
+      "table_name": "objects",
+      "with_check": null,
+      "policy_name": "flag-photos owner delete",
+      "schema_name": "storage"
+    }
+  ],
+  "triggers": [
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_comment_vote_added AFTER INSERT ON comment_votes FOR EACH ROW EXECUTE FUNCTION handle_comment_vote_added()",
+      "table_name": "comment_votes",
+      "schema_name": "public",
+      "trigger_name": "on_comment_vote_added"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enforce_feedback_rate_limit BEFORE INSERT ON feedback FOR EACH ROW EXECUTE FUNCTION check_feedback_rate_limit()",
+      "table_name": "feedback",
+      "schema_name": "public",
+      "trigger_name": "enforce_feedback_rate_limit"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_comment_added AFTER INSERT ON flag_comments FOR EACH ROW EXECUTE FUNCTION handle_comment_added()",
+      "table_name": "flag_comments",
+      "schema_name": "public",
+      "trigger_name": "on_comment_added"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER flag_photos_object_key_insert_guard BEFORE INSERT ON flag_photos FOR EACH ROW EXECUTE FUNCTION enforce_flag_photos_object_key_guard()",
+      "table_name": "flag_photos",
+      "schema_name": "public",
+      "trigger_name": "flag_photos_object_key_insert_guard"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER flag_photos_object_key_update_guard BEFORE UPDATE OF object_key ON flag_photos FOR EACH ROW EXECUTE FUNCTION enforce_flag_photos_object_key_guard()",
+      "table_name": "flag_photos",
+      "schema_name": "public",
+      "trigger_name": "flag_photos_object_key_update_guard"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_flag_photo_added AFTER INSERT ON flag_photos FOR EACH ROW EXECUTE FUNCTION handle_flag_photo_added()",
+      "table_name": "flag_photos",
+      "schema_name": "public",
+      "trigger_name": "on_flag_photo_added"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enforce_flag_creation_rate_limit BEFORE INSERT ON flags FOR EACH ROW EXECUTE FUNCTION check_flag_creation_rate_limit()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "enforce_flag_creation_rate_limit"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enforce_flag_rate_limit BEFORE INSERT ON flags FOR EACH ROW EXECUTE FUNCTION check_flag_rate_limit()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "enforce_flag_rate_limit"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enforce_flag_status_only_for_non_owner BEFORE UPDATE ON flags FOR EACH ROW EXECUTE FUNCTION enforce_flag_status_only_for_non_owner()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "enforce_flag_status_only_for_non_owner"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER enforce_global_anon_rate_limit BEFORE INSERT ON flags FOR EACH ROW EXECUTE FUNCTION check_global_anon_rate_limit()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "enforce_global_anon_rate_limit"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER flag_status_notify_trigger AFTER UPDATE ON flags FOR EACH ROW EXECUTE FUNCTION notify_flag_status_webhook()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "flag_status_notify_trigger"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER flag_status_transition_guard BEFORE UPDATE OF status ON flags FOR EACH ROW EXECUTE FUNCTION enforce_flag_status_transition()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "flag_status_transition_guard"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER flags_photo_object_key_insert_guard BEFORE INSERT ON flags FOR EACH ROW EXECUTE FUNCTION enforce_flags_photo_object_key_guard()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "flags_photo_object_key_insert_guard"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER flags_photo_object_key_update_guard BEFORE UPDATE OF photo_object_key ON flags FOR EACH ROW EXECUTE FUNCTION enforce_flags_photo_object_key_guard()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "flags_photo_object_key_update_guard"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_flag_dispute_reset BEFORE UPDATE OF status ON flags FOR EACH ROW EXECUTE FUNCTION handle_flag_dispute_reset()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "on_flag_dispute_reset"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_flag_insert_history AFTER INSERT ON flags FOR EACH ROW EXECUTE FUNCTION handle_flag_insert_history()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "on_flag_insert_history"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_flag_reopen_reset BEFORE UPDATE OF status ON flags FOR EACH ROW EXECUTE FUNCTION handle_flag_reopen_reset()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "on_flag_reopen_reset"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_flag_status_change AFTER UPDATE OF status ON flags FOR EACH ROW EXECUTE FUNCTION handle_flag_status_change()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "on_flag_status_change"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_flag_submitted AFTER INSERT ON flags FOR EACH ROW EXECUTE FUNCTION handle_flag_submitted()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "on_flag_submitted"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_flag_updated_at BEFORE UPDATE ON flags FOR EACH ROW EXECUTE FUNCTION set_flag_updated_at()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "on_flag_updated_at"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER update_flags_updated_at BEFORE UPDATE ON flags FOR EACH ROW EXECUTE FUNCTION update_flags_updated_at()",
+      "table_name": "flags",
+      "schema_name": "public",
+      "trigger_name": "update_flags_updated_at"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER on_point_event_streak AFTER INSERT ON point_events FOR EACH ROW EXECUTE FUNCTION handle_point_event_streak()",
+      "table_name": "point_events",
+      "schema_name": "public",
+      "trigger_name": "on_point_event_streak"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER users_avatar_object_key_insert_guard BEFORE INSERT ON users FOR EACH ROW EXECUTE FUNCTION enforce_users_avatar_object_key_guard()",
+      "table_name": "users",
+      "schema_name": "public",
+      "trigger_name": "users_avatar_object_key_insert_guard"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER users_avatar_object_key_update_guard BEFORE UPDATE OF avatar_object_key ON users FOR EACH ROW EXECUTE FUNCTION enforce_users_avatar_object_key_guard()",
+      "table_name": "users",
+      "schema_name": "public",
+      "trigger_name": "users_avatar_object_key_update_guard"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER protect_objects_delete BEFORE DELETE ON storage.objects FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete()",
+      "table_name": "objects",
+      "schema_name": "storage",
+      "trigger_name": "protect_objects_delete"
+    },
+    {
+      "enabled": "O",
+      "definition": "CREATE TRIGGER update_objects_updated_at BEFORE UPDATE ON storage.objects FOR EACH ROW EXECUTE FUNCTION storage.update_updated_at_column()",
+      "table_name": "objects",
+      "schema_name": "storage",
+      "trigger_name": "update_objects_updated_at"
+    }
+  ],
+  "functions": [
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "volatility": "s",
+      "result_type": "boolean",
+      "schema_name": "private",
+      "function_name": "current_user_is_admin",
+      "security_definer": true,
+      "definition_sha256": "0827f2a2bdf46e4338bc04153b5599c3b2904dd79f44606982a77072483fe6b9",
+      "identity_arguments": "",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "volatility": "v",
+      "result_type": "trigger",
+      "schema_name": "public",
+      "function_name": "check_flag_creation_rate_limit",
+      "security_definer": true,
+      "definition_sha256": "4e093e509f53bae1ac323858668872f9247b66c1ae97913b501eaa61429d87c8",
+      "identity_arguments": "",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "volatility": "v",
+      "result_type": "trigger",
+      "schema_name": "public",
+      "function_name": "check_flag_rate_limit",
+      "security_definer": true,
+      "definition_sha256": "8cc4ece0edd9e5ac2938193054f845c32a4a18c967599fe163a0b71bc81dad76",
+      "identity_arguments": "",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "volatility": "v",
+      "result_type": "trigger",
+      "schema_name": "public",
+      "function_name": "check_global_anon_rate_limit",
+      "security_definer": true,
+      "definition_sha256": "4272fd30b065b1ac7e95bc94565985ae6999a4dddf929655a2c282631f54ec85",
+      "identity_arguments": "",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "volatility": "v",
+      "result_type": "trigger",
+      "schema_name": "public",
+      "function_name": "enforce_flag_status_transition",
+      "security_definer": true,
+      "definition_sha256": "88b19b5c2bcb118a2f69ea340d4e3fae75c06dbd6396d1cce4d17deb6cdd21e7",
+      "identity_arguments": "",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "volatility": "v",
+      "result_type": "integer",
+      "schema_name": "public",
+      "function_name": "increment_dispute_request",
+      "security_definer": true,
+      "definition_sha256": "dd0152b28b39824d721a6f4e638bc3d3a0f6ac74676c7f4f1cbe0fb995e4c065",
+      "identity_arguments": "p_flag_id uuid",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public"
+      ],
+      "volatility": "v",
+      "result_type": "integer",
+      "schema_name": "public",
+      "function_name": "increment_reopen_request",
+      "security_definer": true,
+      "definition_sha256": "35a843eb8b4608d6a153141348ec288c2eea0f5f1d24ad684f846c34af588765",
+      "identity_arguments": "p_flag_id uuid",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public, vault, net"
+      ],
+      "volatility": "v",
+      "result_type": "trigger",
+      "schema_name": "public",
+      "function_name": "notify_flag_status_webhook",
+      "security_definer": true,
+      "definition_sha256": "fcee0426b1f3d184873354f11104ba107c3be2ae3ea4f7a9a1b265d3f3fae422",
+      "identity_arguments": "",
+      "contains_https_literal": true,
+      "references_webhook_secret": true,
+      "references_webhook_endpoint": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "config": [
+        "search_path=public, vault"
+      ],
+      "volatility": "v",
+      "result_type": "boolean",
+      "schema_name": "public",
+      "function_name": "verify_webhook_secret",
+      "security_definer": true,
+      "definition_sha256": "8778f266674666ac2fe3ac8ffd1f026d6b2d5f78a13384712131a48a09486551",
+      "identity_arguments": "incoming text",
+      "contains_https_literal": null,
+      "references_webhook_secret": null,
+      "references_webhook_endpoint": null
+    }
+  ],
+  "session_role": "postgres",
+  "prerequisites": {
+    "mf03_rows": 0,
+    "mf04_rows": 0,
+    "mf03_shape_valid": false,
+    "mf04_shape_valid": false,
+    "webhook_secret_rows": 1,
+    "webhook_secret_nonempty": true
+  },
+  "capture_version": "production-preflight-v1",
+  "captured_at_utc": "2026-09-15T04:29:57.064Z",
+  "object_presence": {
+    "limiter_grant": false,
+    "limiter_bucket": false,
+    "limiter_config": false,
+    "limiter_key_state": false,
+    "private_current_user_is_admin": true,
+    "public_current_user_can_admin": false,
+    "public_get_my_leaderboard_rank": false,
+    "public_list_public_leaderboard": false,
+    "public_notify_flag_status_webhook": true,
+    "public_get_comment_author_profiles": false
+  },
+  "schema_presence": {
+    "net": true,
+    "vault": true,
+    "limiter": false,
+    "private": true
+  },
+  "role_memberships": [
+    {
+      "member": "anon",
+      "target": "anon",
+      "has_usage": true,
+      "is_member": true
+    },
+    {
+      "member": "anon",
+      "target": "authenticated",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "anon",
+      "target": "authenticator",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "anon",
+      "target": "postgres",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "anon",
+      "target": "service_role",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "anon",
+      "target": "supabase_admin",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "authenticated",
+      "target": "anon",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "authenticated",
+      "target": "authenticated",
+      "has_usage": true,
+      "is_member": true
+    },
+    {
+      "member": "authenticated",
+      "target": "authenticator",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "authenticated",
+      "target": "postgres",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "authenticated",
+      "target": "service_role",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "authenticated",
+      "target": "supabase_admin",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "service_role",
+      "target": "anon",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "service_role",
+      "target": "authenticated",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "service_role",
+      "target": "authenticator",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "service_role",
+      "target": "postgres",
+      "has_usage": false,
+      "is_member": false
+    },
+    {
+      "member": "service_role",
+      "target": "service_role",
+      "has_usage": true,
+      "is_member": true
+    },
+    {
+      "member": "service_role",
+      "target": "supabase_admin",
+      "has_usage": false,
+      "is_member": false
+    }
+  ],
+  "table_privileges": [
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_comments"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_comments"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_comments"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_edit_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_edit_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_edit_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_photos"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_photos"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_photos"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_status_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_status_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_status_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_verifications"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_verifications"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flag_verifications"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flags"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flags"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_flags"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_point_links"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": false,
+      "force_rls": false,
+      "insert_ok": false,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": false,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_point_links"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "bk_2026_08_22_point_links"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "comment_votes"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "comment_votes"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "comment_votes"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "feedback"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "feedback"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "feedback"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_comments"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_comments"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_comments"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_edit_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_edit_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_edit_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_edit_history_public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_edit_history_public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_edit_history_public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_photos"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_photos"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_photos"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_status_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_status_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_status_history"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_status_history_public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_status_history_public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": false,
+      "owner": "postgres",
+      "options": [
+        "security_invoker=true"
+      ],
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_status_history_public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_verifications"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_verifications"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flag_verifications"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flags"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flags"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "flags"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "point_events"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "point_events"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "point_events"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": false,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "users"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": false,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "users"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=awdDxtm/postgres",
+        "authenticated=awdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "rls": true,
+      "owner": "postgres",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "public",
+      "relation_name": "users"
+    },
+    {
+      "acl": [
+        "supabase_storage_admin=a*r*w*d*D*x*t*m*/supabase_storage_admin",
+        "service_role=arwdDxtm/supabase_storage_admin",
+        "authenticated=arwdDxtm/supabase_storage_admin",
+        "anon=arwdDxtm/supabase_storage_admin",
+        "postgres=a*r*w*d*D*x*t*m*/supabase_storage_admin"
+      ],
+      "rls": true,
+      "owner": "supabase_storage_admin",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "anon",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "storage",
+      "relation_name": "objects"
+    },
+    {
+      "acl": [
+        "supabase_storage_admin=a*r*w*d*D*x*t*m*/supabase_storage_admin",
+        "service_role=arwdDxtm/supabase_storage_admin",
+        "authenticated=arwdDxtm/supabase_storage_admin",
+        "anon=arwdDxtm/supabase_storage_admin",
+        "postgres=a*r*w*d*D*x*t*m*/supabase_storage_admin"
+      ],
+      "rls": true,
+      "owner": "supabase_storage_admin",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "authenticated",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "storage",
+      "relation_name": "objects"
+    },
+    {
+      "acl": [
+        "supabase_storage_admin=a*r*w*d*D*x*t*m*/supabase_storage_admin",
+        "service_role=arwdDxtm/supabase_storage_admin",
+        "authenticated=arwdDxtm/supabase_storage_admin",
+        "anon=arwdDxtm/supabase_storage_admin",
+        "postgres=a*r*w*d*D*x*t*m*/supabase_storage_admin"
+      ],
+      "rls": true,
+      "owner": "supabase_storage_admin",
+      "options": null,
+      "delete_ok": true,
+      "force_rls": false,
+      "insert_ok": true,
+      "role_name": "service_role",
+      "select_ok": true,
+      "update_ok": true,
+      "schema_name": "storage",
+      "relation_name": "objects"
+    }
+  ],
+  "schema_privileges": [
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "anon",
+      "schema_name": "net"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "authenticated",
+      "schema_name": "net"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "service_role",
+      "schema_name": "net"
+    },
+    {
+      "use_ok": false,
+      "create_ok": false,
+      "role_name": "anon",
+      "schema_name": "private"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "authenticated",
+      "schema_name": "private"
+    },
+    {
+      "use_ok": false,
+      "create_ok": false,
+      "role_name": "service_role",
+      "schema_name": "private"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "anon",
+      "schema_name": "public"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "authenticated",
+      "schema_name": "public"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "service_role",
+      "schema_name": "public"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "anon",
+      "schema_name": "storage"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "authenticated",
+      "schema_name": "storage"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "service_role",
+      "schema_name": "storage"
+    },
+    {
+      "use_ok": false,
+      "create_ok": false,
+      "role_name": "anon",
+      "schema_name": "vault"
+    },
+    {
+      "use_ok": false,
+      "create_ok": false,
+      "role_name": "authenticated",
+      "schema_name": "vault"
+    },
+    {
+      "use_ok": true,
+      "create_ok": false,
+      "role_name": "service_role",
+      "schema_name": "vault"
+    }
+  ],
+  "default_privileges": [
+    {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "owner": "postgres",
+      "object_type": "S",
+      "schema_name": "public"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "object_type": "f",
+      "schema_name": "public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "owner": "postgres",
+      "object_type": "r",
+      "schema_name": "public"
+    },
+    {
+      "acl": [
+        "postgres=rwU/postgres",
+        "anon=rwU/postgres",
+        "authenticated=rwU/postgres",
+        "service_role=rwU/postgres"
+      ],
+      "owner": "postgres",
+      "object_type": "S",
+      "schema_name": "storage"
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "anon=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "owner": "postgres",
+      "object_type": "f",
+      "schema_name": "storage"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/postgres",
+        "anon=arwdDxtm/postgres",
+        "authenticated=arwdDxtm/postgres",
+        "service_role=arwdDxtm/postgres"
+      ],
+      "owner": "postgres",
+      "object_type": "r",
+      "schema_name": "storage"
+    },
+    {
+      "acl": [
+        "postgres=rwU/supabase_admin",
+        "anon=rwU/supabase_admin",
+        "authenticated=rwU/supabase_admin",
+        "service_role=rwU/supabase_admin"
+      ],
+      "owner": "supabase_admin",
+      "object_type": "S",
+      "schema_name": "public"
+    },
+    {
+      "acl": [
+        "postgres=X/supabase_admin",
+        "anon=X/supabase_admin",
+        "authenticated=X/supabase_admin",
+        "service_role=X/supabase_admin"
+      ],
+      "owner": "supabase_admin",
+      "object_type": "f",
+      "schema_name": "public"
+    },
+    {
+      "acl": [
+        "postgres=arwdDxtm/supabase_admin",
+        "anon=arwdDxtm/supabase_admin",
+        "authenticated=arwdDxtm/supabase_admin",
+        "service_role=arwdDxtm/supabase_admin"
+      ],
+      "owner": "supabase_admin",
+      "object_type": "r",
+      "schema_name": "public"
+    }
+  ],
+  "routine_privileges": [
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "private",
+      "function_name": "current_user_is_admin",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": true,
+      "schema_name": "private",
+      "function_name": "current_user_is_admin",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": false,
+      "schema_name": "private",
+      "function_name": "current_user_is_admin",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "check_flag_creation_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "check_flag_creation_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "check_flag_creation_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "check_flag_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "check_flag_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "check_flag_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "check_global_anon_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "check_global_anon_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "check_global_anon_rate_limit",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "enforce_flag_status_transition",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "enforce_flag_status_transition",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "enforce_flag_status_transition",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "increment_dispute_request",
+      "identity_arguments": "p_flag_id uuid"
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "increment_dispute_request",
+      "identity_arguments": "p_flag_id uuid"
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "increment_dispute_request",
+      "identity_arguments": "p_flag_id uuid"
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "increment_reopen_request",
+      "identity_arguments": "p_flag_id uuid"
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "increment_reopen_request",
+      "identity_arguments": "p_flag_id uuid"
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "increment_reopen_request",
+      "identity_arguments": "p_flag_id uuid"
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "notify_flag_status_webhook",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "notify_flag_status_webhook",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "notify_flag_status_webhook",
+      "identity_arguments": ""
+    },
+    {
+      "role_name": "anon",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "verify_webhook_secret",
+      "identity_arguments": "incoming text"
+    },
+    {
+      "role_name": "authenticated",
+      "execute_ok": false,
+      "schema_name": "public",
+      "function_name": "verify_webhook_secret",
+      "identity_arguments": "incoming text"
+    },
+    {
+      "role_name": "service_role",
+      "execute_ok": true,
+      "schema_name": "public",
+      "function_name": "verify_webhook_secret",
+      "identity_arguments": "incoming text"
+    }
+  ],
+  "safe_aggregate_counts": {
+    "flags": 21,
+    "users": 5,
+    "feedback": 6,
+    "flag_photos": 1,
+    "queued_http": 0,
+    "point_events": 63,
+    "comment_votes": 0,
+    "flag_comments": 3,
+    "storage_objects": 9,
+    "flag_edit_history": 0,
+    "flag_verifications": 0,
+    "flag_status_history": 37
+  },
+  "transaction_read_only": "on"
+}

@@ -1,0 +1,14 @@
+{
+  "validationVersion": 2,
+  "validatedAtUtc": "2026-09-15T04:34:00Z",
+  "status": "PASS",
+  "productionLedgerRows": 71,
+  "productionLedgerOrderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+  "generatedArtifacts": 24,
+  "uniqueUnusedVersions": 24,
+  "restoreOrdering": "PASS",
+  "reapplyOrdering": "PASS",
+  "securityCrossings": 2,
+  "ledgerSemantics": "FORWARD_ONLY_NO_DELETE_NO_REWRITE",
+  "problems": []
+}

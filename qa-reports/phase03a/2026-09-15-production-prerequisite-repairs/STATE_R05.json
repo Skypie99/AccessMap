@@ -1,0 +1,58 @@
+{
+  "runUnit": "P03A_PRODUCTION_PREREQUISITE_REPAIRS",
+  "checkpoint": "R05_CORRECTED_SOURCE_FROZEN",
+  "status": "INDEPENDENT_CODE_REVIEW_R2_RUNNING",
+  "repairSource": {
+    "sha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+    "tree": "657f1b6ce01d3fdbb27102b5aa33616c918feade"
+  },
+  "productionPlanTooling": "PASS",
+  "credentialGate": "PASS",
+  "productionPlanCli": {
+    "ledgerOrderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+    "expectedIdentityCount": 86,
+    "pendingCount": 14,
+    "stageBIncluded": false,
+    "applyAvailable": false,
+    "workspaceDestroyed": true,
+    "receipts": [
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_CLI_R2.json",
+        "sha256": "a0728c41ba4a8e82f39a5b4df5595739a81d94e2d543d0045cc85b610a95c7d8"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_CLI_R2_STDERR.txt",
+        "sha256": "9b6a3e76252e8586b18a3d52cd8951e8c1e871d1e8120172861bf50f37e928f5"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_CLI_R2_EXIT.txt",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_WORKSPACE_DESTROY_R2_STDOUT.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_WORKSPACE_DESTROY_R2_STDERR.txt",
+        "sha256": "7f2fb9c38400b2c5b1c14daf1b7d819793da8dbb33b309b28268f92df16a53d3"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_PLAN_WORKSPACE_DESTROY_R2_EXIT.txt",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      }
+    ]
+  },
+  "protectedBytes": {
+    "fda028LimiterChanged": false,
+    "phase03aMigrationSqlChanged": false
+  },
+  "nextOperation": "Await independent code re-review; only after PASS, execute the bounded read-only production re-preflight.",
+  "operationState": {
+    "running": "INDEPENDENT_CODE_REVIEW_R2",
+    "outcomeUnknown": false
+  },
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE"
+}

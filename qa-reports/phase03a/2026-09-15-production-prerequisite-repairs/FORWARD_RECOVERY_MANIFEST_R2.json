@@ -1,0 +1,331 @@
+{
+  "manifestVersion": 2,
+  "status": "PREPARED_PENDING_INDEPENDENT_REVIEW",
+  "generatedAtUtc": "2026-09-15T04:34:00Z",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "sourceIdentity": {
+    "acceptedReleaseSha": "9a0af4c88b5b00898e405992cfd44ba7dfd689fc",
+    "acceptedReleaseTree": "4e9d6aefc16cb8bce877dc6e0097b61ade8e22c5",
+    "currentSha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+    "currentTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade"
+  },
+  "productionLedgerAtInspection": {
+    "rowCount": 71,
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+    "capturePath": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PRODUCTION_LEDGER_REPREFLIGHT.json",
+    "captureSha256": "2a54be38a86c82bb194c7a46021605c776265849600058e3cc7114fe1be3a629"
+  },
+  "versionReservation": {
+    "restoreRange": "20260916000000..20260916001100",
+    "reapplyRange": "20260917000000..20260917001100",
+    "localAndProductionUnusedAtPreflight": true,
+    "mustReverifyBeforeAnyFutureExecution": true,
+    "reverifiedAtUtc": "2026-09-15T04:32:19.174Z"
+  },
+  "recoverySemantics": {
+    "ledgerModel": "forward-only; never delete or rewrite an applied migration row",
+    "restoreOrder": "reverse dependency order for the 12 candidates with accepted UNSAFE_BASELINE_RESTORE bodies",
+    "reapplyOrder": "original candidate order for those same 12 candidates",
+    "operationStatus": "PREPARED_PENDING_INDEPENDENT_REVIEW",
+    "triggerConditions": [
+      "a separately authorized Stage A production apply has occurred",
+      "post-apply verification identifies a material regression attributable to one or more candidates",
+      "the owner selects an exact bounded recovery subset after impact review",
+      "the selected versions remain unused and the current production ledger is reconciled",
+      "a fresh production capture is banked before and after the recovery operation"
+    ],
+    "stopConditions": [
+      "any target, source hash, ledger, version, prerequisite, or dependency mismatch",
+      "any need to restore either non-reversible security repair",
+      "any uncertain response or partial application",
+      "any recovery that would overwrite or discard legitimate live data"
+    ],
+    "forwardOnlySecurityCrossings": "The two non-restorable security repairs use owner-selected containment or a new defect-specific correcting migration; known weaknesses are never recreated."
+  },
+  "entries": [
+    {
+      "candidate": "20260904000000_adopt_private_admin_helper.sql",
+      "candidatePath": "supabase/migrations-next/20260904000000_adopt_private_admin_helper.sql",
+      "candidateSha256": "1d504c3ad05c0b31052715406059071301a51f4359ef35ce85c92cb61202fbf7",
+      "rollbackPath": "supabase/migrations-next/rollback/20260904000000_adopt_private_admin_helper.rollback.sql",
+      "rollbackSha256": "aea2f69cf9319718acc80de8af9ddd4354b52735a0b49dd00189c5df8565d16c",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Removes a production authorization helper and restores the older inline policy shape.",
+      "restore": {
+        "version": "20260916001100",
+        "file": "20260916001100_restore_adopt_private_admin_helper.sql",
+        "sha256": "a77bd26a4bbd1519d9c704b25d448f3b59dc2dd3fabbc8966c5b3987d241dbfd",
+        "order": 12
+      },
+      "reapply": {
+        "version": "20260917000000",
+        "file": "20260917000000_reapply_adopt_private_admin_helper.sql",
+        "sha256": "4bbe1474c3686d3236a96268d63cfb18bc03993e45d3358ba5a32c9d48ff6803",
+        "order": 1
+      }
+    },
+    {
+      "candidate": "20260904000100_drop_duplicate_status_triggers.sql",
+      "candidatePath": "supabase/migrations-next/20260904000100_drop_duplicate_status_triggers.sql",
+      "candidateSha256": "9771e7c5df363b139e8bcd9e9f9e58b15e6c2f59eebb4523a330a774fc18db49",
+      "rollbackPath": "supabase/migrations-next/rollback/20260904000100_drop_duplicate_status_triggers.rollback.sql",
+      "rollbackSha256": "47a087094b5978b27977c598d0b8454a489138178327758d42fdb57a9c80b906",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Recreates the double-points trigger defect.",
+      "restore": {
+        "version": "20260916001000",
+        "file": "20260916001000_restore_drop_duplicate_status_triggers.sql",
+        "sha256": "e53b7e90f97460e21c7e4bebae3dcdd4771dc3caa6411a377f34f297c94d7f3d",
+        "order": 11
+      },
+      "reapply": {
+        "version": "20260917000100",
+        "file": "20260917000100_reapply_drop_duplicate_status_triggers.sql",
+        "sha256": "95312a74435f4c552240d2a0182eff6f3753fe6a4bd9f92bb97fbf64a43ea6fa",
+        "order": 2
+      }
+    },
+    {
+      "candidate": "20260904000200_adopt_d1sa_containment.sql",
+      "candidatePath": "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+      "candidateSha256": "fbc986296aee71109639ad833d4c75422c28bbefa4fddfefe51f29eeaf03dfb6",
+      "rollbackPath": "supabase/migrations-next/rollback/20260904000200_adopt_d1sa_containment.rollback.sql",
+      "rollbackSha256": "8ff49d968a82cdfe4f45f564b7ab61101b9bc35c429fafec09b51a9f69b8bd1b",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Reopens the stale-account and direct-call authorization boundaries.",
+      "restore": {
+        "version": "20260916000900",
+        "file": "20260916000900_restore_adopt_d1sa_containment.sql",
+        "sha256": "9cd2d51d4e69cfacc3da122144a4069c0e7ca33fd864bd97fbc593d66d866d97",
+        "order": 10
+      },
+      "reapply": {
+        "version": "20260917000200",
+        "file": "20260917000200_reapply_adopt_d1sa_containment.sql",
+        "sha256": "3eafc3a7f1feb87c5d562f33e2458df951ce493269f0379f7f5a2efbb3df773c",
+        "order": 3
+      }
+    },
+    {
+      "candidate": "20260904000300_adopt_live_insert_throttles.sql",
+      "candidatePath": "supabase/migrations-next/20260904000300_adopt_live_insert_throttles.sql",
+      "candidateSha256": "b346b2c7775543c9a268098c0956812b7ad9a9ddf49680202fe846073d4ef776",
+      "rollbackPath": "supabase/migrations-next/rollback/20260904000300_adopt_live_insert_throttles.rollback.sql",
+      "rollbackSha256": "3c67f9b3545a62cd45fca0688a117b2597a8cdc71486105b9349e281a493392d",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Removes every adopted server-side insert throttle.",
+      "restore": {
+        "version": "20260916000800",
+        "file": "20260916000800_restore_adopt_live_insert_throttles.sql",
+        "sha256": "0c438210b56240fcc363ae9e77291d63a493c65bec2b52c6c0ec44064dce6088",
+        "order": 9
+      },
+      "reapply": {
+        "version": "20260917000300",
+        "file": "20260917000300_reapply_adopt_live_insert_throttles.sql",
+        "sha256": "3ad95a6c4fa4ad902d76b28cb615b69790ba6b98a60f632ede728cc75b2d00f2",
+        "order": 4
+      }
+    },
+    {
+      "candidate": "20260905055629_phase03a_flag_policies.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "candidateSha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260905055629_phase03a_flag_policies.rollback.sql",
+      "rollbackSha256": "a10de3760e986bd7a7047de4b8dd88344ee5ed3fa5327cf17f7b7a9b3a18f381",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Restores the accepted pre-candidate posture and its documented weaker authorization state.",
+      "restore": {
+        "version": "20260916000700",
+        "file": "20260916000700_restore_phase03a_flag_policies.sql",
+        "sha256": "616fff5909f0d392f4ff2ac75ad62040711736912328f30e825c5c4d1e532caa",
+        "order": 8
+      },
+      "reapply": {
+        "version": "20260917000400",
+        "file": "20260917000400_reapply_phase03a_flag_policies.sql",
+        "sha256": "51d9c026ef0c5f031e2ac8e322cd714fd383c0539af5219242590a7f19bdc703",
+        "order": 5
+      }
+    },
+    {
+      "candidate": "20260905055630_phase03a_open_inserts.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "candidateSha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260905055630_phase03a_open_inserts.rollback.sql",
+      "rollbackSha256": "febc6fd4f7c16ec90949189d32507bbd870ce53512aea793b564ae92965be9c9",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Restores the accepted pre-candidate posture and its documented weaker authorization state.",
+      "restore": {
+        "version": "20260916000600",
+        "file": "20260916000600_restore_phase03a_open_inserts.sql",
+        "sha256": "2c5735df67803d3ae4f96ffa6999ced66aed7aaf6f4d0a49a2a4d5517825acbb",
+        "order": 7
+      },
+      "reapply": {
+        "version": "20260917000500",
+        "file": "20260917000500_reapply_phase03a_open_inserts.sql",
+        "sha256": "cc785dafbaaa881c2dc1efa45eeaa5bf42ceeb9058310c1118aa3f803be15674",
+        "order": 6
+      }
+    },
+    {
+      "candidate": "20260905055632_phase03a_profile_updates.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "candidateSha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260905055632_phase03a_profile_updates.rollback.sql",
+      "rollbackSha256": "694d1012b068e8834fb02f5c65257e7a37016c955e4760847fc5d749ce99dda1",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Restores the accepted pre-candidate posture and its documented weaker authorization state.",
+      "restore": {
+        "version": "20260916000500",
+        "file": "20260916000500_restore_phase03a_profile_updates.sql",
+        "sha256": "9de75a4ac3aca00f4d95dca493bd21b9a717e0089c9e17987105e38dc1b87f64",
+        "order": 6
+      },
+      "reapply": {
+        "version": "20260917000600",
+        "file": "20260917000600_reapply_phase03a_profile_updates.sql",
+        "sha256": "1c0285b19a085df43171a28fab72141c913ff87542b14a5599be44eb1b2f7862",
+        "order": 7
+      }
+    },
+    {
+      "candidate": "20260905055633_phase03a_contextual_profiles.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "candidateSha256": "526d2c47f3c6edb6c3cffff94b8bec4f3c9e4c3602a30a5e4059b14261d86bf9",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260905055633_phase03a_contextual_profiles.rollback.sql",
+      "rollbackSha256": "aea29d734a4e03940a85f7cb30247681fa674b3229c58d2d9f02e7e280070f5c",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Restores the accepted pre-candidate posture and its documented weaker authorization state.",
+      "restore": {
+        "version": "20260916000400",
+        "file": "20260916000400_restore_phase03a_contextual_profiles.sql",
+        "sha256": "fad594808bf926ff56f21209681dfd40e9e6dc68c45e78cefefbdeece3fcc5ae",
+        "order": 5
+      },
+      "reapply": {
+        "version": "20260917000700",
+        "file": "20260917000700_reapply_phase03a_contextual_profiles.sql",
+        "sha256": "4ab6942066217ff014f1d6d5fd2466d969e0eab87e2defb2d2881358d8d45637",
+        "order": 8
+      }
+    },
+    {
+      "candidate": "20260905055635_phase03a_trigger_execute.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "candidateSha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260905055635_phase03a_trigger_execute.rollback.sql",
+      "rollbackSha256": "71f6027f023b95b1900eaa9f546b487603cc2ca76ae2f2a2595d11c05ee6dcce",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Restores the accepted pre-candidate posture and its documented weaker authorization state.",
+      "restore": {
+        "version": "20260916000300",
+        "file": "20260916000300_restore_phase03a_trigger_execute.sql",
+        "sha256": "784bfc7d6aba09574e7124b093bdb207c174997a2f8d8854428a9b22a5c6d68a",
+        "order": 4
+      },
+      "reapply": {
+        "version": "20260917000800",
+        "file": "20260917000800_reapply_phase03a_trigger_execute.sql",
+        "sha256": "a923d812939d8de814138277875e111fe199affe222659d69f498014f63ab6d8",
+        "order": 9
+      }
+    },
+    {
+      "candidate": "20260905055636_phase03a_client_privileges.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "candidateSha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260905055636_phase03a_client_privileges.rollback.sql",
+      "rollbackSha256": "8a1257a0d355b27aa563cf7cd0c676748a66dab8cd33017a9e1e25712fab42e9",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Restores the accepted pre-candidate posture and its documented weaker authorization state.",
+      "restore": {
+        "version": "20260916000200",
+        "file": "20260916000200_restore_phase03a_client_privileges.sql",
+        "sha256": "63deacc24533b9d4631f2fdff850a52fff09c9d3f95b6d5aa4e218a8942bdeb3",
+        "order": 3
+      },
+      "reapply": {
+        "version": "20260917000900",
+        "file": "20260917000900_reapply_phase03a_client_privileges.sql",
+        "sha256": "4e2f7dcd1f17f4e7b875601114f55675f097fc3e7a57be270999f90ce8e52eeb",
+        "order": 10
+      }
+    },
+    {
+      "candidate": "20260905073925_phase03a_effective_privileges.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260905073925_phase03a_effective_privileges.sql",
+      "candidateSha256": "17970173cb28f29297a931751e9e8ca62c74366f1b83ab5cd36e536049562c20",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260905073925_phase03a_effective_privileges.rollback.sql",
+      "rollbackSha256": "3753ce33e975cfa1e26e25f4b3929b4c0af5e4d3a03d4e33bb74bb7796951c4d",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Restores the accepted pre-candidate posture and its documented weaker authorization state.",
+      "restore": {
+        "version": "20260916000100",
+        "file": "20260916000100_restore_phase03a_effective_privileges.sql",
+        "sha256": "518d4dcd7a3098204378b4f9605539c33b42301ddb636b51e8457eb881144ece",
+        "order": 2
+      },
+      "reapply": {
+        "version": "20260917001000",
+        "file": "20260917001000_reapply_phase03a_effective_privileges.sql",
+        "sha256": "da2caf361ae749ad047ae785bfd51c95bf3d01e1db7b172b688854f67fede79a",
+        "order": 11
+      }
+    },
+    {
+      "candidate": "20260909120000_fda028_v4_limiter.sql",
+      "candidatePath": "supabase/migrations-next/phase03a/20260909120000_fda028_v4_limiter.sql",
+      "candidateSha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771",
+      "rollbackPath": "supabase/migrations-next/phase03a/rollback/20260909120000_fda028_v4_limiter.rollback.sql",
+      "rollbackSha256": "eded3c9feaa139dc112e7356fc7cf2adc896cc87192231a63cb4b55c1acc8302",
+      "rollbackMode": "UNSAFE_BASELINE_RESTORE",
+      "securityReason": "Independently accepted V4 limiter (review round 6 PASS). Restoration removes the limiter entirely, returning guest ingestion to the pre-v4 posture governed only by the global anonymous emergency caps - a known weakness, hence UNSAFE_BASELINE_RESTORE.",
+      "restore": {
+        "version": "20260916000000",
+        "file": "20260916000000_restore_fda028_v4_limiter.sql",
+        "sha256": "cbf127cd99b787f2d96ead0254dd911a932c0fab8b0d4f0e1ccd98bb276dad85",
+        "order": 1
+      },
+      "reapply": {
+        "version": "20260917001100",
+        "file": "20260917001100_reapply_fda028_v4_limiter.sql",
+        "sha256": "c695da25cdb7298652ba594130d6d05df769d2a08b65bab7261d378afc26658f",
+        "order": 12
+      }
+    }
+  ],
+  "nonRestorable": [
+    {
+      "candidate": "20260904000400_adopt_execute_revokes.sql",
+      "candidateSha256": "e8a3d880d361e5d6be96c8b30709a9b1b3d8a8d94e6d23175342db41bb20cf13",
+      "classification": "NON_REVERSIBLE_SECURITY_REPAIR",
+      "reason": "Baseline restoration would republish a retired credential literal and re-open trigger-only SECURITY DEFINER functions.",
+      "disposition": "No production restoration artifact prepared; the accepted rollback is an explicit refusal.",
+      "recoveryMode": "FORWARD_CORRECTION_OR_APPLICATION_CONTAINMENT_ONLY",
+      "triggerResponse": [
+        "stop the affected production operation and preserve exact ledger/catalog evidence",
+        "do not restore the retired credential, trigger execution grants, or hardcoded endpoint",
+        "Sky selects application/release containment or authorizes a newly reviewed correcting migration for the observed defect",
+        "assign the correcting migration a fresh version proven unused immediately before any separately authorized operation"
+      ]
+    },
+    {
+      "candidate": "20260911120000_phase03a_webhook_target_env_scoped.sql",
+      "candidateSha256": "9165f87e3571325fc847de5b08ca33aa9266e8786cee613be0cf61a06f4fbf6b",
+      "classification": "NON_REVERSIBLE_SECURITY_REPAIR",
+      "reason": "STAGE-MF-04. Its rollback restores the hardcoded production endpoint, so it is not a routine undo.",
+      "disposition": "No production restoration artifact prepared because restoring the hardcoded production endpoint is not a routine or safe undo.",
+      "recoveryMode": "FORWARD_CORRECTION_OR_APPLICATION_CONTAINMENT_ONLY",
+      "triggerResponse": [
+        "stop the affected production operation and preserve exact ledger/catalog evidence",
+        "do not restore the retired credential, trigger execution grants, or hardcoded endpoint",
+        "Sky selects application/release containment or authorizes a newly reviewed correcting migration for the observed defect",
+        "assign the correcting migration a fresh version proven unused immediately before any separately authorized operation"
+      ]
+    }
+  ],
+  "reviewScope": "STATIC_LOCAL_FORWARD_RECOVERY_ONLY_NO_EXECUTION"
+}

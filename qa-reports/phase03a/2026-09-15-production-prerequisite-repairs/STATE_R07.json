@@ -1,0 +1,70 @@
+{
+  "runUnit": "P03A_PRODUCTION_PREREQUISITE_REPAIRS",
+  "checkpoint": "R07_COMPLETE",
+  "status": "READY_FOR_OWNER_DECISION",
+  "branch": "codex/flagstone-p03a-takeover-20260914",
+  "repairSource": {
+    "sha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+    "tree": "657f1b6ce01d3fdbb27102b5aa33616c918feade"
+  },
+  "localRepairs": {
+    "productionPlanTooling": "PASS",
+    "credentialGate": "PASS",
+    "independentCodeReview": "PASS",
+    "fda028LimiterBytesChanged": false,
+    "phase03aMigrationBytesChanged": false
+  },
+  "productionRepreflight": {
+    "identityVerified": true,
+    "transactionReadOnly": "on",
+    "ledgerRows": 71,
+    "ledgerLatest": "20260830130000",
+    "ledgerOrderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b",
+    "canonicalCatalogSha256": "2c0bacf76c71924ffd8543852dc830f593058b8cb67a1016871f55908dae0443",
+    "structuralCatalogSha256": "1c4cdbc441d3747f56109955c7b31840720d4cd09373572d961e9638fcc255c8",
+    "pendingCount": 14,
+    "pendingVersions": [
+      "20260904000000",
+      "20260904000100",
+      "20260904000200",
+      "20260904000300",
+      "20260904000400",
+      "20260905055629",
+      "20260905055630",
+      "20260905055632",
+      "20260905055633",
+      "20260905055635",
+      "20260905055636",
+      "20260905073925",
+      "20260909120000",
+      "20260911120000"
+    ],
+    "stageBIncluded": false
+  },
+  "forwardRecovery": {
+    "status": "PREPARED_REVIEWED",
+    "generatedArtifacts": 24,
+    "uniqueProductionUnusedVersions": 24,
+    "securityCrossings": 2,
+    "ledgerSemantics": "FORWARD_ONLY",
+    "executionAuthorized": false
+  },
+  "ownerDecisions": {
+    "mf03": "OWNER_ACTION_REQUIRED",
+    "mf04": "OWNER_ACTION_REQUIRED",
+    "mf05": "OWNER_DECISION_REQUIRED",
+    "productionPolicy": "INCOMPLETE"
+  },
+  "nextSafeAction": "Sky securely creates exactly one production Vault entry named webhook_endpoint with the correct production HTTPS endpoint, then records completion status only for later shape-only verification.",
+  "nextPermittedPhase": "PHASE-03A ONLY",
+  "productionAuthorized": false,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "phase03bStarted": false,
+  "operationState": {
+    "running": false,
+    "outcomeUnknown": false
+  }
+}
