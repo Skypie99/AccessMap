@@ -62,6 +62,12 @@ describe('supportedApplyCommand validates the value, not just the flag list', ()
     expect(() => call(ID, 'supportedApplyCommand', { projectRef: PROD })).toThrow(/production project/);
   });
 
+  it('cannot revive production apply through the removed staging override', () => {
+    expect(() => call(ID, 'supportedApplyCommand', {
+      projectRef: PROD, dryRun: false, expectStaging: false,
+    })).toThrow(/production project/);
+  });
+
   it('builds for a valid staging ref, and returns a PRIMITIVE string', () => {
     const r = call(ID, 'supportedApplyCommand', { projectRef: STAGING });
     // A String object would break === for every consumer, and toBe() in every test.
@@ -110,6 +116,12 @@ describe('workspaceCommands — the entry point the staging packet actually uses
 
   it('refuses the production ref exactly', () => {
     expect(() => call(WS, 'workspaceCommands', { workspace: ws, projectRef: PROD })).toThrow(/production/);
+  });
+
+  it('cannot revive production apply through the removed staging override', () => {
+    expect(() => call(WS, 'workspaceCommands', {
+      workspace: ws, projectRef: PROD, expectStaging: false,
+    })).toThrow(/production/);
   });
 
   it('builds for staging, names one target, and offers argv', () => {

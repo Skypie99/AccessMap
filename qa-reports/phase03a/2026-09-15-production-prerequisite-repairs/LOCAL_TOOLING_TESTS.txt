@@ -1,0 +1,20 @@
+
+> accessmap@4.1.1 test
+> jest --ci --runInBand scripts/__tests__/productionPlanOnly.test.ts scripts/__tests__/targetTokenSafety.test.ts scripts/__tests__/canonicalMigrationIdentity.test.ts scripts/__tests__/canonicalApplyWorkspaceGuard.test.ts
+
+watchman warning:  Recrawled this watch 15 times, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/skypie/AccessMap-codex/flagstone-p03a-takeover-20260914' ; watchman watch-project '/Users/skypie/AccessMap-codex/flagstone-p03a-takeover-20260914'`
+
+PASS scripts/__tests__/canonicalApplyWorkspaceGuard.test.ts (6.226 s)
+PASS scripts/__tests__/canonicalMigrationIdentity.test.ts
+PASS scripts/__tests__/targetTokenSafety.test.ts
+PASS scripts/__tests__/productionPlanOnly.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       106 passed, 106 total
+Snapshots:   0 total
+Time:        9.936 s
+Ran all test suites matching /scripts\/__tests__\/productionPlanOnly.test.ts|scripts\/__tests__\/targetTokenSafety.test.ts|scripts\/__tests__\/canonicalMigrationIdentity.test.ts|scripts\/__tests__\/canonicalApplyWorkspaceGuard.test.ts/i.

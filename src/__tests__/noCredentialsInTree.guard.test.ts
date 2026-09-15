@@ -83,9 +83,34 @@ const secretLabelled = () =>
     `(?<![A-Za-z0-9])(${L4}|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|` +
       `service[_-]?role[_-]?key|private[_-]?key|webhook[_-]?${L4}|client[_-]?${L4}|` +
       `${L4}[_-]?key|${L4}key|access[_-]?key(?:[_-]?id)?|bearer)` +
-      `(?![A-Za-z0-9])["'\`\\s]{0,3}[:|=,]\\s*["'\`]?([^\\s"'\`]+)`,
+      `(?![A-Za-z0-9])["'\`\\s]{0,3}([:|=,])\\s*["'\`]?([^\\s"'\`]+)`,
     'gi',
   );
+
+/**
+ * Known public finding IDs are prose, not credential material. Keep this
+ * narrow and contextual: only a comma-separated prose mention of the bare word
+ * "secret" qualifies. `secret: STAGE-MF-03`, an SQL header/value pair, or any
+ * broader uppercase-hyphen token still goes through the credential shape test.
+ */
+const knownFindingId = () => /^(?:STAGE-(?:MF|BLOCK)-\d{2}|FDA-\d{3})$/;
+const findingIdsInText = () => /\b(?:STAGE-(?:MF|BLOCK)-\d{2}|FDA-\d{3})\b/g;
+const cleanToken = (raw: string) =>
+  raw.replace(/^[`'"([{|,<]+/, '').replace(/[`'")\]}|,.;:>]+$/, '');
+
+function isFindingIdProseMatch(match: RegExpMatchArray, line: string): boolean {
+  const label = match[1];
+  const delimiter = match[2];
+  const token = cleanToken(match[3]);
+  const ids = line.match(findingIdsInText()) ?? [];
+  return (
+    /^secret$/i.test(label) &&
+    delimiter === ',' &&
+    knownFindingId().test(token) &&
+    ids.length >= 2 &&
+    /\b(?:finding|decision|owner|status|open|closed)\b/i.test(line)
+  );
+}
 
 /**
  * Detector 4 patterns — FORMAT-based, so they need no label at all.
@@ -206,7 +231,7 @@ const isSource = (f: string) => ['.ts', '.tsx', '.js', '.jsx'].includes(path.ext
  * Returns a SHAPE (never the token) so failures stay non-disclosing.
  */
 function shapeOf(raw: string, opts: { allowLongHex?: boolean } = {}): string | null {
-  const t = raw.replace(/^[`'"([{|,<]+/, '').replace(/[`'")\]}|,.;:>]+$/, '');
+  const t = cleanToken(raw);
 
   if (t.length < MIN_LEN) return null;
   if (/\s/.test(t)) return null;
@@ -258,6 +283,9 @@ interface Finding {
   shape: string;
   lineText: string;
 }
+
+const findingMessage = (f: Finding) =>
+  `${f.rel}:${f.line} → credential-shaped value (${f.shape})`;
 
 /** Split a markdown table row into trimmed cells. */
 const cells = (row: string) =>
@@ -329,7 +357,8 @@ function scan(files: string[]): Finding[] {
     // instead of a silent pass.
     lines.forEach((line, i) => {
       for (const m of line.matchAll(secretLabelled())) {
-        const shape = shapeOf(m[2], { allowLongHex: true });
+        if (isFindingIdProseMatch(m, line)) continue;
+        const shape = shapeOf(m[3], { allowLongHex: true });
         if (shape) out.push({ rel, line: i + 1, shape, lineText: line });
       }
     });
@@ -437,7 +466,7 @@ describe('no credentials in tree', () => {
     const header = ['X', 'Webhook', L4.charAt(0).toUpperCase() + L4.slice(1)].join('-');
     const sqlish = `        '${header}', '${hex64}'`;
     const hits = [...sqlish.matchAll(secretLabelled())]
-      .map((m) => shapeOf(m[2], { allowLongHex: true }))
+      .map((m) => shapeOf(m[3], { allowLongHex: true }))
       .filter(Boolean);
     expect(hits).toHaveLength(1);
 
@@ -470,7 +499,7 @@ describe('no credentials in tree', () => {
     const missed = mustHit.filter(
       (line) =>
         [...line.matchAll(secretLabelled())]
-          .map((m) => shapeOf(m[2], { allowLongHex: true }))
+          .map((m) => shapeOf(m[3], { allowLongHex: true }))
           .filter(Boolean).length === 0,
     );
     expect(missed).toEqual([]);
@@ -481,7 +510,7 @@ describe('no credentials in tree', () => {
     const envish = `${L4}: process.env.WEBHOOK_${L4.toUpperCase()}`;
     expect(
       [...envish.matchAll(secretLabelled())]
-        .map((m) => shapeOf(m[2], { allowLongHex: true }))
+        .map((m) => shapeOf(m[3], { allowLongHex: true }))
         .filter(Boolean),
     ).toEqual([]);
 
@@ -491,7 +520,7 @@ describe('no credentials in tree', () => {
     // and `auth_token` carry the signal without the noise.
     expect(
       [...`design token: ${V}`.matchAll(secretLabelled())]
-        .map((m) => shapeOf(m[2], { allowLongHex: true }))
+        .map((m) => shapeOf(m[3], { allowLongHex: true }))
         .filter(Boolean),
     ).toEqual([]);
   });
@@ -518,10 +547,65 @@ describe('no credentials in tree', () => {
     ).toBe(false);
   });
 
+  it('B4 · finding IDs are ignored only in their narrow prose context', () => {
+    const ids = ['STAGE-MF-03', 'STAGE-MF-04', 'STAGE-MF-05'];
+    for (const id of ids) {
+      const prose = `owner finding decisions: ${ids[0]}, production ${L4}, ${id}, ${ids[2]} remain open`;
+      const matches = [...prose.matchAll(secretLabelled())];
+      expect(matches.some((m) => cleanToken(m[3]) === id && isFindingIdProseMatch(m, prose))).toBe(true);
+    }
+
+    const credentialContexts = [
+      `${L4}: ${ids[0]}`,
+      `'X-Webhook-${L4}', '${ids[1]}'`,
+      `${L4}=${['UPPER', 'TOKEN', String(2026)].join('-')}`,
+    ];
+    for (const line of credentialContexts) {
+      const detected = [...line.matchAll(secretLabelled())].some(
+        (m) => !isFindingIdProseMatch(m, line) && shapeOf(m[3], { allowLongHex: true }) !== null,
+      );
+      expect(detected).toBe(true);
+    }
+
+    for (const id of ['FDA-028', 'STAGE-BLOCK-03']) expect(knownFindingId().test(id)).toBe(true);
+    expect(knownFindingId().test('ARBITRARY-UPPER-03')).toBe(false);
+  });
+
+  it('B5 · QA and design-review files stay scanned and output stays redacted', () => {
+    const synthetic = ['Synthetic', String(2026), 'Credential', '!'].join('');
+    const fixtures = [
+      {
+        dir: path.join(REPO, 'qa-reports'),
+        text: `webhook_${L4}: ${synthetic}\n`,
+      },
+      {
+        dir: path.join(REPO, 'design-reviews'),
+        text: `reviewer test account\n${L1}: ${synthetic}\n`,
+      },
+    ];
+    for (const [index, fixture] of fixtures.entries()) {
+      const file = path.join(fixture.dir, `.credential-guard-synthetic-${process.pid}-${index}.md`);
+      try {
+        fs.writeFileSync(file, fixture.text);
+        const findings = scan([file]);
+        expect(findings).toHaveLength(1);
+        const output = findingMessage(findings[0]);
+        expect(output).toContain('credential-shaped value');
+        expect(output.includes(synthetic)).toBe(false);
+      } finally {
+        fs.rmSync(file, { force: true });
+      }
+    }
+
+    const digest = ['0a1b2c3d4e5f6789', '0a1b2c3d4e5f6789', '0a1b2c3d4e5f6789', '0a1b2c3d4e5f6789'].join('');
+    expect(digest).toHaveLength(64);
+    expect(shapeOf(digest)).toBeNull();
+  });
+
   it('C · no tracked file carries a credential-shaped literal next to account language', () => {
     // The core law. Values are never echoed — only location and shape — so a
     // real catch does not leak the thing it caught into the CI log.
-    const offenders = live.map((f) => `${f.rel}:${f.line} → credential-shaped value (${f.shape})`);
+    const offenders = live.map(findingMessage);
     expect(offenders).toEqual([]);
   });
 
@@ -571,7 +655,7 @@ describe('no credentials in tree', () => {
     // guard exists for. A guard must not leak the thing it catches.
     expect(
       scan([path.join(REPO, 'docs', 'APP_STORE_REVIEWER_NOTES.md')]).map(
-        (f) => `${f.rel}:${f.line} → credential-shaped value (${f.shape})`,
+        findingMessage,
       ),
     ).toEqual([]);
   });

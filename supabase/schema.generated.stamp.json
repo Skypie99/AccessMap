@@ -2,7 +2,7 @@
   "stampVersion": 2,
   "generationCommand": "node scripts/replay-migrations.mjs --with-next --local-only --dump",
   "generatorSource": "scripts/replay-migrations.mjs",
-  "inputManifestSha256": "74ba4742ea3adecdee81cb43a1239db39260a1bb57aafcdfe4f4055518b1cc46",
+  "inputManifestSha256": "39c33821a19f35d6491f85fc155eca600ae0c61e6dac95d866ce7a320dabcb4d",
   "snapshotSha256": "206ae8c6d09e1da340c424b318fe95f221d4af29b0c8722fa46868850b530d19",
   "inputs": [
     {
@@ -351,7 +351,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "1aacaa52059e9650bd8ed896f5e38e4c2dce7586649d536db43b7a326c0e61b9"
+      "sha256": "7e4516900b3919493abafdb472c16b5c3f475cec0308de89edb17a13d6f0ff79"
     }
   ]
 }

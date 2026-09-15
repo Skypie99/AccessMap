@@ -40,6 +40,7 @@
  * are fabricated versions that no honest local tree can ever contain.
  */
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -349,7 +350,7 @@ export function buildWorkspace({
 }
 
 /** The dry-run and apply commands for a materialized workspace. One target authority. */
-export function workspaceCommands({ workspace, projectRef, expectStaging = true }) {
+export function workspaceCommands({ workspace, projectRef }) {
   if (!workspace) throw new Error('workspace is required');
   // Validate the VALUES before the production compare, for the same reason
   // supportedApplyCommand does: `===` against an unvalidated string that is then
@@ -359,7 +360,7 @@ export function workspaceCommands({ workspace, projectRef, expectStaging = true 
   // packet uses, so it mattered more here than anywhere else.
   assertTargetToken('projectRef', projectRef, { pattern: PROJECT_REF_PATTERN });
   assertTargetToken('workspace', workspace);
-  if (expectStaging && projectRef === PRODUCTION_PROJECT_REF) {
+  if (projectRef === PRODUCTION_PROJECT_REF) {
     throw new Error(`Refusing to build a staging command targeting production ${PRODUCTION_PROJECT_REF}.`);
   }
   const base = ['supabase', 'db', 'push', '--workdir', workspace, '--project-ref', projectRef];
@@ -370,6 +371,184 @@ export function workspaceCommands({ workspace, projectRef, expectStaging = true 
     // argv is the authority for anyone who executes; the strings are for runbooks.
     dryRunArgv: [...base, '--dry-run'],
     applyArgv: [...base],
+  };
+}
+
+/**
+ * Build the only production-capable command this source is allowed to expose:
+ * a dry-run with Vault updates disabled. There is deliberately no apply string,
+ * apply argv, flag, token, or override in this return value.
+ */
+export function productionPlanCommand({ workspace, projectRef }) {
+  assertTargetToken('workspace', workspace);
+  assertTargetToken('projectRef', projectRef, { pattern: PROJECT_REF_PATTERN });
+  if (projectRef !== PRODUCTION_PROJECT_REF) {
+    throw new Error(
+      `Production plan target must be exactly ${PRODUCTION_PROJECT_REF}; received ${projectRef}.`,
+    );
+  }
+  const dryRunArgv = [
+    'supabase', 'db', 'push', '--workdir', workspace,
+    '--project-ref', projectRef, '--dry-run', '--skip-vault',
+  ];
+  assertUnambiguousTarget(dryRunArgv);
+  return Object.freeze({
+    mode: 'PRODUCTION_PLAN_ONLY',
+    target: projectRef,
+    nonMutating: true,
+    applyAvailable: false,
+    dryRunArgv: Object.freeze(dryRunArgv),
+    dryRun: dryRunArgv.join(' '),
+  });
+}
+
+const exactHex = (name, value, length) => {
+  if (typeof value !== 'string' || !new RegExp(`^[0-9a-f]{${length}}$`).test(value)) {
+    throw new Error(`${name} must be exactly ${length} lowercase hexadecimal characters.`);
+  }
+  return value;
+};
+
+/**
+ * Validate the retained production evidence before any transient workspace is
+ * created. "Candidate/object mismatch" is a first-class refusal: absent ledger
+ * rows alone never establish that adoption SQL is a no-op against real objects.
+ */
+export function validateProductionPlanEvidence({
+  projectRef, evidence, evidenceSha256, actualEvidenceSha256,
+  ledger, sourceHead, sourceTree, evidenceSourceAncestor,
+}) {
+  const refusals = [];
+  try { assertTargetToken('projectRef', projectRef, { pattern: PROJECT_REF_PATTERN }); }
+  catch (e) { refusals.push(e.message); }
+  if (projectRef !== PRODUCTION_PROJECT_REF) {
+    refusals.push(`production plan requires exact project ref ${PRODUCTION_PROJECT_REF}`);
+  }
+  try { exactHex('evidenceSha256', evidenceSha256, 64); }
+  catch (e) { refusals.push(e.message); }
+  if (evidenceSha256 !== actualEvidenceSha256) {
+    refusals.push('production evidence hash mismatch');
+  }
+  if (!evidence || typeof evidence !== 'object') {
+    refusals.push('production evidence is missing or not an object');
+    return { ok: false, refusals };
+  }
+  if (evidence.targetProjectRef !== projectRef) {
+    refusals.push('production evidence target does not match the explicit project ref');
+  }
+  try {
+    exactHex('sourceHead', sourceHead, 40);
+    exactHex('sourceTree', sourceTree, 40);
+    exactHex('evidence source SHA', evidence.sourceIdentity?.currentSha, 40);
+    exactHex('evidence source tree', evidence.sourceIdentity?.currentTree, 40);
+  }
+  catch (e) { refusals.push(e.message); }
+  if (evidenceSourceAncestor !== true) {
+    refusals.push('production evidence source is not an exact verified ancestor of the current source');
+  }
+  const contract = evidence.productionPreApplyContract;
+  if (contract?.exactAcceptedComparatorMatch !== true) {
+    refusals.push('candidate/object mismatch: exact accepted production comparator match is not proven');
+  }
+  for (const [name, value] of [
+    ['canonicalCatalogSha256', contract?.canonicalCatalogSha256],
+    ['structuralCatalogSha256', contract?.structuralCatalogSha256],
+    ['ledgerOrderedSha256', contract?.ledgerOrderedSha256],
+  ]) {
+    try { exactHex(name, value, 64); } catch (e) { refusals.push(e.message); }
+  }
+  if (!Array.isArray(ledger)) {
+    refusals.push('production ledger must be an array');
+  } else {
+    if (contract?.ledgerRows !== ledger.length) {
+      refusals.push(`production evidence says ${contract?.ledgerRows} ledger rows but capture has ${ledger.length}`);
+    }
+    const latest = ledger.length ? [...ledger].sort((a, b) => a.version.localeCompare(b.version)).at(-1)?.version : null;
+    if (contract?.ledgerLatest !== latest) {
+      refusals.push(`production evidence latest version ${contract?.ledgerLatest} does not match capture ${latest}`);
+    }
+  }
+  if (evidence.stageB?.included !== false) {
+    refusals.push('Stage B must be explicitly excluded from a production plan');
+  }
+  if (!Array.isArray(evidence.entries) || evidence.entries.length === 0) {
+    refusals.push('production evidence has no pending migration entries');
+  } else {
+    if (evidence.pendingCount !== evidence.entries.length) {
+      refusals.push(`production evidence pending count ${evidence.pendingCount} does not match ${evidence.entries.length} entries`);
+    }
+    const versions = new Set();
+    for (const entry of evidence.entries) {
+      if (entry.stage !== 'A') refusals.push(`${entry.file ?? '<unknown>'}: non-Stage-A entry in production plan`);
+      if (entry.file === evidence.stageB?.file || /stage_b_cutover/i.test(entry.file ?? '')) {
+        refusals.push(`${entry.file}: Stage B leaked into the production plan`);
+      }
+      if (/_(?:restore|reapply)_/i.test(entry.file ?? '')) {
+        refusals.push(`${entry.file}: recovery file leaked into the initial production plan`);
+      }
+      try {
+        const id = canonicalIdentity(entry.file);
+        if (entry.version !== id.version) refusals.push(`${entry.file}: evidence version does not match filename`);
+        if (versions.has(id.version)) refusals.push(`${entry.file}: duplicate evidence version ${id.version}`);
+        versions.add(id.version);
+        exactHex(`${entry.file} sha256`, entry.sha256, 64);
+      } catch (e) { refusals.push(e.message); }
+    }
+  }
+  return { ok: refusals.length === 0, refusals };
+}
+
+/**
+ * Materialize and bind a production PLAN. This function performs local file IO
+ * only. It never starts the Supabase CLI and never returns an apply command.
+ */
+export function buildProductionPlan({
+  baselineDir, adoptionDir, candidateDir, declared, adoptionDeclared,
+  ledger, evidence, evidenceSha256, actualEvidenceSha256,
+  projectRef, sourceHead, sourceTree, evidenceSourceAncestor, projectId = 'accessmap',
+}) {
+  const validated = validateProductionPlanEvidence({
+    projectRef, evidence, evidenceSha256, actualEvidenceSha256,
+    ledger, sourceHead, sourceTree, evidenceSourceAncestor,
+  });
+  if (!validated.ok) {
+    return { ok: false, refusals: validated.refusals, workspace: null, plan: [], command: null };
+  }
+  const built = buildWorkspace({
+    baselineDir, adoptionDir, candidateDir, declared, adoptionDeclared,
+    ledger, stage: 'A', projectId,
+  });
+  if (!built.ok) return { ...built, plan: [], command: null };
+
+  const expected = evidence.entries;
+  const actual = built.wouldPush;
+  const mismatches = [];
+  if (expected.length !== actual.length) {
+    mismatches.push(`evidence declares ${expected.length} pending files but workspace would push ${actual.length}`);
+  }
+  for (let i = 0; i < Math.max(expected.length, actual.length); i++) {
+    const want = expected[i];
+    const got = actual[i];
+    if (!want || !got || want.file !== got.file || want.version !== got.version || want.sha256 !== got.sha256) {
+      mismatches.push(`pending entry ${i + 1} does not exactly match the evidence manifest`);
+    }
+  }
+  if (mismatches.length) {
+    destroyWorkspace(built.workspace);
+    return { ok: false, refusals: mismatches, workspace: null, plan: [], command: null };
+  }
+
+  const command = productionPlanCommand({ workspace: built.workspace, projectRef });
+  return {
+    ok: true,
+    refusals: [],
+    workspace: built.workspace,
+    plan: actual,
+    counts: built.counts,
+    ledgerAudit: built.ledgerAudit,
+    command,
+    sourceIdentity: { head: sourceHead, tree: sourceTree },
+    productionApplyAvailable: false,
   };
 }
 
@@ -398,6 +577,8 @@ export function destroyWorkspace(ws) {
 // CLI
 //   node scripts/canonical-apply-workspace.mjs build   --ledger <f.json> [--stage A|B]
 //   node scripts/canonical-apply-workspace.mjs command --workspace <dir> --project-ref <ref>
+//   node scripts/canonical-apply-workspace.mjs production-plan --ledger <f.json> --evidence <f.json>
+//        --evidence-sha256 <sha256> --project-ref <ref> --release-sha <sha> --release-tree <tree>
 //   node scripts/canonical-apply-workspace.mjs destroy --workspace <dir>
 // Obtain the ledger READ-ONLY, e.g.
 //   supabase db query --linked --project-ref <ref> "select version,name from supabase_migrations.schema_migrations order by version"
@@ -411,6 +592,107 @@ if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(proces
   const baselineDir = path.join(root, flag('baseline', 'supabase/migrations'));
   const adoptionDir = path.join(root, flag('adoption', 'supabase/migrations-next'));
   const candidateDir = path.join(root, flag('candidates', 'supabase/migrations-next/phase03a'));
+
+  if (cmd === 'production-plan') {
+    const valueFlags = new Set([
+      '--ledger', '--evidence', '--evidence-sha256', '--project-ref', '--release-sha', '--release-tree',
+      '--baseline', '--adoption', '--candidates',
+    ]);
+    const forbidden = new Set(['--apply', '--linked', '--local', '--db-url', '--stage']);
+    const seen = new Set();
+    for (let i = 1; i < argv.length; i++) {
+      const token = argv[i];
+      if (forbidden.has(token)) {
+        console.error(`ERROR: ${token} is prohibited in production plan-only mode.`);
+        process.exit(2);
+      }
+      if (!valueFlags.has(token)) {
+        console.error(`ERROR: unexpected production plan argument ${JSON.stringify(token)}.`);
+        process.exit(2);
+      }
+      if (seen.has(token)) {
+        console.error(`ERROR: duplicate production plan argument ${token}.`);
+        process.exit(2);
+      }
+      seen.add(token);
+      const value = argv[++i];
+      if (!value || value.startsWith('--')) {
+        console.error(`ERROR: ${token} requires exactly one value.`);
+        process.exit(2);
+      }
+    }
+    const required = ['ledger', 'evidence', 'evidence-sha256', 'project-ref', 'release-sha', 'release-tree'];
+    for (const name of required) {
+      if (!flag(name)) {
+        console.error(`ERROR: --${name} is required in production plan-only mode.`);
+        process.exit(2);
+      }
+    }
+    let ledger;
+    let evidence;
+    let evidenceBytes;
+    try {
+      const raw = JSON.parse(fs.readFileSync(flag('ledger'), 'utf8'));
+      ledger = Array.isArray(raw) ? raw : raw?.rows;
+      if (!Array.isArray(ledger)) throw new Error('ledger must be an array or an object with a rows array');
+      evidenceBytes = fs.readFileSync(flag('evidence'));
+      evidence = JSON.parse(evidenceBytes);
+    } catch (e) {
+      console.error(`ERROR: production evidence could not be read: ${e.message}`);
+      process.exit(2);
+    }
+    let sourceHead;
+    let sourceTree;
+    let evidenceSourceAncestor;
+    try {
+      const tracked = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=no'],
+        { cwd: root, encoding: 'utf8' });
+      if (tracked.trim()) throw new Error('tracked working tree is dirty');
+      sourceHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+      sourceTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { cwd: root, encoding: 'utf8' }).trim();
+      if (flag('release-sha') !== sourceHead || flag('release-tree') !== sourceTree) {
+        throw new Error('supplied release SHA/tree does not match current clean Git identity');
+      }
+      const evidenceSourceSha = evidence.sourceIdentity?.currentSha;
+      const evidenceSourceTree = evidence.sourceIdentity?.currentTree;
+      exactHex('evidence source SHA', evidenceSourceSha, 40);
+      exactHex('evidence source tree', evidenceSourceTree, 40);
+      const actualEvidenceSourceTree = execFileSync(
+        'git', ['rev-parse', `${evidenceSourceSha}^{tree}`], { cwd: root, encoding: 'utf8' },
+      ).trim();
+      execFileSync('git', ['merge-base', '--is-ancestor', evidenceSourceSha, sourceHead], {
+        cwd: root, stdio: 'ignore',
+      });
+      evidenceSourceAncestor = actualEvidenceSourceTree === evidenceSourceTree;
+      if (!evidenceSourceAncestor) throw new Error('evidence source SHA/tree identity does not match Git');
+    } catch (e) {
+      console.error(`ERROR: production source identity refused: ${e.message}`);
+      process.exit(2);
+    }
+    const contract = JSON.parse(fs.readFileSync(path.join(candidateDir, 'candidate-contract.json'), 'utf8'));
+    const res = buildProductionPlan({
+      baselineDir, adoptionDir, candidateDir,
+      declared: contract.migrations, adoptionDeclared: contract.phase02Adoption?.entries ?? [],
+      ledger, evidence,
+      evidenceSha256: flag('evidence-sha256'), actualEvidenceSha256: sha256(evidenceBytes),
+      projectRef: flag('project-ref'), sourceHead, sourceTree, evidenceSourceAncestor,
+    });
+    console.log(JSON.stringify({
+      mode: 'PRODUCTION_PLAN_ONLY', ok: res.ok, refusals: res.refusals,
+      workspace: res.workspace, counts: res.counts,
+      pending: res.plan?.map((p) => ({ file: p.file, version: p.version, sha256: p.sha256 })),
+      command: res.command, sourceIdentity: res.sourceIdentity, productionApplyAvailable: false,
+    }, null, 2));
+    if (!res.ok) {
+      console.error(`REFUSED: ${res.refusals.length} problem(s). No production plan was prepared.`);
+      process.exit(1);
+    }
+    console.error(
+      `OK: prepared a non-mutating production dry-run plan for ${res.plan.length} pending migrations. ` +
+      'No production command was executed and no apply command exists in this result.',
+    );
+    process.exit(0);
+  }
 
   if (cmd === 'build') {
     const contract = JSON.parse(fs.readFileSync(path.join(candidateDir, 'candidate-contract.json'), 'utf8'));
@@ -444,6 +726,6 @@ if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(proces
     process.exit(0);
   }
 
-  console.error('usage: canonical-apply-workspace.mjs <build|command|destroy> [flags] (see header)');
+  console.error('usage: canonical-apply-workspace.mjs <build|command|production-plan|destroy> [flags] (see header)');
   process.exit(2);
 }

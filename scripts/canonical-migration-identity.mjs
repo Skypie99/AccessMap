@@ -418,14 +418,13 @@ export function assertUnambiguousTarget(args) {
  * @param {string}  opts.projectRef      explicit target; never inferred from link state
  * @param {string} [opts.workdir]        isolated apply workspace (STAGE-BLOCK-03)
  * @param {boolean}[opts.dryRun=true]
- * @param {boolean}[opts.expectStaging=true] refuse the production ref outright
  */
-export function supportedApplyCommand({ projectRef, workdir = null, dryRun = true, expectStaging = true }) {
+export function supportedApplyCommand({ projectRef, workdir = null, dryRun = true }) {
   // Validate BEFORE the production compare: an unvalidated value makes `===` a
   // formality. See assertTargetToken.
   assertTargetToken('projectRef', projectRef, { pattern: PROJECT_REF_PATTERN });
   if (workdir !== null && workdir !== undefined) assertTargetToken('workdir', workdir);
-  if (expectStaging && projectRef === PRODUCTION_PROJECT_REF) {
+  if (projectRef === PRODUCTION_PROJECT_REF) {
     throw new Error(`Refusing to build a staging command targeting the production project ${PRODUCTION_PROJECT_REF}.`);
   }
   const parts = ['supabase', 'db', 'push'];
@@ -446,8 +445,8 @@ export function supportedApplyCommand({ projectRef, workdir = null, dryRun = tru
  * that execs should not have to depend on it -- pass argv to execFile and no
  * tokenization happens at all.
  */
-export function supportedApplyArgv({ projectRef, workdir = null, dryRun = true, expectStaging = true }) {
-  const line = supportedApplyCommand({ projectRef, workdir, dryRun, expectStaging });
+export function supportedApplyArgv({ projectRef, workdir = null, dryRun = true }) {
+  const line = supportedApplyCommand({ projectRef, workdir, dryRun });
   return line.split(' ');
 }
 

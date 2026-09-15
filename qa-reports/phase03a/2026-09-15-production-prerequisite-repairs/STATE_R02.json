@@ -1,0 +1,76 @@
+{
+  "runUnit": "P03A_PRODUCTION_PREREQUISITE_REPAIRS",
+  "checkpoint": "R02_LOCAL_ACCEPTANCE_PRE_FREEZE",
+  "status": "PREPARED_FOR_SOURCE_FREEZE",
+  "preFreezeGit": {
+    "head": "c706449a81e844f2cccf13df92ce700f82ddeda1",
+    "tree": "f61ce1c2facfe032d72d9ae0ec577eef52c1d03d",
+    "branch": "codex/flagstone-p03a-takeover-20260914",
+    "trackedWorktreeDirty": true
+  },
+  "completedRepairUnits": {
+    "productionPlanTooling": "LOCAL_ACCEPTANCE_PASS",
+    "credentialGuardFalsePositive": "LOCAL_ACCEPTANCE_PASS"
+  },
+  "evidence": {
+    "productionLedger": {
+      "path": "qa-reports/phase03a/2026-09-15-production-preflight/PRODUCTION_LEDGER.json",
+      "sha256": "2a54be38a86c82bb194c7a46021605c776265849600058e3cc7114fe1be3a629",
+      "rows": 71,
+      "latest": "20260830130000"
+    },
+    "pendingPlan": {
+      "path": "qa-reports/phase03a/2026-09-15-production-preflight/PENDING_MIGRATION_PLAN.json",
+      "sha256": "b71320d434a09008f32f1bc817c5e3156e5a20d5bf414c07c0c591ac0a3676ad",
+      "pendingCount": 14,
+      "stageBIncluded": false
+    },
+    "receipts": [
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/LOCAL_TOOLING_TESTS.txt",
+        "sha256": "0499ee11302a9ebced164e848732d27096c94ae6be50f8bbb5fabea32761baaa"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/CREDENTIAL_GATE.txt",
+        "sha256": "ee1825956f16e9cc88d5f8b5b2a96764b04502730ae4dfd709deac48948708bd"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/TYPECHECK.txt",
+        "sha256": "d12aee5139a2fecb70054d7e23fa10972d9f2d91f79aacee1f7eb79935e9c1f8"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/LINT.txt",
+        "sha256": "92b2001476cf70c055fbcf6617fbfb7b39fb1552b85f291986f266862019bac7"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/DB_APPLY_PLAN.txt",
+        "sha256": "fd946e2c3ddf9319a07d41da51dffa86acd355ad6280e50393177d69a0e081da"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/CONTRACT_CHECK.txt",
+        "sha256": "fa461ad274e528cabfe1247889036e394ffcb0071fa213d44f9aba156e018e0a"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/SNAPSHOT_CHECK.txt",
+        "sha256": "6c02c36c6dab131fc6181df7bbf83c736bbb2bec7503fa0ae3176ecfc8535e37"
+      },
+      {
+        "path": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/RELEASE_VERIFY.txt",
+        "sha256": "1c34baa0af6f35e5a5a89aa820bbc396118d820c7ff54a3d6cc3ba03c94a8d25"
+      }
+    ]
+  },
+  "protectedBytes": {
+    "fda028LimiterChangedFromPreRepair": false,
+    "phase03aMigrationSqlChangedFromPreRepair": false
+  },
+  "nextOperation": "Create the local source-freeze commit, verify its SHA/tree, and run the production-plan CLI against the retained read-only evidence.",
+  "operationState": {
+    "running": false,
+    "outcomeUnknown": false
+  },
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE"
+}

@@ -1,0 +1,5 @@
+
+> accessmap@4.1.1 contract:check
+> node scripts/generate-migration-crosswalk.mjs --check
+
+migration-crosswalk.v1.json is current.

@@ -43,6 +43,7 @@
     "db:apply:plan": "node scripts/canonical-migration-identity.mjs plan",
     "db:apply:verify": "node scripts/canonical-migration-identity.mjs verify",
     "db:apply:command": "node scripts/canonical-migration-identity.mjs command",
+    "db:production:plan": "node scripts/canonical-apply-workspace.mjs production-plan",
     "db:catalog:sql": "node scripts/structural-catalog.mjs sql",
     "db:catalog:capture": "node scripts/structural-catalog.mjs capture",
     "db:catalog:diff": "node scripts/structural-catalog.mjs diff",
