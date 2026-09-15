@@ -1,0 +1,16 @@
+{
+  "promptId": "FLAGSTONE-P03A-FINAL-OWNER-DECISIONS-20260914-R1",
+  "checkpoint": "R01_PRE_PRODUCTION_INSPECTION",
+  "branch": "codex/flagstone-p03a-takeover-20260914",
+  "startSha": "3140e876af54c1d5945d0e266f8bc1760f7b1848",
+  "startTree": "3024466358326a2002843b0bf53bdc221c37de96",
+  "repairSha": "22e1db5aa7e58d7129551cb1325f921b37f95105",
+  "repairTree": "657f1b6ce01d3fdbb27102b5aa33616c918feade",
+  "targetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "status": "READY_FOR_READ_ONLY_PRODUCTION_INSPECTION",
+  "authority": "READ_ONLY_PRODUCTION_INSPECTION_AND_LOCAL_PACKET_PREPARATION",
+  "productionMutations": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "phase03bStarted": false
+}
