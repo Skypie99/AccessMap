@@ -15,7 +15,6 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export const EXPECTED_PROJECT_REF = 'cepayqmsoqxshsiyqnvz';
 export const EXPECTED_BRANCH_ID = '4a37413a-01c2-4ab2-8bf8-a17a42a549b8';
-export const PARENT_PROJECT_REF = 'kldlwszpfkdmsjrjhjym';
 export const PRODUCTION_PROJECT_REF = 'kldlwszpfkdmsjrjhjym';
 export const OLD_STAGING_PROJECT_REF = 'ctshxbykuemeqnofqcdh';
 export const ACCEPTED_INTEGRATION_SHA = '9a0af4c88b5b00898e405992cfd44ba7dfd689fc';
@@ -48,7 +47,7 @@ export function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
     if (!token.startsWith('--')) throw new Error(`Unexpected positional argument: ${token}`);
-    if (!['--project-ref', '--branch-id', '--receipt-dir'].includes(token)) {
+    if (!['--project-ref', '--branch-id', '--reviewed-sha', '--receipt-dir'].includes(token)) {
       if (TARGET_SELECTORS.has(token)) throw new Error(`Ambiguous or prohibited target selector: ${token}`);
       throw new Error(`Unknown option: ${token}`);
     }
@@ -58,12 +57,13 @@ export function parseArgs(argv) {
     out[token] = value;
     i += 1;
   }
-  for (const required of ['--project-ref', '--branch-id', '--receipt-dir']) {
+  for (const required of ['--project-ref', '--branch-id', '--reviewed-sha', '--receipt-dir']) {
     if (!Object.hasOwn(out, required)) throw new Error(`Missing required option: ${required}`);
   }
   return {
     projectRef: out['--project-ref'],
     branchId: out['--branch-id'],
+    reviewedSha: out['--reviewed-sha'],
     receiptDir: out['--receipt-dir'],
   };
 }
@@ -72,6 +72,11 @@ function assertSingleToken(label, value, pattern) {
   if (typeof value !== 'string' || value.trim() !== value || !pattern.test(value)) {
     throw new Error(`${label} must be exactly one canonical token`);
   }
+}
+
+export function validateReviewedSha(reviewedSha) {
+  assertSingleToken('reviewed SHA', reviewedSha, /^[0-9a-f]{40}$/);
+  return true;
 }
 
 export function validateTarget({ projectRef, branchId }) {
@@ -91,42 +96,6 @@ function walk(value, visit) {
     visit(value);
     for (const child of Object.values(value)) walk(child, visit);
   }
-}
-
-export function verifyBranchMetadata(raw) {
-  let parsed;
-  try {
-    parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-  } catch {
-    throw new Error('Branch identity response was not valid JSON');
-  }
-  let match = null;
-  walk(parsed, (candidate) => {
-    const id = candidate.id ?? candidate.branch_id ?? candidate.branchId;
-    const projectRef = candidate.project_ref ?? candidate.projectRef ?? candidate.preview_project_ref;
-    if (id === EXPECTED_BRANCH_ID || projectRef === EXPECTED_PROJECT_REF) match = candidate;
-  });
-  if (!match) throw new Error('Expected fresh staging branch was absent from branch metadata');
-  const id = match.id ?? match.branch_id ?? match.branchId;
-  const projectRef = match.project_ref ?? match.projectRef ?? match.preview_project_ref;
-  const parentRef = match.parent_project_ref ?? match.parentProjectRef;
-  if (id !== EXPECTED_BRANCH_ID || projectRef !== EXPECTED_PROJECT_REF) {
-    throw new Error('Fresh staging branch id/project ref pairing did not match');
-  }
-  if (parentRef !== PARENT_PROJECT_REF) throw new Error('Fresh staging parent project did not match');
-  if (match.is_default !== false && match.isDefault !== false) throw new Error('Refusing a default branch');
-  if (match.persistent !== false) throw new Error('Fresh staging branch is unexpectedly persistent');
-  if (match.with_data !== false && match.withData !== false) throw new Error('Fresh staging branch unexpectedly includes parent data');
-  if ((match.status ?? match.database_status) !== 'ACTIVE_HEALTHY') throw new Error('Fresh staging branch is not ACTIVE_HEALTHY');
-  return {
-    id,
-    projectRef,
-    parentProjectRef: parentRef,
-    isDefault: false,
-    persistent: false,
-    withData: false,
-    status: 'ACTIVE_HEALTHY',
-  };
 }
 
 export function parseTap(raw) {
@@ -160,6 +129,17 @@ export function assertNegativeControl(raw) {
 }
 
 export function assertSuccessfulTap(raw) {
+  const text = String(raw).replaceAll('\\n', '\n');
+  if (/\bBail out!/i.test(text)) throw new Error('Hosted suite emitted a TAP bailout');
+  if (/\bok\s+\d+[^\r\n]*#\s*(?:SKIP|TODO)\b/i.test(text)) {
+    throw new Error('Hosted suite emitted a skipped or TODO assertion');
+  }
+  if (/(?:^|\n)\s*(?:---|\.\.\.)\s*(?:\n|$)/m.test(text)) {
+    throw new Error('Hosted suite emitted unexpected TAP diagnostics');
+  }
+  if (/(?:^|\n)\s*#\s+[^\r\n]+/m.test(text)) {
+    throw new Error('Hosted suite emitted an unexpected TAP diagnostic comment');
+  }
   const tap = parseTap(raw);
   const plan = assertOnePlan(tap);
   const numbers = tap.ok.map((x) => x.number).sort((a, b) => a - b);
@@ -243,7 +223,10 @@ export function assertPreflightState(state) {
   if (!state.config || Object.entries(expectedConfig).some(([key, value]) => state.config[key] !== value)) {
     throw new Error('Fresh staging limiter configuration did not match the accepted contract');
   }
-  if (!state.function_contract || Object.values(state.function_contract).some((value) => value !== true)) {
+  const functionKeys = ['clockless_flag', 'clocked_flag', 'purge', 'purge_at'];
+  if (!state.function_contract
+      || Object.keys(state.function_contract).sort().join(',') !== [...functionKeys].sort().join(',')
+      || functionKeys.some((key) => state.function_contract[key] !== true)) {
     throw new Error('Fresh staging function contract did not match');
   }
   return true;
@@ -320,6 +303,20 @@ export function assertArtifactSnapshot(expected, root = ROOT) {
   return actual;
 }
 
+export function assertReviewedArtifacts(reviewedSha, root = ROOT) {
+  validateReviewedSha(reviewedSha);
+  const ancestry = command('git', ['merge-base', '--is-ancestor', reviewedSha, 'HEAD'], { cwd: root });
+  if (ancestry.status !== 0) throw new Error('HEAD does not descend from the independently reviewed SHA');
+  const actual = artifactSnapshot(root);
+  for (const relative of Object.keys(actual)) {
+    const reviewed = command('git', ['show', `${reviewedSha}:${relative}`], { cwd: root });
+    if (reviewed.status !== 0) throw new Error(`Reviewed SHA does not contain hosted artifact: ${relative}`);
+    const reviewedHash = createHash('sha256').update(reviewed.stdout).digest('hex');
+    if (actual[relative] !== reviewedHash) throw new Error(`Hosted artifact differs from reviewed SHA: ${relative}`);
+  }
+  return actual;
+}
+
 function command(bin, args, options = {}) {
   const result = spawnSync(bin, args, {
     cwd: ROOT,
@@ -332,6 +329,16 @@ function command(bin, args, options = {}) {
   return { status: result.status ?? 1, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
 }
 
+export function assertAllowedStderr(stderr) {
+  const remaining = String(stderr)
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .filter((line) => !/^A new version of Supabase CLI is available: v\d+\.\d+\.\d+ \(currently installed v\d+\.\d+\.\d+\)$/.test(line))
+    .filter((line) => !/^We recommend updating regularly for new features and bug fixes: https:\/\/supabase\.com\/docs\/guides\/cli\/getting-started#updating-the-supabase-cli$/.test(line));
+  if (remaining.length) throw new Error('Supabase CLI emitted unexpected stderr');
+  return true;
+}
+
 function successfulCommand(bin, args, label) {
   const result = command(bin, args);
   if (result.status !== 0) throw new Error(`${label} failed with exit ${result.status}`);
@@ -342,7 +349,7 @@ function git(...args) {
   return successfulCommand('git', args, `git ${args[0]}`).stdout.trim();
 }
 
-function verifyLocalSource() {
+function verifyLocalSource(reviewedSha) {
   if (git('status', '--porcelain=v1')) throw new Error('Working tree must be clean before hosted execution');
   const ancestry = command('git', ['merge-base', '--is-ancestor', ACCEPTED_INTEGRATION_SHA, 'HEAD']);
   if (ancestry.status !== 0) throw new Error('HEAD does not descend from the accepted integration SHA');
@@ -350,7 +357,15 @@ function verifyLocalSource() {
     const actual = sha256File(path.join(ROOT, relative));
     if (actual !== expected) throw new Error(`Accepted limiter artifact bytes changed: ${relative}`);
   }
+  assertReviewedArtifacts(reviewedSha);
   return { sha: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}') };
+}
+
+function redactDiagnostic(input) {
+  return String(input)
+    .replace(/(postgres(?:ql)?:\/\/[^:\s/]+:)[^@\s/]+@/gi, '$1[REDACTED]@')
+    .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, '[REDACTED JWT]')
+    .replace(/\bsb_secret_[A-Za-z0-9_-]{20,}\b/g, '[REDACTED KEY]');
 }
 
 function safeWrite(file, content) {
@@ -359,7 +374,7 @@ function safeWrite(file, content) {
 
 function writeRaw(receiptDir, name, result) {
   safeWrite(path.join(receiptDir, `${name}.stdout.txt`), result.stdout);
-  safeWrite(path.join(receiptDir, `${name}.stderr.txt`), result.stderr);
+  safeWrite(path.join(receiptDir, `${name}.stderr.txt`), redactDiagnostic(result.stderr));
 }
 
 function dbQuery(projectRef, relativeFile) {
@@ -372,15 +387,18 @@ function dbQuery(projectRef, relativeFile) {
 function main(argv) {
   const args = parseArgs(argv);
   validateTarget(args);
-  const source = verifyLocalSource();
-  const artifacts = artifactSnapshot();
+  validateReviewedSha(args.reviewedSha);
+  const source = verifyLocalSource(args.reviewedSha);
+  const artifacts = assertReviewedArtifacts(args.reviewedSha);
   if (fs.existsSync(args.receiptDir)) throw new Error(`Receipt directory already exists: ${args.receiptDir}`);
   fs.mkdirSync(args.receiptDir, { recursive: true, mode: 0o700 });
 
-  const branchRaw = successfulCommand('supabase', [
-    'branches', 'list', '--project-ref', PARENT_PROJECT_REF, '--output-format', 'json',
-  ], 'fresh staging branch verification');
-  const branch = verifyBranchMetadata(branchRaw.stdout);
+  const target = {
+    id: args.branchId,
+    projectRef: args.projectRef,
+    verification: 'explicit exact tokens plus accepted database ledger and contract',
+    productionContact: false,
+  };
 
   const raw = {};
   let result;
@@ -388,21 +406,28 @@ function main(argv) {
   try {
     result = executeProtocol({
       runState(label) {
+        assertReviewedArtifacts(args.reviewedSha);
         const response = dbQuery(args.projectRef, HOSTED_FILES.state);
         raw[label] = response;
         if (response.status !== 0) throw new Error(`${label} state query failed with exit ${response.status}`);
+        assertAllowedStderr(response.stderr);
+        assertReviewedArtifacts(args.reviewedSha);
         return { ...response, state: extractState(response.stdout) };
       },
       runNegative() {
         assertArtifactSnapshot(artifacts);
+        assertReviewedArtifacts(args.reviewedSha);
         const response = dbQuery(args.projectRef, HOSTED_FILES.negative);
         raw.negative = response;
+        assertAllowedStderr(response.stderr);
         return response;
       },
       runSuite() {
         assertArtifactSnapshot(artifacts);
+        assertReviewedArtifacts(args.reviewedSha);
         const response = dbQuery(args.projectRef, HOSTED_FILES.suite);
         raw.suite = response;
+        assertAllowedStderr(response.stderr);
         return response;
       },
     });
@@ -417,8 +442,9 @@ function main(argv) {
     runUnit: 'FDA028_HOSTED_HARNESS_REPAIR',
     generatedAtUtc: new Date().toISOString(),
     status: failure ? 'HOLD' : 'PASS',
-    target: branch,
+    target,
     source,
+    reviewedSha: args.reviewedSha,
     acceptedIntegrationSha: ACCEPTED_INTEGRATION_SHA,
     expectedLedger: EXPECTED_LEDGER,
     artifactSha256: artifacts,
@@ -436,6 +462,7 @@ function main(argv) {
       'node', 'scripts/run-fda028-hosted.mjs',
       '--project-ref', EXPECTED_PROJECT_REF,
       '--branch-id', EXPECTED_BRANCH_ID,
+      '--reviewed-sha', args.reviewedSha,
       '--receipt-dir', args.receiptDir,
     ],
   };

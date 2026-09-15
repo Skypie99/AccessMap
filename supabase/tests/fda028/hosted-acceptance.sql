@@ -24,18 +24,23 @@ CREATE TEMP TABLE fda028_harness_probe (
 );
 
 DO $probe$
+DECLARE v_constraint text;
 BEGIN
   BEGIN
     INSERT INTO public.flags (lat, lng, category, severity, description, photo_url, status)
     VALUES (49.2827, -123.1207, 'ramp', 3, 'fda028-invalid-category-control', NULL, 'open');
     INSERT INTO fda028_harness_probe VALUES ('invalid-category-rejected', false);
   EXCEPTION WHEN check_violation THEN
-    INSERT INTO fda028_harness_probe VALUES ('invalid-category-rejected', true);
+    GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+    INSERT INTO fda028_harness_probe VALUES (
+      'invalid-category-rejected',
+      v_constraint = 'flags_category_check'
+    );
   END;
 END
 $probe$;
 
-SELECT plan(38);
+SELECT plan(39);
 
 SELECT ok(
   EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pgtap'),
@@ -302,6 +307,26 @@ SELECT is(
   (SELECT count(*)::bigint FROM limiter.grant),
   0::bigint,
   'timing: purge cascades the old grant'
+);
+
+GRANT INSERT ON fda028_harness_result TO service_role;
+SET LOCAL ROLE service_role;
+INSERT INTO fda028_harness_result
+SELECT 10, a.decision, a.out_grant, a.remaining, a.flag_id
+FROM limiter.admit_guest_flag(
+  '203.0.113.245', NULL, 49.2827, -123.1207,
+  'no_ramp', 3, 'fda028-hosted-service-role'
+) a;
+RESET ROLE;
+SELECT ok(
+  (SELECT decision = 'ADMITTED' AND flag_id IS NOT NULL
+   FROM fda028_harness_result WHERE step = 10)
+  AND EXISTS (
+    SELECT 1 FROM public.flags f
+    JOIN fda028_harness_result r ON r.flag_id = f.id
+    WHERE r.step = 10 AND f.description = 'fda028-hosted-service-role'
+  ),
+  'runtime: service_role executes the clockless entry point and writes its real flag row'
 );
 
 UPDATE limiter.config SET enabled = false WHERE id;

@@ -1,18 +1,22 @@
 /** FDA-028 hosted harness: target refusal, TAP accounting, and cleanup protocol. */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   assertNegativeControl,
+  assertAllowedStderr,
   assertPreflightState,
+  assertReviewedArtifacts,
   assertSuccessfulTap,
   executeProtocol,
   extractState,
   parseArgs,
+  validateReviewedSha,
   validateTarget,
-  verifyBranchMetadata,
 } from '../run-fda028-hosted.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -99,24 +103,44 @@ test('requires one explicit value for each runner argument', () => {
     () => parseArgs(['--project-ref', fresh, '--project-ref', fresh, '--branch-id', branch, '--receipt-dir', 'x']),
     /Duplicate/,
   );
+  assert.throws(
+    () => parseArgs(['--project-ref', fresh, '--branch-id', branch, '--receipt-dir', 'x']),
+    /reviewed-sha/,
+  );
+  assert.equal(validateReviewedSha('a'.repeat(40)), true);
+  assert.throws(() => validateReviewedSha('HEAD'), /canonical token/);
 });
 
-test('requires healthy non-default branch metadata with exact parentage', () => {
-  const metadata = [{
-    id: branch,
-    project_ref: fresh,
-    parent_project_ref: 'kldlwszpfkdmsjrjhjym',
-    is_default: false,
-    persistent: false,
-    with_data: false,
-    status: 'ACTIVE_HEALTHY',
-  }];
-  assert.equal(verifyBranchMetadata(JSON.stringify(metadata)).projectRef, fresh);
-  assert.throws(() => verifyBranchMetadata(JSON.stringify([{ ...metadata[0], is_default: true }])), /default branch/);
-  assert.throws(
-    () => verifyBranchMetadata(JSON.stringify([{ ...metadata[0], parent_project_ref: 'wrong' }])),
-    /parent project/,
-  );
+test('binds every executable hosted artifact to the reviewed Git commit', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fda028-reviewed-'));
+  try {
+    for (const relative of [
+      'supabase/tests/fda028/hosted-state.sql',
+      'supabase/tests/fda028/hosted-negative-control.sql',
+      'supabase/tests/fda028/hosted-acceptance.sql',
+      'scripts/run-fda028-hosted.mjs',
+    ]) {
+      const full = path.join(dir, relative);
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, `${relative}\n`);
+    }
+    execFileSync('git', ['init', '-q'], { cwd: dir });
+    execFileSync('git', ['config', 'user.email', 'fda028@example.invalid'], { cwd: dir });
+    execFileSync('git', ['config', 'user.name', 'FDA028 Test'], { cwd: dir });
+    execFileSync('git', ['add', '.'], { cwd: dir });
+    execFileSync('git', ['commit', '-qm', 'reviewed'], { cwd: dir });
+    const reviewed = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
+    assert.deepEqual(Object.keys(assertReviewedArtifacts(reviewed, dir)).sort(), [
+      'scripts/run-fda028-hosted.mjs',
+      'supabase/tests/fda028/hosted-acceptance.sql',
+      'supabase/tests/fda028/hosted-negative-control.sql',
+      'supabase/tests/fda028/hosted-state.sql',
+    ]);
+    fs.appendFileSync(path.join(dir, 'supabase/tests/fda028/hosted-acceptance.sql'), '-- changed\n');
+    assert.throws(() => assertReviewedArtifacts(reviewed, dir), /differs from reviewed SHA/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('accepts a complete ordered TAP plan', () => {
@@ -142,6 +166,23 @@ test('rejects TAP failures, omissions, and duplicate numbering', () => {
   assert.throws(() => assertSuccessfulTap('1..2\nok 1 - one\nok 1 - duplicate\n'), /accounting mismatch/);
 });
 
+test('rejects skipped, TODO, bailout, and diagnostic TAP paths', () => {
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - skipped # SKIP unavailable\n'), /skipped or TODO/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - later # TODO repair\n'), /skipped or TODO/);
+  assert.throws(() => assertSuccessfulTap('1..1\nBail out! unavailable\n'), /bailout/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - one\n  ---\n  message: bad\n  ...\n'), /diagnostics/);
+  assert.throws(() => assertSuccessfulTap('1..1\nok 1 - one\n# unexpected diagnostic\n'), /diagnostic comment/);
+});
+
+test('rejects unexpected CLI stderr and allows only the version notice', () => {
+  assert.equal(assertAllowedStderr(''), true);
+  assert.equal(assertAllowedStderr(
+    'A new version of Supabase CLI is available: v2.117.0 (currently installed v2.116.0)\n' +
+    'We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli\n',
+  ), true);
+  assert.throws(() => assertAllowedStderr('warning: query partially failed\n'), /unexpected stderr/);
+});
+
 test('requires the exact deliberate negative control', () => {
   assert.deepEqual(
     assertNegativeControl('1..1\nnot ok 1 - FDA028 deliberate runner negative control\n'),
@@ -155,6 +196,7 @@ test('extracts and validates nested Supabase state output', () => {
   const raw = JSON.stringify([{ fda028_state: state }]);
   assert.deepEqual(extractState(raw), state);
   assert.equal(assertPreflightState(state), true);
+  assert.throws(() => assertPreflightState({ ...state, function_contract: {} }), /function contract/);
 });
 
 test('verifies cleanup after a passing suite', () => {
@@ -194,6 +236,7 @@ test('legacy ramp appears only in a caught invalid-value control', () => {
   const suite = fs.readFileSync(path.join(root, 'supabase/tests/fda028/hosted-acceptance.sql'), 'utf8');
   assert.equal((suite.match(/'ramp'/g) ?? []).length, 1);
   assert.match(suite, /EXCEPTION WHEN check_violation/);
+  assert.match(suite, /v_constraint = 'flags_category_check'/);
 });
 
 test('hosted SQL does not write fixture key material or create helpers', () => {
@@ -216,8 +259,14 @@ test('hosted SQL plan equals its per-assertion evidence', () => {
   const suite = fs.readFileSync(path.join(root, 'supabase/tests/fda028/hosted-acceptance.sql'), 'utf8');
   const planned = Number(/SELECT plan\((\d+)\)/.exec(suite)?.[1]);
   const assertions = (suite.match(/^SELECT\s+(?:ok|is|isnt|throws_ok)\s*\(/gim) ?? []).length;
-  assert.equal(planned, 38);
+  assert.equal(planned, 39);
   assert.equal(assertions, planned);
+});
+
+test('hosted SQL executes the public clockless path under service_role', () => {
+  const suite = fs.readFileSync(path.join(root, 'supabase/tests/fda028/hosted-acceptance.sql'), 'utf8');
+  assert.match(suite, /SET LOCAL ROLE service_role;[\s\S]*limiter\.admit_guest_flag\(/);
+  assert.match(suite, /RESET ROLE;[\s\S]*runtime: service_role executes the clockless entry point/);
 });
 
 test('state proof records Vault shape without returning secret material', () => {
