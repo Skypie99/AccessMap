@@ -1,0 +1,21 @@
+{
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "readOnly": true,
+  "captureTiming": "Immediately before the apply during final pre-mutation reconciliation.",
+  "rawWrapperRetained": false,
+  "limitation": "The raw pre-apply wrapper was replaced while correcting the catalog-query selection. These returned aggregate values were preserved from the tool result and are corroborated by the earlier retained production preflight capture.",
+  "counts": {
+    "users": 5,
+    "flags": 21,
+    "feedback": 6,
+    "flag_comments": 3,
+    "flag_photos": 1,
+    "point_events": 63,
+    "flag_status_history": 37,
+    "flag_edit_history": 0,
+    "flag_verifications": 0,
+    "comment_votes": 0,
+    "storage_objects": 9,
+    "queued_http": 0
+  }
+}

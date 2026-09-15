@@ -6,7 +6,7 @@
     "head": "22e1db5aa7e58d7129551cb1325f921b37f95105",
     "tree": "657f1b6ce01d3fdbb27102b5aa33616c918feade"
   },
-  "runningCheckpointCommit": "f091f6f2db5bf46a3350f4e511aeb425dd172e8f",
+  "runningCheckpointCommit": "f091f6fc6cb055d5b5449e147bd7f2a490bb7826",
   "command": [
     "supabase",
     "db",

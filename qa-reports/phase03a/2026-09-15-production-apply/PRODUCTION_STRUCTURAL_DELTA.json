@@ -1,0 +1,66 @@
+{
+  "status": "PASS",
+  "scopeCaveat": "Only the schemas above are compared. Anything outside them is invisible to this tool by design.",
+  "productionChecksum": "32df23c33f37e4cdc54a2b2eb26b0d4901869c5ce1735688dbdc76938075a3ac",
+  "acceptedFreshStageChecksum": "1cb772c877a25b87f5e1870301e974a5d23e938e9ed412d2a57b8d9fa3dd45d3",
+  "comparatorV3DeltaSummary": {
+    "roles": {
+      "unchanged": true
+    },
+    "scope": {
+      "unchanged": true
+    },
+    "tables": {
+      "unchanged": true
+    },
+    "columns": {
+      "unchanged": true
+    },
+    "schemas": {
+      "unchanged": true
+    },
+    "policies": {
+      "unchanged": false,
+      "before": 47,
+      "after": 47,
+      "removed": 4,
+      "added": 4
+    },
+    "triggers": {
+      "unchanged": true
+    },
+    "functions": {
+      "unchanged": false,
+      "before": 28,
+      "after": 35,
+      "removed": 1,
+      "added": 8
+    },
+    "tableGrants": {
+      "unchanged": false,
+      "before": 434,
+      "after": 23,
+      "removed": 411,
+      "added": 0
+    },
+    "functionGrants": {
+      "unchanged": false,
+      "before": 49,
+      "after": 12,
+      "removed": 44,
+      "added": 7
+    },
+    "comparatorVersion": {
+      "unchanged": true
+    }
+  },
+  "adjudication": "After removing only the seven inherited production backup relations named bk_2026_08_22_* and their 48 columns, the normalized post-apply production catalog exactly equals the independently accepted fresh-stage Stage A catalog across public, private, storage, and limiter.",
+  "checks": {
+    "captured_four_schemas": true,
+    "only_known_inherited_backup_relations_differ": true,
+    "production_only_backup_relation_count": true,
+    "production_only_backup_column_count": true,
+    "stage_only_structural_items_absent": true
+  },
+  "expectedEffectsReference": "qa-reports/phase03a/2026-09-15-production-prerequisite-repairs/PENDING_MIGRATION_PLAN_REPREFLIGHT.json entries[].expectedCatalogEffect"
+}

@@ -1,0 +1,162 @@
+{
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "readOnly": true,
+  "applicationRowsRead": false,
+  "limiterFunctionsInvoked": false,
+  "webhookInvoked": false,
+  "result": [
+    {
+      "verification": {
+        "config": {
+          "catchup_cap": 32,
+          "ipv4_prefix": 32,
+          "ipv6_prefix": 64,
+          "window_seconds": 86400,
+          "reseed_interval": 7,
+          "bucket_allowance": 50,
+          "normal_allowance": 5,
+          "retention_windows": 1
+        },
+        "mf03_rows": 1,
+        "mf04_rows": 1,
+        "config_exact": true,
+        "stage_b_absent": true,
+        "captured_at_utc": "2026-09-15T07:20:49.846Z",
+        "config_row_count": 1,
+        "mf03_shape_valid": true,
+        "mf04_shape_valid": true,
+        "limiter_functions": [
+          {
+            "args": "p_source_raw text, p_grant uuid, p_now timestamp with time zone",
+            "name": "admit_at"
+          },
+          {
+            "args": "p_source_raw text, p_grant uuid, p_category text, p_body text, p_platform text",
+            "name": "admit_guest_feedback"
+          },
+          {
+            "args": "p_source_raw text, p_grant uuid, p_category text, p_body text, p_platform text, p_now timestamp with time zone",
+            "name": "admit_guest_feedback_at"
+          },
+          {
+            "args": "p_source_raw text, p_grant uuid, p_lat double precision, p_lng double precision, p_category text, p_severity integer, p_description text",
+            "name": "admit_guest_flag"
+          },
+          {
+            "args": "p_source_raw text, p_grant uuid, p_lat double precision, p_lng double precision, p_category text, p_severity integer, p_description text, p_now timestamp with time zone",
+            "name": "admit_guest_flag_at"
+          },
+          {
+            "args": "p_now timestamp with time zone",
+            "name": "current_epoch_key"
+          },
+          {
+            "args": "p_epoch_key bytea, p_prefix text",
+            "name": "derive_bucket_key"
+          },
+          {
+            "args": "",
+            "name": "domain_lock_key"
+          },
+          {
+            "args": "p_addr inet",
+            "name": "embedded_ipv4"
+          },
+          {
+            "args": "",
+            "name": "guard_window_domain"
+          },
+          {
+            "args": "p_addr inet",
+            "name": "ipv6_hex"
+          },
+          {
+            "args": "p_addr inet",
+            "name": "is_public_unicast"
+          },
+          {
+            "args": "p_raw text",
+            "name": "normalize_source"
+          },
+          {
+            "args": "",
+            "name": "purge"
+          },
+          {
+            "args": "p_now timestamp with time zone",
+            "name": "purge_at"
+          },
+          {
+            "args": "p_key bytea, p_next_epoch bigint",
+            "name": "ratchet"
+          },
+          {
+            "args": "",
+            "name": "read_epoch_key"
+          },
+          {
+            "args": "p_addr inet, p_plen integer",
+            "name": "rfc6052_ipv4"
+          },
+          {
+            "args": "p_at timestamp with time zone, p_window_seconds integer",
+            "name": "window_of"
+          },
+          {
+            "args": "p_key bytea",
+            "name": "write_epoch_key"
+          }
+        ],
+        "limiter_row_counts": {
+          "grant": 0,
+          "bucket": 0,
+          "config": 1,
+          "key_state": 1,
+          "translation_prefix": 4
+        },
+        "transaction_read_only": "on",
+        "limiter_function_count": 20,
+        "dev_key_material_absent": true,
+        "limiter_service_execute": [
+          {
+            "args": "p_source_raw text, p_grant uuid, p_category text, p_body text, p_platform text",
+            "name": "admit_guest_feedback"
+          },
+          {
+            "args": "p_source_raw text, p_grant uuid, p_lat double precision, p_lng double precision, p_category text, p_severity integer, p_description text",
+            "name": "admit_guest_flag"
+          },
+          {
+            "args": "",
+            "name": "purge"
+          }
+        ],
+        "recovery_versions_absent": true,
+        "build33_functions_present": true,
+        "limiter_relation_presence": {
+          "grant": true,
+          "bucket": true,
+          "config": true,
+          "key_state": true,
+          "translation_prefix": true
+        },
+        "webhook_references_secret": true,
+        "helper_test_residue_absent": true,
+        "limiter_schema_grants_exact": true,
+        "webhook_references_endpoint": true,
+        "limiter_client_execute_count": 0,
+        "stagea_anon_select_contracts": true,
+        "webhook_hardcoded_url_absent": false,
+        "build33_authenticated_execute": true,
+        "build33_users_is_admin_select": true,
+        "webhook_client_execute_revoked": true,
+        "guard_window_domain_trigger_enabled": true
+      }
+    }
+  ],
+  "interpretation": {
+    "webhookHardcodedUrlRegexFalsePositive": "The broad check matched the in-body explanatory text and validation regex. Exact structural equality with the accepted fresh-stage function is adjudicated separately.",
+    "secretValuesReturned": false,
+    "endpointValueReturned": false
+  }
+}

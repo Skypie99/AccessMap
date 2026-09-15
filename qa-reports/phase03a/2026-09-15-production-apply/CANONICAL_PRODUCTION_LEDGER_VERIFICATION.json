@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "readOnly": true,
+  "beforeCount": 71,
+  "afterCount": 85,
+  "afterLatestVersion": "20260911120000",
+  "afterOrderedSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+  "actualAppliedMigrations": [
+    "20260904000000",
+    "20260904000100",
+    "20260904000200",
+    "20260904000300",
+    "20260904000400",
+    "20260905055629",
+    "20260905055630",
+    "20260905055632",
+    "20260905055633",
+    "20260905055635",
+    "20260905055636",
+    "20260905073925",
+    "20260909120000",
+    "20260911120000"
+  ],
+  "checks": {
+    "before_count_71": true,
+    "after_count_85": true,
+    "expected_post_exact": true,
+    "ordered_sha256_exact": true,
+    "authorized_new_set_order_exact": true,
+    "authorized_each_once": true,
+    "stage_b_absent": true,
+    "recovery_absent": true,
+    "phantom_or_unauthorized_new_absent": true,
+    "wall_clock_substitution_absent": true
+  }
+}
