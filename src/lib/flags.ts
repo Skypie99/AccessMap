@@ -6,7 +6,13 @@ import { trackEvent } from './analytics';
 import { containsBlockedTerm } from '@/moderation/blockedTerms';
 import { CONTENT_BLOCKED_MESSAGE } from './copy';
 import { isColumnMissing, isFunctionMissing } from './postgrestErrors';
-import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
+import type {
+  FlagCategory,
+  FlagRow,
+  FlagSeverity,
+  FlagStatus,
+  ModerationReasonCode,
+} from '@/types/database';
 import { STORAGE_PUBLIC_PREFIX } from '@/lib/remoteImageUrl';
 
 export const FLAG_PHOTOS_BUCKET = 'flag-photos';
@@ -1369,33 +1375,78 @@ export class FlagStatusConflictError extends Error {
   }
 }
 
+export type FlagStatusTransitionOptions = {
+  moderationReason?: ModerationReasonCode;
+  reportId?: string;
+};
+
+const REJECT_REASON_CODES: ReadonlySet<ModerationReasonCode> = new Set([
+  'duplicate',
+  'not_accessibility_barrier',
+  'inaccurate',
+  'abusive_or_spam',
+  'other',
+]);
+
+const RESTORE_REASON_CODES: ReadonlySet<ModerationReasonCode> = new Set([
+  'moderator_error',
+  'new_evidence',
+  'corrected_report',
+  'other',
+]);
+
 export async function updateFlagStatus(
   flagId: string,
   status: FlagStatus,
-  expectedCurrent?: FlagStatus,
+  expectedCurrent: FlagStatus,
+  options: FlagStatusTransitionOptions = {},
 ) {
-  // F53 (re-sweep): the update was a blind last-write-wins — a user acting on
-  // a stale snapshot (the detail modal/list can sit unrefreshed for minutes)
-  // silently reverted another user's resolution (resolved -> verified) while
-  // being told '+points' the trigger never awarded. When the caller passes the
-  // status it believes the flag has, the write only commits if that is still
-  // true; otherwise (status moved, or flag deleted) it throws a typed
-  // conflict the caller can render honestly. A deleted flag also no longer
-  // surfaces .single()'s raw PGRST116 coercion message.
-  let query = supabase.from('flags').update({ status }).eq('id', flagId);
-  if (expectedCurrent !== undefined) {
-    query = query.eq('status', expectedCurrent);
+  // Phase 03B: status is no longer client-writable through the flags table.
+  // Every transition goes through one server-owned compare-and-set RPC, which
+  // independently enforces authorization and moderation invariants.
+  if (
+    status === 'rejected' &&
+    (!options.moderationReason || !REJECT_REASON_CODES.has(options.moderationReason))
+  ) {
+    throw new Error('Choose an approved reason before rejecting this report.');
   }
-  const { data, error } = await query.select().maybeSingle();
-  if (error) throw error;
-  if (!data) throw new FlagStatusConflictError();
+  if (
+    expectedCurrent === 'rejected' &&
+    status === 'open' &&
+    (!options.moderationReason || !RESTORE_REASON_CODES.has(options.moderationReason))
+  ) {
+    throw new Error('Choose an approved reason before restoring this report.');
+  }
+
+  const { data, error } = await supabase.rpc('transition_flag_status', {
+    p_flag_id: flagId,
+    p_expected_status: expectedCurrent,
+    p_new_status: status,
+    p_moderation_reason: options.moderationReason ?? null,
+    p_report_id: options.reportId ?? null,
+  });
+  if (error) {
+    // The RPC deliberately reports stale/deleted CAS targets as a conflict.
+    // Keep the existing typed client error so every caller retains its honest
+    // refresh path instead of leaking a raw Postgres message.
+    if (
+      error.code === '40001' ||
+      error.code === 'P0002' ||
+      (error.code === 'P0001' && /changed|conflict|stale/i.test(error.message ?? ''))
+    ) {
+      throw new FlagStatusConflictError();
+    }
+    throw error;
+  }
+  const updated = Array.isArray(data) ? data[0] : data;
+  if (!updated) throw new FlagStatusConflictError();
 
   // Analytics chokepoint: every status change flows through here, so this is
   // the one place to instrument it. We log only the destination status +
   // platform — never the flag_id or user_id. See src/lib/analytics.ts.
   trackEvent('flag_status_updated', { to_status: status, platform: Platform.OS });
 
-  return data as FlagRow;
+  return updated as FlagRow;
 }
 
 /**

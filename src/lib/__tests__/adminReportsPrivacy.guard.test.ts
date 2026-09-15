@@ -6,7 +6,7 @@
  * selects `user_id` from `public.feedback` in the first place — the
  * reporter's identity never enters the client at all, so there is no
  * runtime value a render test could assert is hidden. The guarantee lives
- * in the SELECT column list and the RLS policy scope, and this pins both.
+ * in the RPC return contract and the RLS policy scope, and this pins both.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -17,21 +17,22 @@ const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
 describe('MOD1 — the admin report queue never reads reporter identity', () => {
   const lib = read('src/lib/adminReports.ts');
 
-  it('REPORT_SELECT never lists user_id (or any *_id belonging to the reporter)', () => {
-    const selectLine = lib.match(/const REPORT_SELECT = '([^']+)';/);
-    expect(selectLine).toBeTruthy();
-    const columns = (selectLine as RegExpMatchArray)[1].split(',').map((c) => c.trim());
-    expect(columns).not.toContain('user_id');
-    // Exactly the columns this feature needs — a stray `select('*')` would
-    // pull user_id back in without this test's other assertion noticing.
-    expect(columns).toEqual([
+  it('uses the narrow moderation-list RPC and its client row shape excludes reporter identity', () => {
+    expect(lib).toContain("supabase.rpc('list_open_moderation_reports'");
+    expect(lib).not.toMatch(/\.from\(['"]feedback['"]\)/);
+
+    const rowShape = lib.match(/type FeedbackReportColumns = \{([\s\S]*?)\n\};/);
+    expect(rowShape).toBeTruthy();
+    expect((rowShape as RegExpMatchArray)[1]).not.toMatch(/\buser_id\b/);
+    for (const field of [
       'id',
       'created_at',
       'body',
       'moderation_reviewed_at',
       'moderation_resolution',
-      'moderation_action_intent',
-    ]);
+    ]) {
+      expect((rowShape as RegExpMatchArray)[1]).toContain(`${field}:`);
+    }
   });
 
   it('no code path in this file references feedback.user_id', () => {

@@ -54,6 +54,9 @@ export type FlagRow = {
   // (applied to live 2026-08-19). ≤200 chars, enforced client + DB check.
   photo_alt?: string | null;
   status: FlagStatus;
+  // Phase 03B: public-safe reason code for the most recent reject/restore.
+  // Readable for notification rendering; status writes remain RPC-only.
+  last_moderation_reason_code?: ModerationReasonCode | null;
   created_at: string;
   // Optional until supabase/migrations/2026-05-23_data_layer_hardening.sql
   // is applied. After that migration runs, every row has updated_at set
@@ -104,6 +107,25 @@ export type ModerationResolution =
   | 'flag_removed'
   | 'comment_removed'
   | 'target_unavailable';
+
+// Phase 03B — owner-approved, public-safe moderation reasons. These are the
+// only values the client may send to the server-owned transition/report RPCs.
+// Internal moderator notes are deliberately not part of this vocabulary and
+// therefore cannot leak into reporter notifications.
+export type RejectReasonCode =
+  | 'duplicate'
+  | 'not_accessibility_barrier'
+  | 'inaccurate'
+  | 'abusive_or_spam'
+  | 'other';
+
+export type RestoreReasonCode =
+  | 'moderator_error'
+  | 'new_evidence'
+  | 'corrected_report'
+  | 'other';
+
+export type ModerationReasonCode = RejectReasonCode | RestoreReasonCode;
 
 // MOD1R FIX2 — mirrors the CHECK constraint's vocabulary in
 // supabase/migrations/20260828080000_mod1r_fix2_action_intent.sql. Written
@@ -174,14 +196,19 @@ export type Database = {
     Tables: {
       flags: {
         Row: FlagRow;
-        Insert: Omit<FlagRow, 'id' | 'created_at' | 'status' | 'user_id'> & {
+        Insert: Omit<
+          FlagRow,
+          'id' | 'created_at' | 'status' | 'user_id' | 'last_moderation_reason_code'
+        > & {
           id?: string;
           created_at?: string;
           status?: FlagStatus;
           // Optional: omit for anon inserts (Postgres stores NULL); provide for auth inserts.
           user_id?: string | null;
         };
-        Update: Partial<FlagRow>;
+        // Status and moderation reason are server-owned through
+        // transition_flag_status; no typed direct-write path is exposed.
+        Update: Partial<Omit<FlagRow, 'status' | 'last_moderation_reason_code'>>;
         Relationships: EmptyRelationships;
       };
       users: {
@@ -473,6 +500,44 @@ export type Database = {
           p_flag_id: string;
         };
         Returns: number;
+      };
+      // Phase 03B: the only client status-write route. The server performs an
+      // atomic compare-and-set and independently enforces admin-only reject /
+      // restore authorization plus the approved reason vocabularies.
+      transition_flag_status: {
+        Args: {
+          p_flag_id: string;
+          p_expected_status: FlagStatus;
+          p_new_status: FlagStatus;
+          p_moderation_reason: ModerationReasonCode | null;
+          p_report_id: string | null;
+        };
+        Returns: FlagRow[];
+      };
+      // Phase 03B: one transaction owns both the report decision and any
+      // associated content mutation. Actor identity is derived from auth.uid()
+      // by the server; the client never supplies it.
+      moderate_report: {
+        Args: {
+          p_report_id: string;
+          p_resolution: ModerationResolution;
+          p_expected_flag_status: FlagStatus | null;
+          p_moderation_reason: RejectReasonCode | null;
+        };
+        Returns: Record<string, unknown>;
+      };
+      // Phase 03B capability gate. This RPC returns only report-shaped rows to
+      // authorized admins and avoids selecting optional columns directly.
+      list_open_moderation_reports: {
+        Args: { p_limit: number };
+        Returns: {
+          id: string;
+          created_at: string;
+          body: string;
+          moderation_reviewed_at: string | null;
+          moderation_resolution: ModerationResolution | null;
+          moderation_action_intent: ContentActionIntent | null;
+        }[];
       };
       // D1F4: server-owned canonical-photo lifecycle. The RPC derives the
       // uploader from auth.uid(); the client never supplies a subject/key.

@@ -121,7 +121,7 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
     expect(acct.finding).toBe('FDA-003');
   });
 
-  it('FDA-004 — the moderation queue selects columns feedback does not have', () => {
+  it('FDA-004 — the candidate queue fails closed before touching absent columns', () => {
     const mod = surfaces.find((s) => s.surface === 'moderation-queue')!;
     expect(Object.keys(deployed.columns.absent)).toEqual(
       expect.arrayContaining([
@@ -130,7 +130,17 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
         'feedback.moderation_action_intent',
       ]),
     );
-    expect(mod.callSites[0].onAbsent).toBe('hard');
+    expect(mod.callSites.map((site) => site.kind)).toEqual(['rpc', 'rpc']);
+    expect(mod.callSites[0]).toMatchObject({
+      name: 'list_open_moderation_reports',
+      onAbsent: 'fail_closed',
+      deployed: false,
+    });
+    expect(mod.callSites[1]).toMatchObject({
+      name: 'moderate_report',
+      onAbsent: 'unreachable',
+      deployed: false,
+    });
     expect(mod.finding).toBe('FDA-004');
   });
 });

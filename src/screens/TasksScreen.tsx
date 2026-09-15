@@ -65,7 +65,7 @@ import {
 import { loadScope, saveScope } from '@/lib/tasksScope';
 import { addWatchedBulk } from '@/lib/watchedFlags';
 import { track } from '@/lib/analytics';
-import type { FlagCategory, FlagRow, FlagStatus } from '@/types/database';
+import type { FlagCategory, FlagRow, FlagStatus, ModerationReasonCode } from '@/types/database';
 import type { RootTabParamList } from '@/navigation/RootNavigator';
 import type { DetailAction } from '@/components/FlagDetailModal';
 import PhotoLightboxModal from '@/components/PhotoLightboxModal';
@@ -89,6 +89,7 @@ import { useDrawer, useDrawerTrigger } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { safeImageUrl } from '@/lib/remoteImageUrl';
+import { ModerationReasonPicker } from '@/components/ModerationReasonPicker';
 
 // Code-split: the flag-detail sheet only opens when a card is tapped. React.lazy
 // moves its (large) code into a shared async web chunk — the SAME chunk is reused
@@ -376,6 +377,10 @@ export default function TasksScreen() {
   }, [displayFlags, userLocation]);
 
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingReject, setPendingReject] = useState<{
+    id: string;
+    isOwn: boolean;
+  } | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   // Flash tone: 'success' = the green "+points" reward pill (default, every
   // existing caller). 'muted' = a neutral dark pill for non-reward notices
@@ -585,6 +590,7 @@ export default function TasksScreen() {
           try {
             // F53: CAS on the status the list showed for this row.
             const fromStatus = flagsMap.get(id)?.status;
+            if (!fromStatus) throw new FlagStatusConflictError();
             const updated = await updateFlagStatus(id, targetStatus, fromStatus);
             // COR-4: log the PRE-CAS status — after a successful CAS,
             // updated.status === targetStatus is always true, so the old
@@ -702,11 +708,9 @@ export default function TasksScreen() {
     [flagsError],
   );
 
-  // Trigger lives in supabase/schema.sql (handle_flag_status_change, ~line 75).
-  // Reporter ALWAYS gets the reporter bonus (10 verify / 15 resolve).
-  // Actor gets the actor bonus (3 verify / 7 resolve) ONLY when actor != reporter.
-  // So if you triage your own flag, you earn the reporter bonus only — keep this
-  // mapping in sync with the trigger if the values ever change.
+  // Phase 03B points semantics: owners may still verify/resolve their own
+  // reports, but those self-actions award zero points. A different actor keeps
+  // the actor reward shown below; server claims make each milestone one-time.
   const applyStatusChange = useCallback(
     (updated: FlagRow, action: DetailAction, isOwn: boolean) => {
       // T4 (F1-08): the commit landed — a medium impact for committing real
@@ -739,14 +743,14 @@ export default function TasksScreen() {
         showFlash('Flag restored');
       } else if (action === 'verify') {
         const msg = isOwn
-          ? `Verified! +${POINTS.reporter.verify} points`
+          ? 'Verified! No points awarded'
           : `Verified! +${POINTS.actor.verify} points`;
         // WCAG 4.1.3: showFlash announces (see its docblock) — single-card
         // triage through this path was once silent to SR.
         showFlash(msg);
       } else if (action === 'resolve') {
         const msg = isOwn
-          ? `Resolved! +${POINTS.reporter.resolve} points`
+          ? 'Resolved! No points awarded'
           : `Resolved! +${POINTS.actor.resolve} points`;
         showFlash(msg);
       }
@@ -760,36 +764,27 @@ export default function TasksScreen() {
     [refresh, patchFlag, removeFlag, showFlash],
   );
 
-  const setStatus = useCallback(
-    async (id: string, status: FlagStatus, isOwn: boolean) => {
-      // R-2 / SR-093, the second caller. Same defect as FlagDetailModal's: a
-      // guest tap fired a real, RLS-refused write to production and came back
-      // with the FALSE "This flag changed" notify below, because zero rows is
-      // indistinguishable from a concurrent edit. Stop before the write and say
-      // the true thing. Confirm gates are below this on purpose — there is no
-      // point asking a guest to confirm an action they cannot take.
-      if (!user) {
-        notify('Sign in required', 'Please sign in to verify or resolve flags.');
+  const commitStatus = useCallback(
+    async (
+      id: string,
+      status: FlagStatus,
+      isOwn: boolean,
+      moderationReason?: ModerationReasonCode,
+    ) => {
+      const currentStatus = flagsMap.get(id)?.status;
+      if (!currentStatus) {
+        notify('This flag changed', 'It is no longer available in this list. Refreshing.');
+        refresh().catch(() => {});
         return;
-      }
-      // Reject removes a report from the queue — confirm first, matching the
-      // destructive-confirm tier (bulk actions, FlagDetailModal Delete/Reject).
-      // confirm() is web-safe: window.confirm on web, Alert.alert on native.
-      if (status === 'rejected') {
-        const ok = await confirm(
-          'Reject this flag?',
-          'This marks the report as invalid or spam and removes it from your queue.',
-          'Reject',
-          true,
-        );
-        if (!ok) return;
       }
       setBusyId(id);
       try {
         // F53: CAS on the status the card showed — a stale card tap must not
         // silently overwrite a concurrent change (and the '+points' flash
         // only fires for transitions the trigger actually awards).
-        const updated = await updateFlagStatus(id, status, flagsMap.get(id)?.status);
+        const updated = await updateFlagStatus(id, status, currentStatus, {
+          moderationReason,
+        });
         const action: DetailAction =
           status === 'verified' ? 'verify' : status === 'resolved' ? 'resolve' : 'reject';
         applyStatusChange(updated, action, isOwn);
@@ -807,7 +802,40 @@ export default function TasksScreen() {
         setBusyId(null);
       }
     },
-    [applyStatusChange, flagsMap, refresh, user],
+    [applyStatusChange, flagsMap, refresh],
+  );
+
+  const setStatus = useCallback(
+    (id: string, status: FlagStatus, isOwn: boolean) => {
+      // Stop guests before any write or moderation prompt.
+      if (!user) {
+        notify('Sign in required', 'Please sign in to verify or resolve flags.');
+        return;
+      }
+      if (status === 'rejected') {
+        setPendingReject({ id, isOwn });
+        return;
+      }
+      void commitStatus(id, status, isOwn);
+    },
+    [commitStatus, user],
+  );
+
+  const handleRejectReason = useCallback(
+    async (reason: ModerationReasonCode) => {
+      const pending = pendingReject;
+      setPendingReject(null);
+      if (!pending) return;
+      const ok = await confirm(
+        'Reject this report?',
+        'It will be hidden from public views. The reporter will be notified. No points will change. An admin can restore it.',
+        'Reject',
+        true,
+      );
+      if (!ok) return;
+      await commitStatus(pending.id, 'rejected', pending.isOwn, reason);
+    },
+    [commitStatus, pendingReject],
   );
 
   const handleViewOnMap = useCallback(
@@ -954,6 +982,11 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.screen}>
+      <View
+        style={styles.screen}
+        accessibilityElementsHidden={pendingReject !== null}
+        importantForAccessibility={pendingReject !== null ? 'no-hide-descendants' : 'auto'}
+      >
       <ScreenStage />
       {/* The chrome — ONE absolute i=24 glass pane carrying the whole header
           zone (title, notices, select-entry, search, chips, sort). The list
@@ -1787,6 +1820,13 @@ export default function TasksScreen() {
           onSignInToReview={handleDetailSignInToReview}
         />
       </Suspense>
+      </View>
+      <ModerationReasonPicker
+        visible={pendingReject !== null}
+        action="reject"
+        onCancel={() => setPendingReject(null)}
+        onSelect={(reason) => void handleRejectReason(reason)}
+      />
     </View>
   );
 }

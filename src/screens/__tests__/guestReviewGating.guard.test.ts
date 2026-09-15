@@ -25,7 +25,7 @@ describe('guest review gating — presentation plus defense in depth', () => {
       detail.indexOf('const handleReject = async'),
     );
 
-    expect(ordered(taskHandler, 'if (!user)', 'updateFlagStatus(')).toBe(true);
+    expect(ordered(taskHandler, 'if (!user)', 'commitStatus(')).toBe(true);
     expect(ordered(detailHandler, 'if (!user)', 'updateFlagStatus(')).toBe(true);
   });
 

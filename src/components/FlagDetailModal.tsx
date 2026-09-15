@@ -87,7 +87,13 @@ import { addFlagPhoto, listFlagPhotos } from '@/lib/photos';
 import { MAX_COMMENT_LENGTH } from '@/lib/comments';
 import { useComments } from '@/hooks/useComments';
 import { getTier } from '@/lib/reputationTier';
-import type { FlagCategory, FlagRow, FlagSeverity, FlagStatus } from '@/types/database';
+import type {
+  FlagCategory,
+  FlagRow,
+  FlagSeverity,
+  FlagStatus,
+  ModerationReasonCode,
+} from '@/types/database';
 import PhotoGallery, { type GalleryPhoto } from './PhotoGallery';
 import StatusHistoryModal from './StatusHistoryModal';
 import ReportContentModal from './ReportContentModal';
@@ -109,6 +115,7 @@ import {
   REPORT_CONTROL_LABEL,
 } from '@/lib/copy';
 import { CommentBubble } from './CommentBubble';
+import { ModerationReasonPicker, type ModerationAction } from './ModerationReasonPicker';
 import {
   a11yToggle,
   decorativeProps,
@@ -130,8 +137,8 @@ interface Props {
   visible: boolean;
   flag: FlagRow | null;
   onClose: () => void;
-  // Called after the status changes succeed; isOwn lets the parent show the
-  // right "+points" flash banner (reporter vs. actor bonus).
+  // Called after the status changes succeed; isOwn lets the parent avoid a
+  // points claim for owner/self verification or resolution.
   onChanged: (updated: FlagRow, action: DetailAction, isOwn: boolean) => void;
   onDeleted: (deletedId: string) => void;
   // F58 (re-sweep): fired after a successful content edit (description /
@@ -207,6 +214,7 @@ export default function FlagDetailModal({
   // locally it presents from THIS modal's VC. See LegalSheets.tsx.
   const legal = useLegalSheets();
   const [busy, setBusy] = useState(false);
+  const [moderationAction, setModerationAction] = useState<ModerationAction | null>(null);
   // Pull-to-dismiss gates (map-gestures SPEC §2.6). `busy` mirrors the close
   // button's own disabled state; `keyboardVisible` covers the comment box at the
   // bottom of the body scroll. `atTop` is the dismiss-vs-scroll rule.
@@ -346,11 +354,13 @@ export default function FlagDetailModal({
     if (!visible) {
       setHistoryOpen(false);
       setReportTarget(null);
+      setModerationAction(null);
     }
   }, [visible]);
   useEffect(() => {
     setHistoryOpen(false);
     setReportTarget(null);
+    setModerationAction(null);
   }, [flag?.id]);
 
   // Reset reopen form state + the comment draft whenever the modal closes or a
@@ -847,7 +857,11 @@ export default function FlagDetailModal({
     }
   };
 
-  const runStatusChange = async (next: FlagStatus, action: DetailAction) => {
+  const runStatusChange = async (
+    next: FlagStatus,
+    action: DetailAction,
+    moderationReason?: ModerationReasonCode,
+  ) => {
     if (busy) return;
     // R-2 / SR-093. A GUEST could tap Verify/Resolve/Reject. The write left,
     // RLS refused it, PostgREST returned ZERO ROWS — and `updateFlagStatus`
@@ -869,7 +883,9 @@ export default function FlagDetailModal({
       // F53: compare-and-set against the status THIS modal is showing — a
       // stale snapshot must not silently overwrite a concurrent change
       // (e.g. reverting another user's resolution to 'verified').
-      const updated = await updateFlagStatus(shownFlag.id, next, shownFlag.status);
+      const updated = await updateFlagStatus(shownFlag.id, next, shownFlag.status, {
+        moderationReason,
+      });
       onChanged(updated, action, isOwn);
       // A11y: the modal closes on success (visual confirmation for sighted
       // users). Announce the outcome too so VoiceOver/TalkBack users hear it —
@@ -900,33 +916,31 @@ export default function FlagDetailModal({
     }
   };
 
-  // Reject is destructive (marks the report invalid + removes it from the
-  // queue), so gate it behind a confirm — same tier as Delete above and the
-  // Tasks card. confirm() is web-safe (window.confirm on web).
-  const handleReject = async () => {
+  const handleReject = () => {
     if (busy) return;
-    const ok = await confirm(
-      'Reject this flag?',
-      'This marks the report as invalid or spam and removes it from the queue.',
-      'Reject',
-      true,
-    );
-    if (!ok) return;
-    await runStatusChange('rejected', 'reject');
+    setModerationAction('reject');
   };
 
-  // MOD1 — moderator-error recovery. Not destructive (it puts the report BACK
-  // in front of the community, same tier as Verify/Resolve), so no `destructive`
-  // flag on the confirm.
-  const handleRestore = async () => {
+  const handleRestore = () => {
     if (busy) return;
+    setModerationAction('restore');
+  };
+
+  const handleModerationReason = async (reason: ModerationReasonCode) => {
+    const action = moderationAction;
+    setModerationAction(null);
+    if (!action) return;
+    const rejecting = action === 'reject';
     const ok = await confirm(
-      'Restore this flag?',
-      'This reopens the report so the community can review it again.',
-      'Restore',
+      rejecting ? 'Reject this report?' : 'Restore this report?',
+      rejecting
+        ? 'It will be hidden from public views. The reporter will be notified. No points will change. An admin can restore it.'
+        : 'It will return to public views. The reporter will be notified. No points will change.',
+      rejecting ? 'Reject' : 'Restore',
+      rejecting,
     );
     if (!ok) return;
-    await runStatusChange('open', 'restore');
+    await runStatusChange(rejecting ? 'rejected' : 'open', action, reason);
   };
 
   // Share the flag. The message is built by the pure `formatFlagShareText`
@@ -1444,7 +1458,11 @@ export default function FlagDetailModal({
           onDismiss?.();
         }}
       >
-        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+        <Animated.View
+          style={[styles.backdrop, { opacity: backdropOpacity }]}
+          accessibilityElementsHidden={moderationAction !== null}
+          importantForAccessibility={moderationAction !== null ? 'no-hide-descendants' : 'auto'}
+        >
           {/* accessibilityViewIsModal: tells iOS VoiceOver that everything
             outside this card is non-interactive — important because we
             render the lightbox as a sibling Modal (Android-stable pattern),
@@ -2526,6 +2544,12 @@ export default function FlagDetailModal({
         </Animated.View>
         {/* Inside this Modal on purpose — see LegalSheets.tsx. */}
       {legal.sheets}
+      <ModerationReasonPicker
+        visible={moderationAction !== null}
+        action={moderationAction ?? 'reject'}
+        onCancel={() => setModerationAction(null)}
+        onSelect={(reason) => void handleModerationReason(reason)}
+      />
       {/* ── EVERY sheet opened FROM this one is mounted INSIDE it ───────────
           Not a stylistic choice. iOS refuses to present a second modal from a
           view controller that is already presenting one, and this Modal IS

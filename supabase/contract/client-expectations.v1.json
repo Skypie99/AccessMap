@@ -1,7 +1,8 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
-  "revision": 4,
+  "revision": 5,
+  "phase03bRevisionNote": "Local Phase03B candidate replaces direct status and moderation-column writes with actor-bound RPCs. The moderation queue fails closed when its list RPC is absent; normal status actions require backend-first deployment of transition_flag_status. This manifest does not mark any Phase03B RPC deployed.",
   "phase03aPrivilegeRevisionNote": "FDA012 source review narrows the local application/service grant proposal. Notification provenance is corrected below: current push-token callers use pushNotifications.ts; preference writes are a preserved RLS contract with no current direct TypeScript caller. All deployment classifications refer to the captured baseline; the Phase03A privilege changes are not deployed.",
   "phase03aRevisionNote": "Local candidate adds caller-scoped admin/rank, bounded leaderboard, and comment-context author RPC requirements. This revision does not mark any candidate RPC deployed. Prior revision notes and historical production capture remain unchanged.",
   "revisionNote": "Rev 2 corrects rev 1 after independent review. Rev 1 was accurate at NAME granularity but wrong at CALL-SITE granularity: it omitted a call site, misattributed two files, classified four sites by the throw at the call rather than by what the caller does with it, and did not record the moderation-column WRITE sites at all. Classifications below are per call site and were each read at the cited line.",
@@ -32,7 +33,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 869,
+          "line": 875,
           "kind": "rpc",
           "name": "prepare_flag_photo_upload",
           "onAbsent": "hard",
@@ -40,7 +41,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 886,
+          "line": 892,
           "kind": "rpc",
           "name": "cancel_flag_photo_upload",
           "onAbsent": "swallowed",
@@ -48,7 +49,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 902,
+          "line": 908,
           "kind": "rpc",
           "name": "commit_flag_photo_upload",
           "onAbsent": "hard",
@@ -57,7 +58,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 914,
+          "line": 920,
           "kind": "rpc",
           "name": "cancel_flag_photo_upload",
           "onAbsent": "swallowed",
@@ -114,7 +115,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1447,
+          "line": 1498,
           "kind": "edge",
           "name": "delete-flag",
           "onAbsent": "hard",
@@ -163,44 +164,47 @@
       "callSites": [
         {
           "file": "src/lib/adminReports.ts",
-          "line": 105,
-          "kind": "columns",
-          "name": "feedback.moderation_reviewed_at, moderation_resolution, moderation_action_intent",
-          "operation": "select",
-          "onAbsent": "hard",
-          "note": "42703 at the query on line 105; the column list is the REPORT_SELECT constant on line 82. AdminScreen.tsx:129 catches into reportsLoadError; the queue is unusable.",
-          "constantDefinedAt": "src/lib/adminReports.ts:82 (REPORT_SELECT)"
+          "line": 62,
+          "kind": "rpc",
+          "name": "list_open_moderation_reports",
+          "onAbsent": "fail_closed",
+          "deployed": false,
+          "note": "Phase03B capability gate. Any RPC error becomes ModerationQueueUnavailableError; AdminScreen shows the unavailable state and no moderation action is offered. The client never selects the candidate feedback columns directly."
         },
         {
           "file": "src/lib/adminReports.ts",
-          "line": 239,
-          "kind": "columns",
-          "name": "feedback.moderation_reviewed_at, moderation_reviewed_by, moderation_resolution",
-          "operation": "update",
-          "onAbsent": "hard",
-          "note": "closeReport returns { ok: false, error } \u2014 surfaced, does not throw."
-        },
-        {
-          "file": "src/lib/adminReports.ts",
-          "line": 275,
-          "kind": "columns",
-          "name": "feedback.moderation_reviewed_by, moderation_resolution",
-          "operation": "update",
-          "onAbsent": "silent",
-          "note": "HAZARD: markPendingResolution awaits and discards the result. Against production this writes nothing and reports nothing. The most dangerous of the four moderation sites."
-        },
-        {
-          "file": "src/lib/adminReports.ts",
-          "line": 307,
-          "kind": "columns",
-          "name": "feedback.moderation_action_intent, moderation_reviewed_by",
-          "operation": "update",
-          "onAbsent": "hard",
-          "note": "markActionIntent throws \u2014 correct, since this is the pre-action intent write that must land before a destructive mutation."
+          "line": 144,
+          "kind": "rpc",
+          "name": "moderate_report",
+          "onAbsent": "unreachable",
+          "deployed": false,
+          "note": "Actions are reachable only from rows returned by list_open_moderation_reports. The backend owns target derivation, content mutation, report closure, actor identity, and transactionality."
         }
       ],
       "deployedAlternative": null,
-      "productionImpact": "BROKEN \u2014 the queue cannot load, and one write path fails silently."
+      "productionImpact": "LOCAL CANDIDATE NOT APPLIED - production lacks the Phase03B queue contract, so the candidate client deterministically withholds the queue instead of issuing missing-column writes. Backend-first deployment and acceptance remain required."
+    },
+    {
+      "surface": "flag-status-transition",
+      "platforms": [
+        "mobile",
+        "web",
+        "admin"
+      ],
+      "finding": "FDA-020",
+      "callSites": [
+        {
+          "file": "src/lib/flags.ts",
+          "line": 1421,
+          "kind": "rpc",
+          "name": "transition_flag_status",
+          "onAbsent": "hard",
+          "deployed": false,
+          "note": "Phase03B replaces direct flags.status updates. The server performs compare-and-set and owns reject/restore authorization and reason validation. Deploy the backend before this client; no direct-write fallback is allowed."
+        }
+      ],
+      "deployedAlternative": "Current production direct flags.status update plus transition trigger; rejected transitions are not safely authorized and restore is unavailable.",
+      "productionImpact": "LOCAL CANDIDATE NOT APPLIED - every candidate status action requires transition_flag_status. Backend-first deployment is mandatory."
     },
     {
       "surface": "leaderboard",
@@ -212,7 +216,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1681,
+          "line": 1732,
           "kind": "rpc",
           "name": "list_public_leaderboard",
           "onAbsent": "hard",
@@ -221,7 +225,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 1701,
+          "line": 1752,
           "kind": "rpc",
           "name": "get_my_leaderboard_rank",
           "onAbsent": "optional_omitted",
@@ -287,7 +291,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1410,
+          "line": 1461,
           "kind": "rpc",
           "name": "increment_reopen_request",
           "onAbsent": "graceful",

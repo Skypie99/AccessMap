@@ -24,7 +24,7 @@ const read = (rel: string) => fs.readFileSync(path.join(REPO, 'src', rel), 'utf8
 describe('R-2 · the guest reviewer walks in and is told the truth', () => {
   /**
    * SR-093. A guest tap fired a real write; RLS refused it; PostgREST returned
-   * zero rows; `updateFlagStatus` cannot tell that apart from a concurrent edit
+   * zero rows; the status transition client cannot tell that apart from a concurrent edit
    * and threw FlagStatusConflictError — so the guest was told "This flag
    * changed". Nothing had changed. The app invented a concurrent edit to
    * explain a permission it had never mentioned.
@@ -47,13 +47,13 @@ describe('R-2 · the guest reviewer walks in and is told the truth', () => {
    * which had no gate at all: a guest in selection mode fired one RLS-denied
    * write per selected flag and got a list of raw error strings back.
    */
-  const GATED_FUNCTIONS: readonly [label: string, rel: string, fn: string][] = [
-    ['the flag sheet', 'components/FlagDetailModal.tsx', 'const runStatusChange'],
-    ['the Tasks card', 'screens/TasksScreen.tsx', 'const setStatus'],
-    ['the Tasks bulk action', 'screens/TasksScreen.tsx', 'const runBulkAction'],
+  const GATED_FUNCTIONS: readonly [label: string, rel: string, fn: string, write: string][] = [
+    ['the flag sheet', 'components/FlagDetailModal.tsx', 'const runStatusChange', 'await updateFlagStatus('],
+    ['the Tasks card', 'screens/TasksScreen.tsx', 'const setStatus', 'void commitStatus('],
+    ['the Tasks bulk action', 'screens/TasksScreen.tsx', 'const runBulkAction', 'await updateFlagStatus('],
   ];
 
-  it.each(GATED_FUNCTIONS)('%s puts the gate ahead of the write, not after', (_l, rel, fn) => {
+  it.each(GATED_FUNCTIONS)('%s puts the gate ahead of the write, not after', (_l, rel, fn, writeCall) => {
     // A gate below the write would still fire the RLS-denied round trip and
     // still surface the false conflict — the bug, with a message bolted on.
     const src = read(rel);
@@ -63,7 +63,7 @@ describe('R-2 · the guest reviewer walks in and is told the truth', () => {
     // the write, short enough not to reach the next function's.
     const body = src.slice(start, start + 4000);
     const gate = body.indexOf("'Sign in required'");
-    const write = body.indexOf('await updateFlagStatus(');
+    const write = body.indexOf(writeCall);
     expect(gate).toBeGreaterThan(-1);
     expect(write).toBeGreaterThan(-1);
     expect(gate).toBeLessThan(write);

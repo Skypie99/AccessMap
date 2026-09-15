@@ -34,21 +34,11 @@
 //   4. Deploy: supabase functions deploy notify-flag-status
 //   5. Create DB Webhook — see README.md §2.
 
-// ---------------------------------------------------------------------------
-// 1. Constants
-// ---------------------------------------------------------------------------
-const ALLOWED_STATUSES = new Set(['verified', 'resolved']);
-
-// Inline copy of the client-side CATEGORY_LABELS — Edge Functions cannot
-// import from src/. Keep in sync with src/lib/flags.ts CATEGORY_LABELS.
-const CATEGORY_LABELS: Record<string, string> = {
-  no_ramp:         'No ramp',
-  broken_sidewalk: 'Broken sidewalk',
-  blocked_path:    'Blocked path',
-  missing_signal:  'Missing signal',
-  steep_grade:     'Steep grade',
-  other:           'Other',
-};
+import {
+  buildNotificationForTransition,
+  parseFlagStatusPreference,
+  parseWebhookBody,
+} from './notification.ts';
 
 // ---------------------------------------------------------------------------
 // 2. Auth gate — shared-secret check
@@ -80,69 +70,27 @@ async function isAuthorized(req: Request): Promise<boolean> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// 3. Input types + parsing
-// ---------------------------------------------------------------------------
-interface FlagRecord {
-  id: string;
-  user_id: string;
-  status: string;
-  category: string;
-}
-
-// Supabase DB webhooks send { record, old_record, type, table, schema }.
-// We need both record (new values) and old_record (pre-update values) to detect
-// whether the status field actually changed.
-interface WebhookBody {
-  record: FlagRecord;
-  old_record: FlagRecord;
-}
-
-function extractFlagRecord(r: unknown): FlagRecord | null {
-  if (typeof r !== 'object' || r === null) return null;
-  const rec = r as Record<string, unknown>;
-  if (typeof rec['user_id'] !== 'string' || typeof rec['status'] !== 'string') {
-    return null;
+// Status notifications use the existing per-user preference. The service key
+// is server-side only; failures are fail-closed so an opt-out is never bypassed
+// because the preference lookup was unavailable.
+async function flagStatusNotificationsEnabled(userId: string): Promise<boolean> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/flag_status_notifications_enabled`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+        'apikey': serviceKey,
+      },
+      body: JSON.stringify({ p_user_id: userId }),
+    });
+    if (!response.ok) return false;
+    return parseFlagStatusPreference(await response.json()) ?? false;
+  } catch {
+    return false;
   }
-  return {
-    id:       typeof rec['id'] === 'string' ? rec['id'] : '',
-    user_id:  rec['user_id'],
-    status:   rec['status'],
-    // category is optional in the DB shape; default so the message degrades
-    // gracefully ("Your flag status changed to verified.") rather than crashing.
-    category: typeof rec['category'] === 'string' ? rec['category'] : '',
-  };
-}
-
-function parseWebhookBody(body: unknown): WebhookBody | null {
-  if (typeof body !== 'object' || body === null) return null;
-  const b = body as Record<string, unknown>;
-  const record     = extractFlagRecord(b['record']);
-  const old_record = extractFlagRecord(b['old_record']);
-  if (!record || !old_record) return null;
-  return { record, old_record };
-}
-
-// ---------------------------------------------------------------------------
-// 3b. Notification copy builder — Option B (warm/community tone)
-// ---------------------------------------------------------------------------
-function buildNotification(status: string, category: string): { title: string; body: string } {
-  const rawLabel = category ? (CATEGORY_LABELS[category] ?? category.replace(/_/g, ' ')) : '';
-  // 'other' and missing category both fall back to a plain noun so the sentence
-  // reads naturally ("Your accessibility issue report was verified…").
-  const label = rawLabel && rawLabel.toLowerCase() !== 'other' ? rawLabel : 'accessibility issue';
-
-  if (status === 'verified') {
-    return {
-      title: 'The community backed you up',
-      body:  `Your ${label} report was verified by another member. Great catch — thank you.`,
-    };
-  }
-  // resolved
-  return {
-    title: 'Issue marked resolved',
-    body:  `Someone fixed the ${label} you reported. That's real impact — thank you.`,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -180,14 +128,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return new Response('ok', { status: 200 });
   }
 
-  // 4e. Only notify on transitions to meaningful statuses.
-  // 'open' and 'rejected' don't warrant a push; 'verified' and 'resolved' do.
-  if (!ALLOWED_STATUSES.has(record.status)) {
+  // 4e. Build copy only for approved transitions. Restores are specifically
+  // rejected -> open; other moves to open remain silent.
+  const notification = buildNotificationForTransition(record, old_record);
+  if (!notification) {
+    if (record.status === 'rejected') {
+      console.error('[notify-flag-status] approved rejection reason missing; skipping notification');
+    }
     return new Response('ok', { status: 200 });
   }
 
-  // 4f. Build notification copy (Option B — warm/community tone).
-  const { title: notifTitle, body: notifBody } = buildNotification(record.status, record.category);
+  // 4f. Honor the existing status-notification preference. A missing row uses
+  // the database default (enabled); lookup failures fail closed.
+  if (!await flagStatusNotificationsEnabled(record.user_id)) {
+    return new Response('ok', { status: 200 });
+  }
+
+  const { title: notifTitle, body: notifBody } = notification;
 
   // 4g. Build optional deep-link data so the app can navigate to the flag.
   const data: Record<string, unknown> = { screen: 'FlagDetail' };

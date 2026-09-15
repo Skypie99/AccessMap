@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "phase": "03B",
+  "status": "local_candidate_only",
+  "production_project_ref": "kldlwszpfkdmsjrjhjym",
+  "accepted_base": {
+    "commit": "342784c6205a824138d59025d65667e316022473",
+    "tree": "337c8e7276f4385153ba832375826ec9f36149a0"
+  },
+  "owner_decision": "APPROVE_RECOMMENDED_PHASE03B_SEMANTICS",
+  "apply_order": [
+    {
+      "identity": "20260915210255_phase03b_moderation_semantics",
+      "path": "supabase/migrations-next/phase03b/20260915210255_phase03b_moderation_semantics.sql",
+      "sha256": "a492fad03bd8dc817019cf6ec72d0492203eba716853104b777a9fbd677a1e9c"
+    },
+    {
+      "identity": "20260915210413_phase03b_points_integrity",
+      "path": "supabase/migrations-next/phase03b/20260915210413_phase03b_points_integrity.sql",
+      "sha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5"
+    }
+  ],
+  "rollback_order": [
+    {
+      "identity": "20260915210413_phase03b_points_integrity_rollback",
+      "path": "supabase/migrations-next/phase03b/rollback/20260915210413_phase03b_points_integrity.rollback.sql",
+      "sha256": "f4da0362fb6f2e7258268e0bfee8dc10b2cf330bd447144e8362e170d1197149"
+    },
+    {
+      "identity": "20260915210255_phase03b_moderation_semantics_rollback",
+      "path": "supabase/migrations-next/phase03b/rollback/20260915210255_phase03b_moderation_semantics.rollback.sql",
+      "sha256": "33cc64614702c564c78234470e4674b51c579e09a524b1897d8ddd32930e8476"
+    }
+  ],
+  "rpc_contract": [
+    {
+      "name": "flag_status_notifications_enabled",
+      "arguments": ["p_user_id uuid"],
+      "returns": "boolean",
+      "execute_role": "service_role"
+    },
+    {
+      "name": "transition_flag_status",
+      "arguments": [
+        "p_flag_id uuid",
+        "p_expected_status public.flag_status",
+        "p_new_status public.flag_status",
+        "p_moderation_reason text default null",
+        "p_report_id uuid default null"
+      ],
+      "returns": "setof public.flags"
+    },
+    {
+      "name": "list_open_moderation_reports",
+      "arguments": ["p_limit integer default 100"],
+      "returns": "table(id uuid, created_at timestamptz, body text, moderation_reviewed_at timestamptz, moderation_resolution text, moderation_action_intent text)"
+    },
+    {
+      "name": "moderate_report",
+      "arguments": [
+        "p_report_id uuid",
+        "p_resolution text",
+        "p_expected_flag_status public.flag_status default null",
+        "p_moderation_reason text default null"
+      ],
+      "returns": "jsonb"
+    }
+  ],
+  "local_proof": {
+    "harness": "scripts/replay-phase03b.mjs",
+    "harness_sha256": "4714f1dcee2f3a7570e7f40729181809955406c5787c45d8d5e6adc749ff4616",
+    "moderation_test": {
+      "path": "supabase/tests/phase03b-moderation.test.sql",
+      "sha256": "2d7a7fb00f02a6e611722ea3be8adeb6c9b3be50d3678f49112c4d130cad0d2f",
+      "result": "49/49 pass on first apply and exact reapply"
+    },
+    "points_test": {
+      "path": "supabase/tests/phase03b-points.test.sql",
+      "sha256": "7e16e13ee211f4bdf586d2f5d12f30356290b122c98d45e83744f17fa956a5b9",
+      "result": "22/22 pass on first apply and exact reapply"
+    },
+    "rollback": "safe compensating rollback pass",
+    "schema_reapply": "exact"
+  },
+  "authorization": {
+    "staging_apply": false,
+    "production_apply": false,
+    "edge_deploy": false,
+    "webhook_invocation": false,
+    "remote_push": false,
+    "main_merge": false
+  }
+}

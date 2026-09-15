@@ -54,6 +54,10 @@ const FAQS: FaqItem[] = [
     a: 'Verified means another person checked the spot and confirmed the issue is real. Resolved means the issue has been fixed (the ramp was added, the path was cleared, etc.). Resolved flags stay on the map, keep their severity color, and are marked with a checkmark.',
   },
   {
+    q: 'Who can reject or restore a report?',
+    a: 'Only Flagstone admins can reject or restore reports. Rejected reports are hidden from public views and can be restored. Rejecting or restoring a report does not change points. Reporters are notified when flag-status notifications are enabled.',
+  },
+  {
     q: 'Are my photos and location private?',
     a: "Photos and the flag location are public; they're visible to everyone using the app, which is the whole point of a community map. Your email is never attached to a flag's public view. Your display name appears on the leaderboard and alongside comments, and other signed-in people can tell which reports are yours. Avoid including faces or identifying info in your photos.",
   },

@@ -1,9 +1,9 @@
 # notify-flag-status — Edge Function
 
 Triggered by a Supabase DB webhook on `UPDATE` events to the `flags` table.
-When a flag's `status` field changes to `verified` or `resolved`, it sends a
-push notification to the flag's owner by delegating to the
-`send-push-notification` Edge Function.
+When a flag's `status` field changes to `verified`, `resolved`, or `rejected`,
+or a rejected flag is restored to `open`, it sends a push notification to the
+flag's owner by delegating to the `send-push-notification` Edge Function.
 
 ---
 
@@ -17,13 +17,16 @@ notify-flag-status (this function)
   ├─ Authenticates: X-Webhook-Secret header == NOTIFY_WEBHOOK_SECRET
   ├─ Validates: record + old_record present and well-formed
   ├─ Guards:    old_record.status != record.status  (skip if unchanged)
-  ├─ Filters:   record.status in {verified, resolved}
+  ├─ Filters:   approved status transition and rejection reason (when required)
+  ├─ Prefs:     notification_preferences.flag_status_updates is enabled
   └─ Calls send-push-notification  →  Expo Push API  →  user's device
 ```
 
-Notifications only fire when the status **actually changes** to a meaningful
+Notifications only fire when the status **actually changes** to an approved
 value. Edits to description, category, or photo on an already-open flag do
-**not** trigger a notification.
+**not** trigger a notification. A transition to `open` only notifies when the
+previous status was `rejected`. Rejection copy only uses the approved public
+label from `record.last_moderation_reason_code`; raw values are never echoed.
 
 ---
 
@@ -132,12 +135,20 @@ This is intentional — a distinct body would be a push-token oracle.
 
 | Transition | Title | Body |
 |-----------|-------|------|
-| open → verified | Flagstone | Your sidewalk flag status changed to verified. |
-| open → resolved | Flagstone | Your ramp flag status changed to resolved. |
-| verified → resolved | Flagstone | Your crossing flag status changed to resolved. |
+| open → verified | The community backed you up | Your No ramp report was verified by another member. Great catch — thank you. |
+| open → resolved | Issue marked resolved | Someone fixed the No ramp you reported. That's real impact — thank you. |
+| verified → resolved | Issue marked resolved | Someone fixed the No ramp you reported. That's real impact — thank you. |
+| open/verified/resolved → rejected | Report rejected | Your report was rejected after moderation review. Reason: {approved reason label}. Your points were not changed. |
+| rejected → open | Report restored | Your report was restored after another review and is visible again. Your points were not changed. |
 
-If `category` is empty in the DB record, the message degrades to:
-`"Your flag status changed to verified."`
+If `category` is empty in the DB record, verified/resolved copy uses the phrase
+`"accessibility issue"`.
+
+The approved rejection reason codes are `duplicate`,
+`not_accessibility_barrier`, `inaccurate`, `abusive_or_spam`, and `other`.
+Missing or unapproved rejection reasons are skipped rather than copied into a
+notification. A missing notification-preferences row uses the database default
+(`flag_status_updates = true`); lookup failures fail closed.
 
 ---
 

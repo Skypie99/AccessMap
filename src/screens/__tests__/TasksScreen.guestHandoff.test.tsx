@@ -130,6 +130,7 @@ jest.mock('@/lib/accessibility', () => {
     a11yToggle: actual.a11yToggle,
     decorativeProps: actual.decorativeProps,
     isAxRecompose: actual.isAxRecompose,
+    useFocusOnOpen: () => ({ current: null }),
     useReducedMotion: () => true,
     useReduceTransparency: () => false,
   };

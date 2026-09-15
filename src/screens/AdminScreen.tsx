@@ -18,6 +18,10 @@ import { HeaderActions } from '@/components/ui/HeaderActions';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import CategoryIcon from '@/components/CategoryIcon';
 import { StatusBadge } from '@/components/StatusBadge';
+import {
+  ModerationReasonPicker,
+  type ModerationAction,
+} from '@/components/ModerationReasonPicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,15 +50,23 @@ import {
   rejectFlagReport,
   removeCommentReport,
   removeFlagReport,
-  retryClose,
   type AdminReport,
   type ContentActionResult,
 } from '@/lib/adminReports';
-import type { FlagRow, ModerationResolution } from '@/types/database';
+import type {
+  FlagRow,
+  ModerationReasonCode,
+  RejectReasonCode,
+  RestoreReasonCode,
+} from '@/types/database';
 
 const REPORT_CATEGORY_TEXT: Record<string, string> = Object.fromEntries(
   REPORT_CATEGORIES.map((c) => [c.id, c.label]),
 );
+
+type PendingModeration =
+  | { action: 'reject'; source: 'report'; report: AdminReport }
+  | { action: ModerationAction; source: 'flag'; flag: FlagRow };
 
 export default function AdminScreen() {
   const color = useColor();
@@ -80,7 +92,7 @@ export default function AdminScreen() {
   // F18: synchronous per-flag guard. The action buttons use only
   // accessibilityState.disabled (a screen-reader hint that does NOT block
   // touches) and setActioningId is set only AFTER the confirm dialog resolves,
-  // so a rapid double-tap (or Remove+Dismiss) on the same row would otherwise
+  // so a rapid double-tap (or Remove+Reject) on the same row would otherwise
   // start two concurrent mutations. This tracks in-flight flag ids.
   const actioningRef = useRef<Set<string>>(new Set());
   // F27: sequence tag so a stale load() (rapid tab focus/blur fires two) can't
@@ -113,14 +125,7 @@ export default function AdminScreen() {
   const [reportsActioningId, setReportsActioningId] = useState<string | null>(null);
   const reportsActioningRef = useRef<Set<string>>(new Set());
   const reportsLoadSeqRef = useRef(0);
-  // MOD1R FIX1 — PENDING CLOSE fallback for THIS session only. The durable
-  // signal is AdminReport.resolution (set by markPendingResolution() and
-  // surviving a reload); this only covers the narrower window where even
-  // that write hasn't landed yet, so a report whose content action just
-  // succeeded doesn't briefly render its original (now-stale) action set
-  // before the next reload. Never read on its own — always merged with
-  // item.resolution via pendingResolutionFor() below.
-  const [pendingResolutions, setPendingResolutions] = useState<Record<string, ModerationResolution>>({});
+  const [pendingModeration, setPendingModeration] = useState<PendingModeration | null>(null);
 
   const loadReports = useCallback(async () => {
     const seq = ++reportsLoadSeqRef.current;
@@ -141,66 +146,35 @@ export default function AdminScreen() {
   useFocusEffect(
     useCallback(() => {
       void load();
-      void loadReports();
-    }, [load, loadReports]),
+      if (isAdmin === true) void loadReports();
+    }, [isAdmin, load, loadReports]),
   );
 
-  /**
-   * MOD1 partial-failure UX: `action` has already performed its content
-   * mutation (or there wasn't one) by the time it settles — closeReport()
-   * itself retries a few times internally, so `{closed: false}` here means
-   * even those retries were exhausted. Rather than treat that like a normal
-   * error, this leaves the report visibly IN the open queue (truthful: it
-   * genuinely isn't closed) and says plainly that the content action already
-   * happened, so an admin is never tempted to press the same destructive
-   * button again.
-   */
+  /** The RPC commits the decision and content mutation atomically. */
   const runReportAction = useCallback(
     async (
       report: AdminReport,
       confirmTitle: string,
       confirmMessage: string,
       action: () => Promise<ContentActionResult>,
+      confirmLabel = 'OK',
+      destructive = false,
     ) => {
       if (reportsActioningRef.current.has(report.id)) return;
       reportsActioningRef.current.add(report.id);
       try {
-        const ok = await confirm(confirmTitle, confirmMessage);
+        const ok = await confirm(confirmTitle, confirmMessage, confirmLabel, destructive);
         if (!ok) return;
         hapticSelection();
         setReportsActioningId(report.id);
         try {
-          const result = await action();
-          if (result.closed) {
-            setReports((prev) => prev.filter((r) => r.id !== report.id));
-            setPendingResolutions((prev) => {
-              if (!(report.id in prev)) return prev;
-              const next = { ...prev };
-              delete next[report.id];
-              return next;
-            });
-          } else {
-            // Present only for a content mutation that already succeeded
-            // (never for closeDirectly's no_action/target_unavailable, which
-            // have no content step to protect) — never let THAT report fall
-            // back to its original action set. See pendingResolutionFor().
-            const { resolution } = result;
-            if (resolution) {
-              setPendingResolutions((prev) => ({ ...prev, [report.id]: resolution }));
-            }
-            Alert.alert(
-              'Not marked reviewed yet',
-              `The action was applied, but this report could not be closed: ${result.closeError}. It stays in the queue — try again in a moment.`,
-            );
-          }
+          await action();
+          setReports((prev) => prev.filter((r) => r.id !== report.id));
         } catch (e) {
           if (e instanceof FlagStatusConflictError) {
-            // The flag moved since this queue was loaded (someone else
-            // acted on it, or a prior partial-failure retry already
-            // succeeded here). Nothing was mutated by THIS press — refresh
-            // so the report's stale snapshot (and any retry) reflects
-            // reality, instead of a generic error and an unwinnable retry
-            // loop against the old status.
+            // The flag moved since this queue was loaded. Nothing was mutated
+            // by this stale press — refresh so the queue reflects reality
+            // instead of offering an unwinnable retry against the old status.
             Alert.alert('This flag changed', 'It was updated since this queue loaded — refreshing.');
             void loadReports();
           } else {
@@ -216,41 +190,33 @@ export default function AdminScreen() {
     [loadReports],
   );
 
-  const closeDirectly = (resolution: 'no_action' | 'target_unavailable', reviewedBy: string, reportId: string) =>
-    closeReport(reportId, resolution, reviewedBy).then(
-      (o): ContentActionResult => (o.ok ? { closed: true } : { closed: false, closeError: o.error }),
-    );
+  const closeDirectly = (
+    resolution: 'no_action' | 'target_unavailable',
+    reportId: string,
+  ): Promise<ContentActionResult> => closeReport(reportId, resolution);
 
   const handleRejectFlagReport = (report: AdminReport) => {
     if (!report.flag || !user) return;
-    const flag = report.flag;
-    void runReportAction(
-      report,
-      'Reject this flag?',
-      'This marks the report as invalid or spam and removes it from the community queue.',
-      () => rejectFlagReport({ reportId: report.id, flagId: flag.id, previousFlagStatus: flag.status, reviewedBy: user.id }),
-    );
+    setPendingModeration({ action: 'reject', source: 'report', report });
   };
 
   const handleRemoveFlagReport = (report: AdminReport) => {
     if (!report.flag || !user) return;
-    const flag = report.flag;
     void runReportAction(
       report,
       'Remove flag?',
       'This permanently deletes the flag and cannot be undone.',
-      () => removeFlagReport({ reportId: report.id, flagId: flag.id, reviewedBy: user.id }),
+      () => removeFlagReport({ reportId: report.id }),
     );
   };
 
   const handleRemoveCommentReport = (report: AdminReport) => {
     if (!report.comment || !user) return;
-    const comment = report.comment;
     void runReportAction(
       report,
       'Delete this comment?',
       'This permanently deletes the comment and cannot be undone.',
-      () => removeCommentReport({ reportId: report.id, commentId: comment.id, reviewedBy: user.id }),
+      () => removeCommentReport({ reportId: report.id }),
     );
   };
 
@@ -260,7 +226,7 @@ export default function AdminScreen() {
       report,
       'Close with no action?',
       'This marks the report reviewed without changing any content.',
-      () => closeDirectly('no_action', user.id, report.id),
+      () => closeDirectly('no_action', report.id),
     );
   };
 
@@ -270,26 +236,7 @@ export default function AdminScreen() {
       report,
       'Close as target unavailable?',
       'This marks the report reviewed — the flag or comment it refers to is already gone.',
-      () => closeDirectly('target_unavailable', user.id, report.id),
-    );
-  };
-
-  // MOD1R FIX1 — a report is PENDING CLOSE (its content action already
-  // succeeded; only the close write is outstanding) when either the durable
-  // column says so, or this session already learned it the hard way. Never
-  // derives resolution from anything but one of those two sources — this
-  // must be the SAME outcome the original successful action recorded, not
-  // recomputed.
-  const pendingResolutionFor = (report: AdminReport): ModerationResolution | null =>
-    report.resolution ?? pendingResolutions[report.id] ?? null;
-
-  const handleFinishReview = (report: AdminReport, resolution: ModerationResolution) => {
-    if (!user) return;
-    void runReportAction(
-      report,
-      'Finish review?',
-      'The moderation action already happened — this only finalizes the report.',
-      () => retryClose(report.id, resolution, user.id),
+      () => closeDirectly('target_unavailable', report.id),
     );
   };
 
@@ -394,17 +341,42 @@ export default function AdminScreen() {
     }
   };
 
-  const handleDismiss = async (flag: FlagRow) => {
+  const handleReject = (flag: FlagRow) => {
+    setPendingModeration({ action: 'reject', source: 'flag', flag });
+  };
+
+  const handleRestore = (flag: FlagRow) => {
+    setPendingModeration({ action: 'restore', source: 'flag', flag });
+  };
+
+  const runFlagModeration = async (
+    flag: FlagRow,
+    action: ModerationAction,
+    reason: RejectReasonCode | RestoreReasonCode,
+  ) => {
     if (actioningRef.current.has(flag.id)) return; // F18: already actioning this flag
     actioningRef.current.add(flag.id);
     try {
-      const ok = await confirm('Dismiss report?', 'This marks the flag as rejected.');
+      const rejecting = action === 'reject';
+      const ok = await confirm(
+        rejecting ? 'Reject this report?' : 'Restore this report?',
+        rejecting
+          ? 'It will be hidden from public views. The reporter will be notified. No points will change. An admin can restore it.'
+          : 'It will return to public views. The reporter will be notified. No points will change.',
+        rejecting ? 'Reject' : 'Restore',
+        rejecting,
+      );
       if (!ok) return;
       hapticSelection();
       setActioningId(flag.id);
       try {
-        await updateFlagStatus(flag.id, 'rejected', flag.status); // F53: CAS
-        setFlags((prev) => prev.map((f) => (f.id === flag.id ? { ...f, status: 'rejected' } : f)));
+        const nextStatus = rejecting ? 'rejected' : 'open';
+        await updateFlagStatus(flag.id, nextStatus, flag.status, {
+          moderationReason: reason,
+        });
+        setFlags((prev) =>
+          prev.map((item) => (item.id === flag.id ? { ...item, status: nextStatus } : item)),
+        );
       } catch (e) {
         Alert.alert('Error', errorMessage(e));
       } finally {
@@ -415,31 +387,35 @@ export default function AdminScreen() {
     }
   };
 
-  // MOD1 — moderator-error recovery. Only ever offered on an already-rejected
-  // row (see renderItem's Dismiss/Restore swap), so this never competes with
-  // Dismiss for the same flag.
-  const handleRestore = async (flag: FlagRow) => {
-    if (actioningRef.current.has(flag.id)) return; // F18: already actioning this flag
-    actioningRef.current.add(flag.id);
-    try {
-      const ok = await confirm(
-        'Restore this flag?',
-        'This reopens the report so the community can review it again.',
+  const handleModerationReason = (reason: ModerationReasonCode) => {
+    const pending = pendingModeration;
+    setPendingModeration(null);
+    if (!pending) return;
+
+    if (pending.source === 'report') {
+      const flag = pending.report.flag;
+      if (!flag) return;
+      void runReportAction(
+        pending.report,
+        'Reject this report?',
+        'It will be hidden from public views. The reporter will be notified. No points will change. An admin can restore it.',
+        () =>
+          rejectFlagReport({
+            reportId: pending.report.id,
+            previousFlagStatus: flag.status,
+            reason: reason as RejectReasonCode,
+          }),
+        'Reject',
+        true,
       );
-      if (!ok) return;
-      hapticSelection();
-      setActioningId(flag.id);
-      try {
-        await updateFlagStatus(flag.id, 'open', flag.status); // F53: CAS
-        setFlags((prev) => prev.map((f) => (f.id === flag.id ? { ...f, status: 'open' } : f)));
-      } catch (e) {
-        Alert.alert('Error', errorMessage(e));
-      } finally {
-        setActioningId(null);
-      }
-    } finally {
-      actioningRef.current.delete(flag.id);
+      return;
     }
+
+    void runFlagModeration(
+      pending.flag,
+      pending.action,
+      reason as RejectReasonCode | RestoreReasonCode,
+    );
   };
 
   const renderItem = ({ item }: { item: FlagRow }) => {
@@ -447,7 +423,7 @@ export default function AdminScreen() {
     const sev = severityRamp[item.severity];
     return (
       // WCAG 4.1.2 / 2.1.1: this card must NOT be `accessible` — it contains the
-      // Remove / Dismiss action buttons, and collapsing the subtree into a single
+      // Remove / Reject action buttons, and collapsing the subtree into a single
       // element makes those buttons unreachable for VoiceOver. Each child (text +
       // buttons) exposes itself instead. GlassSurface renders a plain View (no
       // `accessible`), so it does not collapse the subtree.
@@ -526,20 +502,20 @@ export default function AdminScreen() {
                   Restore
                 </AppText>
               </Pressable>
-            ) : (
+            ) : item.status === 'open' || item.status === 'verified' ? (
               <Pressable
                 style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
-                onPress={() => void handleDismiss(item)}
+                onPress={() => void handleReject(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`Dismiss ${CATEGORY_LABELS[item.category]} report`}
+                accessibilityLabel={`Reject ${CATEGORY_LABELS[item.category]} report`}
                 {...a11yToggle({ disabled: isBusy })}
               >
                 <Ban size={16} color={color.text} strokeWidth={2} />
                 <AppText variant="label" size={font.size.sm} color={color.text}>
-                  Dismiss
+                  Reject
                 </AppText>
               </Pressable>
-            )}
+            ) : null}
           </View>
         )}
       </GlassSurface>
@@ -554,10 +530,6 @@ export default function AdminScreen() {
   const renderReportItem = ({ item }: { item: AdminReport }) => {
     const isBusy = reportsActioningId === item.id;
     const categoryText = item.category ? REPORT_CATEGORY_TEXT[item.category] : null;
-    // MOD1R FIX1 — a pending-close report never re-offers its original
-    // action set (whatever it was already stays applied and unrepeated); the
-    // ONLY control it exposes is closing the still-open report.
-    const pendingResolution = pendingResolutionFor(item);
     return (
       <GlassSurface variant="row" forceEngineered style={styles.card}>
         <View style={styles.cardHeader}>
@@ -643,24 +615,6 @@ export default function AdminScreen() {
 
         {isBusy ? (
           <ActivityIndicator style={styles.busyIndicator} color={color.brand} accessibilityLabel="Processing" />
-        ) : pendingResolution ? (
-          <View style={styles.reportActions}>
-            <AppText variant="label" size={font.size.xs} color={color.inkGlassMuted} style={styles.reportTargetGone}>
-              Action already applied — finishing the review.
-            </AppText>
-            <Pressable
-              style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
-              onPress={() => handleFinishReview(item, pendingResolution)}
-              accessibilityRole="button"
-              accessibilityLabel="Finish review"
-              {...a11yToggle({ disabled: isBusy })}
-            >
-              <Check size={16} color={color.text} strokeWidth={2} />
-              <AppText variant="label" size={font.size.sm} color={color.text}>
-                Finish review
-              </AppText>
-            </Pressable>
-          </View>
         ) : (
           <View style={styles.reportActions}>
             {!item.malformed && item.targetKind === 'flag' && item.targetAvailable ? (
@@ -742,6 +696,8 @@ export default function AdminScreen() {
       <View style={styles.root}>
         <ScreenStage />
         <FlatList
+          accessibilityElementsHidden={pendingModeration !== null}
+          importantForAccessibility={pendingModeration !== null ? 'no-hide-descendants' : 'auto'}
           style={styles.list}
           data={reports}
           keyExtractor={(r) => r.id}
@@ -797,6 +753,12 @@ export default function AdminScreen() {
             )
           }
         />
+        <ModerationReasonPicker
+          visible={pendingModeration !== null}
+          action={pendingModeration?.action ?? 'reject'}
+          onCancel={() => setPendingModeration(null)}
+          onSelect={handleModerationReason}
+        />
       </View>
     );
   }
@@ -805,6 +767,8 @@ export default function AdminScreen() {
     <View style={styles.root}>
       <ScreenStage />
       <FlatList
+        accessibilityElementsHidden={pendingModeration !== null}
+        importantForAccessibility={pendingModeration !== null ? 'no-hide-descendants' : 'auto'}
         style={styles.list}
         data={flags}
         keyExtractor={(f) => f.id}
@@ -854,6 +818,12 @@ export default function AdminScreen() {
             </View>
           )
         }
+      />
+      <ModerationReasonPicker
+        visible={pendingModeration !== null}
+        action={pendingModeration?.action ?? 'reject'}
+        onCancel={() => setPendingModeration(null)}
+        onSelect={handleModerationReason}
       />
     </View>
   );

@@ -223,76 +223,76 @@ describe('listFlagsByUser', () => {
 // ---------------------------------------------------------------------------
 
 describe('updateFlagStatus', () => {
-  it('returns the updated row on success', async () => {
+  it('routes the compare-and-set through transition_flag_status and returns its row', async () => {
     const updated = makeRow({ id: 'f1', status: 'verified' });
-    mockMaybeSingle.mockResolvedValueOnce({ data: updated, error: null });
-    mockFrom.mockReturnValue(makeChain(() => {}));
+    mockRpc.mockResolvedValueOnce({ data: [updated], error: null });
 
-    const result = await updateFlagStatus('f1', 'verified');
+    const result = await updateFlagStatus('f1', 'verified', 'open');
     expect(result.status).toBe('verified');
     expect(result.id).toBe('f1');
+    expect(mockRpc).toHaveBeenCalledWith('transition_flag_status', {
+      p_flag_id: 'f1',
+      p_expected_status: 'open',
+      p_new_status: 'verified',
+      p_moderation_reason: null,
+      p_report_id: null,
+    });
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   it('throws when Supabase returns an error', async () => {
-    mockMaybeSingle.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: null,
       error: { message: 'RLS violation', code: '42501' },
     });
-    mockFrom.mockReturnValue(makeChain(() => {}));
 
-    await expect(updateFlagStatus('f1', 'resolved')).rejects.toMatchObject({ code: '42501' });
+    await expect(updateFlagStatus('f1', 'resolved', 'verified')).rejects.toMatchObject({ code: '42501' });
   });
 
-  // F53 (re-sweep): compare-and-set — 0 matched rows (status moved underneath
-  // the caller, or the flag was deleted) must throw the typed conflict, never
-  // commit a stale overwrite or leak a raw PGRST116 coercion message.
-  it('LOCKING (F53): throws FlagStatusConflictError when the CAS matches no row', async () => {
-    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
-    mockFrom.mockReturnValue(makeChain(() => {}));
+  it('throws FlagStatusConflictError when the RPC returns no row', async () => {
+    mockRpc.mockResolvedValueOnce({ data: [], error: null });
 
     await expect(updateFlagStatus('f1', 'verified', 'open')).rejects.toBeInstanceOf(
       FlagStatusConflictError,
     );
   });
 
-  // Second sweep (F65): the conflict tests above can't see WHICH predicate ran
-  // — deleting the .eq('status', expectedCurrent) line would still pass them.
-  // This test records the builder calls and pins the CAS predicate itself.
-  it('LOCKING (F53): the update is actually filtered by the expected current status', async () => {
-    const eqCalls: [string, unknown][] = [];
-    const recorder: Record<string, unknown> = {
-      update: jest.fn(() => recorder),
-      eq: jest.fn((col: string, val: unknown) => {
-        eqCalls.push([col, val]);
-        return recorder;
-      }),
-      select: jest.fn(() => recorder),
-      maybeSingle: jest.fn().mockResolvedValue({ data: makeRow({ status: 'verified' }), error: null }),
-    };
-    mockFrom.mockReturnValue(recorder);
-
-    await updateFlagStatus('f1', 'verified', 'open');
-    expect(eqCalls).toContainEqual(['id', 'f1']);
-    expect(eqCalls).toContainEqual(['status', 'open']);
-
-    // And without expectedCurrent, no status predicate is added.
-    eqCalls.length = 0;
-    (recorder.maybeSingle as jest.Mock).mockResolvedValue({
-      data: makeRow({ status: 'rejected' }),
-      error: null,
+  it.each(['P0001', 'P0002', '40001'])('maps server CAS code %s to FlagStatusConflictError', async (code) => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { code, message: 'This flag changed since you opened it. Refresh and try again.' },
     });
-    await updateFlagStatus('f1', 'rejected');
-    expect(eqCalls).toContainEqual(['id', 'f1']);
-    expect(eqCalls.some(([col]) => col === 'status')).toBe(false);
+    await expect(updateFlagStatus('f1', 'verified', 'open')).rejects.toBeInstanceOf(
+      FlagStatusConflictError,
+    );
   });
 
-  it('LOCKING (F53): throws the conflict for a deleted flag (no raw PGRST116)', async () => {
-    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
-    mockFrom.mockReturnValue(makeChain(() => {}));
-
-    await expect(updateFlagStatus('gone', 'rejected')).rejects.toThrow(
-      /changed since you opened it/i,
+  it('requires an explicit approved reason before a reject RPC', async () => {
+    await expect(updateFlagStatus('f1', 'rejected', 'open')).rejects.toThrow(
+      /choose an approved reason/i,
     );
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it('passes the chosen reject reason without inventing a default', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [makeRow({ status: 'rejected' })],
+      error: null,
+    });
+    await updateFlagStatus('f1', 'rejected', 'open', {
+      moderationReason: 'inaccurate',
+    });
+    expect(mockRpc).toHaveBeenCalledWith(
+      'transition_flag_status',
+      expect.objectContaining({ p_moderation_reason: 'inaccurate' }),
+    );
+  });
+
+  it('requires an explicit approved restore reason', async () => {
+    await expect(updateFlagStatus('f1', 'open', 'rejected')).rejects.toThrow(
+      /choose an approved reason/i,
+    );
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 });
 
