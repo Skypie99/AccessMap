@@ -1,0 +1,30 @@
+{
+  "promptId": "FLAGSTONE-P03A-PRODUCTION-PREFLIGHT-ONLY-R1",
+  "runUnit": "PRODUCTION_PLAN_RECOVERY_OWNER_PACKET",
+  "generation": 3,
+  "status": "COMPLETE",
+  "bankedAtUtc": "2026-09-15T04:02:00Z",
+  "head": "949c11093922d0b7d7b8665eda84dfde710f0d1c",
+  "tree": "a8ee59aac0e86239370aa55e14d897bed39c1a65",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "preflightStatus": "HOLD",
+  "acceptedStageGate": "PASS",
+  "pendingMigrations": 14,
+  "stageBIncluded": false,
+  "remoteDryRun": "NOT_RUN",
+  "mf03": "OWNER_ACTION_REQUIRED",
+  "mf04": "OWNER_ACTION_REQUIRED",
+  "mf05": "OWNER_DECISION_REQUIRED",
+  "productionPolicy": "INCOMPLETE",
+  "credentialGate": "KNOWN_FALSE_POSITIVE_UNRESOLVED",
+  "forwardRecovery": "HOLD",
+  "artifactManifestSha256": "e635285c5e9c1b930f00e9b6cf4941241b0efc81cfdb3b38dc38bfacd20950fc",
+  "productionMutationAuthority": "NONE",
+  "stagingMutationAuthority": "NONE",
+  "operationState": {
+    "running": [],
+    "appliedNotVerified": [],
+    "outcomeUnknown": []
+  },
+  "nextSafeAction": "one independent reviewer reads only this frozen packet and writes INDEPENDENT_PREFLIGHT_REVIEW.md"
+}

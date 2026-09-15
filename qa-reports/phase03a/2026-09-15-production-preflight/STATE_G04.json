@@ -1,0 +1,26 @@
+{
+  "promptId": "FLAGSTONE-P03A-PRODUCTION-PREFLIGHT-ONLY-R1",
+  "runUnit": "INDEPENDENT_PREFLIGHT_REVIEW",
+  "generation": 4,
+  "status": "COMPLETE",
+  "bankedAtUtc": "2026-09-15T04:18:00Z",
+  "head": "949c11093922d0b7d7b8665eda84dfde710f0d1c",
+  "tree": "a8ee59aac0e86239370aa55e14d897bed39c1a65",
+  "productionPreflight": "HOLD",
+  "acceptedStageGate": "PASS",
+  "independentPreflightReview": "PASS",
+  "independentReviewSha256": "bc5724ccc766ab274722b3d06369bb1e5ceb1df0ba4ef78877967a13c683ddf1",
+  "pendingMigrations": 14,
+  "stageBIncluded": false,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "productionAuthorized": false,
+  "mainMergeAuthorized": false,
+  "pushes": "NONE",
+  "operationState": {
+    "running": [],
+    "appliedNotVerified": [],
+    "outcomeUnknown": []
+  },
+  "nextSafeAction": "Sky authorizes only the bounded local production-plan tooling and credential-guard repair proposal, or requests changes"
+}

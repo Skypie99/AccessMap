@@ -1,0 +1,11 @@
+npm warn exec The following package was not found and will be installed: jest@30.5.1
+npm error code EEXIST
+npm error syscall rename
+npm error path /Users/skypie/.npm/_cacache/tmp/***
+npm error dest /Users/skypie/.npm/_cacache/content-v2/sha512/85/54/bdb22742e81d07a7a58dc2ba753882bc75616bbf57355ec3f00fc5980e3c9cb609e60002656ae1bb7fd3dc6909e93afd367bc8a066b3128d085cbdc156fa
+npm error errno EEXIST
+npm error Invalid response body while trying to fetch https://registry.npmjs.org/jest-snapshot: EACCES: permission denied, rename '/Users/skypie/.npm/_cacache/tmp/***' -> '/Users/skypie/.npm/_cacache/content-v2/sha512/85/54/bdb22742e81d07a7a58dc2ba753882bc75616bbf57355ec3f00fc5980e3c9cb609e60002656ae1bb7fd3dc6909e93afd367bc8a066b3128d085cbdc156fa'
+npm error File exists: /Users/skypie/.npm/_cacache/content-v2/sha512/85/54/bdb22742e81d07a7a58dc2ba753882bc75616bbf57355ec3f00fc5980e3c9cb609e60002656ae1bb7fd3dc6909e93afd367bc8a066b3128d085cbdc156fa
+npm error Remove the existing file and try again, or run npm
+npm error with --force to overwrite files recklessly.
+npm error A complete log of this run can be found in: /Users/skypie/.npm/_logs/2026-09-15T03_38_23_756Z-debug-0.log

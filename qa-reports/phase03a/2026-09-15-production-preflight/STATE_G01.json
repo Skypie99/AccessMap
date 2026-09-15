@@ -1,0 +1,20 @@
+{
+  "promptId": "FLAGSTONE-P03A-PRODUCTION-PREFLIGHT-ONLY-R1",
+  "runUnit": "PRODUCTION_PREFLIGHT_READ_ONLY",
+  "generation": 1,
+  "status": "PREPARED",
+  "bankedAtUtc": "2026-09-15T03:15:10Z",
+  "worktree": "/Users/skypie/AccessMap-codex/flagstone-p03a-takeover-20260914",
+  "branch": "codex/flagstone-p03a-takeover-20260914",
+  "head": "949c11093922d0b7d7b8665eda84dfde710f0d1c",
+  "tree": "a8ee59aac0e86239370aa55e14d897bed39c1a65",
+  "productionReadTarget": "kldlwszpfkdmsjrjhjym",
+  "productionMutationAuthority": "NONE",
+  "stagingMutationAuthority": "NONE",
+  "operationState": {
+    "running": [],
+    "appliedNotVerified": [],
+    "outcomeUnknown": []
+  },
+  "nextSafeAction": "perform the exact bounded Supabase MCP project and read-only production metadata capture"
+}

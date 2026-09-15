@@ -1,0 +1,4 @@
+
+> accessmap@4.1.1 db:apply:command
+> node scripts/canonical-migration-identity.mjs command --project-ref kldlwszpfkdmsjrjhjym
+

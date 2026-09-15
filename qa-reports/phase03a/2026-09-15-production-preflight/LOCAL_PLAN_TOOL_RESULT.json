@@ -1,0 +1,66 @@
+{
+  "stage": "A",
+  "knownLocalVersionCount": 86,
+  "plan": [
+    {
+      "version": "20260905055629",
+      "name": "phase03a_flag_policies",
+      "file": "20260905055629_phase03a_flag_policies.sql",
+      "sha256": "c8f4d419b01a624905c46bd168974d494d82af3a6960049c212d24e8fa07fcaa"
+    },
+    {
+      "version": "20260905055630",
+      "name": "phase03a_open_inserts",
+      "file": "20260905055630_phase03a_open_inserts.sql",
+      "sha256": "c6410a61cb195b6d6d70f0d33139064dd191a9cb193534b7f36dc33e25e90071"
+    },
+    {
+      "version": "20260905055632",
+      "name": "phase03a_profile_updates",
+      "file": "20260905055632_phase03a_profile_updates.sql",
+      "sha256": "ef24f6b44bcb7cdc7a2e89fe4a886a0d6a0688cf0a416564bde74b5d4c217187"
+    },
+    {
+      "version": "20260905055633",
+      "name": "phase03a_contextual_profiles",
+      "file": "20260905055633_phase03a_contextual_profiles.sql",
+      "sha256": "526d2c47f3c6edb6c3cffff94b8bec4f3c9e4c3602a30a5e4059b14261d86bf9"
+    },
+    {
+      "version": "20260905055635",
+      "name": "phase03a_trigger_execute",
+      "file": "20260905055635_phase03a_trigger_execute.sql",
+      "sha256": "ca95d25a3219e541db555d5d8693e7240c7a927617c7a5969ee55cffa68074f9"
+    },
+    {
+      "version": "20260905055636",
+      "name": "phase03a_client_privileges",
+      "file": "20260905055636_phase03a_client_privileges.sql",
+      "sha256": "44e405bd9bc7b8c2cccb816825f57d43d617a83bdf38d7f0b4d58205cf997063"
+    },
+    {
+      "version": "20260905073925",
+      "name": "phase03a_effective_privileges",
+      "file": "20260905073925_phase03a_effective_privileges.sql",
+      "sha256": "17970173cb28f29297a931751e9e8ca62c74366f1b83ab5cd36e536049562c20"
+    },
+    {
+      "version": "20260909120000",
+      "name": "fda028_v4_limiter",
+      "file": "20260909120000_fda028_v4_limiter.sql",
+      "sha256": "8d1cc7e129040a3c1260e87cc45fd893ced1d63dd55b2f74245d2b30e6387771"
+    },
+    {
+      "version": "20260911120000",
+      "name": "phase03a_webhook_target_env_scoped",
+      "file": "20260911120000_phase03a_webhook_target_env_scoped.sql",
+      "sha256": "9165f87e3571325fc847de5b08ca33aa9266e8786cee613be0cf61a06f4fbf6b"
+    }
+  ],
+  "refusals": [],
+  "ok": true,
+  "ledgerAudit": {
+    "ok": true,
+    "problems": []
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "validationVersion": 1,
+  "validatedAtUtc": "2026-09-15T03:55:00Z",
+  "passed": true,
+  "checks": {
+    "entries": 12,
+    "generatedFiles": 24,
+    "uniqueGeneratedVersions": 24,
+    "nonRestorableSecurityRepairs": 2,
+    "sourceRollbackAndGeneratedHashes": "PASS",
+    "exactRegenerationFromAcceptedRollbackBodies": "PASS",
+    "exactReapplySourceBodySuffix": "PASS",
+    "productionVersionAvailabilityAtCapture": "PASS",
+    "localCanonicalVersionAvailabilityAtCapture": "PASS",
+    "stageBExcluded": "PASS"
+  },
+  "limitations": [
+    "Static local validation only; no recovery SQL was executed.",
+    "Every restoration is UNSAFE_BASELINE_RESTORE.",
+    "Two security repairs have no production restoration artifact, so overall recovery remains HOLD.",
+    "Version availability must be rechecked against production immediately before any separately authorized future use."
+  ],
+  "problems": []
+}

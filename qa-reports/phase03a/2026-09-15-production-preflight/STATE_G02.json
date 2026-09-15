@@ -1,0 +1,32 @@
+{
+  "promptId": "FLAGSTONE-P03A-PRODUCTION-PREFLIGHT-ONLY-R1",
+  "runUnit": "PRODUCTION_PREFLIGHT_READ_ONLY",
+  "generation": 2,
+  "status": "COMPLETE",
+  "bankedAtUtc": "2026-09-15T03:31:00Z",
+  "head": "949c11093922d0b7d7b8665eda84dfde710f0d1c",
+  "tree": "a8ee59aac0e86239370aa55e14d897bed39c1a65",
+  "productionReadTarget": "kldlwszpfkdmsjrjhjym",
+  "transactionReadOnly": true,
+  "productionLedger": {
+    "rowCount": 71,
+    "firstVersion": "20260523020620",
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b"
+  },
+  "catalogComparison": {
+    "canonicalSha256": "2c0bacf76c71924ffd8543852dc830f593058b8cb67a1016871f55908dae0443",
+    "structuralSha256": "1c4cdbc441d3747f56109955c7b31840720d4cd09373572d961e9638fcc255c8",
+    "diffLines": 0
+  },
+  "mf03": "OWNER_ACTION_REQUIRED",
+  "mf04": "OWNER_ACTION_REQUIRED",
+  "productionMutationAuthority": "NONE",
+  "stagingMutationAuthority": "NONE",
+  "operationState": {
+    "running": [],
+    "appliedNotVerified": [],
+    "outcomeUnknown": []
+  },
+  "nextSafeAction": "prepare the exact 14-entry Stage A plan, local forward-recovery evidence, and consolidated owner decision sheet without execution"
+}

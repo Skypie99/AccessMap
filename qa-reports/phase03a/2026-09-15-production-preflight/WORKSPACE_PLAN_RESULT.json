@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "refusals": [],
+  "workspace": "/private/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03a-apply-HNrKuL",
+  "counts": {
+    "baseline": 71,
+    "adoption": 5,
+    "candidate": 9,
+    "total": 85
+  },
+  "plan": [
+    "20260905055629_phase03a_flag_policies",
+    "20260905055630_phase03a_open_inserts",
+    "20260905055632_phase03a_profile_updates",
+    "20260905055633_phase03a_contextual_profiles",
+    "20260905055635_phase03a_trigger_execute",
+    "20260905055636_phase03a_client_privileges",
+    "20260905073925_phase03a_effective_privileges",
+    "20260909120000_fda028_v4_limiter",
+    "20260911120000_phase03a_webhook_target_env_scoped"
+  ],
+  "wouldPush": [
+    "20260904000000_adopt_private_admin_helper.sql (adoption)",
+    "20260904000100_drop_duplicate_status_triggers.sql (adoption)",
+    "20260904000200_adopt_d1sa_containment.sql (adoption)",
+    "20260904000300_adopt_live_insert_throttles.sql (adoption)",
+    "20260904000400_adopt_execute_revokes.sql (adoption)",
+    "20260905055629_phase03a_flag_policies.sql (candidate)",
+    "20260905055630_phase03a_open_inserts.sql (candidate)",
+    "20260905055632_phase03a_profile_updates.sql (candidate)",
+    "20260905055633_phase03a_contextual_profiles.sql (candidate)",
+    "20260905055635_phase03a_trigger_execute.sql (candidate)",
+    "20260905055636_phase03a_client_privileges.sql (candidate)",
+    "20260905073925_phase03a_effective_privileges.sql (candidate)",
+    "20260909120000_fda028_v4_limiter.sql (candidate)",
+    "20260911120000_phase03a_webhook_target_env_scoped.sql (candidate)"
+  ]
+}

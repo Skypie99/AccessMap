@@ -1,0 +1,24 @@
+{
+  "promptId": "FLAGSTONE-P03A-PRODUCTION-PREREQUISITE-REPAIRS-20260914-R1",
+  "runUnit": "P03A_PRODUCTION_PREREQUISITE_REPAIRS",
+  "generation": 1,
+  "status": "PREPARED",
+  "bankedAtUtc": "2026-09-15T03:56:04Z",
+  "head": "949c11093922d0b7d7b8665eda84dfde710f0d1c",
+  "tree": "a8ee59aac0e86239370aa55e14d897bed39c1a65",
+  "repair1": "PRODUCTION_PLAN_TOOLING",
+  "repair2": "CREDENTIAL_GUARD_FALSE_POSITIVE",
+  "productionLedger": {
+    "rowCount": 71,
+    "latestVersion": "20260830130000",
+    "orderedSha256": "8fd1da6ea324d6b458951a41970d729e1e879b09b502b68f16ba22b09bb9dc9b"
+  },
+  "operationState": {
+    "running": [],
+    "appliedNotVerified": [],
+    "outcomeUnknown": []
+  },
+  "productionAuthority": "NONE",
+  "stagingAuthority": "NONE",
+  "nextSafeAction": "checkpoint the accepted preflight and this PREPARED generation, then implement only the two bounded local repairs and focused tests"
+}
