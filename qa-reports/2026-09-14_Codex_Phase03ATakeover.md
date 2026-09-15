@@ -29,8 +29,10 @@ The Claude-to-Codex takeover reconciled Git, the checkpoint history, the fresh a
 - `0c9b876` — banked the resumed independent fresh-stage review and its HOLD verdict.
 - Added a bounded test-harness repair proposal and final takeover result; no implementation file changed.
 
-**Branch:** `codex/flagstone-p03a-takeover-20260914`  
-**Base:** `9a0af4c88b5b00898e405992cfd44ba7dfd689fc` (verified Step 12 integration)  
+**Branch:** `codex/flagstone-p03a-takeover-20260914`
+
+**Base:** `9a0af4c88b5b00898e405992cfd44ba7dfd689fc` (verified Step 12 integration)
+
 **Latest committed checkpoint before this report:** `0c9b876f9758c6cf7c6e94b0ca019fffea1a9c55`
 
 ## 5. What's Proposed (Not Applied)

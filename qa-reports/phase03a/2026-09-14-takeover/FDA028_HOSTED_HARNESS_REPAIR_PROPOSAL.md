@@ -1,7 +1,9 @@
 # FDA-028 hosted-harness repair proposal
 
-**Status:** PROPOSED — NOT AUTHORIZED FOR IMPLEMENTATION  
-**Scope:** test harness and evidence path only  
+**Status:** PROPOSED — NOT AUTHORIZED FOR IMPLEMENTATION
+
+**Scope:** test harness and evidence path only
+
 **Accepted limiter migration:** preserve byte-for-byte unless the repaired harness independently exposes an implementation defect
 
 ## Problem
