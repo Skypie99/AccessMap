@@ -22,7 +22,8 @@ insert into public.flags(id,user_id,lat,lng,category,severity,status,photo_url,p
 ('b4000000-0000-4000-8000-000000000002','b3000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open',null,null),
 ('b4000000-0000-4000-8000-000000000003','b3000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'rejected',null,null),
 ('b4000000-0000-4000-8000-000000000004','b3000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open','https://example.invalid/photo.jpg',null),
-('b4000000-0000-4000-8000-000000000005','b3000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open',null,null);
+('b4000000-0000-4000-8000-000000000005','b3000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open',null,null),
+('b4000000-0000-4000-8000-000000000006','b3000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open',null,null);
 insert into public.flag_comments(id,flag_id,user_id,content) values
 ('b5000000-0000-4000-8000-000000000001','b4000000-0000-4000-8000-000000000005','b3000000-0000-4000-8000-000000000002','Synthetic report target'),
 ('b5000000-0000-4000-8000-000000000002','b4000000-0000-4000-8000-000000000005','b3000000-0000-4000-8000-000000000002','Parentless report target'),
@@ -39,7 +40,7 @@ insert into public.feedback(id,user_id,body) values
 ('b6000000-0000-4000-8000-000000000006','b3000000-0000-4000-8000-000000000002','[REPORT] v1 target=comment id=b5000000-0000-4000-8000-000000000002' || E'\n\nSynthetic'),
 ('b6000000-0000-4000-8000-000000000007','b3000000-0000-4000-8000-000000000002','[REPORT] v2 target=comment id=b5000000-0000-4000-8000-000000000003 flag=b4000000-0000-4000-8000-000000000001' || E'\n\nSynthetic');
 
-select ok(not has_column_privilege('authenticated','public.flags','status','UPDATE'), 'authenticated has no direct status UPDATE grant');
+select ok(has_column_privilege('authenticated','public.flags','status','UPDATE'), 'authenticated retains bounded direct status UPDATE compatibility');
 select ok(not has_column_privilege('authenticated','public.flags','last_moderation_reason_code','UPDATE'), 'moderation reason is server managed');
 select ok(has_function_privilege('authenticated','public.transition_flag_status(uuid,public.flag_status,public.flag_status,text,uuid)','EXECUTE'), 'authenticated can use status RPC');
 select ok(not has_function_privilege('anon','public.transition_flag_status(uuid,public.flag_status,public.flag_status,text,uuid)','EXECUTE'), 'anon cannot use status RPC');
@@ -57,7 +58,7 @@ select is(public.flag_status_notifications_enabled('b3000000-0000-4000-8000-0000
 select is(public.flag_status_notifications_enabled('b3000000-0000-4000-8000-000000000004'),true,'service preference RPC applies enabled default for missing row');
 
 reset role; set local request.jwt.claim.sub='b3000000-0000-4000-8000-000000000002'; set local request.jwt.claim.role='authenticated'; set local role authenticated;
-select throws_ok($sql$update public.flags set status='verified' where id='b4000000-0000-4000-8000-000000000001'$sql$,'42P17',null,'direct status UPDATE cannot execute (legacy recursive owner policy also blocks before write)');
+select lives_ok($sql$update public.flags set status='verified' where id='b4000000-0000-4000-8000-000000000006' and status='open'$sql$,'shipped direct status UPDATE with CAS remains compatible');
 select throws_ok($sql$select * from public.transition_flag_status('b4000000-0000-4000-8000-000000000001','open','rejected','duplicate',null)$sql$,'42501','Only Flagstone admins can reject reports.','non-admin reject is denied');
 select lives_ok($sql$select * from public.transition_flag_status('b4000000-0000-4000-8000-000000000005','open','verified',null,null)$sql$,'community legal transition uses CAS RPC');
 select is((select status from public.flags where id='b4000000-0000-4000-8000-000000000005'),'verified','community transition persisted');

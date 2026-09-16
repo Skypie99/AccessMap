@@ -1,8 +1,8 @@
--- SAFE COMPENSATING RESTORATION — Phase03B moderation capability OFF.
+-- SAFE COMPENSATING RESTORATION — Phase03B moderation capability OFF, compatibility retained.
 --
--- This does NOT restore the pre-Phase03B status-write path. Doing so would let
--- non-admin users reject flags, expose rejected rows, and discard immutable
--- audit/reason evidence. It disables moderation actions while retaining a
+-- This retains the bounded Build 33 / pinned-web compatibility bridge for
+-- direct verify/resolve/reopen while the compatibility trigger continues to
+-- force reject/restore through the now-disabled audited RPC. It also retains a
 -- community-only CAS transition RPC for verify/resolve/reopen. The queue and
 -- moderation RPC stay revoked. Tightened RLS, reason columns, and the ledger
 -- remain intact. Reapply the forward migration to restore moderation capability.
@@ -81,10 +81,13 @@ grant execute on function public.transition_flag_status(
   uuid, public.flag_status, public.flag_status, text, uuid
 ) to authenticated;
 
--- Direct writes stay closed; rejected rows stay hidden; audit tables and
--- decision columns stay intact. These statements also guard against privilege
--- drift before the compensating restoration is run.
-revoke update (status, last_moderation_reason_code)
+-- The direct bridge stays open only for authenticated status writes. Rejected
+-- rows stay hidden, reason writes stay server-owned, and the compatibility
+-- trigger keeps direct reject/restore closed. These statements also guard
+-- against privilege drift before the compensating restoration is run.
+revoke update (status) on public.flags from public, anon;
+grant update (status) on public.flags to authenticated;
+revoke update (last_moderation_reason_code)
   on public.flags from public, anon, authenticated;
 revoke update (
   moderation_reviewed_at,

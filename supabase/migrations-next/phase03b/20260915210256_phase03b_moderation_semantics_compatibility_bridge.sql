@@ -1,4 +1,4 @@
--- PHASE-03B: reject authorization and atomic moderation semantics.
+-- PHASE-03B: reject authorization, atomic moderation, and shipped-client compatibility.
 -- Local candidate only. Do not apply without the separately recorded Stage/Prod gate.
 begin;
 
@@ -181,9 +181,27 @@ create policy "flags insert status open only"
   to anon, authenticated
   with check (status = 'open');
 
--- Direct status writes are replaced by transition_flag_status(). Other owner
--- edit columns retain their existing grants and policies.
-revoke update (status) on public.flags from public, anon, authenticated;
+-- The inherited owner-edit policy queried public.flags from inside a policy on
+-- public.flags. Once direct status permission is retained, PostgreSQL evaluates
+-- that recursive policy and the shipped PATCH fails with 42P17 even though the
+-- separate community-status policy admits the row. Column grants already keep
+-- immutable coordinates/ownership fields out of the owner edit surface, so use
+-- a non-recursive owner predicate here.
+drop policy if exists "flags owner edit open" on public.flags;
+create policy "flags owner edit open"
+  on public.flags for update
+  to authenticated
+  using ((select auth.uid()) = user_id and status = 'open')
+  with check ((select auth.uid()) = user_id);
+
+-- Build 33 and the pinned production web client still issue a direct
+-- PostgREST UPDATE(status) with an expected-status filter. Keep that exact
+-- compatibility surface until those clients are retired. The transition
+-- trigger below remains the authority for the allowed community transitions,
+-- and the compatibility guard forces reject/restore through the audited RPC.
+-- Other owner edit columns retain their existing grants and policies.
+revoke update (status) on public.flags from public, anon;
+grant update (status) on public.flags to authenticated;
 revoke update (last_moderation_reason_code) on public.flags from public, anon, authenticated;
 
 -- Moderation columns are server-managed through the two RPCs below.
@@ -265,10 +283,63 @@ $fn$;
 revoke all on function public.enforce_flag_status_transition()
   from public, anon, authenticated, service_role;
 
+-- The temporary direct-write bridge is deliberately narrower than the RPC.
+-- SECURITY DEFINER execution of transition_flag_status() retains the function
+-- owner's current_user while a direct PostgREST write runs as authenticated;
+-- the RPC also supplies a transaction-local actor marker only around its own
+-- update. Requiring both lets shipped clients keep verify/resolve/reopen without
+-- creating an unaudited admin-only reject/restore path.
+create or replace function public.enforce_flag_status_compatibility_bridge()
+returns trigger
+language plpgsql
+set search_path = ''
+as $fn$
+declare
+  v_transition_owner name;
+  v_rpc_actor text;
+begin
+  if new.status = old.status then
+    return new;
+  end if;
+
+  if (old.status in ('open', 'verified', 'resolved') and new.status = 'rejected')
+     or (old.status = 'rejected' and new.status = 'open')
+  then
+    select pg_catalog.pg_get_userbyid(proc.proowner)::name
+      into v_transition_owner
+      from pg_catalog.pg_proc proc
+     where proc.oid =
+       'public.transition_flag_status(uuid,public.flag_status,public.flag_status,text,uuid)'::pg_catalog.regprocedure;
+
+    v_rpc_actor := nullif(
+      pg_catalog.current_setting('flagstone.phase03b_transition_actor', true),
+      ''
+    );
+
+    if current_user::name is distinct from v_transition_owner
+       or v_rpc_actor is distinct from (select auth.uid())::text
+    then
+      raise exception 'Reject and restore require the audited status RPC.'
+        using errcode = '42501';
+    end if;
+  end if;
+
+  return new;
+end
+$fn$;
+
+revoke all on function public.enforce_flag_status_compatibility_bridge()
+  from public, anon, authenticated, service_role;
+
 drop trigger if exists flag_status_transition_guard on public.flags;
 create trigger flag_status_transition_guard
   before update of status on public.flags
   for each row execute function public.enforce_flag_status_transition();
+
+drop trigger if exists flag_status_compatibility_bridge_guard on public.flags;
+create trigger flag_status_compatibility_bridge_guard
+  before update of status on public.flags
+  for each row execute function public.enforce_flag_status_compatibility_bridge();
 
 create or replace function public.transition_flag_status(
   p_flag_id uuid,
@@ -289,6 +360,7 @@ declare
   v_updated public.flags%rowtype;
   v_reversed_event_id bigint;
   v_reason text := nullif(btrim(p_moderation_reason), '');
+  v_did_update boolean;
 begin
   if v_actor is null
      or not exists (select 1 from public.users account where account.id = v_actor)
@@ -360,6 +432,15 @@ begin
     end if;
   end if;
 
+  -- The transaction-local marker and SECURITY DEFINER owner check are both
+  -- required by the compatibility trigger. Neither a direct client role nor an
+  -- unrelated owner-executed function can impersonate this moderation call.
+  perform pg_catalog.set_config(
+    'flagstone.phase03b_transition_actor',
+    v_actor::text,
+    true
+  );
+
   update public.flags
      set status = p_new_status::text,
          last_moderation_reason_code = case
@@ -372,7 +453,10 @@ begin
      and status = p_expected_status::text
    returning * into v_updated;
 
-  if not found then
+  v_did_update := found;
+  perform pg_catalog.set_config('flagstone.phase03b_transition_actor', '', true);
+
+  if not v_did_update then
     raise exception 'This flag changed since you opened it. Refresh and try again.'
       using errcode = 'P0001';
   end if;

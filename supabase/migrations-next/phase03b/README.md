@@ -6,7 +6,7 @@ owner gate.
 
 Apply order:
 
-1. `20260915210255_phase03b_moderation_semantics.sql`
+1. `20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql`
 2. `20260915210413_phase03b_points_integrity.sql`
 
 Rollback order is the reverse. Both rollbacks are safe compensating
@@ -15,11 +15,31 @@ restorations, not historical schema rewinds:
 - the points rollback preserves claims/counters/events and disables the affected
   prospective rewards instead of restoring the penalty or farming paths;
 - the moderation rollback preserves audit/reason evidence and rejected-row
-  hiding, revokes the admin queue/decision RPCs, and narrows the status RPC to
-  community-only compare-and-set transitions.
+  hiding, revokes the admin queue/decision RPCs, narrows the status RPC to
+  community-only compare-and-set transitions, and retains the temporary shipped
+  client bridge described below.
 
 Reapplying the forward migrations restores capabilities from the preserved
 state. Neither rollback discards captured evidence.
+
+## Temporary shipped-client compatibility bridge
+
+iOS Build 33 (`f5594171e75bc5ec92a87d0392c361601ddedfba`) and the
+pinned production web release (`ebf091c21066d39898160b1357bde0aa35bdb8bf`)
+contain the same direct PostgREST `UPDATE public.flags SET status = ...` helper
+with an expected-status filter. The first Phase 03B migration therefore retains
+`UPDATE(status)` for `authenticated` while leaving it revoked from `anon` and
+`public`.
+
+The existing legal-transition trigger remains authoritative for direct and RPC
+writes. A second trigger requires both the `transition_flag_status()` function
+owner and its transaction-local actor marker for reject/restore, so direct
+clients can only use the already-accepted community transitions: open to
+verified/resolved, verified to resolved, and resolved to open. Moderation reason
+columns remain server-owned, and audited admin reject/restore remain RPC-only.
+
+This bridge is temporary. A later owner-authorized gate may remove it only after
+the pinned web release is moved and Build 33 no longer needs compatibility.
 
 ## Flag-removal boundary
 

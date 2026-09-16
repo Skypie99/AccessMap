@@ -49,7 +49,7 @@ reset role; set local request.jwt.claim.sub='b7000000-0000-4000-8000-00000000000
 select throws_ok($sql$delete from public.comment_votes where voter_id='b7000000-0000-4000-8000-000000000002'$sql$,'42501',null,'vote deletion is refused');
 select throws_ok(format($sql$insert into public.comment_votes(comment_id,voter_id) values (%L,%L)$sql$,(select id from public.flag_comments where content='Synthetic 1'),'b7000000-0000-4000-8000-000000000002'),'23505',null,'same voter cannot earn through reinsertion');
 
-select lives_ok($sql$select * from public.transition_flag_status('b8000000-0000-4000-8000-000000000001','open','verified',null,null)$sql$,'non-owner verification succeeds');
+select lives_ok($sql$update public.flags set status='verified' where id='b8000000-0000-4000-8000-000000000001' and status='open'$sql$,'legacy non-owner direct verification succeeds');
 select is((select points from public.users where id='b7000000-0000-4000-8000-000000000001'),30,'reporter receives one verification reward');
 select is((select points from public.users where id='b7000000-0000-4000-8000-000000000002'),3,'actor receives one verification reward');
 

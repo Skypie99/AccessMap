@@ -1,18 +1,36 @@
 {
   "schema_version": 1,
   "phase": "03B",
-  "status": "local_candidate_only",
+  "status": "local_revised_candidate_only",
   "production_project_ref": "kldlwszpfkdmsjrjhjym",
   "accepted_base": {
     "commit": "342784c6205a824138d59025d65667e316022473",
     "tree": "337c8e7276f4385153ba832375826ec9f36149a0"
   },
-  "owner_decision": "APPROVE_RECOMMENDED_PHASE03B_SEMANTICS",
+  "owner_decision": "AUTHORIZE_PHASE03B_COMPATIBILITY_BRIDGE_REPAIR",
+  "repair_base": {
+    "implementation_commit": "be82b9e86d60765ef2224a174bf8498b42b9aa37",
+    "implementation_tree": "a244be7f62a30219ee20127031bbf16a67505e73",
+    "staging_receipt_commit": "02032b74203d77b86e1c6d688fc18821f8fa0561",
+    "staging_project_ref": "cepayqmsoqxshsiyqnvz"
+  },
+  "compatibility_bridge": {
+    "ios_build_33_source": "f5594171e75bc5ec92a87d0392c361601ddedfba",
+    "pinned_web_source": "ebf091c21066d39898160b1357bde0aa35bdb8bf",
+    "direct_transitions": [
+      "open_to_verified",
+      "open_to_resolved",
+      "verified_to_resolved",
+      "resolved_to_open"
+    ],
+    "direct_moderation": false,
+    "removal_gate": "owner-authorized client cutover after Build 33 and pinned web retirement"
+  },
   "apply_order": [
     {
-      "identity": "20260915210255_phase03b_moderation_semantics",
-      "path": "supabase/migrations-next/phase03b/20260915210255_phase03b_moderation_semantics.sql",
-      "sha256": "a492fad03bd8dc817019cf6ec72d0492203eba716853104b777a9fbd677a1e9c"
+      "identity": "20260915210256_phase03b_moderation_semantics_compatibility_bridge",
+      "path": "supabase/migrations-next/phase03b/20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "sha256": "8351ba689d41e11556d3833af3ef591a4ad2c224b2e61862fa977eef13aa69fd"
     },
     {
       "identity": "20260915210413_phase03b_points_integrity",
@@ -27,9 +45,9 @@
       "sha256": "f4da0362fb6f2e7258268e0bfee8dc10b2cf330bd447144e8362e170d1197149"
     },
     {
-      "identity": "20260915210255_phase03b_moderation_semantics_rollback",
-      "path": "supabase/migrations-next/phase03b/rollback/20260915210255_phase03b_moderation_semantics.rollback.sql",
-      "sha256": "33cc64614702c564c78234470e4674b51c579e09a524b1897d8ddd32930e8476"
+      "identity": "20260915210256_phase03b_moderation_semantics_compatibility_bridge_rollback",
+      "path": "supabase/migrations-next/phase03b/rollback/20260915210256_phase03b_moderation_semantics_compatibility_bridge.rollback.sql",
+      "sha256": "2c8114def93e54754aa242aada998d1d932bd3c645468302b77a11ed56d47bf9"
     }
   ],
   "rpc_contract": [
@@ -68,15 +86,20 @@
   ],
   "local_proof": {
     "harness": "scripts/replay-phase03b.mjs",
-    "harness_sha256": "4714f1dcee2f3a7570e7f40729181809955406c5787c45d8d5e6adc749ff4616",
+    "harness_sha256": "8cdc2b6164ef2f2338a4cde937db8cc82def8431bcdc6bc4d98a93b961d5051f",
+    "compatibility_test": {
+      "path": "supabase/tests/phase03b-compatibility.test.sql",
+      "sha256": "76601e695893023bc823d67ada5aeaf55682df94d8a5139c074c46e484069a4d",
+      "result": "30/30 pass after migration one, after full forward apply, and after exact reapply"
+    },
     "moderation_test": {
       "path": "supabase/tests/phase03b-moderation.test.sql",
-      "sha256": "2d7a7fb00f02a6e611722ea3be8adeb6c9b3be50d3678f49112c4d130cad0d2f",
+      "sha256": "b85f7bba42b7d8ef226202b4d1211eb3d3632fffdac9eb8659dd7a051df3b6c8",
       "result": "49/49 pass on first apply and exact reapply"
     },
     "points_test": {
       "path": "supabase/tests/phase03b-points.test.sql",
-      "sha256": "7e16e13ee211f4bdf586d2f5d12f30356290b122c98d45e83744f17fa956a5b9",
+      "sha256": "a61d722ecaa001b9cdd0f962412445d5bb96af7e3f36f6ca842354fd09478a0c",
       "result": "22/22 pass on first apply and exact reapply"
     },
     "rollback": "safe compensating rollback pass",

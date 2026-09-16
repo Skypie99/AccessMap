@@ -87,8 +87,11 @@ function normalizedDump() {
     .join('\n');
 }
 
-function runSuites(label) {
-  const suites = ['phase03b-moderation.test.sql', 'phase03b-points.test.sql'];
+function runSuites(label, suites = [
+  'phase03b-compatibility.test.sql',
+  'phase03b-moderation.test.sql',
+  'phase03b-points.test.sql',
+]) {
   return suites.map((suite) => {
     const output = psql([
       '-qAt', '-c', 'set search_path = public, phase03b_tap, extensions;',
@@ -140,30 +143,37 @@ try {
   for (const entry of phase03a) apply(path.join(phase03aDir, entry.file));
 
   const phase03bDir = path.join(nextDir, 'phase03b');
-  const forward = [
-    '20260915210255_phase03b_moderation_semantics.sql',
-    '20260915210413_phase03b_points_integrity.sql',
-  ];
-  for (const name of forward) apply(path.join(phase03bDir, name));
-
   psql([
     '-q',
     '-c', 'create schema phase03b_tap; set search_path = phase03b_tap, public, extensions;',
     '-f', PGTAP,
     '-c', 'grant usage on schema phase03b_tap to anon, authenticated, service_role; grant execute on all functions in schema phase03b_tap to anon, authenticated, service_role;',
   ]);
+
+  const forward = [
+    '20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql',
+    '20260915210413_phase03b_points_integrity.sql',
+  ];
+  apply(path.join(phase03bDir, forward[0]));
+  result.prePointsCompatibility = runSuites(
+    'after moderation migration',
+    ['phase03b-compatibility.test.sql'],
+  );
+  apply(path.join(phase03bDir, forward[1]));
   result.tests.push({ phase: 'forward', suites: runSuites('forward') });
   const forwardDump = normalizedDump();
 
   apply(path.join(phase03bDir, 'rollback/20260915210413_phase03b_points_integrity.rollback.sql'));
-  apply(path.join(phase03bDir, 'rollback/20260915210255_phase03b_moderation_semantics.rollback.sql'));
+  apply(path.join(phase03bDir, 'rollback/20260915210256_phase03b_moderation_semantics_compatibility_bridge.rollback.sql'));
   const safeState = JSON.parse(psql(['-qAtc', `
     begin;
     insert into auth.users(id,email,raw_user_meta_data) values
       ('ba000000-0000-4000-8000-000000000001','rollback-owner@example.invalid','{}'),
       ('ba000000-0000-4000-8000-000000000002','rollback-community@example.invalid','{}');
     insert into public.flags(id,user_id,lat,lng,category,severity,status)
-    values ('bb000000-0000-4000-8000-000000000001','ba000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open');
+    values
+      ('bb000000-0000-4000-8000-000000000001','ba000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'open'),
+      ('bb000000-0000-4000-8000-000000000002','ba000000-0000-4000-8000-000000000001',0,0,'no_ramp',1,'resolved');
     select set_config('request.jwt.claim.sub','ba000000-0000-4000-8000-000000000002',true);
     select set_config('request.jwt.claim.role','authenticated',true);
     set local role authenticated;
@@ -173,6 +183,11 @@ try {
         'bb000000-0000-4000-8000-000000000001','open','verified',null,null
       );
       perform set_config('phase03b.rollback_community_works','true',true);
+      update public.flags
+         set status = 'open'
+       where id = 'bb000000-0000-4000-8000-000000000002'
+         and status = 'resolved';
+      perform set_config('phase03b.rollback_direct_bridge_works',found::text,true);
       begin
         perform * from public.transition_flag_status(
           'bb000000-0000-4000-8000-000000000001','verified','rejected','duplicate',null
@@ -199,6 +214,7 @@ try {
       'comment_rewards_disabled', position('point_events' in pg_get_functiondef('public.handle_comment_added()'::regprocedure)) = 0,
       'vote_rewards_disabled', position('point_events' in pg_get_functiondef('public.handle_comment_vote_added()'::regprocedure)) = 0
       ,'community_transition_works', current_setting('phase03b.rollback_community_works')::boolean
+      ,'direct_bridge_works', current_setting('phase03b.rollback_direct_bridge_works')::boolean
       ,'reject_capability_off', current_setting('phase03b.rollback_reject_blocked')::boolean
       ,'disabled_milestone_claims_consumed', (select count(*) from public.flag_point_reward_claims where flag_id='bb000000-0000-4000-8000-000000000001')
     );
@@ -207,7 +223,7 @@ try {
     transition_execute: true,
     moderate_execute: false,
     list_execute: false,
-    direct_status_update: false,
+    direct_status_update: true,
     vote_delete: false,
     audit_table_retained: true,
     claims_retained: true,
@@ -218,6 +234,7 @@ try {
     comment_rewards_disabled: true,
     vote_rewards_disabled: true,
     community_transition_works: true,
+    direct_bridge_works: true,
     reject_capability_off: true,
     disabled_milestone_claims_consumed: 2,
   };
