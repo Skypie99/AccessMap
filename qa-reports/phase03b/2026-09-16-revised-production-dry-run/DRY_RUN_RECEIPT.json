@@ -1,0 +1,1813 @@
+{
+  "schemaVersion": 1,
+  "promptId": "FLAGSTONE-P03B-REVISED-PRODUCTION-DRY-RUN-20260916-R1",
+  "startedAt": "2026-09-16T23:03:41.944Z",
+  "target": "kldlwszpfkdmsjrjhjym",
+  "forbiddenStagingTarget": "cepayqmsoqxshsiyqnvz",
+  "result": "PASS",
+  "dryRun": {
+    "command": [
+      "supabase",
+      "db",
+      "push",
+      "--workdir",
+      "/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03b-production-dryrun-v2-LTeCcD",
+      "--linked",
+      "--project-ref",
+      "kldlwszpfkdmsjrjhjym",
+      "--dry-run",
+      "--skip-vault",
+      "--include-all",
+      "--output-format",
+      "json"
+    ],
+    "began": "2026-09-16T23:03:47.877Z",
+    "ended": "2026-09-16T23:03:49.789Z",
+    "exitCode": 0,
+    "signal": null,
+    "timedOut": false,
+    "error": null,
+    "stdout": "{\"upToDate\":false,\"dryRun\":true,\"migrations\":[\"20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql\",\"20260915210413_phase03b_points_integrity.sql\"],\"seeds\":[],\"roles\":[],\"message\":\"Finished supabase db push.\"}\n",
+    "stderr": "Initialising login role...\nDRY RUN: migrations will *not* be pushed to the database.\nConnecting to remote database...\nWould push these migrations:\n • 20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql\n • 20260915210413_phase03b_points_integrity.sql\nA new version of Supabase CLI is available: v2.117.0 (currently installed v2.116.0)\nWe recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli\n",
+    "proposedMigrations": [
+      "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "20260915210413_phase03b_points_integrity.sql"
+    ],
+    "exactTwoMigrationsOnly": true
+  },
+  "discovery": {
+    "ledger": {
+      "latestVersion": "20260911120000",
+      "orderedVersionNameSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+      "phase03bFrozenRowsPresent": 0,
+      "rowCount": 85,
+      "rows": [
+        {
+          "name": "accessmap_schema",
+          "statement_count": 1,
+          "statements_sha256": "5f8fea5c53afc6c3e81f2eae7a0c1983e155fd16a483853aa4a574e4855babbe",
+          "version": "20260523020620"
+        },
+        {
+          "name": "accessmap_security_hardening",
+          "statement_count": 1,
+          "statements_sha256": "460175a0d9ada497ff6565fa6e82170996087137d1f953ba64e3774ebebd648f",
+          "version": "20260523021433"
+        },
+        {
+          "name": "rls_initplan_rewrite_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "4719cdedc275c0f2f86d17646e105939acefdb9f0964bbb5815b168e7eec5093",
+          "version": "20260523093244"
+        },
+        {
+          "name": "data_layer_hardening",
+          "statement_count": 1,
+          "statements_sha256": "8073b4e68254a13f5ea7cbf42e33c1848e96577e0f87b8c46a905589d75a087c",
+          "version": "20260523202748"
+        },
+        {
+          "name": "set_flag_updated_at_search_path",
+          "statement_count": 1,
+          "statements_sha256": "208d512e687eecfdce3cfd8cc410928ff1ad4a666b1977e431b9c5b15d6d758c",
+          "version": "20260523203409"
+        },
+        {
+          "name": "feedback_table",
+          "statement_count": 1,
+          "statements_sha256": "266467ceecfa322a916e47f46c74225784bdc9aa0badf8d35108e10c788a96ca",
+          "version": "20260524211752"
+        },
+        {
+          "name": "flag_context_tags",
+          "statement_count": 1,
+          "statements_sha256": "de2f40e213d29d568105e4d359aa2afcab663b8dd277ccfc1a2d2439b7594682",
+          "version": "20260524211803"
+        },
+        {
+          "name": "flag_status_history",
+          "statement_count": 1,
+          "statements_sha256": "01b19d46883c3befc1d9b284ecae109d081243b501b50c5a40b8603d82d7a17c",
+          "version": "20260524211825"
+        },
+        {
+          "name": "2026-05-25_flag_edit_rls",
+          "statement_count": 1,
+          "statements_sha256": "d874e6e804410d0f657d0b36497b474ee05e10292e3d1fb14ea6c23bf6099ff7",
+          "version": "20260527043142"
+        },
+        {
+          "name": "2026-05-25_push_tokens",
+          "statement_count": 1,
+          "statements_sha256": "60b6a7b33bb38d157bb1055d4f2e98195164569a41b6e9aa0fbeceee9724669b",
+          "version": "20260528101406"
+        },
+        {
+          "name": "d1_flags_rls",
+          "statement_count": 1,
+          "statements_sha256": "b18b0f91260db26f310508c4a6dbf5da1b3649fff720c27933d6e5484a16eeb3",
+          "version": "20260528180513"
+        },
+        {
+          "name": "d3_flag_status_trigger",
+          "statement_count": 1,
+          "statements_sha256": "3fc2fede4824fcd71bb215d6e75f31153e1027d7951a57546222e878ac34e738",
+          "version": "20260528180527"
+        },
+        {
+          "name": "data_layer_hardening",
+          "statement_count": 1,
+          "statements_sha256": "97f3b2929526120c221a24d9549708475ab74efe18b9b52b339143a7b127e9d8",
+          "version": "20260528230556"
+        },
+        {
+          "name": "rls_initplan_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "8fea820ef09efc8cf22db8fff25f6b3fcefce6ef6bd9897cf89addeb14b28bbb",
+          "version": "20260528230609"
+        },
+        {
+          "name": "flag_edit_rls_replacement_idempotent",
+          "statement_count": 1,
+          "statements_sha256": "a5782b36dc7e370d254ac478234415323beee59c3f5b9e9bc73b6081845ad800",
+          "version": "20260528230627"
+        },
+        {
+          "name": "status_update_trigger",
+          "statement_count": 1,
+          "statements_sha256": "cfb266511c9521629a14eb88844a12ee92f1774cedc5066633cfe1d45f952e4b",
+          "version": "20260528230637"
+        },
+        {
+          "name": "2026_05_27_users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "0c9bd6f41ef7742aa01f9d54d0975159e6868bdd83bf9ae83be0ee4373904398",
+          "version": "20260529021624"
+        },
+        {
+          "name": "2026_05_25_push_tokens_complete",
+          "statement_count": 1,
+          "statements_sha256": "37ca323aa41037612f7b5f07f6d70a47c62203944520b79521812cd04aeca1c1",
+          "version": "20260529021646"
+        },
+        {
+          "name": "d3_status_trigger_unblocks_marker_clustering",
+          "statement_count": 1,
+          "statements_sha256": "6d02eac93f4396a6614aceab4ee7891353ec136c218c348db84dabd9fb1c6676",
+          "version": "20260529043740"
+        },
+        {
+          "name": "d1_flag_edit_rls_fix",
+          "statement_count": 1,
+          "statements_sha256": "1480124a57e16c4e95f71d68722b5b5a16ddc3f5e5e8d470a153143e49e368a1",
+          "version": "20260529043753"
+        },
+        {
+          "name": "push_tokens_table_fix",
+          "statement_count": 1,
+          "statements_sha256": "132a72160d27469f396ff8e5ef39a33a1a7374c17e9e5a541262eeadce4cc38d",
+          "version": "20260529043805"
+        },
+        {
+          "name": "email_privacy_closes_pii_exposure",
+          "statement_count": 1,
+          "statements_sha256": "1b04893db09339603ec08b36417b6cb873f248517eed2064a0cc87d122973c8f",
+          "version": "20260529043812"
+        },
+        {
+          "name": "d3_status_update_trigger",
+          "statement_count": 1,
+          "statements_sha256": "a2a4442f7779875ac7b94f9de862701b65e4b7c2cead1589b0a5e44383ab11ac",
+          "version": "20260529050514"
+        },
+        {
+          "name": "d4_realtime_flags_filtered_broadcast",
+          "statement_count": 1,
+          "statements_sha256": "95697a2fd1f48ba2a6eacacf74b686a2d1a8e1d7daaa7718b28b3023b313a40f",
+          "version": "20260529053642"
+        },
+        {
+          "name": "d6_flag_edit_history",
+          "statement_count": 1,
+          "statements_sha256": "3b5ff777618d1192ef4de53d7724cf20bad42570573f6cf2c9fd7358e1ff3a51",
+          "version": "20260529060837"
+        },
+        {
+          "name": "2026_05_25_flag_edit_history_table",
+          "statement_count": 1,
+          "statements_sha256": "c7ac413d53f65696d8340a5c6d22c5ebbb8f910e976f2a18e1bae8a3d3ff7af1",
+          "version": "20260529063432"
+        },
+        {
+          "name": "2026_05_27_users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+          "version": "20260529084003"
+        },
+        {
+          "name": "2026_05_23_status_update_trigger_proposal",
+          "statement_count": 1,
+          "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+          "version": "20260529084007"
+        },
+        {
+          "name": "2026_05_23_rls_initplan_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "66927073ccdfcfbd7dc9c273628ded4d79833fd24365bcd5d4add01c1d72c53d",
+          "version": "20260529084113"
+        },
+        {
+          "name": "2026_05_28_d4_realtime_flags_filtered",
+          "statement_count": 1,
+          "statements_sha256": "5195474281a60331c614ec0e988d2c8bf7bc064f080476ecc671f08f0474b3ea",
+          "version": "20260529084118"
+        },
+        {
+          "name": "2026_05_23_data_layer_hardening_fix",
+          "statement_count": 1,
+          "statements_sha256": "ebefa990b002148704e68d0663f440d136a1a847cd34954f32defbaba6b24604",
+          "version": "20260529084136"
+        },
+        {
+          "name": "2026_05_25_flag_edit_rls_replacement_fix",
+          "statement_count": 1,
+          "statements_sha256": "1322a9c6c333e3decdd0f8ec95e345d0c7f161fe53e7a8dda86ea6d76b70f0ee",
+          "version": "20260529084138"
+        },
+        {
+          "name": "latlong_range_constraint",
+          "statement_count": 1,
+          "statements_sha256": "a75423deaaff22a1c9699a06166ffb0d14dbd1d4cb896eccd01d54aeb95217e8",
+          "version": "20260529175048"
+        },
+        {
+          "name": "notification_preferences",
+          "statement_count": 1,
+          "statements_sha256": "131f652e7873fb3e77f36cc988904df12a877c62012f973962c736d8cf34c622",
+          "version": "20260529175840"
+        },
+        {
+          "name": "anon_flags_select",
+          "statement_count": 1,
+          "statements_sha256": "84c0968ad5b44bc56d6a74e7d84e2bfcb0d3cda9d4c39babb51c554e4c296337",
+          "version": "20260529175842"
+        },
+        {
+          "name": "notify_flag_status_webhook_trigger",
+          "statement_count": 1,
+          "statements_sha256": "90a47f0ac0ae0a7caf870438252be4ed90eec21ace7099b7ed0517383dcfa872",
+          "version": "20260529181141"
+        },
+        {
+          "name": "function_search_path_hardening",
+          "statement_count": 1,
+          "statements_sha256": "2f0aa8831a9401dcc13cbb1de63134365aa4d1597362b333fa77af3eb66d6f97",
+          "version": "20260529192005"
+        },
+        {
+          "name": "status_update_trigger_d3",
+          "statement_count": 1,
+          "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+          "version": "20260529192027"
+        },
+        {
+          "name": "users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+          "version": "20260529192040"
+        },
+        {
+          "name": "flag_creation_rate_limit",
+          "statement_count": 1,
+          "statements_sha256": "455e85b6b368ec4105ced4a3c0fb64836645ddbb277a2fc9203937360fc59aa0",
+          "version": "20260530064949"
+        },
+        {
+          "name": "flag_creation_rate_limit_hardened",
+          "statement_count": 1,
+          "statements_sha256": "04222511419ea0063d00b85af3cc29ca993a9d96909ee8a8f17c161aa23d0dca",
+          "version": "20260530192824"
+        },
+        {
+          "name": "flag_comments_table",
+          "statement_count": 1,
+          "statements_sha256": "e5567f8dab8fa69750df848dac466f56a35caec998aed262a3f8ec3d49a65c31",
+          "version": "20260530192829"
+        },
+        {
+          "name": "flag_reopen_requests",
+          "statement_count": 1,
+          "statements_sha256": "0973b21a5c378ac2cdf329c9d64bd33fbb61ce6177bee7729240c1adb5fc4ac8",
+          "version": "20260530193228"
+        },
+        {
+          "name": "fix_flag_comments_default_user_id",
+          "statement_count": 1,
+          "statements_sha256": "ef0b84a57a912ae523cbc5b2e2b3e2b22bc8f6a59f7f89b9f4529510af18a907",
+          "version": "20260531015433"
+        },
+        {
+          "name": "flag_reopen_requests",
+          "statement_count": 1,
+          "statements_sha256": "c92100c0ca100a428e1b4c25b3334e9bada14325aa252032a6cea779adfa81bf",
+          "version": "20260531015456"
+        },
+        {
+          "name": "flag_photos_junction",
+          "statement_count": 1,
+          "statements_sha256": "c8335097b1dd25f8c22b6915d3a88adc5002db0dd3ae1087075b31af6e0d9ada",
+          "version": "20260531025237"
+        },
+        {
+          "name": "trust_score_system",
+          "statement_count": 1,
+          "statements_sha256": "2f6b7f3d0c2113355ff0a9a9dd22ab13d938b33b7796e7d50f7438d095cf9b66",
+          "version": "20260531202835"
+        },
+        {
+          "name": "account_deletion_cascade",
+          "statement_count": 1,
+          "statements_sha256": "32b1538df7c195c912ad0f9480fede2e8e74bac274aeedd11c3e42306eddc291",
+          "version": "20260601081834"
+        },
+        {
+          "name": "anon_flag_reporting_photo_fix",
+          "statement_count": 1,
+          "statements_sha256": "92010c932d994d6feab72596e3a9957c2712c0a47abf271ea0b723f53c0f4e9f",
+          "version": "20260601081846"
+        },
+        {
+          "name": "drop_duplicate_index_flags",
+          "statement_count": 1,
+          "statements_sha256": "2882526b7797ec712362588cff490189bae848821e043f973c4dbff2467bc0b4",
+          "version": "20260602045352"
+        },
+        {
+          "name": "add_covering_indexes_foreign_keys",
+          "statement_count": 1,
+          "statements_sha256": "cb24669207f7b62dc36f2ce0a7012bab5f716df124c44420874148003ed64d15",
+          "version": "20260602045356"
+        },
+        {
+          "name": "flags_policy_consolidation_20260601",
+          "statement_count": 1,
+          "statements_sha256": "55b235186f3276cd6e70664a550c2b277f98716ae3b8771b1f8f4f2e7ced9880",
+          "version": "20260602053139"
+        },
+        {
+          "name": "restore_flags_auth_user_only_triage_unblock_20260601",
+          "statement_count": 1,
+          "statements_sha256": "69d15b0292e8c378b4bb1b5c8b4a267652118b550b8655397bab926e80e256ee",
+          "version": "20260602053522"
+        },
+        {
+          "name": "flags_close_nonowner_delete_and_fix_triage_20260601",
+          "statement_count": 1,
+          "statements_sha256": "dd6b23f5a59657c862ff26ae0095a87e8c2088347f28b43f844570b38bd3bea8",
+          "version": "20260602060359"
+        },
+        {
+          "name": "reconcile_oob_verify_webhook_secret_for_replay_20260829",
+          "statement_count": 4,
+          "statements_sha256": "90b1a20487e6a3a0cce61a4d6eaf5d3ebaf912526ec6e01c1a4829f8eeaecc71",
+          "version": "20260603002420"
+        },
+        {
+          "name": "admin_role",
+          "statement_count": 1,
+          "statements_sha256": "3ad152e4d3d408237ddeebc717fd2610be6650b9da5be5f8c67774bd77c400f1",
+          "version": "20260603002810"
+        },
+        {
+          "name": "sr009_flag_verifications_null_safe_20260727",
+          "statement_count": 1,
+          "statements_sha256": "c87a33c4097093680aa326b484c4c468588820fa3af9af68e5785e3060b8119f",
+          "version": "20260727075327"
+        },
+        {
+          "name": "fork2_oa_actor_guard_null_safe_plus_status_history_20260727",
+          "statement_count": 1,
+          "statements_sha256": "5a3009c09b119a572c1840472d845dca3a23c73b155299c7fe51c7f2469eff63",
+          "version": "20260727075349"
+        },
+        {
+          "name": "a4_3_owner_edit_subquery_alias_fix_20260727",
+          "statement_count": 1,
+          "statements_sha256": "dbce09c506943ffd4fa207e08fa188b3dc948ce1163f269429f23e4be77e2776",
+          "version": "20260727075512"
+        },
+        {
+          "name": "sr024_flag_photos_anon_explicit_20260727",
+          "statement_count": 1,
+          "statements_sha256": "ee12f812d8130ce4fa3bb97307af66af8339f1c127f8bf6c953b5bdf712b43a9",
+          "version": "20260727075530"
+        },
+        {
+          "name": "sr018_verify_webhook_secret_revoke_20260727",
+          "statement_count": 1,
+          "statements_sha256": "3dd4aba9d3be7c9d20ae06692d82f26e8e772f2b954416d474d2e0a55608685a",
+          "version": "20260727075547"
+        },
+        {
+          "name": "a2_1_nonowner_revert_context_tags_20260727",
+          "statement_count": 1,
+          "statements_sha256": "42939eed44c11b6c4bec415df9ebb37397007391e4333e188b5ba8f6641229e7",
+          "version": "20260727075605"
+        },
+        {
+          "name": "a2_2_feedback_anon_throttle_20260727",
+          "statement_count": 1,
+          "statements_sha256": "6366f4bfdda427f92cdd5fe7b528418829ff5e0543f97472a9d5dadf2792f281",
+          "version": "20260727075623"
+        },
+        {
+          "name": "sr001_admin_delete_comment_20260727",
+          "statement_count": 1,
+          "statements_sha256": "d676dda004f5755c9b519fb13cd15d6bff445dbe374d17c612f354f8d9ce7852",
+          "version": "20260727075638"
+        },
+        {
+          "name": "a4_1_status_history_view_grant_fix_20260727",
+          "statement_count": 1,
+          "statements_sha256": "a85faff5b88360e49053358582dec8e84220a9820233a498fd49536a73269d1e",
+          "version": "20260727075651"
+        },
+        {
+          "name": "rls_initplan_consolidated_20260727",
+          "statement_count": 1,
+          "statements_sha256": "75ecc624c64e17c0f3c4116e7658fc2b525f9ddf09051ff5a6decfe8c052a200",
+          "version": "20260727075749"
+        },
+        {
+          "name": "fork5_w1_dispute_counter_20260727",
+          "statement_count": 1,
+          "statements_sha256": "f3f05b479a9b8e597e2b79bc50da1180e0baa264286d866e9148ea48086264d7",
+          "version": "20260727075821"
+        },
+        {
+          "name": "sr050_admin_delete_flag_photo_20260729",
+          "statement_count": 1,
+          "statements_sha256": "786e72b142f30aea2b58a406375e582cdb487187e792f09fe0e58994027566a7",
+          "version": "20260729053159"
+        },
+        {
+          "name": "flag_status_transition_guard",
+          "statement_count": 1,
+          "statements_sha256": "6b1fe7c6c200a9ed4f3ca1868c9a481ed263a4a88043d6b8a9e8bb3c82ae3dcd",
+          "version": "20260819204409"
+        },
+        {
+          "name": "photo_alt_text",
+          "statement_count": 1,
+          "statements_sha256": "36d3ca546fd3d7552924afc477f170b2e2ed183ba2a7628a10ece43fd3b1539a",
+          "version": "20260819214410"
+        },
+        {
+          "name": "promptb_media_key_read_contract",
+          "statement_count": 19,
+          "statements_sha256": "9404ada34629b39fad7a4c70292afeef383d0d14bb2657cebb0490b8c582cf4c",
+          "version": "20260830130000"
+        },
+        {
+          "name": "adopt_private_admin_helper",
+          "statement_count": 8,
+          "statements_sha256": "4037aafde2c9721a8b864a0bbf4858ee56fe7f2c4a5ce4fd71cb767ace66c444",
+          "version": "20260904000000"
+        },
+        {
+          "name": "drop_duplicate_status_triggers",
+          "statement_count": 2,
+          "statements_sha256": "f060d5cfabf4d73dbd59bd62173bf067fdc840d07a55f635c14d5578ed63e37f",
+          "version": "20260904000100"
+        },
+        {
+          "name": "adopt_d1sa_containment",
+          "statement_count": 13,
+          "statements_sha256": "ff7869bc68186c9834e97f67d3150cdae5c11450db9399fee2a901114d7647fa",
+          "version": "20260904000200"
+        },
+        {
+          "name": "adopt_live_insert_throttles",
+          "statement_count": 12,
+          "statements_sha256": "4ab755166cf87add47923b1e17f00a3a3c36ce3493d8bd7fbf90c926ff84d85a",
+          "version": "20260904000300"
+        },
+        {
+          "name": "adopt_execute_revokes",
+          "statement_count": 6,
+          "statements_sha256": "77e48d160d2f874c73a23641372cedfd11639d6736cfebb7bf53b3cbd8e62608",
+          "version": "20260904000400"
+        },
+        {
+          "name": "phase03a_flag_policies",
+          "statement_count": 3,
+          "statements_sha256": "64cad5cb353103000abcd860d26021c731b7cad2216d0eaf2ce299b91ebb4633",
+          "version": "20260905055629"
+        },
+        {
+          "name": "phase03a_open_inserts",
+          "statement_count": 3,
+          "statements_sha256": "c6a101625dacc7b5e5ef68b085e47ca36abc5bcc8bf81736351cc41e5248d0bc",
+          "version": "20260905055630"
+        },
+        {
+          "name": "phase03a_profile_updates",
+          "statement_count": 5,
+          "statements_sha256": "5aef10fa9df77fbb78d83991cf076e69c87006f2ad323eee0226b6b1e0670b08",
+          "version": "20260905055632"
+        },
+        {
+          "name": "phase03a_contextual_profiles",
+          "statement_count": 14,
+          "statements_sha256": "807535d76d56b8cb3c561cc889b9342aa620851293ac30a4563b780d9d6134dc",
+          "version": "20260905055633"
+        },
+        {
+          "name": "phase03a_trigger_execute",
+          "statement_count": 3,
+          "statements_sha256": "29ea4395d7a7d0f594caf898260da189cfbcf4f104a84fde6d142fecd9ff379d",
+          "version": "20260905055635"
+        },
+        {
+          "name": "phase03a_client_privileges",
+          "statement_count": 8,
+          "statements_sha256": "4b7bd34112b45c948735f66d0db041eb7b22f2340ad97d74a2b7aa33049382f5",
+          "version": "20260905055636"
+        },
+        {
+          "name": "phase03a_effective_privileges",
+          "statement_count": 184,
+          "statements_sha256": "0ff535703f43ce587dc0b9f68cec3a68362cc929fc713ba10d4ad372e4fea0de",
+          "version": "20260905073925"
+        },
+        {
+          "name": "fda028_v4_limiter",
+          "statement_count": 42,
+          "statements_sha256": "078e27be65973204b6a48202f40533792aa85781380224acc1d258c401adf9e1",
+          "version": "20260909120000"
+        },
+        {
+          "name": "phase03a_webhook_target_env_scoped",
+          "statement_count": 5,
+          "statements_sha256": "3e90a8f2a1859e23691191586a5ee0194133aeec96e9a60beffa6cfe116d43f6",
+          "version": "20260911120000"
+        }
+      ],
+      "uniqueVersionCount": 85
+    },
+    "structuralChecksum": "2d533d8f8bfb827fe6b63f4fb6f17035afd55b8d474260a51a20fe2c004bda01",
+    "http": {
+      "requestQueueCount": 0,
+      "responseCount": 6,
+      "responseFingerprint": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8",
+      "rows": [
+        {
+          "created_utc": "2026-09-09T02:37:21.383126Z",
+          "error_state": "NO_ERROR",
+          "id": 67,
+          "status_code": 200,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:28.116576Z",
+          "error_state": "NO_ERROR",
+          "id": 68,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:31.364153Z",
+          "error_state": "NO_ERROR",
+          "id": 69,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:36.115069Z",
+          "error_state": "NO_ERROR",
+          "id": 70,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:40.493470Z",
+          "error_state": "NO_ERROR",
+          "id": 71,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:43.435372Z",
+          "error_state": "NO_ERROR",
+          "id": 72,
+          "status_code": 400,
+          "timed_out": false
+        }
+      ]
+    }
+  },
+  "pre": {
+    "ledger": {
+      "latestVersion": "20260911120000",
+      "orderedVersionNameSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+      "phase03bFrozenRowsPresent": 0,
+      "rowCount": 85,
+      "rows": [
+        {
+          "name": "accessmap_schema",
+          "statement_count": 1,
+          "statements_sha256": "5f8fea5c53afc6c3e81f2eae7a0c1983e155fd16a483853aa4a574e4855babbe",
+          "version": "20260523020620"
+        },
+        {
+          "name": "accessmap_security_hardening",
+          "statement_count": 1,
+          "statements_sha256": "460175a0d9ada497ff6565fa6e82170996087137d1f953ba64e3774ebebd648f",
+          "version": "20260523021433"
+        },
+        {
+          "name": "rls_initplan_rewrite_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "4719cdedc275c0f2f86d17646e105939acefdb9f0964bbb5815b168e7eec5093",
+          "version": "20260523093244"
+        },
+        {
+          "name": "data_layer_hardening",
+          "statement_count": 1,
+          "statements_sha256": "8073b4e68254a13f5ea7cbf42e33c1848e96577e0f87b8c46a905589d75a087c",
+          "version": "20260523202748"
+        },
+        {
+          "name": "set_flag_updated_at_search_path",
+          "statement_count": 1,
+          "statements_sha256": "208d512e687eecfdce3cfd8cc410928ff1ad4a666b1977e431b9c5b15d6d758c",
+          "version": "20260523203409"
+        },
+        {
+          "name": "feedback_table",
+          "statement_count": 1,
+          "statements_sha256": "266467ceecfa322a916e47f46c74225784bdc9aa0badf8d35108e10c788a96ca",
+          "version": "20260524211752"
+        },
+        {
+          "name": "flag_context_tags",
+          "statement_count": 1,
+          "statements_sha256": "de2f40e213d29d568105e4d359aa2afcab663b8dd277ccfc1a2d2439b7594682",
+          "version": "20260524211803"
+        },
+        {
+          "name": "flag_status_history",
+          "statement_count": 1,
+          "statements_sha256": "01b19d46883c3befc1d9b284ecae109d081243b501b50c5a40b8603d82d7a17c",
+          "version": "20260524211825"
+        },
+        {
+          "name": "2026-05-25_flag_edit_rls",
+          "statement_count": 1,
+          "statements_sha256": "d874e6e804410d0f657d0b36497b474ee05e10292e3d1fb14ea6c23bf6099ff7",
+          "version": "20260527043142"
+        },
+        {
+          "name": "2026-05-25_push_tokens",
+          "statement_count": 1,
+          "statements_sha256": "60b6a7b33bb38d157bb1055d4f2e98195164569a41b6e9aa0fbeceee9724669b",
+          "version": "20260528101406"
+        },
+        {
+          "name": "d1_flags_rls",
+          "statement_count": 1,
+          "statements_sha256": "b18b0f91260db26f310508c4a6dbf5da1b3649fff720c27933d6e5484a16eeb3",
+          "version": "20260528180513"
+        },
+        {
+          "name": "d3_flag_status_trigger",
+          "statement_count": 1,
+          "statements_sha256": "3fc2fede4824fcd71bb215d6e75f31153e1027d7951a57546222e878ac34e738",
+          "version": "20260528180527"
+        },
+        {
+          "name": "data_layer_hardening",
+          "statement_count": 1,
+          "statements_sha256": "97f3b2929526120c221a24d9549708475ab74efe18b9b52b339143a7b127e9d8",
+          "version": "20260528230556"
+        },
+        {
+          "name": "rls_initplan_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "8fea820ef09efc8cf22db8fff25f6b3fcefce6ef6bd9897cf89addeb14b28bbb",
+          "version": "20260528230609"
+        },
+        {
+          "name": "flag_edit_rls_replacement_idempotent",
+          "statement_count": 1,
+          "statements_sha256": "a5782b36dc7e370d254ac478234415323beee59c3f5b9e9bc73b6081845ad800",
+          "version": "20260528230627"
+        },
+        {
+          "name": "status_update_trigger",
+          "statement_count": 1,
+          "statements_sha256": "cfb266511c9521629a14eb88844a12ee92f1774cedc5066633cfe1d45f952e4b",
+          "version": "20260528230637"
+        },
+        {
+          "name": "2026_05_27_users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "0c9bd6f41ef7742aa01f9d54d0975159e6868bdd83bf9ae83be0ee4373904398",
+          "version": "20260529021624"
+        },
+        {
+          "name": "2026_05_25_push_tokens_complete",
+          "statement_count": 1,
+          "statements_sha256": "37ca323aa41037612f7b5f07f6d70a47c62203944520b79521812cd04aeca1c1",
+          "version": "20260529021646"
+        },
+        {
+          "name": "d3_status_trigger_unblocks_marker_clustering",
+          "statement_count": 1,
+          "statements_sha256": "6d02eac93f4396a6614aceab4ee7891353ec136c218c348db84dabd9fb1c6676",
+          "version": "20260529043740"
+        },
+        {
+          "name": "d1_flag_edit_rls_fix",
+          "statement_count": 1,
+          "statements_sha256": "1480124a57e16c4e95f71d68722b5b5a16ddc3f5e5e8d470a153143e49e368a1",
+          "version": "20260529043753"
+        },
+        {
+          "name": "push_tokens_table_fix",
+          "statement_count": 1,
+          "statements_sha256": "132a72160d27469f396ff8e5ef39a33a1a7374c17e9e5a541262eeadce4cc38d",
+          "version": "20260529043805"
+        },
+        {
+          "name": "email_privacy_closes_pii_exposure",
+          "statement_count": 1,
+          "statements_sha256": "1b04893db09339603ec08b36417b6cb873f248517eed2064a0cc87d122973c8f",
+          "version": "20260529043812"
+        },
+        {
+          "name": "d3_status_update_trigger",
+          "statement_count": 1,
+          "statements_sha256": "a2a4442f7779875ac7b94f9de862701b65e4b7c2cead1589b0a5e44383ab11ac",
+          "version": "20260529050514"
+        },
+        {
+          "name": "d4_realtime_flags_filtered_broadcast",
+          "statement_count": 1,
+          "statements_sha256": "95697a2fd1f48ba2a6eacacf74b686a2d1a8e1d7daaa7718b28b3023b313a40f",
+          "version": "20260529053642"
+        },
+        {
+          "name": "d6_flag_edit_history",
+          "statement_count": 1,
+          "statements_sha256": "3b5ff777618d1192ef4de53d7724cf20bad42570573f6cf2c9fd7358e1ff3a51",
+          "version": "20260529060837"
+        },
+        {
+          "name": "2026_05_25_flag_edit_history_table",
+          "statement_count": 1,
+          "statements_sha256": "c7ac413d53f65696d8340a5c6d22c5ebbb8f910e976f2a18e1bae8a3d3ff7af1",
+          "version": "20260529063432"
+        },
+        {
+          "name": "2026_05_27_users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+          "version": "20260529084003"
+        },
+        {
+          "name": "2026_05_23_status_update_trigger_proposal",
+          "statement_count": 1,
+          "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+          "version": "20260529084007"
+        },
+        {
+          "name": "2026_05_23_rls_initplan_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "66927073ccdfcfbd7dc9c273628ded4d79833fd24365bcd5d4add01c1d72c53d",
+          "version": "20260529084113"
+        },
+        {
+          "name": "2026_05_28_d4_realtime_flags_filtered",
+          "statement_count": 1,
+          "statements_sha256": "5195474281a60331c614ec0e988d2c8bf7bc064f080476ecc671f08f0474b3ea",
+          "version": "20260529084118"
+        },
+        {
+          "name": "2026_05_23_data_layer_hardening_fix",
+          "statement_count": 1,
+          "statements_sha256": "ebefa990b002148704e68d0663f440d136a1a847cd34954f32defbaba6b24604",
+          "version": "20260529084136"
+        },
+        {
+          "name": "2026_05_25_flag_edit_rls_replacement_fix",
+          "statement_count": 1,
+          "statements_sha256": "1322a9c6c333e3decdd0f8ec95e345d0c7f161fe53e7a8dda86ea6d76b70f0ee",
+          "version": "20260529084138"
+        },
+        {
+          "name": "latlong_range_constraint",
+          "statement_count": 1,
+          "statements_sha256": "a75423deaaff22a1c9699a06166ffb0d14dbd1d4cb896eccd01d54aeb95217e8",
+          "version": "20260529175048"
+        },
+        {
+          "name": "notification_preferences",
+          "statement_count": 1,
+          "statements_sha256": "131f652e7873fb3e77f36cc988904df12a877c62012f973962c736d8cf34c622",
+          "version": "20260529175840"
+        },
+        {
+          "name": "anon_flags_select",
+          "statement_count": 1,
+          "statements_sha256": "84c0968ad5b44bc56d6a74e7d84e2bfcb0d3cda9d4c39babb51c554e4c296337",
+          "version": "20260529175842"
+        },
+        {
+          "name": "notify_flag_status_webhook_trigger",
+          "statement_count": 1,
+          "statements_sha256": "90a47f0ac0ae0a7caf870438252be4ed90eec21ace7099b7ed0517383dcfa872",
+          "version": "20260529181141"
+        },
+        {
+          "name": "function_search_path_hardening",
+          "statement_count": 1,
+          "statements_sha256": "2f0aa8831a9401dcc13cbb1de63134365aa4d1597362b333fa77af3eb66d6f97",
+          "version": "20260529192005"
+        },
+        {
+          "name": "status_update_trigger_d3",
+          "statement_count": 1,
+          "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+          "version": "20260529192027"
+        },
+        {
+          "name": "users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+          "version": "20260529192040"
+        },
+        {
+          "name": "flag_creation_rate_limit",
+          "statement_count": 1,
+          "statements_sha256": "455e85b6b368ec4105ced4a3c0fb64836645ddbb277a2fc9203937360fc59aa0",
+          "version": "20260530064949"
+        },
+        {
+          "name": "flag_creation_rate_limit_hardened",
+          "statement_count": 1,
+          "statements_sha256": "04222511419ea0063d00b85af3cc29ca993a9d96909ee8a8f17c161aa23d0dca",
+          "version": "20260530192824"
+        },
+        {
+          "name": "flag_comments_table",
+          "statement_count": 1,
+          "statements_sha256": "e5567f8dab8fa69750df848dac466f56a35caec998aed262a3f8ec3d49a65c31",
+          "version": "20260530192829"
+        },
+        {
+          "name": "flag_reopen_requests",
+          "statement_count": 1,
+          "statements_sha256": "0973b21a5c378ac2cdf329c9d64bd33fbb61ce6177bee7729240c1adb5fc4ac8",
+          "version": "20260530193228"
+        },
+        {
+          "name": "fix_flag_comments_default_user_id",
+          "statement_count": 1,
+          "statements_sha256": "ef0b84a57a912ae523cbc5b2e2b3e2b22bc8f6a59f7f89b9f4529510af18a907",
+          "version": "20260531015433"
+        },
+        {
+          "name": "flag_reopen_requests",
+          "statement_count": 1,
+          "statements_sha256": "c92100c0ca100a428e1b4c25b3334e9bada14325aa252032a6cea779adfa81bf",
+          "version": "20260531015456"
+        },
+        {
+          "name": "flag_photos_junction",
+          "statement_count": 1,
+          "statements_sha256": "c8335097b1dd25f8c22b6915d3a88adc5002db0dd3ae1087075b31af6e0d9ada",
+          "version": "20260531025237"
+        },
+        {
+          "name": "trust_score_system",
+          "statement_count": 1,
+          "statements_sha256": "2f6b7f3d0c2113355ff0a9a9dd22ab13d938b33b7796e7d50f7438d095cf9b66",
+          "version": "20260531202835"
+        },
+        {
+          "name": "account_deletion_cascade",
+          "statement_count": 1,
+          "statements_sha256": "32b1538df7c195c912ad0f9480fede2e8e74bac274aeedd11c3e42306eddc291",
+          "version": "20260601081834"
+        },
+        {
+          "name": "anon_flag_reporting_photo_fix",
+          "statement_count": 1,
+          "statements_sha256": "92010c932d994d6feab72596e3a9957c2712c0a47abf271ea0b723f53c0f4e9f",
+          "version": "20260601081846"
+        },
+        {
+          "name": "drop_duplicate_index_flags",
+          "statement_count": 1,
+          "statements_sha256": "2882526b7797ec712362588cff490189bae848821e043f973c4dbff2467bc0b4",
+          "version": "20260602045352"
+        },
+        {
+          "name": "add_covering_indexes_foreign_keys",
+          "statement_count": 1,
+          "statements_sha256": "cb24669207f7b62dc36f2ce0a7012bab5f716df124c44420874148003ed64d15",
+          "version": "20260602045356"
+        },
+        {
+          "name": "flags_policy_consolidation_20260601",
+          "statement_count": 1,
+          "statements_sha256": "55b235186f3276cd6e70664a550c2b277f98716ae3b8771b1f8f4f2e7ced9880",
+          "version": "20260602053139"
+        },
+        {
+          "name": "restore_flags_auth_user_only_triage_unblock_20260601",
+          "statement_count": 1,
+          "statements_sha256": "69d15b0292e8c378b4bb1b5c8b4a267652118b550b8655397bab926e80e256ee",
+          "version": "20260602053522"
+        },
+        {
+          "name": "flags_close_nonowner_delete_and_fix_triage_20260601",
+          "statement_count": 1,
+          "statements_sha256": "dd6b23f5a59657c862ff26ae0095a87e8c2088347f28b43f844570b38bd3bea8",
+          "version": "20260602060359"
+        },
+        {
+          "name": "reconcile_oob_verify_webhook_secret_for_replay_20260829",
+          "statement_count": 4,
+          "statements_sha256": "90b1a20487e6a3a0cce61a4d6eaf5d3ebaf912526ec6e01c1a4829f8eeaecc71",
+          "version": "20260603002420"
+        },
+        {
+          "name": "admin_role",
+          "statement_count": 1,
+          "statements_sha256": "3ad152e4d3d408237ddeebc717fd2610be6650b9da5be5f8c67774bd77c400f1",
+          "version": "20260603002810"
+        },
+        {
+          "name": "sr009_flag_verifications_null_safe_20260727",
+          "statement_count": 1,
+          "statements_sha256": "c87a33c4097093680aa326b484c4c468588820fa3af9af68e5785e3060b8119f",
+          "version": "20260727075327"
+        },
+        {
+          "name": "fork2_oa_actor_guard_null_safe_plus_status_history_20260727",
+          "statement_count": 1,
+          "statements_sha256": "5a3009c09b119a572c1840472d845dca3a23c73b155299c7fe51c7f2469eff63",
+          "version": "20260727075349"
+        },
+        {
+          "name": "a4_3_owner_edit_subquery_alias_fix_20260727",
+          "statement_count": 1,
+          "statements_sha256": "dbce09c506943ffd4fa207e08fa188b3dc948ce1163f269429f23e4be77e2776",
+          "version": "20260727075512"
+        },
+        {
+          "name": "sr024_flag_photos_anon_explicit_20260727",
+          "statement_count": 1,
+          "statements_sha256": "ee12f812d8130ce4fa3bb97307af66af8339f1c127f8bf6c953b5bdf712b43a9",
+          "version": "20260727075530"
+        },
+        {
+          "name": "sr018_verify_webhook_secret_revoke_20260727",
+          "statement_count": 1,
+          "statements_sha256": "3dd4aba9d3be7c9d20ae06692d82f26e8e772f2b954416d474d2e0a55608685a",
+          "version": "20260727075547"
+        },
+        {
+          "name": "a2_1_nonowner_revert_context_tags_20260727",
+          "statement_count": 1,
+          "statements_sha256": "42939eed44c11b6c4bec415df9ebb37397007391e4333e188b5ba8f6641229e7",
+          "version": "20260727075605"
+        },
+        {
+          "name": "a2_2_feedback_anon_throttle_20260727",
+          "statement_count": 1,
+          "statements_sha256": "6366f4bfdda427f92cdd5fe7b528418829ff5e0543f97472a9d5dadf2792f281",
+          "version": "20260727075623"
+        },
+        {
+          "name": "sr001_admin_delete_comment_20260727",
+          "statement_count": 1,
+          "statements_sha256": "d676dda004f5755c9b519fb13cd15d6bff445dbe374d17c612f354f8d9ce7852",
+          "version": "20260727075638"
+        },
+        {
+          "name": "a4_1_status_history_view_grant_fix_20260727",
+          "statement_count": 1,
+          "statements_sha256": "a85faff5b88360e49053358582dec8e84220a9820233a498fd49536a73269d1e",
+          "version": "20260727075651"
+        },
+        {
+          "name": "rls_initplan_consolidated_20260727",
+          "statement_count": 1,
+          "statements_sha256": "75ecc624c64e17c0f3c4116e7658fc2b525f9ddf09051ff5a6decfe8c052a200",
+          "version": "20260727075749"
+        },
+        {
+          "name": "fork5_w1_dispute_counter_20260727",
+          "statement_count": 1,
+          "statements_sha256": "f3f05b479a9b8e597e2b79bc50da1180e0baa264286d866e9148ea48086264d7",
+          "version": "20260727075821"
+        },
+        {
+          "name": "sr050_admin_delete_flag_photo_20260729",
+          "statement_count": 1,
+          "statements_sha256": "786e72b142f30aea2b58a406375e582cdb487187e792f09fe0e58994027566a7",
+          "version": "20260729053159"
+        },
+        {
+          "name": "flag_status_transition_guard",
+          "statement_count": 1,
+          "statements_sha256": "6b1fe7c6c200a9ed4f3ca1868c9a481ed263a4a88043d6b8a9e8bb3c82ae3dcd",
+          "version": "20260819204409"
+        },
+        {
+          "name": "photo_alt_text",
+          "statement_count": 1,
+          "statements_sha256": "36d3ca546fd3d7552924afc477f170b2e2ed183ba2a7628a10ece43fd3b1539a",
+          "version": "20260819214410"
+        },
+        {
+          "name": "promptb_media_key_read_contract",
+          "statement_count": 19,
+          "statements_sha256": "9404ada34629b39fad7a4c70292afeef383d0d14bb2657cebb0490b8c582cf4c",
+          "version": "20260830130000"
+        },
+        {
+          "name": "adopt_private_admin_helper",
+          "statement_count": 8,
+          "statements_sha256": "4037aafde2c9721a8b864a0bbf4858ee56fe7f2c4a5ce4fd71cb767ace66c444",
+          "version": "20260904000000"
+        },
+        {
+          "name": "drop_duplicate_status_triggers",
+          "statement_count": 2,
+          "statements_sha256": "f060d5cfabf4d73dbd59bd62173bf067fdc840d07a55f635c14d5578ed63e37f",
+          "version": "20260904000100"
+        },
+        {
+          "name": "adopt_d1sa_containment",
+          "statement_count": 13,
+          "statements_sha256": "ff7869bc68186c9834e97f67d3150cdae5c11450db9399fee2a901114d7647fa",
+          "version": "20260904000200"
+        },
+        {
+          "name": "adopt_live_insert_throttles",
+          "statement_count": 12,
+          "statements_sha256": "4ab755166cf87add47923b1e17f00a3a3c36ce3493d8bd7fbf90c926ff84d85a",
+          "version": "20260904000300"
+        },
+        {
+          "name": "adopt_execute_revokes",
+          "statement_count": 6,
+          "statements_sha256": "77e48d160d2f874c73a23641372cedfd11639d6736cfebb7bf53b3cbd8e62608",
+          "version": "20260904000400"
+        },
+        {
+          "name": "phase03a_flag_policies",
+          "statement_count": 3,
+          "statements_sha256": "64cad5cb353103000abcd860d26021c731b7cad2216d0eaf2ce299b91ebb4633",
+          "version": "20260905055629"
+        },
+        {
+          "name": "phase03a_open_inserts",
+          "statement_count": 3,
+          "statements_sha256": "c6a101625dacc7b5e5ef68b085e47ca36abc5bcc8bf81736351cc41e5248d0bc",
+          "version": "20260905055630"
+        },
+        {
+          "name": "phase03a_profile_updates",
+          "statement_count": 5,
+          "statements_sha256": "5aef10fa9df77fbb78d83991cf076e69c87006f2ad323eee0226b6b1e0670b08",
+          "version": "20260905055632"
+        },
+        {
+          "name": "phase03a_contextual_profiles",
+          "statement_count": 14,
+          "statements_sha256": "807535d76d56b8cb3c561cc889b9342aa620851293ac30a4563b780d9d6134dc",
+          "version": "20260905055633"
+        },
+        {
+          "name": "phase03a_trigger_execute",
+          "statement_count": 3,
+          "statements_sha256": "29ea4395d7a7d0f594caf898260da189cfbcf4f104a84fde6d142fecd9ff379d",
+          "version": "20260905055635"
+        },
+        {
+          "name": "phase03a_client_privileges",
+          "statement_count": 8,
+          "statements_sha256": "4b7bd34112b45c948735f66d0db041eb7b22f2340ad97d74a2b7aa33049382f5",
+          "version": "20260905055636"
+        },
+        {
+          "name": "phase03a_effective_privileges",
+          "statement_count": 184,
+          "statements_sha256": "0ff535703f43ce587dc0b9f68cec3a68362cc929fc713ba10d4ad372e4fea0de",
+          "version": "20260905073925"
+        },
+        {
+          "name": "fda028_v4_limiter",
+          "statement_count": 42,
+          "statements_sha256": "078e27be65973204b6a48202f40533792aa85781380224acc1d258c401adf9e1",
+          "version": "20260909120000"
+        },
+        {
+          "name": "phase03a_webhook_target_env_scoped",
+          "statement_count": 5,
+          "statements_sha256": "3e90a8f2a1859e23691191586a5ee0194133aeec96e9a60beffa6cfe116d43f6",
+          "version": "20260911120000"
+        }
+      ],
+      "uniqueVersionCount": 85
+    },
+    "structuralChecksum": "2d533d8f8bfb827fe6b63f4fb6f17035afd55b8d474260a51a20fe2c004bda01",
+    "http": {
+      "requestQueueCount": 0,
+      "responseCount": 6,
+      "responseFingerprint": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8",
+      "rows": [
+        {
+          "created_utc": "2026-09-09T02:37:21.383126Z",
+          "error_state": "NO_ERROR",
+          "id": 67,
+          "status_code": 200,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:28.116576Z",
+          "error_state": "NO_ERROR",
+          "id": 68,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:31.364153Z",
+          "error_state": "NO_ERROR",
+          "id": 69,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:36.115069Z",
+          "error_state": "NO_ERROR",
+          "id": 70,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:40.493470Z",
+          "error_state": "NO_ERROR",
+          "id": 71,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:43.435372Z",
+          "error_state": "NO_ERROR",
+          "id": 72,
+          "status_code": 400,
+          "timed_out": false
+        }
+      ]
+    }
+  },
+  "post": {
+    "ledger": {
+      "latestVersion": "20260911120000",
+      "orderedVersionNameSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+      "phase03bFrozenRowsPresent": 0,
+      "rowCount": 85,
+      "rows": [
+        {
+          "name": "accessmap_schema",
+          "statement_count": 1,
+          "statements_sha256": "5f8fea5c53afc6c3e81f2eae7a0c1983e155fd16a483853aa4a574e4855babbe",
+          "version": "20260523020620"
+        },
+        {
+          "name": "accessmap_security_hardening",
+          "statement_count": 1,
+          "statements_sha256": "460175a0d9ada497ff6565fa6e82170996087137d1f953ba64e3774ebebd648f",
+          "version": "20260523021433"
+        },
+        {
+          "name": "rls_initplan_rewrite_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "4719cdedc275c0f2f86d17646e105939acefdb9f0964bbb5815b168e7eec5093",
+          "version": "20260523093244"
+        },
+        {
+          "name": "data_layer_hardening",
+          "statement_count": 1,
+          "statements_sha256": "8073b4e68254a13f5ea7cbf42e33c1848e96577e0f87b8c46a905589d75a087c",
+          "version": "20260523202748"
+        },
+        {
+          "name": "set_flag_updated_at_search_path",
+          "statement_count": 1,
+          "statements_sha256": "208d512e687eecfdce3cfd8cc410928ff1ad4a666b1977e431b9c5b15d6d758c",
+          "version": "20260523203409"
+        },
+        {
+          "name": "feedback_table",
+          "statement_count": 1,
+          "statements_sha256": "266467ceecfa322a916e47f46c74225784bdc9aa0badf8d35108e10c788a96ca",
+          "version": "20260524211752"
+        },
+        {
+          "name": "flag_context_tags",
+          "statement_count": 1,
+          "statements_sha256": "de2f40e213d29d568105e4d359aa2afcab663b8dd277ccfc1a2d2439b7594682",
+          "version": "20260524211803"
+        },
+        {
+          "name": "flag_status_history",
+          "statement_count": 1,
+          "statements_sha256": "01b19d46883c3befc1d9b284ecae109d081243b501b50c5a40b8603d82d7a17c",
+          "version": "20260524211825"
+        },
+        {
+          "name": "2026-05-25_flag_edit_rls",
+          "statement_count": 1,
+          "statements_sha256": "d874e6e804410d0f657d0b36497b474ee05e10292e3d1fb14ea6c23bf6099ff7",
+          "version": "20260527043142"
+        },
+        {
+          "name": "2026-05-25_push_tokens",
+          "statement_count": 1,
+          "statements_sha256": "60b6a7b33bb38d157bb1055d4f2e98195164569a41b6e9aa0fbeceee9724669b",
+          "version": "20260528101406"
+        },
+        {
+          "name": "d1_flags_rls",
+          "statement_count": 1,
+          "statements_sha256": "b18b0f91260db26f310508c4a6dbf5da1b3649fff720c27933d6e5484a16eeb3",
+          "version": "20260528180513"
+        },
+        {
+          "name": "d3_flag_status_trigger",
+          "statement_count": 1,
+          "statements_sha256": "3fc2fede4824fcd71bb215d6e75f31153e1027d7951a57546222e878ac34e738",
+          "version": "20260528180527"
+        },
+        {
+          "name": "data_layer_hardening",
+          "statement_count": 1,
+          "statements_sha256": "97f3b2929526120c221a24d9549708475ab74efe18b9b52b339143a7b127e9d8",
+          "version": "20260528230556"
+        },
+        {
+          "name": "rls_initplan_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "8fea820ef09efc8cf22db8fff25f6b3fcefce6ef6bd9897cf89addeb14b28bbb",
+          "version": "20260528230609"
+        },
+        {
+          "name": "flag_edit_rls_replacement_idempotent",
+          "statement_count": 1,
+          "statements_sha256": "a5782b36dc7e370d254ac478234415323beee59c3f5b9e9bc73b6081845ad800",
+          "version": "20260528230627"
+        },
+        {
+          "name": "status_update_trigger",
+          "statement_count": 1,
+          "statements_sha256": "cfb266511c9521629a14eb88844a12ee92f1774cedc5066633cfe1d45f952e4b",
+          "version": "20260528230637"
+        },
+        {
+          "name": "2026_05_27_users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "0c9bd6f41ef7742aa01f9d54d0975159e6868bdd83bf9ae83be0ee4373904398",
+          "version": "20260529021624"
+        },
+        {
+          "name": "2026_05_25_push_tokens_complete",
+          "statement_count": 1,
+          "statements_sha256": "37ca323aa41037612f7b5f07f6d70a47c62203944520b79521812cd04aeca1c1",
+          "version": "20260529021646"
+        },
+        {
+          "name": "d3_status_trigger_unblocks_marker_clustering",
+          "statement_count": 1,
+          "statements_sha256": "6d02eac93f4396a6614aceab4ee7891353ec136c218c348db84dabd9fb1c6676",
+          "version": "20260529043740"
+        },
+        {
+          "name": "d1_flag_edit_rls_fix",
+          "statement_count": 1,
+          "statements_sha256": "1480124a57e16c4e95f71d68722b5b5a16ddc3f5e5e8d470a153143e49e368a1",
+          "version": "20260529043753"
+        },
+        {
+          "name": "push_tokens_table_fix",
+          "statement_count": 1,
+          "statements_sha256": "132a72160d27469f396ff8e5ef39a33a1a7374c17e9e5a541262eeadce4cc38d",
+          "version": "20260529043805"
+        },
+        {
+          "name": "email_privacy_closes_pii_exposure",
+          "statement_count": 1,
+          "statements_sha256": "1b04893db09339603ec08b36417b6cb873f248517eed2064a0cc87d122973c8f",
+          "version": "20260529043812"
+        },
+        {
+          "name": "d3_status_update_trigger",
+          "statement_count": 1,
+          "statements_sha256": "a2a4442f7779875ac7b94f9de862701b65e4b7c2cead1589b0a5e44383ab11ac",
+          "version": "20260529050514"
+        },
+        {
+          "name": "d4_realtime_flags_filtered_broadcast",
+          "statement_count": 1,
+          "statements_sha256": "95697a2fd1f48ba2a6eacacf74b686a2d1a8e1d7daaa7718b28b3023b313a40f",
+          "version": "20260529053642"
+        },
+        {
+          "name": "d6_flag_edit_history",
+          "statement_count": 1,
+          "statements_sha256": "3b5ff777618d1192ef4de53d7724cf20bad42570573f6cf2c9fd7358e1ff3a51",
+          "version": "20260529060837"
+        },
+        {
+          "name": "2026_05_25_flag_edit_history_table",
+          "statement_count": 1,
+          "statements_sha256": "c7ac413d53f65696d8340a5c6d22c5ebbb8f910e976f2a18e1bae8a3d3ff7af1",
+          "version": "20260529063432"
+        },
+        {
+          "name": "2026_05_27_users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+          "version": "20260529084003"
+        },
+        {
+          "name": "2026_05_23_status_update_trigger_proposal",
+          "statement_count": 1,
+          "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+          "version": "20260529084007"
+        },
+        {
+          "name": "2026_05_23_rls_initplan_and_non_owner_status_update",
+          "statement_count": 1,
+          "statements_sha256": "66927073ccdfcfbd7dc9c273628ded4d79833fd24365bcd5d4add01c1d72c53d",
+          "version": "20260529084113"
+        },
+        {
+          "name": "2026_05_28_d4_realtime_flags_filtered",
+          "statement_count": 1,
+          "statements_sha256": "5195474281a60331c614ec0e988d2c8bf7bc064f080476ecc671f08f0474b3ea",
+          "version": "20260529084118"
+        },
+        {
+          "name": "2026_05_23_data_layer_hardening_fix",
+          "statement_count": 1,
+          "statements_sha256": "ebefa990b002148704e68d0663f440d136a1a847cd34954f32defbaba6b24604",
+          "version": "20260529084136"
+        },
+        {
+          "name": "2026_05_25_flag_edit_rls_replacement_fix",
+          "statement_count": 1,
+          "statements_sha256": "1322a9c6c333e3decdd0f8ec95e345d0c7f161fe53e7a8dda86ea6d76b70f0ee",
+          "version": "20260529084138"
+        },
+        {
+          "name": "latlong_range_constraint",
+          "statement_count": 1,
+          "statements_sha256": "a75423deaaff22a1c9699a06166ffb0d14dbd1d4cb896eccd01d54aeb95217e8",
+          "version": "20260529175048"
+        },
+        {
+          "name": "notification_preferences",
+          "statement_count": 1,
+          "statements_sha256": "131f652e7873fb3e77f36cc988904df12a877c62012f973962c736d8cf34c622",
+          "version": "20260529175840"
+        },
+        {
+          "name": "anon_flags_select",
+          "statement_count": 1,
+          "statements_sha256": "84c0968ad5b44bc56d6a74e7d84e2bfcb0d3cda9d4c39babb51c554e4c296337",
+          "version": "20260529175842"
+        },
+        {
+          "name": "notify_flag_status_webhook_trigger",
+          "statement_count": 1,
+          "statements_sha256": "90a47f0ac0ae0a7caf870438252be4ed90eec21ace7099b7ed0517383dcfa872",
+          "version": "20260529181141"
+        },
+        {
+          "name": "function_search_path_hardening",
+          "statement_count": 1,
+          "statements_sha256": "2f0aa8831a9401dcc13cbb1de63134365aa4d1597362b333fa77af3eb66d6f97",
+          "version": "20260529192005"
+        },
+        {
+          "name": "status_update_trigger_d3",
+          "statement_count": 1,
+          "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+          "version": "20260529192027"
+        },
+        {
+          "name": "users_email_privacy",
+          "statement_count": 1,
+          "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+          "version": "20260529192040"
+        },
+        {
+          "name": "flag_creation_rate_limit",
+          "statement_count": 1,
+          "statements_sha256": "455e85b6b368ec4105ced4a3c0fb64836645ddbb277a2fc9203937360fc59aa0",
+          "version": "20260530064949"
+        },
+        {
+          "name": "flag_creation_rate_limit_hardened",
+          "statement_count": 1,
+          "statements_sha256": "04222511419ea0063d00b85af3cc29ca993a9d96909ee8a8f17c161aa23d0dca",
+          "version": "20260530192824"
+        },
+        {
+          "name": "flag_comments_table",
+          "statement_count": 1,
+          "statements_sha256": "e5567f8dab8fa69750df848dac466f56a35caec998aed262a3f8ec3d49a65c31",
+          "version": "20260530192829"
+        },
+        {
+          "name": "flag_reopen_requests",
+          "statement_count": 1,
+          "statements_sha256": "0973b21a5c378ac2cdf329c9d64bd33fbb61ce6177bee7729240c1adb5fc4ac8",
+          "version": "20260530193228"
+        },
+        {
+          "name": "fix_flag_comments_default_user_id",
+          "statement_count": 1,
+          "statements_sha256": "ef0b84a57a912ae523cbc5b2e2b3e2b22bc8f6a59f7f89b9f4529510af18a907",
+          "version": "20260531015433"
+        },
+        {
+          "name": "flag_reopen_requests",
+          "statement_count": 1,
+          "statements_sha256": "c92100c0ca100a428e1b4c25b3334e9bada14325aa252032a6cea779adfa81bf",
+          "version": "20260531015456"
+        },
+        {
+          "name": "flag_photos_junction",
+          "statement_count": 1,
+          "statements_sha256": "c8335097b1dd25f8c22b6915d3a88adc5002db0dd3ae1087075b31af6e0d9ada",
+          "version": "20260531025237"
+        },
+        {
+          "name": "trust_score_system",
+          "statement_count": 1,
+          "statements_sha256": "2f6b7f3d0c2113355ff0a9a9dd22ab13d938b33b7796e7d50f7438d095cf9b66",
+          "version": "20260531202835"
+        },
+        {
+          "name": "account_deletion_cascade",
+          "statement_count": 1,
+          "statements_sha256": "32b1538df7c195c912ad0f9480fede2e8e74bac274aeedd11c3e42306eddc291",
+          "version": "20260601081834"
+        },
+        {
+          "name": "anon_flag_reporting_photo_fix",
+          "statement_count": 1,
+          "statements_sha256": "92010c932d994d6feab72596e3a9957c2712c0a47abf271ea0b723f53c0f4e9f",
+          "version": "20260601081846"
+        },
+        {
+          "name": "drop_duplicate_index_flags",
+          "statement_count": 1,
+          "statements_sha256": "2882526b7797ec712362588cff490189bae848821e043f973c4dbff2467bc0b4",
+          "version": "20260602045352"
+        },
+        {
+          "name": "add_covering_indexes_foreign_keys",
+          "statement_count": 1,
+          "statements_sha256": "cb24669207f7b62dc36f2ce0a7012bab5f716df124c44420874148003ed64d15",
+          "version": "20260602045356"
+        },
+        {
+          "name": "flags_policy_consolidation_20260601",
+          "statement_count": 1,
+          "statements_sha256": "55b235186f3276cd6e70664a550c2b277f98716ae3b8771b1f8f4f2e7ced9880",
+          "version": "20260602053139"
+        },
+        {
+          "name": "restore_flags_auth_user_only_triage_unblock_20260601",
+          "statement_count": 1,
+          "statements_sha256": "69d15b0292e8c378b4bb1b5c8b4a267652118b550b8655397bab926e80e256ee",
+          "version": "20260602053522"
+        },
+        {
+          "name": "flags_close_nonowner_delete_and_fix_triage_20260601",
+          "statement_count": 1,
+          "statements_sha256": "dd6b23f5a59657c862ff26ae0095a87e8c2088347f28b43f844570b38bd3bea8",
+          "version": "20260602060359"
+        },
+        {
+          "name": "reconcile_oob_verify_webhook_secret_for_replay_20260829",
+          "statement_count": 4,
+          "statements_sha256": "90b1a20487e6a3a0cce61a4d6eaf5d3ebaf912526ec6e01c1a4829f8eeaecc71",
+          "version": "20260603002420"
+        },
+        {
+          "name": "admin_role",
+          "statement_count": 1,
+          "statements_sha256": "3ad152e4d3d408237ddeebc717fd2610be6650b9da5be5f8c67774bd77c400f1",
+          "version": "20260603002810"
+        },
+        {
+          "name": "sr009_flag_verifications_null_safe_20260727",
+          "statement_count": 1,
+          "statements_sha256": "c87a33c4097093680aa326b484c4c468588820fa3af9af68e5785e3060b8119f",
+          "version": "20260727075327"
+        },
+        {
+          "name": "fork2_oa_actor_guard_null_safe_plus_status_history_20260727",
+          "statement_count": 1,
+          "statements_sha256": "5a3009c09b119a572c1840472d845dca3a23c73b155299c7fe51c7f2469eff63",
+          "version": "20260727075349"
+        },
+        {
+          "name": "a4_3_owner_edit_subquery_alias_fix_20260727",
+          "statement_count": 1,
+          "statements_sha256": "dbce09c506943ffd4fa207e08fa188b3dc948ce1163f269429f23e4be77e2776",
+          "version": "20260727075512"
+        },
+        {
+          "name": "sr024_flag_photos_anon_explicit_20260727",
+          "statement_count": 1,
+          "statements_sha256": "ee12f812d8130ce4fa3bb97307af66af8339f1c127f8bf6c953b5bdf712b43a9",
+          "version": "20260727075530"
+        },
+        {
+          "name": "sr018_verify_webhook_secret_revoke_20260727",
+          "statement_count": 1,
+          "statements_sha256": "3dd4aba9d3be7c9d20ae06692d82f26e8e772f2b954416d474d2e0a55608685a",
+          "version": "20260727075547"
+        },
+        {
+          "name": "a2_1_nonowner_revert_context_tags_20260727",
+          "statement_count": 1,
+          "statements_sha256": "42939eed44c11b6c4bec415df9ebb37397007391e4333e188b5ba8f6641229e7",
+          "version": "20260727075605"
+        },
+        {
+          "name": "a2_2_feedback_anon_throttle_20260727",
+          "statement_count": 1,
+          "statements_sha256": "6366f4bfdda427f92cdd5fe7b528418829ff5e0543f97472a9d5dadf2792f281",
+          "version": "20260727075623"
+        },
+        {
+          "name": "sr001_admin_delete_comment_20260727",
+          "statement_count": 1,
+          "statements_sha256": "d676dda004f5755c9b519fb13cd15d6bff445dbe374d17c612f354f8d9ce7852",
+          "version": "20260727075638"
+        },
+        {
+          "name": "a4_1_status_history_view_grant_fix_20260727",
+          "statement_count": 1,
+          "statements_sha256": "a85faff5b88360e49053358582dec8e84220a9820233a498fd49536a73269d1e",
+          "version": "20260727075651"
+        },
+        {
+          "name": "rls_initplan_consolidated_20260727",
+          "statement_count": 1,
+          "statements_sha256": "75ecc624c64e17c0f3c4116e7658fc2b525f9ddf09051ff5a6decfe8c052a200",
+          "version": "20260727075749"
+        },
+        {
+          "name": "fork5_w1_dispute_counter_20260727",
+          "statement_count": 1,
+          "statements_sha256": "f3f05b479a9b8e597e2b79bc50da1180e0baa264286d866e9148ea48086264d7",
+          "version": "20260727075821"
+        },
+        {
+          "name": "sr050_admin_delete_flag_photo_20260729",
+          "statement_count": 1,
+          "statements_sha256": "786e72b142f30aea2b58a406375e582cdb487187e792f09fe0e58994027566a7",
+          "version": "20260729053159"
+        },
+        {
+          "name": "flag_status_transition_guard",
+          "statement_count": 1,
+          "statements_sha256": "6b1fe7c6c200a9ed4f3ca1868c9a481ed263a4a88043d6b8a9e8bb3c82ae3dcd",
+          "version": "20260819204409"
+        },
+        {
+          "name": "photo_alt_text",
+          "statement_count": 1,
+          "statements_sha256": "36d3ca546fd3d7552924afc477f170b2e2ed183ba2a7628a10ece43fd3b1539a",
+          "version": "20260819214410"
+        },
+        {
+          "name": "promptb_media_key_read_contract",
+          "statement_count": 19,
+          "statements_sha256": "9404ada34629b39fad7a4c70292afeef383d0d14bb2657cebb0490b8c582cf4c",
+          "version": "20260830130000"
+        },
+        {
+          "name": "adopt_private_admin_helper",
+          "statement_count": 8,
+          "statements_sha256": "4037aafde2c9721a8b864a0bbf4858ee56fe7f2c4a5ce4fd71cb767ace66c444",
+          "version": "20260904000000"
+        },
+        {
+          "name": "drop_duplicate_status_triggers",
+          "statement_count": 2,
+          "statements_sha256": "f060d5cfabf4d73dbd59bd62173bf067fdc840d07a55f635c14d5578ed63e37f",
+          "version": "20260904000100"
+        },
+        {
+          "name": "adopt_d1sa_containment",
+          "statement_count": 13,
+          "statements_sha256": "ff7869bc68186c9834e97f67d3150cdae5c11450db9399fee2a901114d7647fa",
+          "version": "20260904000200"
+        },
+        {
+          "name": "adopt_live_insert_throttles",
+          "statement_count": 12,
+          "statements_sha256": "4ab755166cf87add47923b1e17f00a3a3c36ce3493d8bd7fbf90c926ff84d85a",
+          "version": "20260904000300"
+        },
+        {
+          "name": "adopt_execute_revokes",
+          "statement_count": 6,
+          "statements_sha256": "77e48d160d2f874c73a23641372cedfd11639d6736cfebb7bf53b3cbd8e62608",
+          "version": "20260904000400"
+        },
+        {
+          "name": "phase03a_flag_policies",
+          "statement_count": 3,
+          "statements_sha256": "64cad5cb353103000abcd860d26021c731b7cad2216d0eaf2ce299b91ebb4633",
+          "version": "20260905055629"
+        },
+        {
+          "name": "phase03a_open_inserts",
+          "statement_count": 3,
+          "statements_sha256": "c6a101625dacc7b5e5ef68b085e47ca36abc5bcc8bf81736351cc41e5248d0bc",
+          "version": "20260905055630"
+        },
+        {
+          "name": "phase03a_profile_updates",
+          "statement_count": 5,
+          "statements_sha256": "5aef10fa9df77fbb78d83991cf076e69c87006f2ad323eee0226b6b1e0670b08",
+          "version": "20260905055632"
+        },
+        {
+          "name": "phase03a_contextual_profiles",
+          "statement_count": 14,
+          "statements_sha256": "807535d76d56b8cb3c561cc889b9342aa620851293ac30a4563b780d9d6134dc",
+          "version": "20260905055633"
+        },
+        {
+          "name": "phase03a_trigger_execute",
+          "statement_count": 3,
+          "statements_sha256": "29ea4395d7a7d0f594caf898260da189cfbcf4f104a84fde6d142fecd9ff379d",
+          "version": "20260905055635"
+        },
+        {
+          "name": "phase03a_client_privileges",
+          "statement_count": 8,
+          "statements_sha256": "4b7bd34112b45c948735f66d0db041eb7b22f2340ad97d74a2b7aa33049382f5",
+          "version": "20260905055636"
+        },
+        {
+          "name": "phase03a_effective_privileges",
+          "statement_count": 184,
+          "statements_sha256": "0ff535703f43ce587dc0b9f68cec3a68362cc929fc713ba10d4ad372e4fea0de",
+          "version": "20260905073925"
+        },
+        {
+          "name": "fda028_v4_limiter",
+          "statement_count": 42,
+          "statements_sha256": "078e27be65973204b6a48202f40533792aa85781380224acc1d258c401adf9e1",
+          "version": "20260909120000"
+        },
+        {
+          "name": "phase03a_webhook_target_env_scoped",
+          "statement_count": 5,
+          "statements_sha256": "3e90a8f2a1859e23691191586a5ee0194133aeec96e9a60beffa6cfe116d43f6",
+          "version": "20260911120000"
+        }
+      ],
+      "uniqueVersionCount": 85
+    },
+    "structuralChecksum": "2d533d8f8bfb827fe6b63f4fb6f17035afd55b8d474260a51a20fe2c004bda01",
+    "http": {
+      "requestQueueCount": 0,
+      "responseCount": 6,
+      "responseFingerprint": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8",
+      "rows": [
+        {
+          "created_utc": "2026-09-09T02:37:21.383126Z",
+          "error_state": "NO_ERROR",
+          "id": 67,
+          "status_code": 200,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:28.116576Z",
+          "error_state": "NO_ERROR",
+          "id": 68,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:31.364153Z",
+          "error_state": "NO_ERROR",
+          "id": 69,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:36.115069Z",
+          "error_state": "NO_ERROR",
+          "id": 70,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:40.493470Z",
+          "error_state": "NO_ERROR",
+          "id": 71,
+          "status_code": 400,
+          "timed_out": false
+        },
+        {
+          "created_utc": "2026-09-09T02:37:43.435372Z",
+          "error_state": "NO_ERROR",
+          "id": 72,
+          "status_code": 400,
+          "timed_out": false
+        }
+      ]
+    }
+  },
+  "preFunction": {
+    "projectRef": "kldlwszpfkdmsjrjhjym",
+    "function": {
+      "id": "9f774901-f397-428c-a3a4-17a5e2421828",
+      "slug": "notify-flag-status",
+      "name": "notify-flag-status",
+      "status": "ACTIVE",
+      "version": 8,
+      "verifyJwt": false,
+      "createdAt": 1780007669310,
+      "updatedAt": 1780446106002
+    },
+    "identitySha256": "276dcb14c85ca75955058b10ebb38d9d633fc29a21062fbcc181b502db7c2d70",
+    "command": [
+      "supabase",
+      "functions",
+      "list",
+      "--project-ref",
+      "kldlwszpfkdmsjrjhjym",
+      "--output-format",
+      "json"
+    ],
+    "commandStartedAt": "2026-09-16T23:03:44.080Z",
+    "commandEndedAt": "2026-09-16T23:03:45.048Z",
+    "commandExitCode": 0
+  },
+  "postFunction": {
+    "projectRef": "kldlwszpfkdmsjrjhjym",
+    "function": {
+      "id": "9f774901-f397-428c-a3a4-17a5e2421828",
+      "slug": "notify-flag-status",
+      "name": "notify-flag-status",
+      "status": "ACTIVE",
+      "version": 8,
+      "verifyJwt": false,
+      "createdAt": 1780007669310,
+      "updatedAt": 1780446106002
+    },
+    "identitySha256": "276dcb14c85ca75955058b10ebb38d9d633fc29a21062fbcc181b502db7c2d70",
+    "command": [
+      "supabase",
+      "functions",
+      "list",
+      "--project-ref",
+      "kldlwszpfkdmsjrjhjym",
+      "--output-format",
+      "json"
+    ],
+    "commandStartedAt": "2026-09-16T23:03:51.544Z",
+    "commandEndedAt": "2026-09-16T23:03:52.544Z",
+    "commandExitCode": 0
+  },
+  "workspace": "/var/folders/mw/t168n0fn6dg8n35vq6c__chr0000gn/T/flagstone-p03b-production-dryrun-v2-LTeCcD",
+  "workspaceRemoved": true,
+  "failure": null,
+  "immutability": {
+    "ledger": true,
+    "structure": true,
+    "function": true,
+    "http": true
+  },
+  "endedAt": "2026-09-16T23:03:52.553Z"
+}

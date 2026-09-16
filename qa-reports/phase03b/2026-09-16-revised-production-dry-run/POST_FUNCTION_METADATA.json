@@ -1,0 +1,26 @@
+{
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "function": {
+    "id": "9f774901-f397-428c-a3a4-17a5e2421828",
+    "slug": "notify-flag-status",
+    "name": "notify-flag-status",
+    "status": "ACTIVE",
+    "version": 8,
+    "verifyJwt": false,
+    "createdAt": 1780007669310,
+    "updatedAt": 1780446106002
+  },
+  "identitySha256": "276dcb14c85ca75955058b10ebb38d9d633fc29a21062fbcc181b502db7c2d70",
+  "command": [
+    "supabase",
+    "functions",
+    "list",
+    "--project-ref",
+    "kldlwszpfkdmsjrjhjym",
+    "--output-format",
+    "json"
+  ],
+  "commandStartedAt": "2026-09-16T23:03:51.544Z",
+  "commandEndedAt": "2026-09-16T23:03:52.544Z",
+  "commandExitCode": 0
+}

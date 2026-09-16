@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "classification": "LOCAL_ONLY_STOP_BEFORE_DRY_RUN",
+  "cause": "The first evidence-harness pass reconstructed one historical workspace filename from the ledger display name. The stored display name differed from the canonical local filename although the migration version matched.",
+  "correction": "Map historical frozen sources by their unique 14-digit migration version, which is the remote migration identity used by the CLI. Keep the complete version/name ledger separately for evidence.",
+  "productionReads": "Read-only discovery snapshot and Edge Function metadata only",
+  "dryRunCommandStarted": false,
+  "productionMutation": false,
+  "workspaceRemoved": true,
+  "authorizedDryRunConsumed": false
+}

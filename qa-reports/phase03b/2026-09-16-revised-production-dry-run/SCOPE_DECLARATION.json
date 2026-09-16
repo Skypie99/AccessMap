@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "productionMigrationApply": "NONE",
+  "functionDeployments": "NONE",
+  "functionInvocations": "NONE",
+  "vaultConfigSecretAuthChanges": "NONE",
+  "webhookNotificationExecutions": "NONE",
+  "syntheticProductionData": "NONE",
+  "recoveryActions": "NONE",
+  "pushes": "NONE",
+  "mainMerges": "NONE",
+  "clientRelease": "NONE",
+  "phase03cStarted": false,
+  "productionApplyAuthorized": false,
+  "temporaryWorkspaceRemoved": true
+}

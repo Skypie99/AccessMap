@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "reviewBasis": {
+    "dryRunPlan": [
+      "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "20260915210413_phase03b_points_integrity.sql"
+    ],
+    "moderationSha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11",
+    "pointsSha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5",
+    "acceptedStagingCommit": "d88bb853b059e54d19cd9549ead4122c63b3ff15",
+    "acceptedHostedCompatibilitySecurity": "52/52 PASS",
+    "acceptedHostedModeration": "49/49 PASS",
+    "acceptedHostedPoints": "22/22 PASS",
+    "acceptedFocusedApplication": "107/107 PASS"
+  },
+  "compatibility": {
+    "legacyBuild33VerifyResolve": "PASS",
+    "pinnedWebVerifyResolve": "PASS",
+    "newRpcVerifyResolve": "PASS",
+    "transientBreakageRisk": "NONE",
+    "reason": "Migration one retains authenticated direct status-column updates for shipped clients, while transition and compatibility triggers admit the shipped community transitions and force reject/restore through the audited RPC. Migration two changes only prospective points bookkeeping after that compatibility state exists."
+  },
+  "security": {
+    "photoAltCrossOwnerMutationBlocked": "PASS",
+    "siblingProtectedColumnsPreserved": "PASS",
+    "anonymousPrivilegeNotExpanded": "PASS",
+    "unrelatedAuthenticatedCrossOwnerMutationBlocked": "PASS",
+    "adminRejectBoundary": "PASS",
+    "adminRestoreBoundary": "PASS",
+    "moderationAuditSemantics": "PASS",
+    "pointsSemantics": "PASS",
+    "compatibilityPathCannotDirectlyManipulatePoints": "PASS",
+    "reason": "The non-owner guard raises on photo_alt changes and restores every other protected field; anon status update stays revoked; reject/restore require the audited RPC marker and an active admin; moderation events are immutable; points are awarded only by server triggers with once-only claims, owner-neutral transitions, daily comment caps, and one-way vote controls."
+  },
+  "stagingParity": "PASS",
+  "productionMutationTestsRerun": false,
+  "productionMutationTestsRerunReason": "The packet authorizes migration-plan analysis plus accepted staging evidence, not production mutation tests."
+}

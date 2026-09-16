@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "scope": "qa-reports/phase03b/2026-09-16-revised-production-dry-run",
+  "credentialValueMatches": 0,
+  "emailAddressMatches": 0,
+  "authorizationHeaderMatches": 0,
+  "databaseConnectionStringMatches": 0,
+  "customerPayloadsStored": false,
+  "httpUrlsHeadersBodiesStored": false,
+  "functionSourceStored": false,
+  "migrationBodiesDuplicatedInEvidence": false,
+  "result": "PASS"
+}

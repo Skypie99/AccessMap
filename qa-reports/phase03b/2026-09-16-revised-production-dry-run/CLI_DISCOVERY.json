@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "installedVersion": "2.116.0",
+  "availableVersionNotice": "2.117.0",
+  "upgradePerformed": false,
+  "dbPushHelp": {
+    "dryRun": "Print the migrations that would be applied, but don't actually apply them.",
+    "skipVault": "Skip updating vault secrets from config.toml.",
+    "includeAll": "Include all migrations not found on remote history table.",
+    "projectRef": "Project ref of the Supabase project."
+  },
+  "targetExplicitCompatibility": "CLI 2.116.0 requires --linked together with --project-ref for the management-API remote path.",
+  "changelogReview": "No reviewed breaking change altered this bounded CLI dry-run contract."
+}

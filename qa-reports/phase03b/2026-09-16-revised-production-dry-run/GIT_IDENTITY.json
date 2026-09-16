@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "branch": "codex/flagstone-p03b-production-dry-run-v2-20260916",
+  "worktree": "/Users/skypie/AccessMap-codex/flagstone-p03b-production-dry-run-v2-20260916",
+  "candidateSha": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "cleanBeforeEvidenceCreation": true,
+  "interruptedGitOperation": false,
+  "unexpectedCandidateDiff": false
+}

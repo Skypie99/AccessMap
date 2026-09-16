@@ -1,0 +1,6194 @@
+{
+  "capturedAt": "2026-09-16T23:03:47.149288Z",
+  "database": "postgres",
+  "forbiddenStagingRef": "cepayqmsoqxshsiyqnvz",
+  "http": {
+    "requestQueueCount": 0,
+    "responseCount": 6,
+    "responseFingerprint": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8",
+    "rows": [
+      {
+        "created_utc": "2026-09-09T02:37:21.383126Z",
+        "error_state": "NO_ERROR",
+        "id": 67,
+        "status_code": 200,
+        "timed_out": false
+      },
+      {
+        "created_utc": "2026-09-09T02:37:28.116576Z",
+        "error_state": "NO_ERROR",
+        "id": 68,
+        "status_code": 400,
+        "timed_out": false
+      },
+      {
+        "created_utc": "2026-09-09T02:37:31.364153Z",
+        "error_state": "NO_ERROR",
+        "id": 69,
+        "status_code": 400,
+        "timed_out": false
+      },
+      {
+        "created_utc": "2026-09-09T02:37:36.115069Z",
+        "error_state": "NO_ERROR",
+        "id": 70,
+        "status_code": 400,
+        "timed_out": false
+      },
+      {
+        "created_utc": "2026-09-09T02:37:40.493470Z",
+        "error_state": "NO_ERROR",
+        "id": 71,
+        "status_code": 400,
+        "timed_out": false
+      },
+      {
+        "created_utc": "2026-09-09T02:37:43.435372Z",
+        "error_state": "NO_ERROR",
+        "id": 72,
+        "status_code": 400,
+        "timed_out": false
+      }
+    ]
+  },
+  "ledger": {
+    "latestVersion": "20260911120000",
+    "orderedVersionNameSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+    "phase03bFrozenRowsPresent": 0,
+    "rowCount": 85,
+    "rows": [
+      {
+        "name": "accessmap_schema",
+        "statement_count": 1,
+        "statements_sha256": "5f8fea5c53afc6c3e81f2eae7a0c1983e155fd16a483853aa4a574e4855babbe",
+        "version": "20260523020620"
+      },
+      {
+        "name": "accessmap_security_hardening",
+        "statement_count": 1,
+        "statements_sha256": "460175a0d9ada497ff6565fa6e82170996087137d1f953ba64e3774ebebd648f",
+        "version": "20260523021433"
+      },
+      {
+        "name": "rls_initplan_rewrite_and_non_owner_status_update",
+        "statement_count": 1,
+        "statements_sha256": "4719cdedc275c0f2f86d17646e105939acefdb9f0964bbb5815b168e7eec5093",
+        "version": "20260523093244"
+      },
+      {
+        "name": "data_layer_hardening",
+        "statement_count": 1,
+        "statements_sha256": "8073b4e68254a13f5ea7cbf42e33c1848e96577e0f87b8c46a905589d75a087c",
+        "version": "20260523202748"
+      },
+      {
+        "name": "set_flag_updated_at_search_path",
+        "statement_count": 1,
+        "statements_sha256": "208d512e687eecfdce3cfd8cc410928ff1ad4a666b1977e431b9c5b15d6d758c",
+        "version": "20260523203409"
+      },
+      {
+        "name": "feedback_table",
+        "statement_count": 1,
+        "statements_sha256": "266467ceecfa322a916e47f46c74225784bdc9aa0badf8d35108e10c788a96ca",
+        "version": "20260524211752"
+      },
+      {
+        "name": "flag_context_tags",
+        "statement_count": 1,
+        "statements_sha256": "de2f40e213d29d568105e4d359aa2afcab663b8dd277ccfc1a2d2439b7594682",
+        "version": "20260524211803"
+      },
+      {
+        "name": "flag_status_history",
+        "statement_count": 1,
+        "statements_sha256": "01b19d46883c3befc1d9b284ecae109d081243b501b50c5a40b8603d82d7a17c",
+        "version": "20260524211825"
+      },
+      {
+        "name": "2026-05-25_flag_edit_rls",
+        "statement_count": 1,
+        "statements_sha256": "d874e6e804410d0f657d0b36497b474ee05e10292e3d1fb14ea6c23bf6099ff7",
+        "version": "20260527043142"
+      },
+      {
+        "name": "2026-05-25_push_tokens",
+        "statement_count": 1,
+        "statements_sha256": "60b6a7b33bb38d157bb1055d4f2e98195164569a41b6e9aa0fbeceee9724669b",
+        "version": "20260528101406"
+      },
+      {
+        "name": "d1_flags_rls",
+        "statement_count": 1,
+        "statements_sha256": "b18b0f91260db26f310508c4a6dbf5da1b3649fff720c27933d6e5484a16eeb3",
+        "version": "20260528180513"
+      },
+      {
+        "name": "d3_flag_status_trigger",
+        "statement_count": 1,
+        "statements_sha256": "3fc2fede4824fcd71bb215d6e75f31153e1027d7951a57546222e878ac34e738",
+        "version": "20260528180527"
+      },
+      {
+        "name": "data_layer_hardening",
+        "statement_count": 1,
+        "statements_sha256": "97f3b2929526120c221a24d9549708475ab74efe18b9b52b339143a7b127e9d8",
+        "version": "20260528230556"
+      },
+      {
+        "name": "rls_initplan_and_non_owner_status_update",
+        "statement_count": 1,
+        "statements_sha256": "8fea820ef09efc8cf22db8fff25f6b3fcefce6ef6bd9897cf89addeb14b28bbb",
+        "version": "20260528230609"
+      },
+      {
+        "name": "flag_edit_rls_replacement_idempotent",
+        "statement_count": 1,
+        "statements_sha256": "a5782b36dc7e370d254ac478234415323beee59c3f5b9e9bc73b6081845ad800",
+        "version": "20260528230627"
+      },
+      {
+        "name": "status_update_trigger",
+        "statement_count": 1,
+        "statements_sha256": "cfb266511c9521629a14eb88844a12ee92f1774cedc5066633cfe1d45f952e4b",
+        "version": "20260528230637"
+      },
+      {
+        "name": "2026_05_27_users_email_privacy",
+        "statement_count": 1,
+        "statements_sha256": "0c9bd6f41ef7742aa01f9d54d0975159e6868bdd83bf9ae83be0ee4373904398",
+        "version": "20260529021624"
+      },
+      {
+        "name": "2026_05_25_push_tokens_complete",
+        "statement_count": 1,
+        "statements_sha256": "37ca323aa41037612f7b5f07f6d70a47c62203944520b79521812cd04aeca1c1",
+        "version": "20260529021646"
+      },
+      {
+        "name": "d3_status_trigger_unblocks_marker_clustering",
+        "statement_count": 1,
+        "statements_sha256": "6d02eac93f4396a6614aceab4ee7891353ec136c218c348db84dabd9fb1c6676",
+        "version": "20260529043740"
+      },
+      {
+        "name": "d1_flag_edit_rls_fix",
+        "statement_count": 1,
+        "statements_sha256": "1480124a57e16c4e95f71d68722b5b5a16ddc3f5e5e8d470a153143e49e368a1",
+        "version": "20260529043753"
+      },
+      {
+        "name": "push_tokens_table_fix",
+        "statement_count": 1,
+        "statements_sha256": "132a72160d27469f396ff8e5ef39a33a1a7374c17e9e5a541262eeadce4cc38d",
+        "version": "20260529043805"
+      },
+      {
+        "name": "email_privacy_closes_pii_exposure",
+        "statement_count": 1,
+        "statements_sha256": "1b04893db09339603ec08b36417b6cb873f248517eed2064a0cc87d122973c8f",
+        "version": "20260529043812"
+      },
+      {
+        "name": "d3_status_update_trigger",
+        "statement_count": 1,
+        "statements_sha256": "a2a4442f7779875ac7b94f9de862701b65e4b7c2cead1589b0a5e44383ab11ac",
+        "version": "20260529050514"
+      },
+      {
+        "name": "d4_realtime_flags_filtered_broadcast",
+        "statement_count": 1,
+        "statements_sha256": "95697a2fd1f48ba2a6eacacf74b686a2d1a8e1d7daaa7718b28b3023b313a40f",
+        "version": "20260529053642"
+      },
+      {
+        "name": "d6_flag_edit_history",
+        "statement_count": 1,
+        "statements_sha256": "3b5ff777618d1192ef4de53d7724cf20bad42570573f6cf2c9fd7358e1ff3a51",
+        "version": "20260529060837"
+      },
+      {
+        "name": "2026_05_25_flag_edit_history_table",
+        "statement_count": 1,
+        "statements_sha256": "c7ac413d53f65696d8340a5c6d22c5ebbb8f910e976f2a18e1bae8a3d3ff7af1",
+        "version": "20260529063432"
+      },
+      {
+        "name": "2026_05_27_users_email_privacy",
+        "statement_count": 1,
+        "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+        "version": "20260529084003"
+      },
+      {
+        "name": "2026_05_23_status_update_trigger_proposal",
+        "statement_count": 1,
+        "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+        "version": "20260529084007"
+      },
+      {
+        "name": "2026_05_23_rls_initplan_and_non_owner_status_update",
+        "statement_count": 1,
+        "statements_sha256": "66927073ccdfcfbd7dc9c273628ded4d79833fd24365bcd5d4add01c1d72c53d",
+        "version": "20260529084113"
+      },
+      {
+        "name": "2026_05_28_d4_realtime_flags_filtered",
+        "statement_count": 1,
+        "statements_sha256": "5195474281a60331c614ec0e988d2c8bf7bc064f080476ecc671f08f0474b3ea",
+        "version": "20260529084118"
+      },
+      {
+        "name": "2026_05_23_data_layer_hardening_fix",
+        "statement_count": 1,
+        "statements_sha256": "ebefa990b002148704e68d0663f440d136a1a847cd34954f32defbaba6b24604",
+        "version": "20260529084136"
+      },
+      {
+        "name": "2026_05_25_flag_edit_rls_replacement_fix",
+        "statement_count": 1,
+        "statements_sha256": "1322a9c6c333e3decdd0f8ec95e345d0c7f161fe53e7a8dda86ea6d76b70f0ee",
+        "version": "20260529084138"
+      },
+      {
+        "name": "latlong_range_constraint",
+        "statement_count": 1,
+        "statements_sha256": "a75423deaaff22a1c9699a06166ffb0d14dbd1d4cb896eccd01d54aeb95217e8",
+        "version": "20260529175048"
+      },
+      {
+        "name": "notification_preferences",
+        "statement_count": 1,
+        "statements_sha256": "131f652e7873fb3e77f36cc988904df12a877c62012f973962c736d8cf34c622",
+        "version": "20260529175840"
+      },
+      {
+        "name": "anon_flags_select",
+        "statement_count": 1,
+        "statements_sha256": "84c0968ad5b44bc56d6a74e7d84e2bfcb0d3cda9d4c39babb51c554e4c296337",
+        "version": "20260529175842"
+      },
+      {
+        "name": "notify_flag_status_webhook_trigger",
+        "statement_count": 1,
+        "statements_sha256": "90a47f0ac0ae0a7caf870438252be4ed90eec21ace7099b7ed0517383dcfa872",
+        "version": "20260529181141"
+      },
+      {
+        "name": "function_search_path_hardening",
+        "statement_count": 1,
+        "statements_sha256": "2f0aa8831a9401dcc13cbb1de63134365aa4d1597362b333fa77af3eb66d6f97",
+        "version": "20260529192005"
+      },
+      {
+        "name": "status_update_trigger_d3",
+        "statement_count": 1,
+        "statements_sha256": "e0c99fadb8a828d9fa8f3e0c04edf346cb89cd254b5fcf2fc06456035dc182d8",
+        "version": "20260529192027"
+      },
+      {
+        "name": "users_email_privacy",
+        "statement_count": 1,
+        "statements_sha256": "9ab75705b4b4930551198d525d3395d96f7412e7fae7f614d5596438cadced1d",
+        "version": "20260529192040"
+      },
+      {
+        "name": "flag_creation_rate_limit",
+        "statement_count": 1,
+        "statements_sha256": "455e85b6b368ec4105ced4a3c0fb64836645ddbb277a2fc9203937360fc59aa0",
+        "version": "20260530064949"
+      },
+      {
+        "name": "flag_creation_rate_limit_hardened",
+        "statement_count": 1,
+        "statements_sha256": "04222511419ea0063d00b85af3cc29ca993a9d96909ee8a8f17c161aa23d0dca",
+        "version": "20260530192824"
+      },
+      {
+        "name": "flag_comments_table",
+        "statement_count": 1,
+        "statements_sha256": "e5567f8dab8fa69750df848dac466f56a35caec998aed262a3f8ec3d49a65c31",
+        "version": "20260530192829"
+      },
+      {
+        "name": "flag_reopen_requests",
+        "statement_count": 1,
+        "statements_sha256": "0973b21a5c378ac2cdf329c9d64bd33fbb61ce6177bee7729240c1adb5fc4ac8",
+        "version": "20260530193228"
+      },
+      {
+        "name": "fix_flag_comments_default_user_id",
+        "statement_count": 1,
+        "statements_sha256": "ef0b84a57a912ae523cbc5b2e2b3e2b22bc8f6a59f7f89b9f4529510af18a907",
+        "version": "20260531015433"
+      },
+      {
+        "name": "flag_reopen_requests",
+        "statement_count": 1,
+        "statements_sha256": "c92100c0ca100a428e1b4c25b3334e9bada14325aa252032a6cea779adfa81bf",
+        "version": "20260531015456"
+      },
+      {
+        "name": "flag_photos_junction",
+        "statement_count": 1,
+        "statements_sha256": "c8335097b1dd25f8c22b6915d3a88adc5002db0dd3ae1087075b31af6e0d9ada",
+        "version": "20260531025237"
+      },
+      {
+        "name": "trust_score_system",
+        "statement_count": 1,
+        "statements_sha256": "2f6b7f3d0c2113355ff0a9a9dd22ab13d938b33b7796e7d50f7438d095cf9b66",
+        "version": "20260531202835"
+      },
+      {
+        "name": "account_deletion_cascade",
+        "statement_count": 1,
+        "statements_sha256": "32b1538df7c195c912ad0f9480fede2e8e74bac274aeedd11c3e42306eddc291",
+        "version": "20260601081834"
+      },
+      {
+        "name": "anon_flag_reporting_photo_fix",
+        "statement_count": 1,
+        "statements_sha256": "92010c932d994d6feab72596e3a9957c2712c0a47abf271ea0b723f53c0f4e9f",
+        "version": "20260601081846"
+      },
+      {
+        "name": "drop_duplicate_index_flags",
+        "statement_count": 1,
+        "statements_sha256": "2882526b7797ec712362588cff490189bae848821e043f973c4dbff2467bc0b4",
+        "version": "20260602045352"
+      },
+      {
+        "name": "add_covering_indexes_foreign_keys",
+        "statement_count": 1,
+        "statements_sha256": "cb24669207f7b62dc36f2ce0a7012bab5f716df124c44420874148003ed64d15",
+        "version": "20260602045356"
+      },
+      {
+        "name": "flags_policy_consolidation_20260601",
+        "statement_count": 1,
+        "statements_sha256": "55b235186f3276cd6e70664a550c2b277f98716ae3b8771b1f8f4f2e7ced9880",
+        "version": "20260602053139"
+      },
+      {
+        "name": "restore_flags_auth_user_only_triage_unblock_20260601",
+        "statement_count": 1,
+        "statements_sha256": "69d15b0292e8c378b4bb1b5c8b4a267652118b550b8655397bab926e80e256ee",
+        "version": "20260602053522"
+      },
+      {
+        "name": "flags_close_nonowner_delete_and_fix_triage_20260601",
+        "statement_count": 1,
+        "statements_sha256": "dd6b23f5a59657c862ff26ae0095a87e8c2088347f28b43f844570b38bd3bea8",
+        "version": "20260602060359"
+      },
+      {
+        "name": "reconcile_oob_verify_webhook_secret_for_replay_20260829",
+        "statement_count": 4,
+        "statements_sha256": "90b1a20487e6a3a0cce61a4d6eaf5d3ebaf912526ec6e01c1a4829f8eeaecc71",
+        "version": "20260603002420"
+      },
+      {
+        "name": "admin_role",
+        "statement_count": 1,
+        "statements_sha256": "3ad152e4d3d408237ddeebc717fd2610be6650b9da5be5f8c67774bd77c400f1",
+        "version": "20260603002810"
+      },
+      {
+        "name": "sr009_flag_verifications_null_safe_20260727",
+        "statement_count": 1,
+        "statements_sha256": "c87a33c4097093680aa326b484c4c468588820fa3af9af68e5785e3060b8119f",
+        "version": "20260727075327"
+      },
+      {
+        "name": "fork2_oa_actor_guard_null_safe_plus_status_history_20260727",
+        "statement_count": 1,
+        "statements_sha256": "5a3009c09b119a572c1840472d845dca3a23c73b155299c7fe51c7f2469eff63",
+        "version": "20260727075349"
+      },
+      {
+        "name": "a4_3_owner_edit_subquery_alias_fix_20260727",
+        "statement_count": 1,
+        "statements_sha256": "dbce09c506943ffd4fa207e08fa188b3dc948ce1163f269429f23e4be77e2776",
+        "version": "20260727075512"
+      },
+      {
+        "name": "sr024_flag_photos_anon_explicit_20260727",
+        "statement_count": 1,
+        "statements_sha256": "ee12f812d8130ce4fa3bb97307af66af8339f1c127f8bf6c953b5bdf712b43a9",
+        "version": "20260727075530"
+      },
+      {
+        "name": "sr018_verify_webhook_secret_revoke_20260727",
+        "statement_count": 1,
+        "statements_sha256": "3dd4aba9d3be7c9d20ae06692d82f26e8e772f2b954416d474d2e0a55608685a",
+        "version": "20260727075547"
+      },
+      {
+        "name": "a2_1_nonowner_revert_context_tags_20260727",
+        "statement_count": 1,
+        "statements_sha256": "42939eed44c11b6c4bec415df9ebb37397007391e4333e188b5ba8f6641229e7",
+        "version": "20260727075605"
+      },
+      {
+        "name": "a2_2_feedback_anon_throttle_20260727",
+        "statement_count": 1,
+        "statements_sha256": "6366f4bfdda427f92cdd5fe7b528418829ff5e0543f97472a9d5dadf2792f281",
+        "version": "20260727075623"
+      },
+      {
+        "name": "sr001_admin_delete_comment_20260727",
+        "statement_count": 1,
+        "statements_sha256": "d676dda004f5755c9b519fb13cd15d6bff445dbe374d17c612f354f8d9ce7852",
+        "version": "20260727075638"
+      },
+      {
+        "name": "a4_1_status_history_view_grant_fix_20260727",
+        "statement_count": 1,
+        "statements_sha256": "a85faff5b88360e49053358582dec8e84220a9820233a498fd49536a73269d1e",
+        "version": "20260727075651"
+      },
+      {
+        "name": "rls_initplan_consolidated_20260727",
+        "statement_count": 1,
+        "statements_sha256": "75ecc624c64e17c0f3c4116e7658fc2b525f9ddf09051ff5a6decfe8c052a200",
+        "version": "20260727075749"
+      },
+      {
+        "name": "fork5_w1_dispute_counter_20260727",
+        "statement_count": 1,
+        "statements_sha256": "f3f05b479a9b8e597e2b79bc50da1180e0baa264286d866e9148ea48086264d7",
+        "version": "20260727075821"
+      },
+      {
+        "name": "sr050_admin_delete_flag_photo_20260729",
+        "statement_count": 1,
+        "statements_sha256": "786e72b142f30aea2b58a406375e582cdb487187e792f09fe0e58994027566a7",
+        "version": "20260729053159"
+      },
+      {
+        "name": "flag_status_transition_guard",
+        "statement_count": 1,
+        "statements_sha256": "6b1fe7c6c200a9ed4f3ca1868c9a481ed263a4a88043d6b8a9e8bb3c82ae3dcd",
+        "version": "20260819204409"
+      },
+      {
+        "name": "photo_alt_text",
+        "statement_count": 1,
+        "statements_sha256": "36d3ca546fd3d7552924afc477f170b2e2ed183ba2a7628a10ece43fd3b1539a",
+        "version": "20260819214410"
+      },
+      {
+        "name": "promptb_media_key_read_contract",
+        "statement_count": 19,
+        "statements_sha256": "9404ada34629b39fad7a4c70292afeef383d0d14bb2657cebb0490b8c582cf4c",
+        "version": "20260830130000"
+      },
+      {
+        "name": "adopt_private_admin_helper",
+        "statement_count": 8,
+        "statements_sha256": "4037aafde2c9721a8b864a0bbf4858ee56fe7f2c4a5ce4fd71cb767ace66c444",
+        "version": "20260904000000"
+      },
+      {
+        "name": "drop_duplicate_status_triggers",
+        "statement_count": 2,
+        "statements_sha256": "f060d5cfabf4d73dbd59bd62173bf067fdc840d07a55f635c14d5578ed63e37f",
+        "version": "20260904000100"
+      },
+      {
+        "name": "adopt_d1sa_containment",
+        "statement_count": 13,
+        "statements_sha256": "ff7869bc68186c9834e97f67d3150cdae5c11450db9399fee2a901114d7647fa",
+        "version": "20260904000200"
+      },
+      {
+        "name": "adopt_live_insert_throttles",
+        "statement_count": 12,
+        "statements_sha256": "4ab755166cf87add47923b1e17f00a3a3c36ce3493d8bd7fbf90c926ff84d85a",
+        "version": "20260904000300"
+      },
+      {
+        "name": "adopt_execute_revokes",
+        "statement_count": 6,
+        "statements_sha256": "77e48d160d2f874c73a23641372cedfd11639d6736cfebb7bf53b3cbd8e62608",
+        "version": "20260904000400"
+      },
+      {
+        "name": "phase03a_flag_policies",
+        "statement_count": 3,
+        "statements_sha256": "64cad5cb353103000abcd860d26021c731b7cad2216d0eaf2ce299b91ebb4633",
+        "version": "20260905055629"
+      },
+      {
+        "name": "phase03a_open_inserts",
+        "statement_count": 3,
+        "statements_sha256": "c6a101625dacc7b5e5ef68b085e47ca36abc5bcc8bf81736351cc41e5248d0bc",
+        "version": "20260905055630"
+      },
+      {
+        "name": "phase03a_profile_updates",
+        "statement_count": 5,
+        "statements_sha256": "5aef10fa9df77fbb78d83991cf076e69c87006f2ad323eee0226b6b1e0670b08",
+        "version": "20260905055632"
+      },
+      {
+        "name": "phase03a_contextual_profiles",
+        "statement_count": 14,
+        "statements_sha256": "807535d76d56b8cb3c561cc889b9342aa620851293ac30a4563b780d9d6134dc",
+        "version": "20260905055633"
+      },
+      {
+        "name": "phase03a_trigger_execute",
+        "statement_count": 3,
+        "statements_sha256": "29ea4395d7a7d0f594caf898260da189cfbcf4f104a84fde6d142fecd9ff379d",
+        "version": "20260905055635"
+      },
+      {
+        "name": "phase03a_client_privileges",
+        "statement_count": 8,
+        "statements_sha256": "4b7bd34112b45c948735f66d0db041eb7b22f2340ad97d74a2b7aa33049382f5",
+        "version": "20260905055636"
+      },
+      {
+        "name": "phase03a_effective_privileges",
+        "statement_count": 184,
+        "statements_sha256": "0ff535703f43ce587dc0b9f68cec3a68362cc929fc713ba10d4ad372e4fea0de",
+        "version": "20260905073925"
+      },
+      {
+        "name": "fda028_v4_limiter",
+        "statement_count": 42,
+        "statements_sha256": "078e27be65973204b6a48202f40533792aa85781380224acc1d258c401adf9e1",
+        "version": "20260909120000"
+      },
+      {
+        "name": "phase03a_webhook_target_env_scoped",
+        "statement_count": 5,
+        "statements_sha256": "3e90a8f2a1859e23691191586a5ee0194133aeec96e9a60beffa6cfe116d43f6",
+        "version": "20260911120000"
+      }
+    ],
+    "uniqueVersionCount": 85
+  },
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "schemaVersion": 1,
+  "structure": {
+    "columns": {
+      "count": 179,
+      "items": [
+        {
+          "acl": "",
+          "column": "bucket_key",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "bucket",
+          "type": "bytea"
+        },
+        {
+          "acl": "",
+          "column": "window_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "bucket",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "units_consumed",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "bucket",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "grants_issued",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "bucket",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "boolean"
+        },
+        {
+          "acl": "",
+          "column": "enabled",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "boolean"
+        },
+        {
+          "acl": "",
+          "column": "normal_allowance",
+          "defaultSha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "bucket_allowance",
+          "defaultSha256": "1a6562590ef19d1045d06c4055742d38288e9e6dcd71ccde5cee80f1d5a774eb",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "window_seconds",
+          "defaultSha256": "b045dd9c18caa8be1e17a4b902152cc1fd292b242b7b9dd74ba8c40896239424",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "ipv4_prefix",
+          "defaultSha256": "e29c9c180c6279b0b02abd6a1801c7c04082cf486ec027aa13515e4f3884bb6b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "ipv6_prefix",
+          "defaultSha256": "a68b412c4282555f15546cf6e1fc42893b7e07f271557ceb021821098dd66c1b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "require_public_ip",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "boolean"
+        },
+        {
+          "acl": "",
+          "column": "reseed_interval",
+          "defaultSha256": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "catchup_cap",
+          "defaultSha256": "e29c9c180c6279b0b02abd6a1801c7c04082cf486ec027aa13515e4f3884bb6b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "retention_windows",
+          "defaultSha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "config",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "grant_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "grant",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "bucket_key",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "grant",
+          "type": "bytea"
+        },
+        {
+          "acl": "",
+          "column": "window_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "grant",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "allowance",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "grant",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "units_consumed",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "grant",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "key_state",
+          "type": "boolean"
+        },
+        {
+          "acl": "",
+          "column": "epoch",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "key_state",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "reseed_anchor",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "key_state",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "window_seconds",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "limiter",
+          "table": "key_state",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "prefix",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "translation_prefix",
+          "type": "inet"
+        },
+        {
+          "acl": "",
+          "column": "plen",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "limiter",
+          "table": "translation_prefix",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "note",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "limiter",
+          "table": "translation_prefix",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_comments",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_comments",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_comments",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "content",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_comments",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_comments",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_edit_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_edit_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_edit_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "changed_fields",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_edit_history",
+          "type": "text[]"
+        },
+        {
+          "acl": "",
+          "column": "old_values",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_edit_history",
+          "type": "jsonb"
+        },
+        {
+          "acl": "",
+          "column": "new_values",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_edit_history",
+          "type": "jsonb"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_edit_history",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_photos",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_photos",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "url",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_photos",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "position",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_photos",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_photos",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "alt_text",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_photos",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_status_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_status_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_status_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "from_status",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_status_history",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "to_status",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_status_history",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_status_history",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_verifications",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_verifications",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "verifier_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_verifications",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "weight",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_verifications",
+          "type": "numeric(3,1)"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flag_verifications",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "lat",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "double precision"
+        },
+        {
+          "acl": "",
+          "column": "lng",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "double precision"
+        },
+        {
+          "acl": "",
+          "column": "category",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "description",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "severity",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "smallint"
+        },
+        {
+          "acl": "",
+          "column": "photo_url",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "status",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "updated_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "context_tags",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "text[]"
+        },
+        {
+          "acl": "",
+          "column": "reopen_requests",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "reopen_requests_reset_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "dispute_requests",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "dispute_requests_reset_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "photo_alt",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_flags",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "point_event_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_point_links",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "bk_2026_08_22_point_links",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "comment_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "comment_votes",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "voter_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "comment_votes",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "comment_votes",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "eea9a3e7c2abe43835e2a6fdf92a7d1e6f145ad6dfbfd243fc5d395e5b390a33",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "feedback",
+          "type": "uuid"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres}",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "feedback",
+          "type": "uuid"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres}",
+          "column": "category",
+          "defaultSha256": "22aea95540083f19daf1d7ed12f73f798c573198791ca730160aa14144c47db7",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "feedback",
+          "type": "feedback_category"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres}",
+          "column": "body",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "feedback",
+          "type": "text"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres}",
+          "column": "contact_email",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "feedback",
+          "type": "text"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres}",
+          "column": "platform",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "feedback",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "feedback",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "eea9a3e7c2abe43835e2a6fdf92a7d1e6f145ad6dfbfd243fc5d395e5b390a33",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "user_id",
+          "defaultSha256": "a9a52710919f609ca6d1d154123662386421f0eb1a70a0776355d8b5d2c6c1ce",
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "content",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "id",
+          "defaultSha256": "eea9a3e7c2abe43835e2a6fdf92a7d1e6f145ad6dfbfd243fc5d395e5b390a33",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=ar/postgres}",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=ar/postgres}",
+          "column": "changed_fields",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "text[]"
+        },
+        {
+          "acl": "{authenticated=ar/postgres}",
+          "column": "old_values",
+          "defaultSha256": "8001f2ba79d7ee0ed7c18f82705408c75c1e6f9ac6859477febdad7f5599c099",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "jsonb"
+        },
+        {
+          "acl": "{authenticated=ar/postgres}",
+          "column": "new_values",
+          "defaultSha256": "8001f2ba79d7ee0ed7c18f82705408c75c1e6f9ac6859477febdad7f5599c099",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "jsonb"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_edit_history_public",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_edit_history_public",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "changed_fields",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_edit_history_public",
+          "type": "text[]"
+        },
+        {
+          "acl": "",
+          "column": "old_values",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_edit_history_public",
+          "type": "jsonb"
+        },
+        {
+          "acl": "",
+          "column": "new_values",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_edit_history_public",
+          "type": "jsonb"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_edit_history_public",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "eea9a3e7c2abe43835e2a6fdf92a7d1e6f145ad6dfbfd243fc5d395e5b390a33",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "url",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "position",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "alt_text",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "object_key",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "id",
+          "defaultSha256": "eea9a3e7c2abe43835e2a6fdf92a7d1e6f145ad6dfbfd243fc5d395e5b390a33",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "from_status",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "to_status",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_status_history_public",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_status_history_public",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "from_status",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_status_history_public",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "to_status",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_status_history_public",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flag_status_history_public",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "eedb0fbbd997db1c382fa8e9b050cc77dfa576f733b1fbd28f2d9f46a24e43f6",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=a/postgres}",
+          "column": "verifier_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "weight",
+          "defaultSha256": "d0ff5974b6aa52cf562bea5921840c032a860a91a3512f7fe8f768f6bbe005f6",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "numeric(3,1)"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "eedb0fbbd997db1c382fa8e9b050cc77dfa576f733b1fbd28f2d9f46a24e43f6",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "uuid"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres,service_role=rw/postgres}",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flags",
+          "type": "uuid"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres}",
+          "column": "lat",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "double precision"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=a/postgres}",
+          "column": "lng",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "double precision"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=aw/postgres}",
+          "column": "category",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "text"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=aw/postgres}",
+          "column": "description",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flags",
+          "type": "text"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=aw/postgres}",
+          "column": "severity",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "smallint"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=aw/postgres}",
+          "column": "photo_url",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flags",
+          "type": "text"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=aw/postgres}",
+          "column": "status",
+          "defaultSha256": "9da22162de51a4b8d5f3c7d1020c962580d830df9faac491a083d7a143ff9bec",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "updated_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=aw/postgres}",
+          "column": "context_tags",
+          "defaultSha256": "de9b902a0abb75d50771c319ee6d6a50d3963e3d28ce30e76b96e3c382b0c4ab",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "text[]"
+        },
+        {
+          "acl": "",
+          "column": "reopen_requests",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "reopen_requests_reset_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "dispute_requests",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "flags",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "dispute_requests_reset_at",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flags",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "{anon=a/postgres,authenticated=aw/postgres}",
+          "column": "photo_alt",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flags",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "photo_object_key",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "flags",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "flag_status_updates",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "boolean"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "nearby_flags",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "boolean"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "watched_flag_updates",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "boolean"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "bulk_watch_alerts",
+          "defaultSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "boolean"
+        },
+        {
+          "acl": "",
+          "column": "updated_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": "773e27a8993aa286d9f6d5d5078d1351f159e42611d42b025a963c9514cbf654",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "point_events",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "point_events",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "event_type",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "point_events",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "delta",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "point_events",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "flag_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "point_events",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "point_events",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "{authenticated=aw/postgres,service_role=r/postgres}",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "uuid"
+        },
+        {
+          "acl": "{authenticated=aw/postgres,service_role=r/postgres}",
+          "column": "token",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=aw/postgres}",
+          "column": "platform",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "updated_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "a",
+          "notNull": true,
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "bigint"
+        },
+        {
+          "acl": "",
+          "column": "user_id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "event",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "channel",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "logged_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "users",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "email",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "users",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=rw/postgres}",
+          "column": "display_name",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "users",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=rw/postgres}",
+          "column": "avatar_url",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "users",
+          "type": "text"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "points",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "users",
+          "type": "integer"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "created_at",
+          "defaultSha256": "28a4dae0461e17af56e979c2095abfbe0bfc45fe9ca8abf3144338a518a1bb8f",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "users",
+          "type": "timestamp with time zone"
+        },
+        {
+          "acl": "",
+          "column": "last_active_date",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "users",
+          "type": "date"
+        },
+        {
+          "acl": "",
+          "column": "streak_days",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "users",
+          "type": "integer"
+        },
+        {
+          "acl": "",
+          "column": "longest_streak_days",
+          "defaultSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "users",
+          "type": "integer"
+        },
+        {
+          "acl": "{authenticated=r/postgres}",
+          "column": "is_admin",
+          "defaultSha256": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+          "generated": "",
+          "identity": "",
+          "notNull": true,
+          "schema": "public",
+          "table": "users",
+          "type": "boolean"
+        },
+        {
+          "acl": "{authenticated=rw/postgres}",
+          "column": "avatar_object_key",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "users",
+          "type": "text"
+        },
+        {
+          "acl": "",
+          "column": "id",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "users_self_email",
+          "type": "uuid"
+        },
+        {
+          "acl": "",
+          "column": "email",
+          "defaultSha256": null,
+          "generated": "",
+          "identity": "",
+          "notNull": false,
+          "schema": "public",
+          "table": "users_self_email",
+          "type": "text"
+        }
+      ]
+    },
+    "constraints": {
+      "count": 74,
+      "items": [
+        {
+          "definitionSha256": "3b581899f402d89d7cdc04eb933c7866b4e5c431521083a9f5fca1082d30145d",
+          "name": "bucket_grants_issued_check",
+          "schema": "limiter",
+          "table": "bucket",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "4056a7bffabe82e9b910185dcd453cc3f63b93ee8cd94f8863b8c1a0f5affe11",
+          "name": "bucket_pkey",
+          "schema": "limiter",
+          "table": "bucket",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "ce48932b018c45beb62f6a2359a7e0497347869b760191b8656369cf2b20f6eb",
+          "name": "bucket_units_consumed_check",
+          "schema": "limiter",
+          "table": "bucket",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "c2a13b0ea6f7fbb872acf0c5253aa8be98ca197bdde4e4a93691649e76803eb1",
+          "name": "config_bucket_allowance_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "d5bc53f06abc1a90eccdab015492035cc274b250a433ad4aa6a7d19d27b4a5ce",
+          "name": "config_catchup_cap_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "cb1fe0a9f570761c433b25cf2c88c28b1f14b9b547ac07842f101569fcb474dd",
+          "name": "config_id_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "537bf5329c7a0e3c8eef23bf9f8f53dfe2f43e744ea72e41ab27d5ea98cbe1bf",
+          "name": "config_ipv4_prefix_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "1d1616cacf70f8ae6fea2473003dcc0c2831a8cd050c0099d949b2239218e47d",
+          "name": "config_ipv6_prefix_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "c73ecd4602733829770c58f4e1c13ca8ae630e0f80898237490735066dcb6ea1",
+          "name": "config_normal_allowance_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "config_pkey",
+          "schema": "limiter",
+          "table": "config",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "113cf7fd4bdd4e090e775f4caf220c073591f06e522a98b8176ecb45812d6c50",
+          "name": "config_reseed_interval_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "4c7cd936e9e1eb0c522fa50519ac5ad3a6d0c618a652382d2135a66c7f5ca57b",
+          "name": "config_retention_windows_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "dab8ee2c11f5cf4fe8136c9ecab1f93af28a141cc6553c26d70428496539de6e",
+          "name": "config_window_seconds_check",
+          "schema": "limiter",
+          "table": "config",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "3d866541eeddce9925e54ce3e737db36062ae56b84a5b97f21b62c2e69bf811a",
+          "name": "grant_allowance_check",
+          "schema": "limiter",
+          "table": "grant",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "72102336a4dedc5fe0aca0194d13c8ba31b87c07fb2e6815d0125cfc3f779814",
+          "name": "grant_parent_fk",
+          "schema": "limiter",
+          "table": "grant",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8074ddf4eeaedc63b28571916e1efb38791b6e8193904591f5b42cf56a911cb1",
+          "name": "grant_pkey",
+          "schema": "limiter",
+          "table": "grant",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "ce48932b018c45beb62f6a2359a7e0497347869b760191b8656369cf2b20f6eb",
+          "name": "grant_units_consumed_check",
+          "schema": "limiter",
+          "table": "grant",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "256606b228461a1a9aa9babf9aa4666463279745056be70cd7435c1478a1831c",
+          "name": "grant_within_allowance",
+          "schema": "limiter",
+          "table": "grant",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "cb1fe0a9f570761c433b25cf2c88c28b1f14b9b547ac07842f101569fcb474dd",
+          "name": "key_state_id_check",
+          "schema": "limiter",
+          "table": "key_state",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "key_state_pkey",
+          "schema": "limiter",
+          "table": "key_state",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "aeb80b495ce045c9aacd905aada9e4c969cbe0e4256f94ada17701e6c2ff74c4",
+          "name": "translation_prefix_pkey",
+          "schema": "limiter",
+          "table": "translation_prefix",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "e33f9d7ebb73fc451642eda10dfb447cbe764df29510beb9d7f1952720a50a55",
+          "name": "translation_prefix_plen_check",
+          "schema": "limiter",
+          "table": "translation_prefix",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "98448338249d99d6a133cd8545af441f283c37863f9c276293ca1a2ffc17f8bf",
+          "name": "comment_votes_comment_id_fkey",
+          "schema": "public",
+          "table": "comment_votes",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "bda5263170b6df68c4beadf5d14a9a4141ecb7d1e9e86bdf62af1fd7e8deedfa",
+          "name": "comment_votes_pkey",
+          "schema": "public",
+          "table": "comment_votes",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "305985333b4b8410fdc26424c9b216fad6804a9ad9907c5f4b38d1b50c561bbc",
+          "name": "comment_votes_voter_id_fkey",
+          "schema": "public",
+          "table": "comment_votes",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "f03189fbdfc5eee63a5c4e6c4baa593ce43e63ffc2de83b7b2db925dba6c415a",
+          "name": "feedback_body_check",
+          "schema": "public",
+          "table": "feedback",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "f50bfcd7f5aebfb6da2b7219762bf8f42ab2f43cc45f445876490a1232e2a4b7",
+          "name": "feedback_contact_email_check",
+          "schema": "public",
+          "table": "feedback",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "feedback_pkey",
+          "schema": "public",
+          "table": "feedback",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "729642a2e2ff084369def34245055a252c5511e61dbb79a901b7539bbe3bf421",
+          "name": "feedback_user_id_fkey",
+          "schema": "public",
+          "table": "feedback",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "af8354f70cdaf387b4e16c3422a8c7a7e62e510d772bd1e84fb251b7f6a26677",
+          "name": "flag_comments_content_check",
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "6e5f9a33c3015af674191026d05e49ee360fc33f5abdc44fdc7c2a7ea6f4c9e3",
+          "name": "flag_comments_flag_id_fkey",
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "flag_comments_pkey",
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "8ebf15b0f574e6eb387627b7b676ac919ead3900f82636c92f4660c52f0d9e82",
+          "name": "flag_comments_user_id_fkey",
+          "schema": "public",
+          "table": "flag_comments",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "6e5f9a33c3015af674191026d05e49ee360fc33f5abdc44fdc7c2a7ea6f4c9e3",
+          "name": "flag_edit_history_flag_id_fkey",
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "flag_edit_history_pkey",
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "729642a2e2ff084369def34245055a252c5511e61dbb79a901b7539bbe3bf421",
+          "name": "flag_edit_history_user_id_fkey",
+          "schema": "public",
+          "table": "flag_edit_history",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "dfb46ee902bd74e7e6e4f5af921c6a05633d68c724c0d159d76d86557d2beccd",
+          "name": "flag_photos_alt_text_check",
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "6e5f9a33c3015af674191026d05e49ee360fc33f5abdc44fdc7c2a7ea6f4c9e3",
+          "name": "flag_photos_flag_id_fkey",
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "flag_photos_pkey",
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "568cfd2aad5ee5417c3dba4c839a6297b6a15b2d73b043f0b19263f567e4cf93",
+          "name": "flag_photos_position_check",
+          "schema": "public",
+          "table": "flag_photos",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "6e5f9a33c3015af674191026d05e49ee360fc33f5abdc44fdc7c2a7ea6f4c9e3",
+          "name": "flag_status_history_flag_id_fkey",
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "flag_status_history_pkey",
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "729642a2e2ff084369def34245055a252c5511e61dbb79a901b7539bbe3bf421",
+          "name": "flag_status_history_user_id_fkey",
+          "schema": "public",
+          "table": "flag_status_history",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "6e5f9a33c3015af674191026d05e49ee360fc33f5abdc44fdc7c2a7ea6f4c9e3",
+          "name": "flag_verifications_flag_id_fkey",
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "95dc1527aa7662036e727ddbf68ae68dde54b7418c531df3d8bf64708562d41e",
+          "name": "flag_verifications_flag_id_verifier_id_key",
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "u"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "flag_verifications_pkey",
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "28484b6cdf35846e818b279707bfea354c61fd373be07116caa4da421015bdd4",
+          "name": "flag_verifications_verifier_id_fkey",
+          "schema": "public",
+          "table": "flag_verifications",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "912890aa9b60515c7e5d0d7251894226967f1399f46f7a571ef201da5ae8d2cd",
+          "name": "description_max_length",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "488858c8db5169ce33b55848c39c9f8c2f2b51328198c70e02dcae3c096d0c22",
+          "name": "flags_category_check",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "6abbdc00b1716f916c630734d51d2f61a0e37934755d090704e92ea0a2352799",
+          "name": "flags_description_length_chk",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "fc63ba8d26a7759ce9721c0e081e9a35695b86d018524d297c690f9c067479aa",
+          "name": "flags_lat_range_chk",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "0545bf6e077b954b0b5b542f1f54c3bb04eefbc27a9f37b1f5493ae3248339fe",
+          "name": "flags_lng_range_chk",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "5592d065baa9ae45d9e625e8dca0563bc7e1a0852f6ee26a28d749ad2192d0a0",
+          "name": "flags_photo_alt_check",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "flags_pkey",
+          "schema": "public",
+          "table": "flags",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "5cbc2c11b69296f7a9cb702b6e28bdf8d59d2bc52b291670c8a623210667a987",
+          "name": "flags_severity_check",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "7612b3ce7366c4a7db281d0f7a1c83199e899bec8db290a9f1e4153e823e263e",
+          "name": "flags_status_check",
+          "schema": "public",
+          "table": "flags",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "c6ea7ac3cce8e09c29b2d03a17cc56938d74bc153c4036c40eb2b7a6b0bb1e14",
+          "name": "flags_user_id_fkey",
+          "schema": "public",
+          "table": "flags",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "44756d887704fc88d8d0adc5c0c431103c555b4f8e6a4ddef6f7a7f6b4110606",
+          "name": "notification_preferences_pkey",
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "7dffc1fe5c72443147ef9227e966626cdc6e5997f36e90bcc553577512766d2a",
+          "name": "notification_preferences_user_id_fkey",
+          "schema": "public",
+          "table": "notification_preferences",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "5949a9835da863f7cd060223c5e621ceed33d42f015e83bce8a52c0f967ebd13",
+          "name": "point_events_event_type_check",
+          "schema": "public",
+          "table": "point_events",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "ec17ae68ea4e8082b32fc719327ad64de80d389a1546bcbbda6769b2dda59c75",
+          "name": "point_events_flag_id_fkey",
+          "schema": "public",
+          "table": "point_events",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "point_events_pkey",
+          "schema": "public",
+          "table": "point_events",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "c6ea7ac3cce8e09c29b2d03a17cc56938d74bc153c4036c40eb2b7a6b0bb1e14",
+          "name": "point_events_user_id_fkey",
+          "schema": "public",
+          "table": "point_events",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "44756d887704fc88d8d0adc5c0c431103c555b4f8e6a4ddef6f7a7f6b4110606",
+          "name": "push_tokens_pkey",
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "f182bda49048df40ab9a335bf32be10212d8d571237bb4a43878a2f985c8db95",
+          "name": "push_tokens_platform_check",
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "c6ea7ac3cce8e09c29b2d03a17cc56938d74bc153c4036c40eb2b7a6b0bb1e14",
+          "name": "push_tokens_user_id_fkey",
+          "schema": "public",
+          "table": "push_tokens",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8ac1a67c9bb9332b93682828b35c7e1fd22b5accd2985b3d39248709c97fe4db",
+          "name": "realtime_subscribe_log_event_check",
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "realtime_subscribe_log_pkey",
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "c6ea7ac3cce8e09c29b2d03a17cc56938d74bc153c4036c40eb2b7a6b0bb1e14",
+          "name": "realtime_subscribe_log_user_id_fkey",
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "f883d05bce96e8c52d89fe54a4407c171238b1d0d7a055bb78dc793b9085fe9a",
+          "name": "points_non_negative",
+          "schema": "public",
+          "table": "users",
+          "type": "c"
+        },
+        {
+          "definitionSha256": "1d40c82d98714111dd53c279d299065411caaa45ac74a9580421fa43800e1432",
+          "name": "users_email_key",
+          "schema": "public",
+          "table": "users",
+          "type": "u"
+        },
+        {
+          "definitionSha256": "6ca7d4b44819dee9635fa86ca6f49bf152903fbbd5a2ff2c0fc4c4f0c3c3e5c8",
+          "name": "users_id_fkey",
+          "schema": "public",
+          "table": "users",
+          "type": "f"
+        },
+        {
+          "definitionSha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+          "name": "users_pkey",
+          "schema": "public",
+          "table": "users",
+          "type": "p"
+        },
+        {
+          "definitionSha256": "f883d05bce96e8c52d89fe54a4407c171238b1d0d7a055bb78dc793b9085fe9a",
+          "name": "users_points_nonneg_chk",
+          "schema": "public",
+          "table": "users",
+          "type": "c"
+        }
+      ]
+    },
+    "flagsColumnGrants": [
+      {
+        "column": "category",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "category",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "created_at",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "description",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "description",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "dispute_requests",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "dispute_requests_reset_at",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "id",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "lat",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "lat",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "lng",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "lng",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_object_key",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "reopen_requests",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "reopen_requests_reset_at",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "severity",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "severity",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "status",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "status",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "updated_at",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "user_id",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "user_id",
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "category",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "category",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "category",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "created_at",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "description",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "description",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "description",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "dispute_requests",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "dispute_requests_reset_at",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "id",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "lat",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "lat",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "lng",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "lng",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "photo_object_key",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "reopen_requests",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "reopen_requests_reset_at",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "severity",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "severity",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "severity",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "status",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "status",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "status",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "updated_at",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "user_id",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "user_id",
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "category",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "category",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "category",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "category",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "context_tags",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "created_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "created_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "created_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "created_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "description",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "description",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "description",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "description",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "dispute_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "dispute_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "dispute_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "dispute_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "dispute_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "dispute_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "dispute_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "dispute_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "lat",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "lat",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "lat",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "lat",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "lng",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "lng",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "lng",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "lng",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_alt",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "photo_object_key",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "photo_object_key",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "photo_object_key",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_object_key",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "photo_url",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "reopen_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "reopen_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "reopen_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "reopen_requests",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "reopen_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "reopen_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "reopen_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "reopen_requests_reset_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "severity",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "severity",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "severity",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "severity",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "status",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "status",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "status",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "status",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "updated_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "updated_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "updated_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "updated_at",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "user_id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "INSERT"
+      },
+      {
+        "column": "user_id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "REFERENCES"
+      },
+      {
+        "column": "user_id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "user_id",
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      },
+      {
+        "column": "user_id",
+        "grantable": "NO",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "privilege": "SELECT"
+      },
+      {
+        "column": "user_id",
+        "grantable": "NO",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "privilege": "UPDATE"
+      }
+    ],
+    "flagsTableGrants": [
+      {
+        "grantable": "NO",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "hierarchy": "YES",
+        "privilege": "SELECT"
+      },
+      {
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "hierarchy": "NO",
+        "privilege": "DELETE"
+      },
+      {
+        "grantable": "NO",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "hierarchy": "YES",
+        "privilege": "SELECT"
+      },
+      {
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "hierarchy": "NO",
+        "privilege": "DELETE"
+      },
+      {
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "hierarchy": "NO",
+        "privilege": "INSERT"
+      },
+      {
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "hierarchy": "NO",
+        "privilege": "REFERENCES"
+      },
+      {
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "hierarchy": "YES",
+        "privilege": "SELECT"
+      },
+      {
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "hierarchy": "NO",
+        "privilege": "TRIGGER"
+      },
+      {
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "hierarchy": "NO",
+        "privilege": "TRUNCATE"
+      },
+      {
+        "grantable": "YES",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "hierarchy": "NO",
+        "privilege": "UPDATE"
+      }
+    ],
+    "indexes": {
+      "count": 40,
+      "items": [
+        {
+          "definitionSha256": "6a1d56ebe1c0f400742831630a37d6013559199d8058b7151f560e152d551b91",
+          "name": "bucket_pkey",
+          "schema": "limiter",
+          "table": "bucket"
+        },
+        {
+          "definitionSha256": "afc899216165b382319e0cb35563b7804ff24dcbd7e10d3a16cffdf33a68d1b1",
+          "name": "config_pkey",
+          "schema": "limiter",
+          "table": "config"
+        },
+        {
+          "definitionSha256": "284f86b31f24d4adcdaf7328acccd9851aa1a90be58658c68a3d670a15237e07",
+          "name": "grant_parent_idx",
+          "schema": "limiter",
+          "table": "grant"
+        },
+        {
+          "definitionSha256": "a2a786b95228290444dc65e18b7ce5355dadf24764201568e36cce7e1451d97c",
+          "name": "grant_pkey",
+          "schema": "limiter",
+          "table": "grant"
+        },
+        {
+          "definitionSha256": "d77e2bb01bbc377d6514c42a606dc92c5e17abd023aedd25f4d7ca23aad8ba73",
+          "name": "key_state_pkey",
+          "schema": "limiter",
+          "table": "key_state"
+        },
+        {
+          "definitionSha256": "c884d5c8cfc1dd0d6bf9ac5086f68dc8f8c480757380e9f3181bb5381d8ac5ce",
+          "name": "translation_prefix_pkey",
+          "schema": "limiter",
+          "table": "translation_prefix"
+        },
+        {
+          "definitionSha256": "0bc242ab1dd00c5c520d7a4c0b28eef0a4f0d7e8768557fdbd6e88b6d4f5e716",
+          "name": "comment_votes_pkey",
+          "schema": "public",
+          "table": "comment_votes"
+        },
+        {
+          "definitionSha256": "9b35571f3fe4090b6bada2dea33a9a77ea0034d0964d099516a76dea68e7d88e",
+          "name": "comment_votes_voter_id_idx",
+          "schema": "public",
+          "table": "comment_votes"
+        },
+        {
+          "definitionSha256": "4f98c2e7de0e6b6a1770c8c7e85cb09da2fae75c16264a4e304649dfd4af22d3",
+          "name": "feedback_category_idx",
+          "schema": "public",
+          "table": "feedback"
+        },
+        {
+          "definitionSha256": "5068822ee7b50f68f024a576e1d2d56c1c3fbbb77ba7dd875ffb3ead258798c6",
+          "name": "feedback_pkey",
+          "schema": "public",
+          "table": "feedback"
+        },
+        {
+          "definitionSha256": "3c416a2dc5a12ebf47df65e45ec6e418f1df3d090f16ae31ead6516b4e4b42b8",
+          "name": "feedback_user_created_at_idx",
+          "schema": "public",
+          "table": "feedback"
+        },
+        {
+          "definitionSha256": "8f20b3db324f0f5c2c8d36fe959f3c34e74281d573342e4643e0568b0684280f",
+          "name": "flag_comments_flag_id_created_at_idx",
+          "schema": "public",
+          "table": "flag_comments"
+        },
+        {
+          "definitionSha256": "a0c0b752f4a0e3522042a1587b931df02550ea5405cd034ecd54defdfe6080ba",
+          "name": "flag_comments_pkey",
+          "schema": "public",
+          "table": "flag_comments"
+        },
+        {
+          "definitionSha256": "86cc27b771e83ffeec5fca2cda09d07883fdcfc817a5d8f24d146c1eaea26262",
+          "name": "flag_comments_user_id_idx",
+          "schema": "public",
+          "table": "flag_comments"
+        },
+        {
+          "definitionSha256": "7b0e577b8c32c2ab978d56765ff1f143bea12bf40f33c30ad14ecc986aac3323",
+          "name": "flag_edit_history_flag_idx",
+          "schema": "public",
+          "table": "flag_edit_history"
+        },
+        {
+          "definitionSha256": "66ab303318163558376551bc623cd75dc29dd336556b3c93ef8456f4a198e860",
+          "name": "flag_edit_history_pkey",
+          "schema": "public",
+          "table": "flag_edit_history"
+        },
+        {
+          "definitionSha256": "1a256a81e97e102813c7112193d5c2064dcba5573c3432e4f3c12c8e3f3a1d6a",
+          "name": "flag_edit_history_user_id_idx",
+          "schema": "public",
+          "table": "flag_edit_history"
+        },
+        {
+          "definitionSha256": "7127abfcc8dc7a98e64fca88915545c25aa59a31ca54872b5a2f4228bb72ffdf",
+          "name": "flag_photos_flag_id_position_idx",
+          "schema": "public",
+          "table": "flag_photos"
+        },
+        {
+          "definitionSha256": "ac4d6c9ec30f4aca62b79aa5335e5317923cead0eb7d7a2815b541ae1730cd89",
+          "name": "flag_photos_pkey",
+          "schema": "public",
+          "table": "flag_photos"
+        },
+        {
+          "definitionSha256": "74436c81e2ccddede334f87686cc782049ceeb8c4f199c57207f73cbc82199e5",
+          "name": "flag_status_history_flag_idx",
+          "schema": "public",
+          "table": "flag_status_history"
+        },
+        {
+          "definitionSha256": "1fa0b5b77a8f1460ab2f4efe7b2fef3e497544efa6d4c1049336cb9e478514c4",
+          "name": "flag_status_history_pkey",
+          "schema": "public",
+          "table": "flag_status_history"
+        },
+        {
+          "definitionSha256": "4105c8eacb4a58a2c8bc7f0035e86cb86015ba25514d65d0443aa2b9d351a8a8",
+          "name": "flag_status_history_user_id_idx",
+          "schema": "public",
+          "table": "flag_status_history"
+        },
+        {
+          "definitionSha256": "6596485c31e50dd7725f6b40ec4177f6e1a73d18a6fddb5f57cd471b4cbd8167",
+          "name": "flag_verifications_flag_id_idx",
+          "schema": "public",
+          "table": "flag_verifications"
+        },
+        {
+          "definitionSha256": "1546b8246f29be14581186798ee45d024676c38c96782f2c116d1b3f05ad4faa",
+          "name": "flag_verifications_flag_id_verifier_id_key",
+          "schema": "public",
+          "table": "flag_verifications"
+        },
+        {
+          "definitionSha256": "77ae788a451662ae393b7fa05a5d805c248d0afd66a9e9e0180424899aa629d3",
+          "name": "flag_verifications_pkey",
+          "schema": "public",
+          "table": "flag_verifications"
+        },
+        {
+          "definitionSha256": "a8072ea0474c44792c929087d4a72f2db82dc3a62290136c7f51e96c15a919cc",
+          "name": "flag_verifications_verifier_id_idx",
+          "schema": "public",
+          "table": "flag_verifications"
+        },
+        {
+          "definitionSha256": "9a9e34c9689c1b70641d9d0f4b4030cc8ebf77b4acd9b1f3ccc30e265776df02",
+          "name": "flags_context_tags_idx",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "d313047075dbf8a51391bdf4b05a3bb9087ac781d853c9ae441dc2aa71eebb0c",
+          "name": "flags_pkey",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "878a022c12939029791ba712638bcdc6db80a763ff01daa22761e1d6facc506b",
+          "name": "flags_reopen_requests_idx",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "564225c61aa955bd82519964f0fef28caa3bce071843e86899388c4b1a9e905a",
+          "name": "flags_status_created_at_idx",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "056634865e3b1edd415330a90e989b6fbb7b28d890d94da9f5a30ce3f123c0de",
+          "name": "flags_user_id_idx",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "07c78960621dc2ace4d396c788c27bc90728268ff0a97e5dfff9f6ae5cf5dd83",
+          "name": "notification_preferences_pkey",
+          "schema": "public",
+          "table": "notification_preferences"
+        },
+        {
+          "definitionSha256": "b942cb64a40596ad718fa41f5d9dcdf57d3ac430b3b2800844d9f32f1056c7d1",
+          "name": "point_events_flag_id_idx",
+          "schema": "public",
+          "table": "point_events"
+        },
+        {
+          "definitionSha256": "462cd9d4c188a94262317c4d758a46a6838141ad21ca48f0cdbeb5c254955e8b",
+          "name": "point_events_pkey",
+          "schema": "public",
+          "table": "point_events"
+        },
+        {
+          "definitionSha256": "cd2d4d306fb7a439fd85f3c0295260915247107e9ea2b203616501ca693a8373",
+          "name": "point_events_user_id_idx",
+          "schema": "public",
+          "table": "point_events"
+        },
+        {
+          "definitionSha256": "899cebf2053fc0c2554f789a28dc5f28f44febe5e3fcd6b68651fc1692eaccbf",
+          "name": "push_tokens_pkey",
+          "schema": "public",
+          "table": "push_tokens"
+        },
+        {
+          "definitionSha256": "8610776afc8ca56dfe615b8e5981711fde31dd6b57f8033092fcb41c4ac1fbe5",
+          "name": "realtime_subscribe_log_pkey",
+          "schema": "public",
+          "table": "realtime_subscribe_log"
+        },
+        {
+          "definitionSha256": "cf0af6947df5be849cc5ad59909a4324d4e5d257dce01378880ea5fa5f3b5695",
+          "name": "realtime_subscribe_log_user_id_idx",
+          "schema": "public",
+          "table": "realtime_subscribe_log"
+        },
+        {
+          "definitionSha256": "be951c1b45e8469ae97e4a5f51902c4ae57809e6fb4b65b4f57757dfee41a7c9",
+          "name": "users_email_key",
+          "schema": "public",
+          "table": "users"
+        },
+        {
+          "definitionSha256": "d99201d7b35710b756dae598aedb27a88cc24d029d6f09191c9d3a2c257a273b",
+          "name": "users_pkey",
+          "schema": "public",
+          "table": "users"
+        }
+      ]
+    },
+    "policies": {
+      "count": 44,
+      "items": [
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "comment_votes delete own",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "comment_votes",
+          "usingSha256": "e47782bd4127c11d57c801b4934ddcd9d436601c4c85bed875e6bb09bd2d2d00"
+        },
+        {
+          "checkSha256": "e47782bd4127c11d57c801b4934ddcd9d436601c4c85bed875e6bb09bd2d2d00",
+          "command": "INSERT",
+          "name": "comment_votes insert own",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "comment_votes",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "comment_votes readable",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "comment_votes",
+          "usingSha256": "3c2d923e3939436a0ddda4e3d141a95088a6e0be56a982c7ffe6c7ba3d5a7905"
+        },
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "feedback_delete_own",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "schema": "public",
+          "table": "feedback",
+          "usingSha256": "6b36a5a5cb32f4f093c5a1eecd58f66dc0ab9b61bf7f01c0efa8db968409e14c"
+        },
+        {
+          "checkSha256": "c76d15b0291b8aeaf410e020b3673f0a44e911e9c87e8449fcf8304375cade2b",
+          "command": "INSERT",
+          "name": "feedback_insert_self_or_anon",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "schema": "public",
+          "table": "feedback",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "feedback_select_maintainer",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "schema": "public",
+          "table": "feedback",
+          "usingSha256": "9a196f9ce7acea5be942acf8f821c6392498b5e39a8f3bc868366e3f88fddb37"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "feedback_select_own",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "public"
+          ],
+          "schema": "public",
+          "table": "feedback",
+          "usingSha256": "6b36a5a5cb32f4f093c5a1eecd58f66dc0ab9b61bf7f01c0efa8db968409e14c"
+        },
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "admin delete any comment",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_comments",
+          "usingSha256": "708ed100bda471fbabaedf2c9d69580073da0b883c4676d3e173f3abee8ac3cb"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flag_comments: authenticated read",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_comments",
+          "usingSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "flag_comments: own delete",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_comments",
+          "usingSha256": "1b29cc1f6c0017f447260789db013ce3e4e626934472e2d6330af3984baee68b"
+        },
+        {
+          "checkSha256": "1b29cc1f6c0017f447260789db013ce3e4e626934472e2d6330af3984baee68b",
+          "command": "INSERT",
+          "name": "flag_comments: own insert",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_comments",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": "c7d76f7e8c47da9e4e025dbe3c0a810be2c82c245ee60fd94546e4607bb18faf",
+          "command": "INSERT",
+          "name": "flag_edit_history insert by flag owner",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_edit_history",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flag_edit_history select by maintainer",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_edit_history",
+          "usingSha256": "9a196f9ce7acea5be942acf8f821c6392498b5e39a8f3bc868366e3f88fddb37"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flag_edit_history select via public view",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_edit_history",
+          "usingSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+          "checkSha256": "4ab0734bd4f5caba4274a1eb7fa8e6809d5d0b2b7fb9cd9bdd2de3df88ae81de",
+          "command": "INSERT",
+          "name": "flag_photos: authenticated insert",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_photos",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flag_photos: authenticated read",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_photos",
+          "usingSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "flag_photos: flag owner delete",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_photos",
+          "usingSha256": "eeefd41a78acd9b37e13d95ad65096459e0e8474369a6eb45b0044e754df7c43"
+        },
+        {
+          "checkSha256": "eeefd41a78acd9b37e13d95ad65096459e0e8474369a6eb45b0044e754df7c43",
+          "command": "UPDATE",
+          "name": "flag_photos: flag owner update",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_photos",
+          "usingSha256": "eeefd41a78acd9b37e13d95ad65096459e0e8474369a6eb45b0044e754df7c43"
+        },
+        {
+          "checkSha256": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+          "command": "INSERT",
+          "name": "flag_status_history no direct insert",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_status_history",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flag_status_history readable by maintainer",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_status_history",
+          "usingSha256": "9a196f9ce7acea5be942acf8f821c6392498b5e39a8f3bc868366e3f88fddb37"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flag_status_history readable via public view",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_status_history",
+          "usingSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+          "checkSha256": "27b66593ccec850c1a2005be613433f2cc9317396015a79a2b56a3f9a3c21406",
+          "command": "INSERT",
+          "name": "flag_verifications own insert",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_verifications",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flag_verifications readable",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flag_verifications",
+          "usingSha256": "80feada07b3bb5c4d4ab2a3279963103dbdd4ab318f5ccea3a6131dbf3f2483a"
+        },
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "admin delete any flag",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": "708ed100bda471fbabaedf2c9d69580073da0b883c4676d3e173f3abee8ac3cb"
+        },
+        {
+          "checkSha256": "dd17ee77ee14163f2d69009f8fa541dfbcd95086ebc19ebc32a863614617d321",
+          "command": "INSERT",
+          "name": "flags anon insert",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "anon"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": "bfe848e875fbfa8ecb39137b55cd4d0f42b3dc21b34943559291b8b382cb98fb",
+          "command": "INSERT",
+          "name": "flags authenticated insert open",
+          "permissive": "RESTRICTIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "flags delete own",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54"
+        },
+        {
+          "checkSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54",
+          "command": "INSERT",
+          "name": "flags insert own",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": "3e4ccb0042069508534a90beb8e94edc67d76587389b2cc08a27f77b37792aff",
+          "command": "UPDATE",
+          "name": "flags owner edit open",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": "2f462feeb2d5dc4f76a92b72a2f5dbc26975313af3ab858d4b91601619feeb25"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flags readable by anon",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "anon"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "flags readable by authenticated",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+          "checkSha256": "6753e00ecb456a7c7d7c2736eff926d6fb136286764bb57b5db4f0ffd7ba6c50",
+          "command": "UPDATE",
+          "name": "flags status update by any authenticated",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "flags",
+          "usingSha256": "6753e00ecb456a7c7d7c2736eff926d6fb136286764bb57b5db4f0ffd7ba6c50"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "Users can read their own notification preferences",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "notification_preferences",
+          "usingSha256": "1b29cc1f6c0017f447260789db013ce3e4e626934472e2d6330af3984baee68b"
+        },
+        {
+          "checkSha256": "1b29cc1f6c0017f447260789db013ce3e4e626934472e2d6330af3984baee68b",
+          "command": "UPDATE",
+          "name": "Users can update their own notification preferences",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "notification_preferences",
+          "usingSha256": "1b29cc1f6c0017f447260789db013ce3e4e626934472e2d6330af3984baee68b"
+        },
+        {
+          "checkSha256": "1b29cc1f6c0017f447260789db013ce3e4e626934472e2d6330af3984baee68b",
+          "command": "INSERT",
+          "name": "Users can upsert their own notification preferences",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "notification_preferences",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "point_events owner select",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "point_events",
+          "usingSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54"
+        },
+        {
+          "checkSha256": null,
+          "command": "DELETE",
+          "name": "push_tokens owner delete",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "push_tokens",
+          "usingSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54"
+        },
+        {
+          "checkSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54",
+          "command": "INSERT",
+          "name": "push_tokens owner insert",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "push_tokens",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "push_tokens owner select",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "push_tokens",
+          "usingSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54"
+        },
+        {
+          "checkSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54",
+          "command": "UPDATE",
+          "name": "push_tokens owner update",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "push_tokens",
+          "usingSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54"
+        },
+        {
+          "checkSha256": "abb2d82683183540acec49069ec5c2b403521340fc0e48e77b80ca1a0f449c54",
+          "command": "INSERT",
+          "name": "subscribe_log insert own",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "realtime_subscribe_log",
+          "usingSha256": null
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "users own row full select",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "users",
+          "usingSha256": "2c784b59c72c931640f976cc5bcca6c71de36d9302884cd9897946378836b31c"
+        },
+        {
+          "checkSha256": null,
+          "command": "SELECT",
+          "name": "users readable by authenticated",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "users",
+          "usingSha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+        },
+        {
+          "checkSha256": "27449941183c58b00187bcce5b73c0b274bdbeb0e18a77b1e01e9049a759032a",
+          "command": "UPDATE",
+          "name": "users update own row",
+          "permissive": "PERMISSIVE",
+          "roles": [
+            "authenticated"
+          ],
+          "schema": "public",
+          "table": "users",
+          "usingSha256": "2c784b59c72c931640f976cc5bcca6c71de36d9302884cd9897946378836b31c"
+        }
+      ]
+    },
+    "relations": {
+      "count": 30,
+      "items": [
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bucket",
+          "options": "",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "limiter"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "config",
+          "options": "",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "limiter"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "grant",
+          "options": "",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "limiter"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "key_state",
+          "options": "",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "limiter"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "translation_prefix",
+          "options": "",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "limiter"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bk_2026_08_22_flag_comments",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bk_2026_08_22_flag_edit_history",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bk_2026_08_22_flag_photos",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bk_2026_08_22_flag_status_history",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bk_2026_08_22_flag_verifications",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bk_2026_08_22_flags",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "bk_2026_08_22_point_links",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=rd/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "comment_votes",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=rd/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "feedback",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=rd/postgres,anon=r/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "flag_comments",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "flag_edit_history",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=r/postgres,anon=r/postgres}",
+          "forceRls": false,
+          "kind": "v",
+          "name": "flag_edit_history_public",
+          "options": "security_invoker=true",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=rd/postgres,anon=r/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "flag_photos",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "flag_status_history",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=r/postgres,anon=r/postgres}",
+          "forceRls": false,
+          "kind": "v",
+          "name": "flag_status_history_public",
+          "options": "security_invoker=true",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=r/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "flag_verifications",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,anon=r/postgres,authenticated=rd/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "flags",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=r/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "notification_preferences",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,anon=r/postgres,authenticated=r/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "point_events",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=rwU/postgres}",
+          "forceRls": false,
+          "kind": "S",
+          "name": "point_events_id_seq",
+          "options": "",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,authenticated=rd/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "push_tokens",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "realtime_subscribe_log",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=rwU/postgres}",
+          "forceRls": false,
+          "kind": "S",
+          "name": "realtime_subscribe_log_id_seq",
+          "options": "",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "r",
+          "name": "users",
+          "options": "",
+          "owner": "postgres",
+          "rls": true,
+          "schema": "public"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres}",
+          "forceRls": false,
+          "kind": "v",
+          "name": "users_self_email",
+          "options": "security_invoker=true",
+          "owner": "postgres",
+          "rls": false,
+          "schema": "public"
+        }
+      ]
+    },
+    "routines": {
+      "count": 55,
+      "items": [
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, extensions, pg_temp",
+          "definitionSha256": "88db56145762521756390e7a4f80cf0bee31aa080993c6a78d8e6b8d8fd0aa6b",
+          "identityArgs": "p_source_raw text, p_grant uuid, p_now timestamp with time zone",
+          "kind": "f",
+          "leakproof": false,
+          "name": "admit_at",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,service_role=X/postgres}",
+          "config": "search_path=limiter, pg_temp",
+          "definitionSha256": "158b14663ffbd50ed6833097f1775405493a1a7b6381f1f209e0c771471ad79a",
+          "identityArgs": "p_source_raw text, p_grant uuid, p_category text, p_body text, p_platform text",
+          "kind": "f",
+          "leakproof": false,
+          "name": "admit_guest_feedback",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, public, extensions, pg_temp",
+          "definitionSha256": "c32193ca290643a0bc559317fe3746ca08fb6e633f1f15e43fe6ae973bd0f896",
+          "identityArgs": "p_source_raw text, p_grant uuid, p_category text, p_body text, p_platform text, p_now timestamp with time zone",
+          "kind": "f",
+          "leakproof": false,
+          "name": "admit_guest_feedback_at",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,service_role=X/postgres}",
+          "config": "search_path=limiter, pg_temp",
+          "definitionSha256": "bce673e609caefaf2fe96114d68b03de2f1e372a123ffe4f601d92ebaca4b8ca",
+          "identityArgs": "p_source_raw text, p_grant uuid, p_lat double precision, p_lng double precision, p_category text, p_severity integer, p_description text",
+          "kind": "f",
+          "leakproof": false,
+          "name": "admit_guest_flag",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, public, extensions, pg_temp",
+          "definitionSha256": "8778ccbdcbc7cdb890b7785b62b70509b6dfd0114adfa8ffeff888ba60298226",
+          "identityArgs": "p_source_raw text, p_grant uuid, p_lat double precision, p_lng double precision, p_category text, p_severity integer, p_description text, p_now timestamp with time zone",
+          "kind": "f",
+          "leakproof": false,
+          "name": "admit_guest_flag_at",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, extensions, pg_temp",
+          "definitionSha256": "5e8c5a2e0172a3b647fae10b08300588ede80d2c5d88e3edfb9668905cf4abba",
+          "identityArgs": "p_now timestamp with time zone",
+          "kind": "f",
+          "leakproof": false,
+          "name": "current_epoch_key",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "13ba84379b27d206390c394aa29118170fdb9d00edde42eadf95a80d0ea8b020",
+          "identityArgs": "p_epoch_key bytea, p_prefix text",
+          "kind": "f",
+          "leakproof": false,
+          "name": "derive_bucket_key",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "i"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "bf6a8fbea342f22d806ce481a1d8b46dd4bda30f7d16b468bb2abe8d8b92e8e1",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "domain_lock_key",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "i"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "8d5a9bfc4ce0dcb7ffcf0c0f27ff1cda7f5a926b4d634ceef3b5c5069f05f2f3",
+          "identityArgs": "p_addr inet",
+          "kind": "f",
+          "leakproof": false,
+          "name": "embedded_ipv4",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, pg_temp",
+          "definitionSha256": "f0257b0bd95d0a56e0873238073cace0431da72478e05669b7cd944186459054",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "guard_window_domain",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "7fcc2e1af2977d3432d4c7e9504e00aceae6059e51699a2b3b98ef1297fe92fd",
+          "identityArgs": "p_addr inet",
+          "kind": "f",
+          "leakproof": false,
+          "name": "ipv6_hex",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "i"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "371125c647e9e38ea5c09798d8ae8567ffc0a82ac382b9869a6289280666d030",
+          "identityArgs": "p_addr inet",
+          "kind": "f",
+          "leakproof": false,
+          "name": "is_public_unicast",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "i"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "3ea541213f9f95ecb085465e52457f7782bf0c45f91be14709bde9c6a988cb24",
+          "identityArgs": "p_raw text",
+          "kind": "f",
+          "leakproof": false,
+          "name": "normalize_source",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres,service_role=X/postgres}",
+          "config": "search_path=limiter, pg_temp",
+          "definitionSha256": "aa44577dcaa81b64d835dfdb7dba6ac0821afbcac2d359d4430a2ffa93a575d0",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "purge",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, pg_temp",
+          "definitionSha256": "df76f2e1766416fdceda5b7571a368bb575f393a1a2669e92723dd0593d957af",
+          "identityArgs": "p_now timestamp with time zone",
+          "kind": "f",
+          "leakproof": false,
+          "name": "purge_at",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "dd408d337a18c884cc7ce64ae53a22472a2688b30edbe8eeee347e5a320a29a2",
+          "identityArgs": "p_key bytea, p_next_epoch bigint",
+          "kind": "f",
+          "leakproof": false,
+          "name": "ratchet",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "i"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, extensions, pg_temp",
+          "definitionSha256": "524c0127d058e4275209e6513e3c7e81398a29c5cf8859b23b655961bf794f4d",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "read_epoch_key",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "421867dd3b415be49b4ee0092b95837578328dedd3b6cf68cc0689f40d7b0093",
+          "identityArgs": "p_addr inet, p_plen integer",
+          "kind": "f",
+          "leakproof": false,
+          "name": "rfc6052_ipv4",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "i"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "",
+          "definitionSha256": "95b74ea2d4944c5500133bbdcc07497b3b1290dd14ed0505a5236c9e3cb2de08",
+          "identityArgs": "p_at timestamp with time zone, p_window_seconds integer",
+          "kind": "f",
+          "leakproof": false,
+          "name": "window_of",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": false,
+          "volatility": "i"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=limiter, extensions, pg_temp",
+          "definitionSha256": "3fb974f9ae987870517a5004a86c7a742915fc29e66ec092f2efb48b01111767",
+          "identityArgs": "p_key bytea",
+          "kind": "f",
+          "leakproof": false,
+          "name": "write_epoch_key",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "limiter",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "0827f2a2bdf46e4338bc04153b5599c3b2904dd79f44606982a77072483fe6b9",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "current_user_is_admin",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "private",
+          "securityDefiner": true,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "2b871a8d7f3a533ad4ebca07081e4fbe3dfb6afa274cc8aca3d43d7317a36e3f",
+          "identityArgs": "p_comment_ids uuid[]",
+          "kind": "f",
+          "leakproof": false,
+          "name": "get_comment_author_profiles",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "private",
+          "securityDefiner": true,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "e3c67de45ee0f2272a4170914159f4b8266fa150d23bfe2d0e8d73ebdb51a2f0",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "get_my_leaderboard_rank",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "private",
+          "securityDefiner": true,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "454fcffb365e2c9dbe5483b23d46a8090c352051008043a9418971d7a17ffc93",
+          "identityArgs": "p_limit integer",
+          "kind": "f",
+          "leakproof": false,
+          "name": "list_public_leaderboard",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "private",
+          "securityDefiner": true,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "b9fffe151dc59d36a80fd141e3a7da3b5b4c44beb1ea16c0ddd0f5eac3404dc5",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "check_feedback_rate_limit",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "4e093e509f53bae1ac323858668872f9247b66c1ae97913b501eaa61429d87c8",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "check_flag_creation_rate_limit",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "8cc4ece0edd9e5ac2938193054f845c32a4a18c967599fe163a0b71bc81dad76",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "check_flag_rate_limit",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "4272fd30b065b1ac7e95bc94565985ae6999a4dddf929655a2c282631f54ec85",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "check_global_anon_rate_limit",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "ce12d54f3d73328da6f09ca5a66db22e5d3aef51d7a6f342fe132e8650169bf8",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "current_user_can_admin",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "cb880ea3baec90843d0810f77d1563a159dd3f20041ba3bd4218b7a608922da7",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "enforce_flag_photos_object_key_guard",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "2b7b6cf280fc508e1cc3cf7671e25f0da426a8b708d26bf6019fcd33a413a8bd",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "enforce_flag_status_only_for_non_owner",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "88b19b5c2bcb118a2f69ea340d4e3fae75c06dbd6396d1cce4d17deb6cdd21e7",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "enforce_flag_status_transition",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "487547d0faa347d73de3a7cc9fb05b96ac7240c93dfc14a322719678122fefed",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "enforce_flags_photo_object_key_guard",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "a2846b36bd06d8e31643a018d49e2d956cf259134b76e3eb7bde578c327c1b5b",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "enforce_users_avatar_object_key_guard",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "0fd24809f3c42b47cd4ec41345accd5983b2544bf00fd44bc9a8365be32aeaaa",
+          "identityArgs": "p_comment_ids uuid[]",
+          "kind": "f",
+          "leakproof": false,
+          "name": "get_comment_author_profiles",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "ffe7bc61a5e66cdde8e92149721f0e6c665fe239ced95200df7d5bbb430ca70a",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "get_my_leaderboard_rank",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "a6c94335d28c95d8de10ad9ed0d6b7e7706491881ead8088cbfcbe72791276e8",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_comment_added",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "fd25cecd95ebbc3b96c28b7ef5e4cab3255fcd3af649b5a03eeebfc0276f1c1f",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_comment_vote_added",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "a9c25e6183e8f3145f1ad686b009322af739a53b398770835a91858ec14ea2eb",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_flag_dispute_reset",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "a30f351058b1ca147f8ed84301d41cf62573ecc3af9fb11ea646f7cf8bd74285",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_flag_insert_history",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "1051749e233b858643f91ef0de5c206289961b996218a25eb182f44eddabe7e4",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_flag_photo_added",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "aef8d210486edb170399a139b6a13f6f5a386b8fc99208a24afcd1a0dbe946d9",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_flag_reopen_reset",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "b57bcf53e392e10ab51104b2d4ed10c59936729445146664477e558f527270d2",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_flag_status_change",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "97a389dd112dea61176d9435718c95fa5cc1230afc03f1ffeb14fb42b0d9bf68",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_flag_submitted",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "46a5c5c2efc696e19db8b626ec72ffbbe3c8fce95c33d1f7b3f90358f471dd32",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_new_user",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "0f2758f6b26b1e9d9cd15dec58852f1f29747160d5018921c45f3fa0d0f834b1",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_point_event_streak",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public, pg_temp",
+          "definitionSha256": "61cbba86162a0f92406a0b1cd93ac7472deb11a40dceb8fbfbc1b61dbbcc123a",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "handle_push_token_updated_at",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "dd0152b28b39824d721a6f4e638bc3d3a0f6ac74676c7f4f1cbe0fb995e4c065",
+          "identityArgs": "p_flag_id uuid",
+          "kind": "f",
+          "leakproof": false,
+          "name": "increment_dispute_request",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "35a843eb8b4608d6a153141348ec288c2eea0f5f1d24ad684f846c34af588765",
+          "identityArgs": "p_flag_id uuid",
+          "kind": "f",
+          "leakproof": false,
+          "name": "increment_reopen_request",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=\"\"",
+          "definitionSha256": "b946416074e7a3e364ea2c3952b5fc7e92ac41e7653cd6855a6de8ff59498b0e",
+          "identityArgs": "p_limit integer",
+          "kind": "f",
+          "leakproof": false,
+          "name": "list_public_leaderboard",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "s"
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "config": "search_path=public",
+          "definitionSha256": "abe1d677ab9f4655a70012b2b7ff036ccc6282de3c384a412bcb2cf07c726de7",
+          "identityArgs": "p_event text, p_channel text",
+          "kind": "f",
+          "leakproof": false,
+          "name": "log_realtime_event",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public, vault, net",
+          "definitionSha256": "144ebfd0bd81a2f448382a6961447b5cc393a68fe7b175fc61f91a3f140dab49",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "notify_flag_status_webhook",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public, pg_temp",
+          "definitionSha256": "5644b6990a9df826930e02661885091b2794c979bb82666f7f0380b8b9ff431f",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "set_flag_updated_at",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres}",
+          "config": "search_path=public, pg_temp",
+          "definitionSha256": "00d1bf032fcd651a50b9a2b1b944bd143903136edab14cf8d3fcfc5a01762800",
+          "identityArgs": "",
+          "kind": "f",
+          "leakproof": false,
+          "name": "update_flags_updated_at",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": false,
+          "volatility": "v"
+        },
+        {
+          "acl": "{postgres=X/postgres,service_role=X/postgres}",
+          "config": "search_path=public, vault",
+          "definitionSha256": "8778f266674666ac2fe3ac8ffd1f026d6b2d5f78a13384712131a48a09486551",
+          "identityArgs": "incoming text",
+          "kind": "f",
+          "leakproof": false,
+          "name": "verify_webhook_secret",
+          "owner": "postgres",
+          "parallel": "u",
+          "schema": "public",
+          "securityDefiner": true,
+          "volatility": "v"
+        }
+      ]
+    },
+    "schemas": {
+      "count": 4,
+      "items": [
+        {
+          "acl": "{postgres=UC/postgres,service_role=U/postgres}",
+          "owner": "postgres",
+          "schema": "limiter"
+        },
+        {
+          "acl": "{supabase_admin=UC/supabase_admin,=U/supabase_admin,supabase_functions_admin=U/supabase_admin,postgres=U/supabase_admin,anon=U/supabase_admin,authenticated=U/supabase_admin,service_role=U/supabase_admin}",
+          "owner": "supabase_admin",
+          "schema": "net"
+        },
+        {
+          "acl": "{postgres=UC/postgres,authenticated=U/postgres}",
+          "owner": "postgres",
+          "schema": "private"
+        },
+        {
+          "acl": "{pg_database_owner=UC/pg_database_owner,=U/pg_database_owner,postgres=U/pg_database_owner,anon=U/pg_database_owner,authenticated=U/pg_database_owner,service_role=U/pg_database_owner}",
+          "owner": "pg_database_owner",
+          "schema": "public"
+        }
+      ]
+    },
+    "triggers": {
+      "count": 26,
+      "items": [
+        {
+          "definitionSha256": "68bd0312c783be372a7c36abffd7b32df39c42b62b237ecf2b5f6b278df8e826",
+          "enabled": "O",
+          "name": "guard_window_domain",
+          "schema": "limiter",
+          "table": "config"
+        },
+        {
+          "definitionSha256": "b41977123bf9c5a63d7f4275162aa9ece0ee9c5619ca0d09c1deb5ded38de5b7",
+          "enabled": "O",
+          "name": "on_comment_vote_added",
+          "schema": "public",
+          "table": "comment_votes"
+        },
+        {
+          "definitionSha256": "f9107824ee8454f9db1db37d576010fbe570b66090909cab07b55ca6eb31386f",
+          "enabled": "O",
+          "name": "enforce_feedback_rate_limit",
+          "schema": "public",
+          "table": "feedback"
+        },
+        {
+          "definitionSha256": "bfef7abc68c5ab9c8f087a23603558c116b2b910404bddef3f314e6729807cff",
+          "enabled": "O",
+          "name": "on_comment_added",
+          "schema": "public",
+          "table": "flag_comments"
+        },
+        {
+          "definitionSha256": "c90f12a2126e5a3dd1b22c4b61ffd215fc42b6ae77dbb01632c35432d809b6db",
+          "enabled": "O",
+          "name": "flag_photos_object_key_insert_guard",
+          "schema": "public",
+          "table": "flag_photos"
+        },
+        {
+          "definitionSha256": "f3f4fd69dc1c5f8cbbbaacfe8d2db1cd7f0a73626f169dab8e6f61456413dde4",
+          "enabled": "O",
+          "name": "flag_photos_object_key_update_guard",
+          "schema": "public",
+          "table": "flag_photos"
+        },
+        {
+          "definitionSha256": "9c17470dbab186e9a8f3cc469738750b1b58ca225249c01b2d4f9410ccb08fff",
+          "enabled": "O",
+          "name": "on_flag_photo_added",
+          "schema": "public",
+          "table": "flag_photos"
+        },
+        {
+          "definitionSha256": "19e9b7eaa651396159dbb7ddd33877c4aef60462fc5d7e1f9afb186e60de098d",
+          "enabled": "O",
+          "name": "enforce_flag_creation_rate_limit",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "2382bb5abaf73629cd007b2f07723c79e2d512521648cd5e6f05070d30343b1e",
+          "enabled": "O",
+          "name": "enforce_flag_rate_limit",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "74e68cc7355648dfefbeb936565c922366d79f945f562956b8e75eec7f802dca",
+          "enabled": "O",
+          "name": "enforce_flag_status_only_for_non_owner",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "360721387d5a55259e16892ec03eb177c4f07dd1765a24ab98b7a1184f152839",
+          "enabled": "O",
+          "name": "enforce_global_anon_rate_limit",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "fccf3b0ad6af97f1a22aa2610d7901c5241a1936b0c1c0b039602914751680d0",
+          "enabled": "O",
+          "name": "flag_status_notify_trigger",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "ec2d19f2f48b882864c591d5c2f5a29bbec1a7033f974157aee2dae0033abf7d",
+          "enabled": "O",
+          "name": "flag_status_transition_guard",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "d4a80e6c503e7629a50705394f391dd1c08d2348a53990b754fd972ab4cadb36",
+          "enabled": "O",
+          "name": "flags_photo_object_key_insert_guard",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "06e6a3915d01fffb5efe0a99b420c3dfe2884b4eff4e5c209c183afcad953ae8",
+          "enabled": "O",
+          "name": "flags_photo_object_key_update_guard",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "4e7e97809d9094cc870892ce8f7cd5db810e4ce40c12f2e348f4685391fc2efe",
+          "enabled": "O",
+          "name": "on_flag_dispute_reset",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "a5d68a603faaded53d112f44aad5c008f9bd49b5bb85a6c7fe0787d5e140b65a",
+          "enabled": "O",
+          "name": "on_flag_insert_history",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "c39bcdf5a2dd915cc900a2b3467b5e27b98e7d0f16c5377a095fd6e363ea3900",
+          "enabled": "O",
+          "name": "on_flag_reopen_reset",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "1ffb00914d6a727426f5e837a7334a3c8ff4e0bc4860a91c9b29eb22f60cf6a7",
+          "enabled": "O",
+          "name": "on_flag_status_change",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "0c21a95641e74f3fd8cc211cbf33f8765cf78a73273bdfaa879f7e79bb3385de",
+          "enabled": "O",
+          "name": "on_flag_submitted",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "4100abadaa91c7d975084da4dba93dd17d9fd9899377b172329678ef07c8e586",
+          "enabled": "O",
+          "name": "on_flag_updated_at",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "f112cc9ed4029aa255ea1d4496c02677f9c4f940e537e7c5ed5978fa90230363",
+          "enabled": "O",
+          "name": "update_flags_updated_at",
+          "schema": "public",
+          "table": "flags"
+        },
+        {
+          "definitionSha256": "926eb10993aa4b704d3f2f75a8acd44003aeafa82a748edb8d94d6727e8ae304",
+          "enabled": "O",
+          "name": "on_point_event_streak",
+          "schema": "public",
+          "table": "point_events"
+        },
+        {
+          "definitionSha256": "b88209a7a86aa868fca1f84518e5494f6a19f529d24f35a6c399a4eca420aa54",
+          "enabled": "O",
+          "name": "push_tokens_updated_at",
+          "schema": "public",
+          "table": "push_tokens"
+        },
+        {
+          "definitionSha256": "242dea1d0cf172500e4537605f4bbf50fa0ab0954bb986c72e7bedae77e1affe",
+          "enabled": "O",
+          "name": "users_avatar_object_key_insert_guard",
+          "schema": "public",
+          "table": "users"
+        },
+        {
+          "definitionSha256": "207adb093e35f795b2801eefedc01a0aa750cb36b34d4907dc50fe846b03c3c5",
+          "enabled": "O",
+          "name": "users_avatar_object_key_update_guard",
+          "schema": "public",
+          "table": "users"
+        }
+      ]
+    }
+  },
+  "transactionReadOnly": "on",
+  "structuralChecksum": "2d533d8f8bfb827fe6b63f4fb6f17035afd55b8d474260a51a20fe2c004bda01",
+  "command": [
+    "supabase",
+    "db",
+    "query",
+    "--linked",
+    "--project-ref",
+    "kldlwszpfkdmsjrjhjym",
+    "--output-format",
+    "json",
+    "--file",
+    "/Users/skypie/AccessMap-codex/flagstone-p03b-production-dry-run-v2-20260916/qa-reports/phase03b/2026-09-16-revised-production-dry-run/snapshot.sql"
+  ],
+  "commandStartedAt": "2026-09-16T23:03:46.145Z",
+  "commandEndedAt": "2026-09-16T23:03:47.873Z",
+  "commandExitCode": 0
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "promptId": "FLAGSTONE-P03B-REVISED-PRODUCTION-DRY-RUN-20260916-R1",
+  "ownerDecision": "AUTHORIZE_PHASE03B_REVISED_PRODUCTION_DRY_RUN",
+  "role": "Phase 03B production dry-run executor and evidence producer",
+  "authorizedTarget": "kldlwszpfkdmsjrjhjym",
+  "forbiddenStagingTarget": "cepayqmsoqxshsiyqnvz",
+  "authorizedOperation": "One target-explicit read-only production migration dry-run against the frozen candidate",
+  "productionApplyAuthorized": false,
+  "productionMutationsAuthorized": false,
+  "functionDeploymentAuthorized": false,
+  "vaultConfigSecretAuthChangesAuthorized": false,
+  "webhookNotificationExecutionAuthorized": false,
+  "pushMergeReleasePhase03cAuthorized": false
+}

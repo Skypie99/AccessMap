@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "projectRef": "kldlwszpfkdmsjrjhjym",
+  "projectUrl": "https://kldlwszpfkdmsjrjhjym.supabase.co",
+  "projectName": "Accessable City App",
+  "projectStatus": "ACTIVE_HEALTHY",
+  "projectRegion": "us-west-2",
+  "forbiddenStagingRef": "cepayqmsoqxshsiyqnvz",
+  "exactMatch": true,
+  "source": "Fresh filtered supabase projects list read before database contact",
+  "stagingContacted": false
+}
