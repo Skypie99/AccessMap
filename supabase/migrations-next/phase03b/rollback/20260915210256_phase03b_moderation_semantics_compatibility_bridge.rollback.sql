@@ -5,7 +5,9 @@
 -- force reject/restore through the now-disabled audited RPC. It also retains a
 -- community-only CAS transition RPC for verify/resolve/reopen. The queue and
 -- moderation RPC stay revoked. Tightened RLS, reason columns, and the ledger
--- remain intact. Reapply the forward migration to restore moderation capability.
+-- remain intact. The repaired non-owner flags guard also stays in place, so
+-- cross-owner photo_alt writes remain atomically denied in this safe state.
+-- Reapply the forward migration to restore moderation capability.
 begin;
 
 revoke all on function public.moderate_report(

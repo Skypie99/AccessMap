@@ -189,6 +189,14 @@ try {
          and status = 'resolved';
       perform set_config('phase03b.rollback_direct_bridge_works',found::text,true);
       begin
+        update public.flags
+           set photo_alt = 'rollback cross-owner tamper'
+         where id = 'bb000000-0000-4000-8000-000000000001';
+        perform set_config('phase03b.rollback_photo_alt_blocked','false',true);
+      exception when sqlstate '42501' then
+        perform set_config('phase03b.rollback_photo_alt_blocked','true',true);
+      end;
+      begin
         perform * from public.transition_flag_status(
           'bb000000-0000-4000-8000-000000000001','verified','rejected','duplicate',null
         );
@@ -215,6 +223,7 @@ try {
       'vote_rewards_disabled', position('point_events' in pg_get_functiondef('public.handle_comment_vote_added()'::regprocedure)) = 0
       ,'community_transition_works', current_setting('phase03b.rollback_community_works')::boolean
       ,'direct_bridge_works', current_setting('phase03b.rollback_direct_bridge_works')::boolean
+      ,'photo_alt_boundary_retained', current_setting('phase03b.rollback_photo_alt_blocked')::boolean
       ,'reject_capability_off', current_setting('phase03b.rollback_reject_blocked')::boolean
       ,'disabled_milestone_claims_consumed', (select count(*) from public.flag_point_reward_claims where flag_id='bb000000-0000-4000-8000-000000000001')
     );
@@ -235,6 +244,7 @@ try {
     vote_rewards_disabled: true,
     community_transition_works: true,
     direct_bridge_works: true,
+    photo_alt_boundary_retained: true,
     reject_capability_off: true,
     disabled_milestone_claims_consumed: 2,
   };

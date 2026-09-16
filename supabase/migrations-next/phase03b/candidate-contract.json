@@ -7,7 +7,7 @@
     "commit": "342784c6205a824138d59025d65667e316022473",
     "tree": "337c8e7276f4385153ba832375826ec9f36149a0"
   },
-  "owner_decision": "AUTHORIZE_PHASE03B_COMPATIBILITY_BRIDGE_REPAIR",
+  "owner_decision": "HOLD_PHASE03B_STAGING_AND_AUTHORIZE_LOCAL_PHOTO_ALT_BOUNDARY_REPAIR",
   "repair_base": {
     "implementation_commit": "be82b9e86d60765ef2224a174bf8498b42b9aa37",
     "implementation_tree": "a244be7f62a30219ee20127031bbf16a67505e73",
@@ -26,11 +26,25 @@
     "direct_moderation": false,
     "removal_gate": "owner-authorized client cutover after Build 33 and pinned web retirement"
   },
+  "photo_alt_boundary_repair": {
+    "pre_repair_sha256": "8351ba689d41e11556d3833af3ef591a4ad2c224b2e61862fa977eef13aa69fd",
+    "pre_repair_disposition": "SUPERSEDED",
+    "enforcement": "public.enforce_flag_status_only_for_non_owner() atomically rejects non-owner photo_alt changes with SQLSTATE 42501",
+    "full_authenticated_update_columns": [
+      "category",
+      "context_tags",
+      "description",
+      "photo_alt",
+      "photo_url",
+      "severity",
+      "status"
+    ]
+  },
   "apply_order": [
     {
       "identity": "20260915210256_phase03b_moderation_semantics_compatibility_bridge",
       "path": "supabase/migrations-next/phase03b/20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
-      "sha256": "8351ba689d41e11556d3833af3ef591a4ad2c224b2e61862fa977eef13aa69fd"
+      "sha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11"
     },
     {
       "identity": "20260915210413_phase03b_points_integrity",
@@ -47,7 +61,7 @@
     {
       "identity": "20260915210256_phase03b_moderation_semantics_compatibility_bridge_rollback",
       "path": "supabase/migrations-next/phase03b/rollback/20260915210256_phase03b_moderation_semantics_compatibility_bridge.rollback.sql",
-      "sha256": "2c8114def93e54754aa242aada998d1d932bd3c645468302b77a11ed56d47bf9"
+      "sha256": "7e748e636e408415fe0d0161a800a57683e43a310a3cb6a49b67cdf7ca595a6b"
     }
   ],
   "rpc_contract": [
@@ -86,11 +100,11 @@
   ],
   "local_proof": {
     "harness": "scripts/replay-phase03b.mjs",
-    "harness_sha256": "8cdc2b6164ef2f2338a4cde937db8cc82def8431bcdc6bc4d98a93b961d5051f",
+    "harness_sha256": "f5f65567edeceaedc4df8f003a78c76865d12bef61d7957064a5e183449aee4c",
     "compatibility_test": {
       "path": "supabase/tests/phase03b-compatibility.test.sql",
-      "sha256": "76601e695893023bc823d67ada5aeaf55682df94d8a5139c074c46e484069a4d",
-      "result": "30/30 pass after migration one, after full forward apply, and after exact reapply"
+      "sha256": "619a6152587ca1d9129638284bab8bf50a425cde5bde09d2081d7e4b8b10f082",
+      "result": "52/52 pass after migration one, after full forward apply, and after exact reapply"
     },
     "moderation_test": {
       "path": "supabase/tests/phase03b-moderation.test.sql",
@@ -102,7 +116,7 @@
       "sha256": "a61d722ecaa001b9cdd0f962412445d5bb96af7e3f36f6ca842354fd09478a0c",
       "result": "22/22 pass on first apply and exact reapply"
     },
-    "rollback": "safe compensating rollback pass",
+    "rollback": "safe compensating rollback pass with photo_alt boundary retained",
     "schema_reapply": "exact"
   },
   "authorization": {

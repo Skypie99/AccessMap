@@ -17,7 +17,8 @@ restorations, not historical schema rewinds:
 - the moderation rollback preserves audit/reason evidence and rejected-row
   hiding, revokes the admin queue/decision RPCs, narrows the status RPC to
   community-only compare-and-set transitions, and retains the temporary shipped
-  client bridge described below.
+  client bridge plus the repaired cross-owner `photo_alt` boundary described
+  below.
 
 Reapplying the forward migrations restores capabilities from the preserved
 state. Neither rollback discards captured evidence.
@@ -40,6 +41,26 @@ columns remain server-owned, and audited admin reject/restore remain RPC-only.
 
 This bridge is temporary. A later owner-authorized gate may remove it only after
 the pinned web release is moved and Build 33 no longer needs compatibility.
+
+## `photo_alt` authorization boundary
+
+Phase 03A intentionally grants authenticated clients UPDATE on seven flag
+columns: six owner content/media fields and `status`. The inherited non-owner
+guard restored five content/media fields but predated `photo_alt`, allowing that
+later column to persist on another owner's flag through the broad community
+status policy.
+
+The corrected `20260915210256` migration repairs the existing shared guard. A
+non-owner attempt to change `photo_alt`, including a mixed `status + photo_alt`
+write, raises `42501` and leaves the statement unchanged. Owner `photo_alt`
+edits and legal direct status-only transitions remain available. The complete
+flags column inventory and effective UPDATE grants are pinned by the 52-assertion
+compatibility suite, and the compensating rollback deliberately retains this
+hardening.
+
+The pre-repair migration SHA-256
+`8351ba689d41e11556d3833af3ef591a4ad2c224b2e61862fa977eef13aa69fd`
+is superseded and is not accepted evidence.
 
 ## Flag-removal boundary
 

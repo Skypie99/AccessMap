@@ -181,6 +181,47 @@ create policy "flags insert status open only"
   to anon, authenticated
   with check (status = 'open');
 
+-- The inherited community-status policy deliberately admits a visible flag row
+-- for any active authenticated account, then this trigger narrows the write to
+-- the shipped status surface. photo_alt was added after the trigger's explicit
+-- protected-column list and could therefore persist on another owner's flag.
+-- Reject that field rather than silently stripping it: a mixed status +
+-- photo_alt write must fail atomically, while the existing status-only bridge
+-- and owner edit behavior remain unchanged.
+create or replace function public.enforce_flag_status_only_for_non_owner()
+returns trigger
+language plpgsql
+set search_path = ''
+as $fn$
+declare
+  v_actor uuid := (select auth.uid());
+begin
+  if v_actor is null or v_actor = old.user_id then
+    return new;
+  end if;
+
+  if new.photo_alt is distinct from old.photo_alt then
+    raise exception 'Only the flag owner may update photo_alt.'
+      using errcode = '42501';
+  end if;
+
+  new.id           := old.id;
+  new.user_id      := old.user_id;
+  new.lat          := old.lat;
+  new.lng          := old.lng;
+  new.category     := old.category;
+  new.severity     := old.severity;
+  new.description  := old.description;
+  new.photo_url    := old.photo_url;
+  new.created_at   := old.created_at;
+  new.context_tags := old.context_tags;
+  return new;
+end
+$fn$;
+
+revoke all on function public.enforce_flag_status_only_for_non_owner()
+  from public, anon, authenticated, service_role;
+
 -- The inherited owner-edit policy queried public.flags from inside a policy on
 -- public.flags. Once direct status permission is retained, PostgreSQL evaluates
 -- that recursive policy and the shipped PATCH fails with 42P17 even though the
