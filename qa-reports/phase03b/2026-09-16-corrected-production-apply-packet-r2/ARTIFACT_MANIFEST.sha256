@@ -1,0 +1,11 @@
+156eb16a3a490271af1883c3ab02553e770f2015a67342ec617d93f48b9676fc  qa-reports/2026-09-16_Codex_Phase03BCorrectedProductionApplyPacketR2.md
+cf28a8223254bf9b86250e96b181ccdf810a06c57c0369224766a8e5d25c596a  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/LOCAL_QUIESCENCE_VALIDATION.json
+69d2cc4e7b2fa47243be92cea4cac0815bd3e8233c3eb7a450c5212b1fcb7c43  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/MONITOR_READ_ONLY.sql
+749c1d9760c13df82d43c145e51b4447160b3dbe889dd8fff45c713f776dfc61  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/PRIVACY_SCAN.json
+e8f3647d225898fa736c7ee1a79719b090e475021a191ee3191717ab327d7af1  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/PROPOSED_QUIESCENCE_ENTER.sql
+a303154a26e4ab91b150ef867d9e114269558081c699af4984156a408035a3b8  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/PROPOSED_QUIESCENCE_EXIT_TEMPLATE.sql
+6ee1e583149f9af9650ae6f3b2c43dcda46d77ec803721bdb992772862afa616  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/PROPOSED_QUIESCENCE_VERIFY.sql
+e4ab3f31b65bc500cbc3bfa8d4aae7ba511df81db18044434391fbc08ad3cdb0  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/SUPERSESSION.md
+4a0e8a38d2e7c29a9305ffe73d92fb7a68700c301625600804e293e12e0c70f3  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/execute_apply_bounded.mjs
+33f81aeef99d1eaa722fb201da62b8ac5a6edc6ceedcb51af1fc8e80a8b70acf  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/generate_exit_sql.mjs
+2105f6f421e4865f7a75397d67ce4ad14c3decfd2d619791edc4dcb820dcfe53  qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2/validate_quiescence_local.mjs

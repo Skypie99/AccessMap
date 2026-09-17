@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "scannedAtUtc": "2026-09-17T06:03:00Z",
+  "scope": [
+    "qa-reports/2026-09-16_Codex_Phase03BCorrectedProductionApplyPacketR2.md",
+    "qa-reports/phase03b/2026-09-16-corrected-production-apply-packet-r2"
+  ],
+  "checks": {
+    "credentialValuePatterns": 0,
+    "customerRowExports": 0,
+    "queryTextCapturedByMonitor": false,
+    "productionWriteReceipts": 0,
+    "stagingWriteReceipts": 0
+  },
+  "notes": [
+    "Role names and the word secret appear only in control descriptions; no credential values are present.",
+    "Production evidence is limited to project/catalog identity and aggregate or hashed baselines.",
+    "The monitor deliberately excludes pg_stat_activity.query."
+  ]
+}

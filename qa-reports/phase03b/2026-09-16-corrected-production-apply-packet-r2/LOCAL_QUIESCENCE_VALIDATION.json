@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "validatedAtUtc": "2026-09-17T05:56:00Z",
+  "target": "socket-only disposable PostgreSQL 17",
+  "tcpDisabled": true,
+  "productionInputsAccepted": false,
+  "checks": {
+    "gateEnteredAlways": true,
+    "insertBlocked": true,
+    "deleteBlocked": true,
+    "idChangeBlocked": true,
+    "statusChangeBlocked": true,
+    "replicaModeStatusChangeBlocked": true,
+    "unrelatedUpdateAllowed": true,
+    "migrationOneAppliedWithGate": true,
+    "migrationTwoAppliedWithGate": true,
+    "entryInvariantStable": true,
+    "preDropOidOwnerHashVerification": true,
+    "exitRefusesIdentityDriftAndDropsNothing": true,
+    "gateRemovedAtomically": true,
+    "writeRestoredAfterExit": true
+  },
+  "tempDestroyed": true
+}

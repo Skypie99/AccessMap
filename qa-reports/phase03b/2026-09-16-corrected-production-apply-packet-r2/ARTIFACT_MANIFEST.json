@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "promptId": "FLAGSTONE-P03B-CORRECTED-PRODUCTION-APPLY-QUIESCENCE-PACKET-20260916-R2",
+  "sourcePacketCommit": "b5f5afb558fafcaa492d103781fc7e943ab75c2b",
+  "sourceIndependentReviewCommit": "856053f2977e38ae11390afa6a2ece010caf664a",
+  "sourceStoppedExecutorCommit": "cadbd7fe1185cec6e3cf50fa21202b8747b26592",
+  "candidate": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "productionApplyExecuted": false,
+  "quiescenceEntered": false,
+  "expectedFunctionDefinitionSha256": "bbe1c2892c5191e820a36c64933585e5172f5289945540efae79ed0ae5547ae6",
+  "expectedTriggerDefinitionSha256": "e89ac15de9a1f20a2bd269289fa3ddf3ef22ff529d8c4b929587da5781995bbf",
+  "hashManifest": "ARTIFACT_MANIFEST.sha256",
+  "artifactCountExcludingManifests": 11
+}
