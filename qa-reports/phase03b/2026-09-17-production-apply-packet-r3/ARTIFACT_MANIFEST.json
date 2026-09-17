@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "promptId": "FLAGSTONE-P03B-PRODUCTION-APPLY-PACKET-R3-FOUR-BLOCKER-REPAIR-20260917-R1",
+  "sourceR2PacketCommit": "3c9aa3b7cdb36a4bdfda5bdfcbb028371a9a691d",
+  "sourceR2IndependentReviewCommit": "fff266ba2ced85e912406622c53058ad9065ebb4",
+  "candidate": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "blockerCount": 4,
+  "expectedFunctionDefinitionSha256": "16555e58ee2cdfce5d54336ef63584116ed1cb798d90ac779c278a5c0e5b0bac",
+  "expectedRowTriggerDefinitionSha256": "e89ac15de9a1f20a2bd269289fa3ddf3ef22ff529d8c4b929587da5781995bbf",
+  "expectedTruncateTriggerDefinitionSha256": "54e10e11dabd45d1edfdf44a7aa065f2e335c964b230cd41c6138c6ef295c58a",
+  "candidateBytesChanged": false,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "quiescenceEntered": false,
+  "productionApplyExecuted": false,
+  "artifactCountExcludingManifests": 18,
+  "artifacts": [
+    {
+      "path": "LOCAL_QUIESCENCE_VALIDATION.json",
+      "sha256": "8e4f49a55d21be0c560025649a739f8f4c8b3681eae03091d2116ec87f9e1a3c"
+    },
+    {
+      "path": "LOCAL_VALIDATION.stderr.log",
+      "sha256": "6c324fb94ba2e86c59ce6bb2c0d4482e1224a0e8bb75ed0501cb954524684ab7"
+    },
+    {
+      "path": "LOCAL_VALIDATION.stdout.log",
+      "sha256": "8e4f49a55d21be0c560025649a739f8f4c8b3681eae03091d2116ec87f9e1a3c"
+    },
+    {
+      "path": "LOCAL_VALIDATION_RECEIPT.json",
+      "sha256": "59ab3795e69a7fef494c0ec17e5525de25ef64e2d773806e37e825034330b135"
+    },
+    {
+      "path": "MONITOR_READ_ONLY.sql",
+      "sha256": "df5ecfb4fa681e1779856240cde87f0214b9666bacbbbacb1f5b2bd6a1f25067"
+    },
+    {
+      "path": "POST_EXIT_VERIFY.sql",
+      "sha256": "2ec586109f04c958bd5f9862a08f33dfff332273c05da62a4d4e1b77f2d410c5"
+    },
+    {
+      "path": "PRIVACY_SCAN.json",
+      "sha256": "1b6a9aeb12d72889e84b6e01b281b0700060071cad7e4400444235ceabcc8e56"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_ENTER.sql",
+      "sha256": "caf402f0f466305a04217e3ee24a7bed1f4ef5f27c2db5fa3d84550b9eb5da76"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_EXIT_TEMPLATE.sql",
+      "sha256": "e984579e48fbaead385d8b0594f7542ca039c803e427fad1c88e63375d5d3aa9"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_VERIFY.sql",
+      "sha256": "45b3aef0d6722ac1c67b8796adaf6214f4a792422d863f12c3e9a66bc50d647d"
+    },
+    {
+      "path": "SUPERSESSION.md",
+      "sha256": "e934c8d991726d0eab878dd7d8822fa13f19531caf13c73bdbbc0bbdc177e3d3"
+    },
+    {
+      "path": "execute_apply_bounded.mjs",
+      "sha256": "c272a7bd3c9e774d2a51926b9aa315a8183e18827a751e5a35d1b939943dbf52"
+    },
+    {
+      "path": "generate_exit_sql.mjs",
+      "sha256": "9f24fe259321fb7a9d5c1c583376ef6a719858801ca1bf045e3089206bf0dc95"
+    },
+    {
+      "path": "generate_manifest.mjs",
+      "sha256": "7c6152ac03fe3087568bc15c43f5c9db966fa8156d13289432c15ab6fcf8db86"
+    },
+    {
+      "path": "run_local_validation.mjs",
+      "sha256": "d37d4d09721b614da67a7d95b6f2470134e5f30bd5e50f72aab34ca62e13220b"
+    },
+    {
+      "path": "validate_quiescence_local.mjs",
+      "sha256": "49a7769a589039fd04ba13eb3f4f91c7c0e4b08b539f2d026b6fab65d7ac7ef8"
+    },
+    {
+      "path": "verify_post_apply.mjs",
+      "sha256": "e88f70987928967a56e243ee66693ee48c92c79bcf109b50180e030b61d46ddc"
+    },
+    {
+      "path": "verify_post_exit.mjs",
+      "sha256": "41e71b374016d10b783caac01e22ddbd833ce2b75885f8fabb94b92d68648785"
+    }
+  ]
+}

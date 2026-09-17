@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "scope": "R3 packet artifacts only",
+  "forbiddenCustomerDataCaptured": false,
+  "credentialsOrSecretsCaptured": false,
+  "productionQueryTextCapturedByMonitor": false,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "notes": "Committed evidence contains synthetic local fixture identities, aggregate counts, catalog identities, hashes, commands, timings, and local process metadata only."
+}
