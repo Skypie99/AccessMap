@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R6",
+  "sourceR5PacketCommit": "aeab11d6dedb6a6789abe1d3bb47b7bc9c89cf23",
+  "sourceR5IndependentReviewCommit": "cbd32a182cd4c89f7d3ea5d110b119e48fa72930",
+  "rootDefectCount": 2,
+  "entries": [
+    {
+      "id": "R6-D1",
+      "SOURCE_REVIEW_FILE": "cbd32a182cd4c89f7d3ea5d110b119e48fa72930:qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR5IndependentReview.md",
+      "SOURCE_SECTION_LINE_EVIDENCE": [
+        "lines 31-76 BLOCKER 1",
+        "r5_control_lib.mjs:206-236 and 466-475",
+        "execute_cutover_controller.mjs:385-390",
+        "validate_r5_controls.mjs:173-192 and 340-345"
+      ],
+      "EXACT_FINDING": "R5 accepts a PASS comparator envelope with null or incomplete proof and wrong pinned ledger, structure, and HTTP digests; postExitDisposition can then return PASS and COMPLETE.",
+      "EXECUTABLE_FAILURE": "A malformed or contradictory comparator receipt can authorize quiescence exit or final completion despite not proving the exact post-apply or post-exit state.",
+      "ROOT_CAUSE": "R5 validates only outer and phase-level key sets plus the gate-manifest digest; it does not validate exact expected values, full proof keys and values, successful step receipts, or proof-to-entry invariants.",
+      "AFFECTED_R5_FIELDS": ["R5_D1_STRICT_ENVELOPE", "STRICT_R5_ENVELOPE_SCHEMA", "ENTRY_RECEIPT_DESIGN", "POST_APPLY_VERIFICATION_WHILE_QUIESCED", "WRITE_RESTORATION_VERIFICATION", "EVIDENCE_PACKAGE_R5"],
+      "R6_REPAIR": "Use one exact-key R6 envelope with producer identity and process outcome fields; validate phase-specific expected values, full nested comparator proof, exact migrations and digests, exact successful steps, structure digest, run identity, and proof-to-entry invariants at each comparator consumer.",
+      "R6_ACCEPTANCE_CONDITION": "Exact R6 evidence passes, R5 and legacy evidence fail, and null or empty proof, wrong final digests, contradictory status, malformed steps, extra nested keys, producer drift, and run drift all fail closed before control flow.",
+      "LOCAL_BRANCH_TESTS": ["d1_01 through d1_25"],
+      "CANDIDATE_CHANGE_REQUIRED": false
+    },
+    {
+      "id": "R6-D2",
+      "SOURCE_REVIEW_FILE": "cbd32a182cd4c89f7d3ea5d110b119e48fa72930:qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR5IndependentReview.md",
+      "SOURCE_SECTION_LINE_EVIDENCE": [
+        "lines 78-116 BLOCKER 2",
+        "execute_cutover_controller.mjs:421-428",
+        "execute_cutover_controller.mjs:129-146",
+        "validate_r5_controls.mjs:305-328 and 355-359"
+      ],
+      "EXACT_FINDING": "R5 performs a final guard below 600 seconds, then calls runCaptured with a newly computed now plus 30 second deadline; the actual exit spawn can therefore occur at or after the immutable maximum.",
+      "EXECUTABLE_FAILURE": "The automatic restoration transaction can be newly launched after the 600-second fail-closed boundary in the guard-to-spawn interval.",
+      "ROOT_CAUSE": "Eligibility and spawning are separate operations, and the spawn primitive is not bound to the immutable maximum-quiescence deadline.",
+      "AFFECTED_R5_FIELDS": ["R5_D3_HARD_600S_LATCH", "MAX_QUIESCENCE_HARD_LATCH", "RESTORATION_AFTER_600S", "MONOTONIC_CONTROLLER", "QUIESCENCE_EXIT_ATOMICITY", "EVIDENCE_PACKAGE_R5"],
+      "R6_REPAIR": "Route the only normal exit path through one restoration dispatcher; require every safety predicate and the immutable run deadline inside the same synchronous primitive that invokes spawn; reject direct exit-helper calls; preserve the irreversible latch and allow only one already-dispatched pre-deadline transaction to resolve.",
+      "R6_ACCEPTANCE_CONDITION": "A dispatch at 599 seconds is allowed, every new dispatch at or after 600 seconds is blocked even after an earlier safe calculation, the latch cannot clear, and catch, finally, signal, retry, rollback, restart, or ambiguous-result paths cannot launch restoration.",
+      "LOCAL_BRANCH_TESTS": ["d2_01 through d2_15"],
+      "CANDIDATE_CHANGE_REQUIRED": false
+    }
+  ]
+}

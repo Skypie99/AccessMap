@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flagstone.phase03b.r6-envelope.v1",
+  "title": "Flagstone Phase 03B R6 exact safety envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "packetVersion", "candidateSha", "candidateTree", "productionTarget",
+    "runId", "controllerPid", "controllerMonotonicOrigin", "phase", "checkName", "expected",
+    "observed", "status", "capturedAtUtc", "capturedAtMonotonic", "sourceArtifact",
+    "producer", "producerVersion", "numericExit", "signal", "timedOut"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "flagstone.phase03b.r6-envelope.v1" },
+    "packetVersion": { "const": "R6" },
+    "candidateSha": { "const": "9d638456fa8e679678c54f131fe8f0db723eda72" },
+    "candidateTree": { "const": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8" },
+    "productionTarget": { "const": "kldlwszpfkdmsjrjhjym" },
+    "runId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "controllerPid": { "type": "integer", "minimum": 1 },
+    "controllerMonotonicOrigin": { "type": "integer", "minimum": 0 },
+    "phase": { "enum": ["ENTRY_RECEIPT", "SERVER_STATE_CLASSIFICATION", "POST_APPLY_COMPARATOR", "POST_EXIT_COMPARATOR"] },
+    "checkName": { "type": "string", "minLength": 1 },
+    "expected": { "type": "object" },
+    "observed": { "type": "object" },
+    "status": { "enum": ["HOLD", "ENTRY_COMMITTED_CONFIRMED", "ENTRY_CONFIRMED_NOT_COMMITTED", "OWNER_REQUIRED_FAIL_CLOSED", "PASS_WHILE_QUIESCED", "PASS_RESTORED"] },
+    "capturedAtUtc": { "type": "string", "format": "date-time" },
+    "capturedAtMonotonic": { "type": "integer", "minimum": 0 },
+    "sourceArtifact": { "type": "string", "minLength": 1 },
+    "producer": { "type": "string", "minLength": 1 },
+    "producerVersion": { "const": "flagstone.phase03b.packet-r6.v1" },
+    "numericExit": { "type": "integer" },
+    "signal": { "type": ["string", "null"] },
+    "timedOut": { "type": "boolean" }
+  },
+  "$defs": {
+    "comparatorExpected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "gateManifestSha256", "finalLedgerSha256", "finalStructureSha256", "httpResponseSha256"],
+      "properties": {
+        "result": { "enum": ["PASS_WHILE_QUIESCED", "PASS_RESTORED"] },
+        "gateManifestSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "finalLedgerSha256": { "const": "b9fb376947238c4bd3dc3d164337d6b9294df9084eab9008530ba9fd4d4603b5" },
+        "finalStructureSha256": { "const": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7" },
+        "httpResponseSha256": { "const": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8" }
+      }
+    },
+    "comparatorObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proof", "normalizedStructureSha256", "steps"],
+      "properties": {
+        "proof": { "type": ["object", "null"] },
+        "normalizedStructureSha256": { "type": ["string", "null"] },
+        "steps": { "type": "array" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "phase": { "const": "ENTRY_RECEIPT" } } },
+      "then": {
+        "properties": {
+          "checkName": { "const": "entry-and-immediate-proof" },
+          "sourceArtifact": { "const": "execute_cutover_controller.mjs" },
+          "producer": { "const": "phase03b-r6-cutover-controller" },
+          "expected": {
+            "type": "object", "additionalProperties": false,
+            "required": ["candidateSha", "candidateTree", "productionTarget", "gateManifestSha256", "migrationFilenames"],
+            "properties": {
+              "candidateSha": { "const": "9d638456fa8e679678c54f131fe8f0db723eda72" },
+              "candidateTree": { "const": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8" },
+              "productionTarget": { "const": "kldlwszpfkdmsjrjhjym" },
+              "gateManifestSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "migrationFilenames": { "type": "array", "prefixItems": [{ "const": "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql" }, { "const": "20260915210413_phase03b_points_integrity.sql" }], "minItems": 2, "maxItems": 2 }
+            }
+          },
+          "observed": {
+            "type": "object", "additionalProperties": false,
+            "required": ["entry", "immediatePostCommitProof", "migrationInventory", "immutableDeadlines", "rawCapture"],
+            "properties": {
+              "entry": { "type": "object" }, "immediatePostCommitProof": { "type": "object" },
+              "migrationInventory": { "type": "object" }, "immutableDeadlines": { "type": "object" }, "rawCapture": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "const": "SERVER_STATE_CLASSIFICATION" } } },
+      "then": {
+        "properties": {
+          "checkName": { "const": "ambiguous-server-state" },
+          "sourceArtifact": { "const": "adjudicate_server_state.mjs" },
+          "producer": { "const": "phase03b-r6-server-adjudicator" },
+          "expected": { "type": "object", "additionalProperties": false, "required": ["gateManifestSha256", "acceptedLedgerCounts", "productionTarget"] },
+          "observed": { "type": "object", "additionalProperties": false, "required": ["entryClassification", "gateState", "applyClassification", "snapshot", "policy", "steps"] }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "phase": { "enum": ["POST_APPLY_COMPARATOR", "POST_EXIT_COMPARATOR"] } } },
+      "then": { "properties": { "expected": { "$ref": "#/$defs/comparatorExpected" }, "observed": { "$ref": "#/$defs/comparatorObserved" } } }
+    }
+  ]
+}
