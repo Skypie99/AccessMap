@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "sourceReviewCommit": "f77555b2b4a3ce7e1939ad63ae1a9bef4e82890c",
+  "rootDefectCount": 3,
+  "defects": [
+    {
+      "id": "R4-D1",
+      "sourceReviewArtifact": "qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR3IndependentReview.md lines 15-22",
+      "exactReviewFinding": "The generated exit cannot consume the controller's ENTRY_RECEIPT.json envelope because the generator ignores envelope.entry; R3 local replay supplied a different bare shape.",
+      "executableFailure": "A successful controller run cannot materialize the exact exit transaction, so the gate cannot be removed through the documented path.",
+      "rootCause": "Producer and consumer use incompatible JSON contracts and the replay bypasses the producer envelope.",
+      "downstreamHoldFields": ["R3_B3_EXECUTABLE_COMPARATORS", "PARTIAL_APPLY_FAILURE_MATRIX", "QUIESCENCE_EXIT_ATOMICITY", "WRITE_RESTORATION_VERIFICATION", "EVIDENCE_PACKAGE_R3", "TRANSIENT_BREAKAGE_RISK_AFTER_R3"],
+      "r4AcceptanceCondition": "The exit generator accepts only the schema-validated R4 controller envelope, local replay passes that exact envelope, comparator failure blocks exit, and post-exit failure returns HOLD.",
+      "r4Repair": "Use one R4 entry-envelope schema from capture through exit generation and invoke exit/post-exit only from the controller's fail-closed state machine.",
+      "localValidation": "Generate an R4 envelope from raw entry/proof fixtures, materialize exit SQL from it, reject malformed envelopes, and prove UNKNOWN/comparator-failure states cannot exit.",
+      "candidateChangeRequired": "NO"
+    },
+    {
+      "id": "R4-D2",
+      "sourceReviewArtifact": "qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR3IndependentReview.md lines 24-30",
+      "exactReviewFinding": "The workdir guard proves two candidate hashes and an 87-file shape but does not authenticate the full manifest; another unapplied lower-version migration can be substituted and --include-all can apply a third migration.",
+      "executableFailure": "The future apply can discover more than the exact frozen pair while the R3 guard still passes.",
+      "rootCause": "The workdir mixes 85 historical files with pending files and validates only count/tail position rather than exact pending-set equality.",
+      "downstreamHoldFields": ["R3_B3_EXECUTABLE_COMPARATORS", "EXACT_TWO_MIGRATIONS_ONLY", "TEMP_WORKDIR_DESIGN", "PARTIAL_APPLY_FAILURE_MATRIX", "EVIDENCE_PACKAGE_R3", "TRANSIENT_BREAKAGE_RISK_AFTER_R3"],
+      "r4AcceptanceCondition": "The hermetic workdir contains exactly two SQL files with exact names, sizes, paths, hashes, and no seed/roles/helper SQL; a target-explicit dry-run proposes exactly that ordered pair before quiescence.",
+      "r4Repair": "Build a new minimal Supabase project exposing only the frozen pair, emit a complete inventory receipt, hard-fail any extra SQL, and validate the dry-run JSON set before entry.",
+      "localValidation": "Build and inventory a disposable workdir, inject a third migration and require hard failure, and validate exact-pair versus extra-plan fixtures.",
+      "candidateChangeRequired": "NO"
+    },
+    {
+      "id": "R4-D3",
+      "sourceReviewArtifact": "qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR3IndependentReview.md lines 32-40",
+      "exactReviewFinding": "Monitor and immediate-proof outputs are captured but not required, cadence gaps are not measured, monitor SQL cannot pin full gate/invariant identity, immediate proof ignores ledger/HTTP drift, and ambiguous client exit performs no server-state adjudication.",
+      "executableFailure": "Failed, late, or mismatched monitoring and proof can coexist with progression; timeout/client ambiguity cannot distinguish no apply, partial apply, complete apply, or active backend.",
+      "rootCause": "R3 has evidence capture without one enforcing orchestration/state-classification contract.",
+      "downstreamHoldFields": ["R3_B2_MONOTONIC_CONTROLLER", "MONITORING_CADENCE", "MAX_QUIESCENCE_POLICY", "SERVER_SIDE_UNKNOWN_STATE_POLICY", "AMBIGUOUS_CLIENT_EXIT_POLICY", "PARTIAL_APPLY_FAILURE_MATRIX", "ENTRY_RECEIPT_DESIGN", "QUIESCENCE_EXIT_ATOMICITY", "WRITE_RESTORATION_VERIFICATION", "EVIDENCE_PACKAGE_R3", "TRANSIENT_BREAKAGE_RISK_AFTER_R3"],
+      "r4AcceptanceCondition": "One controller uses one monotonic origin and immutable deadlines, schedules T+5n samples, parses and enforces every proof/monitor/comparator, escalates fail-closed at 600 seconds, and invokes a read-only classifier for every ambiguous outcome with no blind retry.",
+      "r4Repair": "Replace capture-only orchestration with an anchored scheduler, exact proof comparators, executable state matrix, server adjudicator, controller-generated entry/final receipts, and recursive evidence manifest.",
+      "localValidation": "Exercise cadence/missed-slot logic, timeout UNKNOWN, four ledger classifications, 600-second escalation, comparator failure, exit eligibility, entry receipt generation, and manifest generation in disposable fixtures.",
+      "candidateChangeRequired": "NO"
+    }
+  ]
+}

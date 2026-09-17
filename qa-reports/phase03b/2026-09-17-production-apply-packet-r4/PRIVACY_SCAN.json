@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R4",
+  "scope": "qa-reports/phase03b/2026-09-17-production-apply-packet-r4",
+  "method": "filename-only ripgrep scans; secret values were never printed",
+  "credentialAssignmentFiles": 0,
+  "jwtLikeFiles": 0,
+  "credentialedPostgresUriFiles": 0,
+  "productionRowPayloadsCaptured": false,
+  "productionCredentialsReadOrCopied": false,
+  "result": "PASS"
+}

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R4",
+  "sourceR3PacketCommit": "88e6fce5f262b2385571a09f7084821ceb980244",
+  "sourceR3IndependentReviewCommit": "f77555b2b4a3ce7e1939ad63ae1a9bef4e82890c",
+  "candidate": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "forbiddenStagingTarget": "cepayqmsoqxshsiyqnvz",
+  "migrations": [
+    {
+      "version": "20260915210256",
+      "filename": "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "sha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11"
+    },
+    {
+      "version": "20260915210413",
+      "filename": "20260915210413_phase03b_points_integrity.sql",
+      "sha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5"
+    }
+  ],
+  "baseline": {
+    "ledgerCount": 85,
+    "ledgerUniqueCount": 85,
+    "ledgerLatestVersion": "20260911120000",
+    "ledgerSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+    "httpQueueCount": 0,
+    "httpResponseCount": 6,
+    "httpResponseSha256": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8"
+  },
+  "final": {
+    "ledgerCount": 87,
+    "ledgerUniqueCount": 87,
+    "ledgerLatestVersion": "20260915210413",
+    "ledgerSha256": "b9fb376947238c4bd3dc3d164337d6b9294df9084eab9008530ba9fd4d4603b5",
+    "normalizedStructureSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+    "structuralCatalogQuerySha256": "7a88aa297ac302a1b9ac1ad90860baf5ae7b51818f81b84e63cc7b8eea3f8106",
+    "phase03bConstraintIndexSha256": "cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a",
+    "edgeFunctionIdentitySha256": "276dcb14c85ca75955058b10ebb38d9d633fc29a21062fbcc181b502db7c2d70",
+    "grantsRlsPoliciesRoutinesTriggersAndRpcFingerprint": "covered-by-normalizedStructureSha256",
+    "moderationAndPointsDefinitionsFingerprint": "covered-by-normalizedStructureSha256"
+  },
+  "gate": {
+    "functionName": "private.flagstone_phase03b_block_row_lifecycle_r2()",
+    "functionOwner": "postgres",
+    "functionDefinitionSha256": "16555e58ee2cdfce5d54336ef63584116ed1cb798d90ac779c278a5c0e5b0bac",
+    "rowTriggerName": "aaa_flagstone_phase03b_row_lifecycle_quiescence_r2",
+    "rowTriggerDefinitionSha256": "e89ac15de9a1f20a2bd269289fa3ddf3ef22ff529d8c4b929587da5781995bbf",
+    "truncateTriggerName": "aaa_flagstone_phase03b_truncate_quiescence_r3",
+    "truncateTriggerDefinitionSha256": "54e10e11dabd45d1edfdf44a7aa065f2e335c964b230cd41c6138c6ef295c58a",
+    "tableOwner": "postgres",
+    "enableState": "A"
+  },
+  "timingMs": {
+    "entryComplete": 30000,
+    "applyComplete": 180000,
+    "postApplyVerificationComplete": 480000,
+    "maximumQuiescenceEscalation": 600000,
+    "monitorCadence": 5000,
+    "monitorMaximumStartLateness": 250,
+    "clockSkew": 2000,
+    "signalGrace": 10000
+  }
+}
