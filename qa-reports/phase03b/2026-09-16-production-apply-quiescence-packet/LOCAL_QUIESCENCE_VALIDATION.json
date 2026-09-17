@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "target": "socket-only disposable PostgreSQL 17",
+  "tcpDisabled": true,
+  "productionInputsAccepted": false,
+  "checks": {
+    "gateEnteredAlways": true,
+    "migrationOneAppliedWithGate": true,
+    "migrationTwoAppliedWithGate": true,
+    "statusAndHistoryStableWhileQuiesced": true,
+    "gateRemoved": true,
+    "writeRestoredAfterExit": true
+  },
+  "tempDestroyed": true
+}

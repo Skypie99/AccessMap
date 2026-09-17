@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-17T01:22:11Z",
+  "entries": [
+    {
+      "path": "../../2026-09-16_Codex_Phase03BProductionApplyQuiescencePacket.md",
+      "bytes": 28122,
+      "sha256": "9f4f54e4779613f3a378f05107fe3fdc00ec08b81d754e21aa056af08aac9548"
+    },
+    {
+      "path": "LOCAL_QUIESCENCE_VALIDATION.json",
+      "bytes": 401,
+      "sha256": "7a3a0c7bcf3b990b4fa7f23d461bb7ada82729fd46872de4abee05ff3da81f76"
+    },
+    {
+      "path": "PRIVACY_SCAN.json",
+      "bytes": 604,
+      "sha256": "92d56c80241540828578b337d549e3c105c6d5ad9d1997c2ef7295e095c6b777"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_ENTER.sql",
+      "bytes": 5050,
+      "sha256": "345924b8302144f24f6eea9144cf2adac94b7b2a8d3ff6878aa73d394bbf0f9d"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_EXIT.sql",
+      "bytes": 7456,
+      "sha256": "db93fafc343bd8ef4ddf02b03c646c614d456dd5daf152f4f83e14f9b35e1017"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_VERIFY.sql",
+      "bytes": 3869,
+      "sha256": "282522dc36c2c84b8bc45e3664109a90c89c5d4c43a6238fc8c7c38acc226302"
+    },
+    {
+      "path": "prepare_apply_workspace.mjs",
+      "bytes": 5947,
+      "sha256": "fab2bcb0ec06179d636990181d37e6b3472c5d5685afc1e1d179afb4c4ad7595"
+    },
+    {
+      "path": "validate_quiescence_local.mjs",
+      "bytes": 10174,
+      "sha256": "5658141b991833915c982662d0305107f4248b55623145e8a278f9870e4b61cc"
+    }
+  ]
+}

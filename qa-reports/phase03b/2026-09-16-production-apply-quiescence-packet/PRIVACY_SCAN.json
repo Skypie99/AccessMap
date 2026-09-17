@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "scope": "qa-reports/2026-09-16_Codex_Phase03BProductionApplyQuiescencePacket.md and qa-reports/phase03b/2026-09-16-production-apply-quiescence-packet",
+  "credentialValueMatches": 0,
+  "authorizationHeaderMatches": 0,
+  "databaseConnectionStringMatches": 0,
+  "customerEmailAddressMatches": 0,
+  "syntheticReservedEmailAddresses": 2,
+  "syntheticReservedDomain": "example.invalid",
+  "customerPayloadsStored": false,
+  "coordinatesStored": false,
+  "userIdentifiersStored": false,
+  "httpHeadersOrBodiesStored": false,
+  "secretValuesReadOrStored": false,
+  "result": "PASS"
+}
