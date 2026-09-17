@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R5",
+  "sourceR4PacketCommit": "71ec54f6bbebf9934dbb6ea6cd8dacf2305d670a",
+  "sourceR4IndependentReviewCommit": "675503927b44c51d6c5b21447d7bc9d9203c52fc",
+  "rootDefectCount": 4,
+  "entries": [
+    {
+      "id": "R5-D1",
+      "SOURCE_REVIEW_ARTIFACT": "675503927b44c51d6c5b21447d7bc9d9203c52fc:qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR4IndependentReview.md",
+      "SOURCE_LOCATION": [
+        "review lines 62-77 (BLOCKER 3)",
+        "R4 verify_post_apply.mjs:27-28",
+        "R4 verify_post_exit.mjs:19-20",
+        "R4 validate_r4_controls.mjs:147-163"
+      ],
+      "EXACT_FINDING": "R4 comparator consumers accept envelope.entry, the legacy phase03b_quiescence_entry_r3 alias, or a bare object; the validator proves only that the mutating exit generator rejects a bare R3 receipt.",
+      "EXECUTABLE_FAILURE": "Legacy, unversioned, partial, bare, malformed, or structurally ambiguous entry material can reach post-apply or post-exit comparison instead of failing before any database query or exit decision.",
+      "ROOT_CAUSE": "There is no single strict current-version envelope validator shared by every packet consumer, and R4's entry envelope uses a partial identity contract rather than an exact-key schema.",
+      "DOWNSTREAM_HOLD_FIELDS": [
+        "STRICT_R5_ENVELOPE_SCHEMA",
+        "LEGACY_BARE_ENVELOPE_REJECTION",
+        "ENTRY_RECEIPT_DESIGN",
+        "POST_APPLY_VERIFICATION_WHILE_QUIESCED",
+        "WRITE_RESTORATION_VERIFICATION",
+        "EVIDENCE_PACKAGE_R5"
+      ],
+      "R5_REPAIR": "Define one exact-key R5 envelope schema and committed fail-closed validator, require the exact R5 packet/candidate/tree/target/run/controller/monotonic/phase/check/expected/observed/status/source/numeric-exit contract, and make post-apply, post-exit, classifier input, exit materialization, and evidence acceptance call it without legacy aliases.",
+      "R5_ACCEPTANCE_CONDITION": "Only the exact current R5 envelope validates; all bare, legacy, unversioned, incomplete, extra-key, wrong-identity, null-identity, and malformed variants fail before use; post-apply and post-exit emit and consume strict R5 comparator envelopes.",
+      "LOCAL_REPLAY_CASES": [1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 24, 27, 28, 30],
+      "CANDIDATE_CHANGE_REQUIRED": false
+    },
+    {
+      "id": "R5-D2",
+      "SOURCE_REVIEW_ARTIFACT": "675503927b44c51d6c5b21447d7bc9d9203c52fc:qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR4IndependentReview.md",
+      "SOURCE_LOCATION": [
+        "review lines 21-42 (BLOCKER 1)",
+        "R4 execute_cutover_controller.mjs:222-235",
+        "R4 execute_cutover_controller.mjs:270-277",
+        "R4 execute_cutover_controller.mjs:369-391"
+      ],
+      "EXACT_FINDING": "R4 sets entryCommitted only after an exit-0 subprocess, parseable stdout, and a matching row, then adjudicates only when a full entry envelope exists; a committed entry whose client evidence is lost can be reported as HOLD_NOT_ENTERED without server adjudication.",
+      "EXECUTABLE_FAILURE": "If the entry transaction commits but the connection, shell, stdout, stderr, or parser fails before trustworthy client receipt construction, the controller can leave the production write gate installed while recording that entry did not occur and collecting no authoritative gate/ledger/backend state.",
+      "ROOT_CAUSE": "The controller equates absence of a trustworthy client receipt with non-commit and makes adjudication depend on the very receipt that is absent in the ambiguous branch.",
+      "DOWNSTREAM_HOLD_FIELDS": [
+        "ENTRY_AMBIGUITY_SERVER_ADJUDICATION",
+        "ENTRY_COMMITTED_LOST_OUTPUT_CASE",
+        "SERVER_SIDE_UNKNOWN_STATE_POLICY",
+        "AMBIGUOUS_CLIENT_EXIT_POLICY",
+        "PARTIAL_APPLY_FAILURE_MATRIX",
+        "ENTRY_RECEIPT_DESIGN",
+        "MONOTONIC_CONTROLLER"
+      ],
+      "R5_REPAIR": "Generate one immutable runId before entry; mark entry begun before spawning; classify any missing or untrustworthy entry result as ENTRY_COMMIT_AMBIGUOUS; invoke a read-only classifier that does not depend on an entry receipt and binds run evidence to exact reserved object identities, relationships, definitions, ledger, invariants, HTTP baseline, and backend state; never infer not-entered from client process behavior.",
+      "R5_ACCEPTANCE_CONDITION": "Explicit rollback plus exact server absence may produce ENTRY_CONFIRMED_NOT_COMMITTED; exact installed gates produce ENTRY_COMMITTED_CONFIRMED; partial, mismatched, or unknown state produces OWNER_REQUIRED_FAIL_CLOSED; no apply, exit, restoration, retry, or object removal starts from ambiguity.",
+      "LOCAL_REPLAY_CASES": [8, 9, 10, 11, 12, 13, 25, 29, 30],
+      "CANDIDATE_CHANGE_REQUIRED": false
+    },
+    {
+      "id": "R5-D3",
+      "SOURCE_REVIEW_ARTIFACT": "675503927b44c51d6c5b21447d7bc9d9203c52fc:qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR4IndependentReview.md",
+      "SOURCE_LOCATION": [
+        "review lines 44-60 (BLOCKER 2)",
+        "R4 execute_cutover_controller.mjs:101-110",
+        "R4 execute_cutover_controller.mjs:263-268",
+        "R4 execute_cutover_controller.mjs:323-346"
+      ],
+      "EXACT_FINDING": "R4 evaluates exit eligibility once, then can cross the immutable 600-second maximum during monitor shutdown or exit generation and still spawn restoration; runCaptured clamps an expired deadline to one millisecond instead of refusing to spawn.",
+      "EXECUTABLE_FAILURE": "A new quiescence-exit/restoration transaction can launch after the controller has already reached its fail-closed maximum-quiescence boundary.",
+      "ROOT_CAUSE": "The escalation flag is not an irreversible controller state/latch enforced at every dispatch boundary, and the process launcher treats an expired absolute deadline as a short timeout rather than a prohibited transition.",
+      "DOWNSTREAM_HOLD_FIELDS": [
+        "MAX_QUIESCENCE_HARD_LATCH",
+        "RESTORATION_AFTER_600S",
+        "MONOTONIC_CONTROLLER",
+        "MONITORING_CADENCE",
+        "PARTIAL_APPLY_FAILURE_MATRIX",
+        "QUIESCENCE_EXIT_ATOMICITY"
+      ],
+      "R5_REPAIR": "Implement an irreversible ESCALATED_FAIL_CLOSED_OWNER_REQUIRED latch on the single monotonic origin, refuse process dispatch at or beyond an absolute deadline, and require a fresh dispatch-time guard proving VERIFIED_SAFE_TO_EXIT, elapsed below 600 seconds, no latch, exact comparator passes, exact gate identity, and no unknown state immediately before exit spawn.",
+      "R5_ACCEPTANCE_CONDITION": "Crossing 600 seconds permanently blocks apply, retry, automatic repair, exit, restoration, gate removal, and automatic rollback for that run; a later PASS cannot clear the latch; an atomic exit launched before the boundary may complete, but no exit transaction may be newly launched at or after the boundary.",
+      "LOCAL_REPLAY_CASES": [14, 15, 16, 17, 18, 26, 30],
+      "CANDIDATE_CHANGE_REQUIRED": false
+    },
+    {
+      "id": "R5-D4",
+      "SOURCE_REVIEW_ARTIFACT": "675503927b44c51d6c5b21447d7bc9d9203c52fc:qa-reports/2026-09-17_Codex_Phase03BProductionApplyPacketR4IndependentReview.md",
+      "SOURCE_LOCATION": [
+        "review lines 79-90 (BLOCKER 4)",
+        "R4 SERVER_STATE_ADJUDICATE.sql:14-21",
+        "R4 adjudicate_server_state.mjs:69-76",
+        "R4 r4_control_lib.mjs:281-297"
+      ],
+      "EXACT_FINDING": "R4 ambiguous-state capture and classification use counts, OIDs, owner, and enable state but omit exact normalized function and trigger definition hashes, so zero-row and one-row states can be described as exact without full temporary-gate identity proof.",
+      "EXECUTABLE_FAILURE": "A reserved-name object with altered function or trigger behavior can be classified as the approved quiescence gate during entry or apply ambiguity.",
+      "ROOT_CAUSE": "The adjudication SQL omits normalized definition hashes and complete trigger relationships/semantics, and the classifier has no committed expected-identity manifest against which to compare every safety object.",
+      "DOWNSTREAM_HOLD_FIELDS": [
+        "GATE_EXPECTED_IDENTITY_MANIFEST",
+        "SERVER_STATE_CLASSIFIER_HASH_PINNING",
+        "FUNCTION_HASH_PINNING",
+        "TRIGGER_HASH_PINNING",
+        "SERVER_SIDE_UNKNOWN_STATE_POLICY",
+        "PARTIAL_APPLY_FAILURE_MATRIX"
+      ],
+      "R5_REPAIR": "Commit one R5 expected temporary-gate identity manifest and make read-only adjudication capture and compare every function/trigger schema, name, OID relationship, owner, enable state, normalized definition SHA-256, table OID, referenced function OID, event, timing, and level.",
+      "R5_ACCEPTANCE_CONDITION": "GATE_PRESENT_EXACT is returned only when all required objects and relationships match the manifest; any hash, owner, enable-state, table, referenced-function, event, timing, level, count, or presence mismatch returns GATE_PRESENT_MISMATCH and latches owner-required fail-closed without automatic drop or recreation.",
+      "LOCAL_REPLAY_CASES": [12, 13, 19, 20, 21, 22, 23, 29, 30],
+      "CANDIDATE_CHANGE_REQUIRED": false
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R5",
+  "promptId": "FLAGSTONE-P03B-PRODUCTION-APPLY-PACKET-R5-FOUR-DEFECT-REPAIR-20260917-R1",
+  "sourceR4PacketCommit": "71ec54f6bbebf9934dbb6ea6cd8dacf2305d670a",
+  "sourceR4IndependentReviewCommit": "675503927b44c51d6c5b21447d7bc9d9203c52fc",
+  "candidate": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "rootDefectCount": 4,
+  "exactTwoMigrationsOnly": true,
+  "localReplayCheckCount": 96,
+  "newControllerBranchTests": {
+    "passed": 30,
+    "total": 30
+  },
+  "localReplayExit": [
+    0,
+    0
+  ],
+  "validationInfrastructureDestroyed": true,
+  "candidateBytesChanged": false,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "quiescenceEntered": false,
+  "productionApplyExecuted": false,
+  "artifactCountExcludingManifests": 34,
+  "artifacts": [
+    {
+      "path": "EXPECTED_TEMPORARY_GATE_IDENTITIES.json",
+      "size": 2091,
+      "sha256": "fe172c0d76d027018fe0c1aa86a46c1e74b8f452fcf95f1f3776f9c00889a860"
+    },
+    {
+      "path": "EXPECTED_VALUES.json",
+      "size": 2936,
+      "sha256": "73cc3695c1b1b49864146c0e438236b302b65f7e655edb09e37b6b710b18d5fe"
+    },
+    {
+      "path": "LOCAL_R5_CONTROL_VALIDATION.json",
+      "size": 3664,
+      "sha256": "a563bd7aeedb96426d99835861fe41bbc25ee9cef0618279bd07558dfc4e1454"
+    },
+    {
+      "path": "LOCAL_R5_CONTROL_VALIDATION.stderr.log",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "LOCAL_R5_CONTROL_VALIDATION.stdout.log",
+      "size": 3664,
+      "sha256": "a563bd7aeedb96426d99835861fe41bbc25ee9cef0618279bd07558dfc4e1454"
+    },
+    {
+      "path": "LOCAL_SQL_GATE_VALIDATION.json",
+      "size": 1360,
+      "sha256": "88e029c1b0f4196ded159bbc70466f2656e3ac410ebc22cd49e4afff12019b7f"
+    },
+    {
+      "path": "LOCAL_SQL_GATE_VALIDATION.stderr.log",
+      "size": 27111,
+      "sha256": "a1e7af1e08580d1caccee089069c21c2ec15bdc586945e5bad0bf0886232bbde"
+    },
+    {
+      "path": "LOCAL_SQL_GATE_VALIDATION.stdout.log",
+      "size": 1360,
+      "sha256": "88e029c1b0f4196ded159bbc70466f2656e3ac410ebc22cd49e4afff12019b7f"
+    },
+    {
+      "path": "LOCAL_VALIDATION_RECEIPT.json",
+      "size": 8743,
+      "sha256": "25374a5098d23fab8761aba7935a9772a74f760a729b3df582fae412fff5cbb0"
+    },
+    {
+      "path": "MONITOR_READ_ONLY.sql",
+      "size": 6781,
+      "sha256": "96833b930ee36d6944596a2c48dff6aa5896e968f1b2e021cc2cffa4450b2bb9"
+    },
+    {
+      "path": "PARTIAL_APPLY_STATE_MACHINE.json",
+      "size": 12233,
+      "sha256": "66a4695d17857ae9b0c97b700cfdd1432aed764ee4bb50001b1d4d57af04ff4d"
+    },
+    {
+      "path": "POST_EXIT_VERIFY.sql",
+      "size": 4557,
+      "sha256": "2ec586109f04c958bd5f9862a08f33dfff332273c05da62a4d4e1b77f2d410c5"
+    },
+    {
+      "path": "PRIVACY_SCAN.json",
+      "size": 193,
+      "sha256": "66df7de6c1c5bc7749f0c2cfb613273628856f7bc0d2088cb088d481113d6984"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_ENTER.sql",
+      "size": 16362,
+      "sha256": "caf402f0f466305a04217e3ee24a7bed1f4ef5f27c2db5fa3d84550b9eb5da76"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_EXIT_TEMPLATE.sql",
+      "size": 11567,
+      "sha256": "e984579e48fbaead385d8b0594f7542ca039c803e427fad1c88e63375d5d3aa9"
+    },
+    {
+      "path": "PROPOSED_QUIESCENCE_VERIFY.sql",
+      "size": 8415,
+      "sha256": "45b3aef0d6722ac1c67b8796adaf6214f4a792422d863f12c3e9a66bc50d647d"
+    },
+    {
+      "path": "SERVER_STATE_ADJUDICATE.sql",
+      "size": 11914,
+      "sha256": "5b967c2daad929696439d62e1fd987fb4691bd2b019009a8c3782ac703f8b255"
+    },
+    {
+      "path": "STRICT_R5_ENVELOPE_SCHEMA.json",
+      "size": 1958,
+      "sha256": "a519a720f7543f1174bf092f3faf557e762a6d6cee60fd23bf8848935940555b"
+    },
+    {
+      "path": "SUPERSESSION.md",
+      "size": 715,
+      "sha256": "e0c0b52f735501711f14ada7cbc7185a06151a7c78e86e3f679cb1525fae29e3"
+    },
+    {
+      "path": "TRACEABILITY.json",
+      "size": 9130,
+      "sha256": "9e40a4a9bec5a95d18750ab65376176b7b7066b438be671310f7204457589dd4"
+    },
+    {
+      "path": "TRACEABILITY.md",
+      "size": 4717,
+      "sha256": "9a450ce85ce3e3700850be833f7f05327fb8bd9e58e0610bdb39229e8ac1def1"
+    },
+    {
+      "path": "adjudicate_server_state.mjs",
+      "size": 6850,
+      "sha256": "be9981a1f5b51cbaf7e182a1163fb0943d72b1890c6fbbf347d6ec18bcf838c3"
+    },
+    {
+      "path": "build_hermetic_workdir.mjs",
+      "size": 4973,
+      "sha256": "c75619753f3ecb0adadc89502328ed342161c02d224ca9bd82dc7bea188411ed"
+    },
+    {
+      "path": "execute_cutover_controller.mjs",
+      "size": 23816,
+      "sha256": "b037f4df002f8aab667864ee14f50cbcdc03604d9f0acb19fa9ca4515473c853"
+    },
+    {
+      "path": "generate_evidence_manifest.mjs",
+      "size": 1991,
+      "sha256": "969632927f4794ea2ecb2738c71b9cd263fc47f25c3d30817e4df765b56f17c4"
+    },
+    {
+      "path": "generate_exit_sql.mjs",
+      "size": 3000,
+      "sha256": "de26665d42e73b2c5069b2a15456aa9cc4cc7e67b770bce0a786c3d3731f4dea"
+    },
+    {
+      "path": "generate_packet_manifest.mjs",
+      "size": 3795,
+      "sha256": "ad2fcaea6a5214161f27f2b5b752d5cdf66f5cb84e3a318eeb2ffcdb8058727b"
+    },
+    {
+      "path": "r5_control_lib.mjs",
+      "size": 27952,
+      "sha256": "d2833743fd9837c840fc2fb0e5fcfa145542cc1e44d1b276e4804c7b56eccb82"
+    },
+    {
+      "path": "run_local_validation.mjs",
+      "size": 4308,
+      "sha256": "22e51c1098db27faa390b45dc9a221bb6b7bb2a23bdf7511ba8c60d6e706bf77"
+    },
+    {
+      "path": "run_privacy_scan.mjs",
+      "size": 2052,
+      "sha256": "5da7f881f6fbfe39cc83c767bfd25230d69dbea19f1d1dfbeb9e58693742144f"
+    },
+    {
+      "path": "validate_quiescence_local.mjs",
+      "size": 17479,
+      "sha256": "c808864aa00a8bafef29f22a552c381ac924224e5a2b481e8eb6e360692fcafe"
+    },
+    {
+      "path": "validate_r5_controls.mjs",
+      "size": 25930,
+      "sha256": "51626abef4dbe3b79a1088a3b37d90102597dc316b0ef24f8afdb41151e1b307"
+    },
+    {
+      "path": "verify_post_apply.mjs",
+      "size": 10867,
+      "sha256": "fd5793ab503780830e168c25b9d9c71483900665565e502710b6c725f2684fd0"
+    },
+    {
+      "path": "verify_post_exit.mjs",
+      "size": 7190,
+      "sha256": "6b0a15ad1aa30a58c759e20f30ba1ff53c518ab09c8bb9e0e8e477dfe6876ebb"
+    }
+  ]
+}

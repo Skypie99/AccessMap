@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flagstone.phase03b.r5-envelope.v1",
+  "title": "Flagstone Phase 03B R5 packet envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "packetVersion",
+    "candidateSha",
+    "candidateTree",
+    "productionTarget",
+    "runId",
+    "controllerPid",
+    "controllerMonotonicOrigin",
+    "phase",
+    "checkName",
+    "expected",
+    "observed",
+    "status",
+    "capturedAtUtc",
+    "capturedAtMonotonic",
+    "sourceArtifact",
+    "numericExit"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "flagstone.phase03b.r5-envelope.v1" },
+    "packetVersion": { "const": "R5" },
+    "candidateSha": { "const": "9d638456fa8e679678c54f131fe8f0db723eda72" },
+    "candidateTree": { "const": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8" },
+    "productionTarget": { "const": "kldlwszpfkdmsjrjhjym" },
+    "runId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "controllerPid": { "type": "integer", "minimum": 1 },
+    "controllerMonotonicOrigin": { "type": "integer", "minimum": 0 },
+    "phase": {
+      "enum": [
+        "ENTRY_RECEIPT",
+        "SERVER_STATE_CLASSIFICATION",
+        "POST_APPLY_COMPARATOR",
+        "POST_EXIT_COMPARATOR"
+      ]
+    },
+    "checkName": { "type": "string", "minLength": 1 },
+    "expected": { "type": "object" },
+    "observed": { "type": "object" },
+    "status": {
+      "enum": [
+        "PASS",
+        "HOLD",
+        "ENTRY_COMMITTED_CONFIRMED",
+        "ENTRY_CONFIRMED_NOT_COMMITTED",
+        "OWNER_REQUIRED_FAIL_CLOSED",
+        "PASS_WHILE_QUIESCED",
+        "PASS_RESTORED"
+      ]
+    },
+    "capturedAtUtc": { "type": "string", "format": "date-time" },
+    "capturedAtMonotonic": { "type": "integer", "minimum": 0 },
+    "sourceArtifact": { "type": "string", "minLength": 1 },
+    "numericExit": { "type": "integer" }
+  }
+}
