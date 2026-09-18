@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R6",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "table": {
+    "schema": "public",
+    "name": "flags",
+    "owner": "postgres",
+    "oidBinding": "runtime.entry.table_oid"
+  },
+  "objects": [
+    {
+      "kind": "function",
+      "schema": "private",
+      "name": "flagstone_phase03b_block_row_lifecycle_r2",
+      "identityArguments": "",
+      "owner": "postgres",
+      "oidBinding": "runtime.entry.function_oid",
+      "language": "plpgsql",
+      "securityDefiner": false,
+      "volatility": "v",
+      "normalizedDefinitionSha256": "16555e58ee2cdfce5d54336ef63584116ed1cb798d90ac779c278a5c0e5b0bac"
+    },
+    {
+      "kind": "trigger",
+      "schema": "public",
+      "table": "flags",
+      "tableOwner": "postgres",
+      "name": "aaa_flagstone_phase03b_row_lifecycle_quiescence_r2",
+      "oidBinding": "runtime.entry.trigger_oid",
+      "tableOidBinding": "runtime.entry.table_oid",
+      "referencedFunctionOidBinding": "runtime.entry.function_oid",
+      "referencedFunction": "private.flagstone_phase03b_block_row_lifecycle_r2()",
+      "enabled": "A",
+      "tgType": 31,
+      "timing": "BEFORE",
+      "level": "ROW",
+      "events": ["INSERT", "DELETE", "UPDATE"],
+      "updateColumns": ["id", "status"],
+      "normalizedDefinitionSha256": "e89ac15de9a1f20a2bd269289fa3ddf3ef22ff529d8c4b929587da5781995bbf"
+    },
+    {
+      "kind": "trigger",
+      "schema": "public",
+      "table": "flags",
+      "tableOwner": "postgres",
+      "name": "aaa_flagstone_phase03b_truncate_quiescence_r3",
+      "oidBinding": "runtime.entry.truncate_trigger_oid",
+      "tableOidBinding": "runtime.entry.table_oid",
+      "referencedFunctionOidBinding": "runtime.entry.function_oid",
+      "referencedFunction": "private.flagstone_phase03b_block_row_lifecycle_r2()",
+      "enabled": "A",
+      "tgType": 34,
+      "timing": "BEFORE",
+      "level": "STATEMENT",
+      "events": ["TRUNCATE"],
+      "updateColumns": [],
+      "normalizedDefinitionSha256": "54e10e11dabd45d1edfdf44a7aa065f2e335c964b230cd41c6138c6ef295c58a"
+    }
+  ]
+}

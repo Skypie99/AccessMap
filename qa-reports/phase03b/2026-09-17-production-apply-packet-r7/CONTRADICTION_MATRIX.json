@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R7",
+  "policy": "No envelope may contain two mutually incompatible truths; every rejection occurs before control-flow use.",
+  "cases": [
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status with nonzero numericExit", "test": "r7_09_entryPassNonzeroExitRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status with timedOut true", "test": "r7_10_entryPassTimedOutRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status with non-null signal", "test": "r7_11_entryPassSignalRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status without both successful captured steps", "test": "r7_12_entryMissingSuccessfulStepRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "successful outer receipt with timed-out and signaled nested step", "test": "r7_14_entryContradictoryNestedTimeoutRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "entry object identity differs from immediate proof identity", "test": "r7_15_entryProofIdentityMismatchRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "definitive classification differs from classification recomputed from exact evidence", "test": "r7_23_serverClassificationContradictionRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "committed classification with mismatched function definition hash", "test": "r7_24_gateHashMismatchCannotClaimCommitted", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "gate-absent classification with live object identity", "test": "r7_25_absentClassificationWithLiveObjectsRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "committed classification with incomplete expected object proof", "test": "r7_26_committedClassificationIncompleteObjectsRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "querySucceeded false with definitive not-committed classification", "test": "r7_27_unknownEvidenceCannotBeDefinitive", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "server snapshot changed after parse but before adjudication", "test": "r7_31_rawInvalidServerCannotDriveAdjudication", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "policy differs from policy derived from apply classification", "test": "r7_34_serverPolicyMismatchRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "envelope classification was produced for apply not spawned but consumer context says apply spawned", "test": "r7_35_serverApplySpawnedContextMismatchRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" }
+  ]
+}

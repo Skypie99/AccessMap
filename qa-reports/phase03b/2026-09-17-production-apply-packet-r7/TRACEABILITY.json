@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R7",
+  "sourceR6PacketCommit": "f6d314b6f58c3367d6a5ee0d461c43ef05516e56",
+  "sourceR6IndependentReview": {
+    "rolloutId": "01a0b2b2-cdfa-79e1-9545-c5166ec6940a",
+    "executableProbe": "custom-tool ordinal 164",
+    "holdAdjudication": "assistant-message ordinal 199"
+  },
+  "rootDefectCount": 3,
+  "entries": [
+    {
+      "id": "R7-D1",
+      "finding": "STRICT_R6_ENVELOPE_SCHEMA permitted safety-critical nested objects without closed key sets, so unexpected nested fields were schema-valid.",
+      "executableProof": "The independent probe added an unexpected key to entry.proof and the R6 JSON Schema path accepted it.",
+      "repair": "Generate and compile STRICT_R7_ENVELOPE_SCHEMA.json with explicit required keys and additionalProperties false at every safety-critical object level.",
+      "acceptance": "The compiled validator accepts an exact R7 envelope and rejects top-level unknown, nested unknown, missing required, legacy alias, R6 packetVersion, and wrong schemaVersion cases.",
+      "candidateChangeRequired": false
+    },
+    {
+      "id": "R7-D2",
+      "finding": "The R6 executable ENTRY_RECEIPT path accepted a PASS-like entry whose captured step reported timedOut/signaled and carried an unexpected nested key.",
+      "executableProof": "The independent probe reached R6 validation with contradictory process outcome fields instead of failing closed.",
+      "repair": "Route entry consumers through validateEntryEnvelope: compiled exact schema, pinned identity, exact nested key sets, successful process outcome, proof consistency, and immutable-deadline checks.",
+      "acceptance": "Exact valid entry is accepted; nonzero exit, timeout, signal, missing step, unknown nested key, proof contradiction, cross-run, wrong candidate/target, and raw-unvalidated cases are rejected.",
+      "candidateChangeRequired": false
+    },
+    {
+      "id": "R7-D3",
+      "finding": "The R6 executable SERVER_STATE_CLASSIFICATION path accepted a definitive ENTRY_CONFIRMED_NOT_COMMITTED / GATE_ABSENT / APPLY_NOT_STARTED claim while the server snapshot said querySucceeded false.",
+      "executableProof": "The independent probe supplied unavailable evidence plus definitive classifications and the R6 validator accepted the contradiction.",
+      "repair": "Route fresh and reused classifications through validateServerStateEnvelope with exact schema, context pinning, complete identity evidence, classification recomputation, and fail-closed UNKNOWN policy.",
+      "acceptance": "Definitive classifications require successful complete evidence; contradictions, hash mismatches, missing identity, absent-plus-live proof, cross-run, wrong candidate/target, policy mismatch, and raw-unvalidated cases are rejected.",
+      "candidateChangeRequired": false
+    }
+  ],
+  "preservedR6D2": {
+    "status": "PASS_NOT_REOPENED",
+    "controls": [
+      "MAX_QUIESCENCE_HARD_LATCH",
+      "MAX_QUIESCENCE_LATCH_IRREVERSIBLE",
+      "SINGLE_RESTORATION_DISPATCHER",
+      "RESTORATION_AFTER_600S",
+      "ERROR_PATH_RESTORATION_BYPASS"
+    ]
+  }
+}
