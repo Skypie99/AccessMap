@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R11",
+  "successToken": "VALIDATED_R10 for extracted snapshot; VALIDATED_R8 for final envelope",
+  "failureToken": "FAIL_CLOSED_INVALID_ENVELOPE",
+  "policy": "RAW evidence may be retained, but every safety decision consumes only data that passed exact transport-container, cardinality, row-key, compiled schema, semantic identity, phase-proof, and contradiction validation.",
+  "boundaries": [
+    { "consumer": "CLI transport normalizer", "rawInput": "parsed Supabase CLI JSON", "validator": "resultRow exact container, cardinality, row-object, and row-key validation", "decisionInput": "one extracted snapshot object", "rawRetained": true },
+    { "consumer": "entry receipt consumer", "rawInput": "entry and immediate-proof CLI JSON", "validator": "validateEntryEnvelope via validateR8Envelope", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "entry adjudicator", "rawInput": "exact-transport-extracted server-state snapshot", "validator": "validateServerStateSnapshot", "decisionInput": "VALIDATED_R10", "rawRetained": true },
+    { "consumer": "monitoring sample consumer", "rawInput": "read-only monitoring CLI JSON", "validator": "validateMonitorAgainstEntry against a validated R8 entry envelope", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "apply-result consumer", "rawInput": "captured child process result", "validator": "deriveClientOutcome with timeout, exit, signal, and spawn-error fail-closed policy", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "server-state classifier", "rawInput": "server catalog, gate, ledger, invariant, HTTP, and backend snapshot", "validator": "classifyValidatedServerState requires validateServerStateSnapshot before every consumer", "decisionInput": "VALIDATED_R10", "rawRetained": true },
+    { "consumer": "post-apply comparator aggregator", "rawInput": "POST_APPLY_VERIFIER_RECEIPT.json", "validator": "validateR8Envelope with exact proof, steps, digests, run, and entry constraints", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "partial-apply state machine", "rawInput": "validated gate and server classifications", "validator": "statePolicy exact state identifier", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "pre-exit gate", "rawInput": "validated comparator and controller state", "validator": "evaluateExitEligibility plus assertExitDispatchAllowed", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "exit dispatcher", "rawInput": "validated run state and receipt-bound SQL path", "validator": "dispatchRestorationBeforeDeadline inside the synchronous spawn primitive", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "post-exit comparator aggregator", "rawInput": "POST_EXIT_VERIFIER_RECEIPT.json", "validator": "postExitDisposition calling validateR8Envelope with exact proof, steps, digests, run, and entry constraints", "decisionInput": "VALIDATED_R8", "rawRetained": true },
+    { "consumer": "final evidence receipt generator", "rawInput": "captured validated envelopes and process receipts", "validator": "generateEvidenceManifest plus generate_packet_manifest", "decisionInput": "VALIDATED_R8", "rawRetained": true }
+  ]
+}

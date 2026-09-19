@@ -1,0 +1,16 @@
+{
+  "receipt": "phase03b_r11_live_readonly_pgnet_preflight",
+  "productionTargetProjectRef": "kldlwszpfkdmsjrjhjym",
+  "databaseT0": "2026-09-19T17:27:39.212443Z",
+  "capturedAtUtc": "2026-09-19T17:27:41.232438Z",
+  "transactionReadOnly": "on",
+  "pgNetTtl": "6 hours",
+  "pgNetTtlSeconds": 21600,
+  "httpQueueCount": 0,
+  "httpResponseCountDiagnosticOnly": 3,
+  "httpResponseSha256DiagnosticOnly": "14d0617d38d7625f9470ed931c4c7e849bba5d9472bc8e39983dd1a359118dfd",
+  "httpResponseNewSinceT0Count": 0,
+  "observationIntervalMilliseconds": 2020,
+  "transactionEnd": "ROLLBACK",
+  "productionMutations": "NONE"
+}

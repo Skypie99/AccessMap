@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R11",
+  "localValidationChildren": 4,
+  "numericChildExits": [0, 0, 0, 0],
+  "localReplayCheckCount": 232,
+  "preservedR10ReplayCheckCount": 217,
+  "newR11PgNetTests": "14/14",
+  "newR11SqlGateChecks": "1/1",
+  "allDisposableValidationRootsDestroyed": true,
+  "productionObjectsCreated": 0,
+  "stagingObjectsCreated": 0,
+  "quiescenceEntered": false,
+  "productionApplyExecuted": false,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "status": "PASS"
+}

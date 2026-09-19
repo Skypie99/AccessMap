@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R11",
+  "sourceR10PacketCommit": "0ba40b4ff027e043edf441ea24fe2be1eae5f9bc",
+  "sourceR10RefreshEvidenceCommit": "41184103505ae2af44cc2a506b7f485a19846f81",
+  "pgNetProvenanceEvidenceCommit": "64ee3b24e270a590656590e55312a1dd7326ab88",
+  "rootDefectCount": 1,
+  "entries": [
+    {
+      "id": "R11-D1",
+      "finding": "VOLATILE_PG_NET_RESPONSE_HISTORY_USED_AS_AUTHORIZATION_IDENTITY",
+      "before": "R10 required the total net._http_response count and full-table fingerprint to equal one retained-history snapshot at every safety checkpoint.",
+      "executableFailure": "With pg_net.ttl at six hours, terminal pre-existing response rows expire normally; that safe expiry changed the total count and fingerprint and caused a false HOLD despite an empty request queue and no active outbound side effect.",
+      "repair": "R11 captures one database transaction timestamp T0 before mutation, requires pg_net.ttl greater than 600 seconds, and requires an empty request queue plus zero response rows created at or after the immutable T0 at preflight and every existing checkpoint. Historical count and fingerprint remain diagnostic only.",
+      "acceptance": "Fourteen R11 tests cover safe historical expiry, every defined fail-closed condition, database-time authority, TTL observability, immutable T0 propagation, and absence of historical fingerprint equality from safety control flow.",
+      "candidateChangeRequired": false
+    }
+  ],
+  "preservedR10AndEarlier": {
+    "status": "PASS_NOT_REOPENED",
+    "preservedR10ReplayCheckCount": 217,
+    "sourceR7ReplayCheckCount": 172,
+    "controls": [
+      "PRE_CLASSIFICATION_SNAPSHOT_VALIDATION_ORDER",
+      "SNAPSHOT_VALIDATED_BEFORE_CLASSIFICATION",
+      "INVALID_SNAPSHOT_CLASSIFIER_CALL_COUNT_ZERO",
+      "INVALID_SNAPSHOT_COMPARATOR_CALL_COUNT_ZERO",
+      "RAW_SNAPSHOT_CONTROL_FLOW_BYPASS_NONE",
+      "SERVER_STATE_CLASSIFIER_HASH_PINNING",
+      "ENTRY_AMBIGUITY_SERVER_ADJUDICATION",
+      "MAX_QUIESCENCE_HARD_LATCH",
+      "MAX_QUIESCENCE_LATCH_IRREVERSIBLE",
+      "SINGLE_RESTORATION_DISPATCHER",
+      "RESTORATION_AFTER_600S_BLOCKED",
+      "EXACT_TWO_MIGRATIONS_ONLY",
+      "POST_APPLY_VERIFICATION_WHILE_QUIESCED",
+      "QUIESCENCE_EXIT_ATOMICITY",
+      "WRITE_RESTORATION_VERIFICATION"
+    ]
+  }
+}

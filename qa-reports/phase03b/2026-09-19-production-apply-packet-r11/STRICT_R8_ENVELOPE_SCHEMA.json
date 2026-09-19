@@ -1,0 +1,1930 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flagstone.phase03b.r8-envelope.v1",
+  "title": "Flagstone Phase 03B R8 exact safety envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "packetVersion",
+    "candidateSha",
+    "candidateTree",
+    "productionTarget",
+    "runId",
+    "controllerPid",
+    "controllerMonotonicOrigin",
+    "phase",
+    "checkName",
+    "expected",
+    "observed",
+    "status",
+    "capturedAtUtc",
+    "capturedAtMonotonic",
+    "sourceArtifact",
+    "producer",
+    "producerVersion",
+    "numericExit",
+    "signal",
+    "timedOut"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "flagstone.phase03b.r8-envelope.v1"
+    },
+    "packetVersion": {
+      "const": "R8"
+    },
+    "candidateSha": {
+      "const": "9d638456fa8e679678c54f131fe8f0db723eda72"
+    },
+    "candidateTree": {
+      "const": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8"
+    },
+    "productionTarget": {
+      "const": "kldlwszpfkdmsjrjhjym"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "controllerPid": {
+      "$ref": "#/$defs/positiveInteger"
+    },
+    "controllerMonotonicOrigin": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "phase": {
+      "enum": [
+        "ENTRY_RECEIPT",
+        "SERVER_STATE_CLASSIFICATION",
+        "POST_APPLY_COMPARATOR",
+        "POST_EXIT_COMPARATOR"
+      ]
+    },
+    "checkName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expected": {
+      "type": "object"
+    },
+    "observed": {
+      "type": "object"
+    },
+    "status": {
+      "enum": [
+        "HOLD",
+        "ENTRY_COMMITTED_CONFIRMED",
+        "ENTRY_CONFIRMED_NOT_COMMITTED",
+        "OWNER_REQUIRED_FAIL_CLOSED",
+        "PASS_WHILE_QUIESCED",
+        "PASS_RESTORED"
+      ]
+    },
+    "capturedAtUtc": {
+      "$ref": "#/$defs/utc"
+    },
+    "capturedAtMonotonic": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "sourceArtifact": {
+      "type": "string",
+      "minLength": 1
+    },
+    "producer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "producerVersion": {
+      "const": "flagstone.phase03b.packet-r8.v1"
+    },
+    "numericExit": {
+      "type": "integer"
+    },
+    "signal": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timedOut": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "oid": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "nullableInteger": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "migrationRows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "name",
+          "statement_count",
+          "statement_sha256"
+        ],
+        "properties": {
+          "version": {},
+          "name": {},
+          "statement_count": {
+            "$ref": "#/$defs/positiveInteger"
+          },
+          "statement_sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      }
+    },
+    "entryExpected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateSha",
+        "candidateTree",
+        "productionTarget",
+        "gateManifestSha256",
+        "migrationFilenames",
+        "databaseT0",
+        "maximumQuiescenceWindowSeconds"
+      ],
+      "properties": {
+        "candidateSha": {
+          "const": "9d638456fa8e679678c54f131fe8f0db723eda72"
+        },
+        "candidateTree": {
+          "const": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8"
+        },
+        "productionTarget": {
+          "const": "kldlwszpfkdmsjrjhjym"
+        },
+        "gateManifestSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "migrationFilenames": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "const": "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql"
+            },
+            {
+              "const": "20260915210413_phase03b_points_integrity.sql"
+            }
+          ]
+        },
+        "databaseT0": {
+          "$ref": "#/$defs/utc"
+        },
+        "maximumQuiescenceWindowSeconds": {
+          "const": 600
+        }
+      }
+    },
+    "entryState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "function_oid",
+        "trigger_oid",
+        "truncate_trigger_oid",
+        "table_oid",
+        "function_owner",
+        "trigger_table_owner",
+        "lock_mode",
+        "function_execute_grants",
+        "truncate_trigger_table_oid",
+        "pre_entry_structural_snapshot_sha256",
+        "function_definition_sha256",
+        "trigger_definition_sha256",
+        "truncate_trigger_definition_sha256",
+        "trigger_enabled",
+        "truncate_trigger_enabled",
+        "flags_id_status_count",
+        "flags_id_status_sha256",
+        "history_count",
+        "history_sha256",
+        "ledger_count",
+        "ledger_unique_count",
+        "ledger_latest_version",
+        "ledger_ordered_version_name_sha256",
+        "database_t0",
+        "pg_net_ttl",
+        "pg_net_ttl_seconds",
+        "http_queue_count",
+        "http_response_count",
+        "http_response_sha256",
+        "http_response_new_since_t0_count",
+        "receipt",
+        "phase03b_ledger_count",
+        "boundary_at_utc",
+        "transaction_id",
+        "backend_pid",
+        "lock_acquisition_started_at_utc",
+        "lock_acquisition_ended_at_utc",
+        "lock_wait_ms",
+        "pre_install_flags_id_status_count",
+        "pre_install_flags_id_status_sha256",
+        "pre_install_history_count",
+        "pre_install_history_sha256"
+      ],
+      "properties": {
+        "function_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "trigger_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "truncate_trigger_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "table_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "function_owner": {},
+        "trigger_table_owner": {},
+        "lock_mode": {
+          "const": "SHARE ROW EXCLUSIVE"
+        },
+        "function_execute_grants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grant"
+          }
+        },
+        "truncate_trigger_table_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "pre_entry_structural_snapshot_sha256": {
+          "const": "2d533d8f8bfb827fe6b63f4fb6f17035afd55b8d474260a51a20fe2c004bda01"
+        },
+        "function_definition_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "trigger_definition_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "truncate_trigger_definition_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "trigger_enabled": {},
+        "truncate_trigger_enabled": {},
+        "flags_id_status_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "flags_id_status_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "history_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "history_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "ledger_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "ledger_unique_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "ledger_latest_version": {},
+        "ledger_ordered_version_name_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "database_t0": {
+          "$ref": "#/$defs/utc"
+        },
+        "pg_net_ttl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pg_net_ttl_seconds": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "http_queue_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "http_response_new_since_t0_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "receipt": {
+          "const": "phase03b_quiescence_entry_r3"
+        },
+        "phase03b_ledger_count": {
+          "const": 0
+        },
+        "boundary_at_utc": {
+          "$ref": "#/$defs/utc"
+        },
+        "transaction_id": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "backend_pid": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "lock_acquisition_started_at_utc": {
+          "$ref": "#/$defs/utc"
+        },
+        "lock_acquisition_ended_at_utc": {
+          "$ref": "#/$defs/utc"
+        },
+        "lock_wait_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "pre_install_flags_id_status_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "pre_install_flags_id_status_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pre_install_history_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "pre_install_history_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "entryProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "function_oid",
+        "trigger_oid",
+        "truncate_trigger_oid",
+        "table_oid",
+        "function_owner",
+        "trigger_table_owner",
+        "captured_at_utc",
+        "backend_pid",
+        "function_execute_grants",
+        "truncate_trigger_table_oid",
+        "phase03b_constraint_index_sha256",
+        "function_definition_sha256",
+        "trigger_definition_sha256",
+        "truncate_trigger_definition_sha256",
+        "trigger_enabled",
+        "truncate_trigger_enabled",
+        "flags_id_status_count",
+        "flags_id_status_sha256",
+        "history_count",
+        "history_sha256",
+        "ledger_count",
+        "ledger_unique_count",
+        "ledger_latest_version",
+        "ledger_ordered_version_name_sha256",
+        "database_t0",
+        "pg_net_ttl",
+        "pg_net_ttl_seconds",
+        "http_queue_count",
+        "http_response_count",
+        "http_response_sha256",
+        "http_response_new_since_t0_count",
+        "receipt",
+        "transaction_read_only",
+        "function_count",
+        "trigger_count",
+        "truncate_trigger_count",
+        "phase03b_versions",
+        "phase03b_rows"
+      ],
+      "properties": {
+        "function_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "trigger_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "truncate_trigger_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "table_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "function_owner": {},
+        "trigger_table_owner": {},
+        "captured_at_utc": {
+          "$ref": "#/$defs/utc"
+        },
+        "backend_pid": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "function_execute_grants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grant"
+          }
+        },
+        "truncate_trigger_table_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "phase03b_constraint_index_sha256": {
+          "const": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "function_definition_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "trigger_definition_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "truncate_trigger_definition_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "trigger_enabled": {},
+        "truncate_trigger_enabled": {},
+        "flags_id_status_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "flags_id_status_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "history_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "history_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "ledger_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "ledger_unique_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "ledger_latest_version": {},
+        "ledger_ordered_version_name_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "database_t0": {
+          "$ref": "#/$defs/utc"
+        },
+        "pg_net_ttl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pg_net_ttl_seconds": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "http_queue_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "http_response_new_since_t0_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "receipt": {
+          "const": "phase03b_quiescence_proof_r3"
+        },
+        "transaction_read_only": {
+          "const": "on"
+        },
+        "function_count": {
+          "const": 1
+        },
+        "trigger_count": {
+          "const": 1
+        },
+        "truncate_trigger_count": {
+          "const": 1
+        },
+        "phase03b_versions": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "phase03b_rows": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
+    },
+    "migrationInventoryFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relativePath",
+        "filename",
+        "size",
+        "sha256"
+      ],
+      "properties": {
+        "relativePath": {},
+        "filename": {},
+        "size": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "migrationInventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "packetVersion",
+        "target",
+        "candidate",
+        "candidateTree",
+        "workspaceRoot",
+        "migrationFileCount",
+        "seedFiles",
+        "roleFiles",
+        "otherSqlFiles",
+        "files"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "packetVersion": {
+          "const": "R8"
+        },
+        "target": {
+          "const": "kldlwszpfkdmsjrjhjym"
+        },
+        "candidate": {
+          "const": "9d638456fa8e679678c54f131fe8f0db723eda72"
+        },
+        "candidateTree": {
+          "const": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8"
+        },
+        "workspaceRoot": {},
+        "migrationFileCount": {
+          "const": 2
+        },
+        "seedFiles": {
+          "const": 0
+        },
+        "roleFiles": {
+          "const": 0
+        },
+        "otherSqlFiles": {
+          "const": 0
+        },
+        "files": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/migrationInventoryFile"
+          }
+        }
+      }
+    },
+    "deadlines": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "originMonoMs",
+        "entryCompleteMonoMs",
+        "applyCompleteMonoMs",
+        "postApplyVerificationCompleteMonoMs",
+        "maximumQuiescenceEscalationMonoMs"
+      ],
+      "properties": {
+        "originMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "entryCompleteMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "applyCompleteMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "postApplyVerificationCompleteMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "maximumQuiescenceEscalationMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      }
+    },
+    "controllerStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "command",
+        "controllerPid",
+        "childPid",
+        "processGroupId",
+        "startedAt",
+        "endedAt",
+        "startedMonoMs",
+        "endedMonoMs",
+        "absoluteDeadlineMonoMs",
+        "restorationDispatchedAtMonoMs",
+        "timeoutMs",
+        "timedOut",
+        "signalSent",
+        "exitCode",
+        "exitSignal",
+        "spawnError",
+        "stdoutPath",
+        "stderrPath"
+      ],
+      "properties": {
+        "label": {},
+        "command": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "controllerPid": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "childPid": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "processGroupId": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "startedAt": {
+          "$ref": "#/$defs/utc"
+        },
+        "endedAt": {
+          "$ref": "#/$defs/utc"
+        },
+        "startedMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "endedMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "absoluteDeadlineMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "restorationDispatchedAtMonoMs": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "timeoutMs": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "timedOut": {
+          "type": "boolean"
+        },
+        "signalSent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "exitCode": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "exitSignal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "spawnError": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stdoutPath": {},
+        "stderrPath": {}
+      }
+    },
+    "entryObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry",
+        "immediatePostCommitProof",
+        "migrationInventory",
+        "immutableDeadlines",
+        "rawCapture"
+      ],
+      "properties": {
+        "entry": {
+          "$ref": "#/$defs/entryState"
+        },
+        "immediatePostCommitProof": {
+          "$ref": "#/$defs/entryProof"
+        },
+        "migrationInventory": {
+          "$ref": "#/$defs/migrationInventory"
+        },
+        "immutableDeadlines": {
+          "$ref": "#/$defs/deadlines"
+        },
+        "rawCapture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "entryStep",
+            "proofStep"
+          ],
+          "properties": {
+            "entryStep": {
+              "$ref": "#/$defs/controllerStep"
+            },
+            "proofStep": {
+              "$ref": "#/$defs/controllerStep"
+            }
+          }
+        }
+      }
+    },
+    "serverExpected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gateManifestSha256",
+        "acceptedLedgerCounts",
+        "productionTarget",
+        "databaseT0",
+        "maximumQuiescenceWindowSeconds"
+      ],
+      "properties": {
+        "gateManifestSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "acceptedLedgerCounts": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/nonNegativeInteger"
+          }
+        },
+        "productionTarget": {
+          "const": "kldlwszpfkdmsjrjhjym"
+        },
+        "databaseT0": {
+          "$ref": "#/$defs/utc"
+        },
+        "maximumQuiescenceWindowSeconds": {
+          "const": 600
+        }
+      }
+    },
+    "runtimeBindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "functionOid",
+        "tableOid",
+        "rowTriggerOid",
+        "truncateTriggerOid"
+      ],
+      "properties": {
+        "functionOid": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "tableOid": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "rowTriggerOid": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "truncateTriggerOid": {
+          "$ref": "#/$defs/nullableInteger"
+        }
+      }
+    },
+    "gateState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "mismatches"
+          ],
+          "properties": {
+            "state": {
+              "enum": [
+                "GATE_UNKNOWN",
+                "GATE_ABSENT"
+              ]
+            },
+            "mismatches": {
+              "$ref": "#/$defs/stringArray"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "mismatches",
+            "runtimeBindings"
+          ],
+          "properties": {
+            "state": {
+              "enum": [
+                "GATE_PRESENT_EXACT",
+                "GATE_PRESENT_MISMATCH"
+              ]
+            },
+            "mismatches": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "runtimeBindings": {
+              "$ref": "#/$defs/runtimeBindings"
+            }
+          }
+        }
+      ]
+    },
+    "candidateBackend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pid",
+        "usename",
+        "application_name",
+        "state",
+        "wait_event_type",
+        "wait_event",
+        "xact_start",
+        "query_start"
+      ],
+      "properties": {
+        "pid": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "usename": {},
+        "application_name": {},
+        "state": {},
+        "wait_event_type": {},
+        "wait_event": {},
+        "xact_start": {},
+        "query_start": {}
+      }
+    },
+    "serverSnapshotFailure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "querySucceeded",
+        "captureError"
+      ],
+      "properties": {
+        "querySucceeded": {
+          "const": false
+        },
+        "captureError": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "serverSnapshotSuccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "querySucceeded",
+        "receipt",
+        "captured_at_utc",
+        "transaction_read_only",
+        "candidate_backends",
+        "ledger_count",
+        "ledger_unique_count",
+        "ledger_latest_version",
+        "ledger_ordered_version_name_sha256",
+        "phase03b_versions",
+        "table_oid",
+        "table_schema",
+        "table_name",
+        "table_owner",
+        "function_count",
+        "function_oid",
+        "function_schema",
+        "function_name",
+        "function_identity_arguments",
+        "function_owner",
+        "function_language",
+        "function_security_definer",
+        "function_volatility",
+        "function_definition_sha256",
+        "row_trigger_count",
+        "row_trigger_oid",
+        "row_trigger_schema",
+        "row_trigger_table",
+        "row_trigger_table_oid",
+        "row_trigger_table_owner",
+        "row_trigger_name",
+        "row_trigger_enabled",
+        "row_trigger_tgtype",
+        "row_trigger_timing",
+        "row_trigger_level",
+        "row_trigger_events",
+        "row_trigger_update_columns",
+        "row_trigger_function_oid",
+        "row_trigger_function_identity",
+        "row_trigger_definition_sha256",
+        "truncate_trigger_count",
+        "truncate_trigger_oid",
+        "truncate_trigger_schema",
+        "truncate_trigger_table",
+        "truncate_trigger_table_oid",
+        "truncate_trigger_table_owner",
+        "truncate_trigger_name",
+        "truncate_trigger_enabled",
+        "truncate_trigger_tgtype",
+        "truncate_trigger_timing",
+        "truncate_trigger_level",
+        "truncate_trigger_events",
+        "truncate_trigger_update_columns",
+        "truncate_trigger_function_oid",
+        "truncate_trigger_function_identity",
+        "truncate_trigger_definition_sha256",
+        "flags_id_status_count",
+        "flags_id_status_sha256",
+        "history_count",
+        "history_sha256",
+        "phase03b_constraint_index_sha256",
+        "database_t0",
+        "pg_net_ttl",
+        "pg_net_ttl_seconds",
+        "http_queue_count",
+        "http_response_count",
+        "http_response_sha256",
+        "http_response_new_since_t0_count"
+      ],
+      "properties": {
+        "querySucceeded": {
+          "const": true
+        },
+        "receipt": {
+          "const": "phase03b_server_state_r8"
+        },
+        "captured_at_utc": {
+          "$ref": "#/$defs/utc"
+        },
+        "transaction_read_only": {
+          "const": "on"
+        },
+        "candidate_backends": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/candidateBackend"
+          }
+        },
+        "ledger_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "ledger_unique_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "ledger_latest_version": {},
+        "ledger_ordered_version_name_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "phase03b_versions": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "table_oid": {
+          "$ref": "#/$defs/oid"
+        },
+        "table_schema": {},
+        "table_name": {},
+        "table_owner": {},
+        "function_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "function_oid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/oid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "function_schema": {},
+        "function_name": {},
+        "function_identity_arguments": {},
+        "function_owner": {},
+        "function_language": {},
+        "function_security_definer": {},
+        "function_volatility": {},
+        "function_definition_sha256": {},
+        "row_trigger_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "row_trigger_oid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/oid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "row_trigger_schema": {},
+        "row_trigger_table": {},
+        "row_trigger_table_oid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/oid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "row_trigger_table_owner": {},
+        "row_trigger_name": {},
+        "row_trigger_enabled": {},
+        "row_trigger_tgtype": {},
+        "row_trigger_timing": {},
+        "row_trigger_level": {},
+        "row_trigger_events": {},
+        "row_trigger_update_columns": {},
+        "row_trigger_function_oid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/oid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "row_trigger_function_identity": {},
+        "row_trigger_definition_sha256": {},
+        "truncate_trigger_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "truncate_trigger_oid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/oid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "truncate_trigger_schema": {},
+        "truncate_trigger_table": {},
+        "truncate_trigger_table_oid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/oid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "truncate_trigger_table_owner": {},
+        "truncate_trigger_name": {},
+        "truncate_trigger_enabled": {},
+        "truncate_trigger_tgtype": {},
+        "truncate_trigger_timing": {},
+        "truncate_trigger_level": {},
+        "truncate_trigger_events": {},
+        "truncate_trigger_update_columns": {},
+        "truncate_trigger_function_oid": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/oid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "truncate_trigger_function_identity": {},
+        "truncate_trigger_definition_sha256": {},
+        "flags_id_status_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "flags_id_status_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "history_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "history_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "phase03b_constraint_index_sha256": {},
+        "database_t0": {
+          "$ref": "#/$defs/utc"
+        },
+        "pg_net_ttl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pg_net_ttl_seconds": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "http_queue_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "http_response_new_since_t0_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "structureExact": {
+          "type": "boolean"
+        }
+      }
+    },
+    "serverCaptureStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "began",
+        "ended",
+        "startedMonoMs",
+        "endedMonoMs",
+        "exitCode",
+        "signal",
+        "timedOut",
+        "spawnError",
+        "stdoutPath",
+        "stderrPath"
+      ],
+      "properties": {
+        "command": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "began": {
+          "$ref": "#/$defs/utc"
+        },
+        "ended": {
+          "$ref": "#/$defs/utc"
+        },
+        "startedMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "endedMonoMs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "exitCode": {
+          "$ref": "#/$defs/nullableInteger"
+        },
+        "signal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timedOut": {
+          "type": "boolean"
+        },
+        "spawnError": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stdoutPath": {},
+        "stderrPath": {}
+      }
+    },
+    "adjudicationError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adjudicationError"
+      ],
+      "properties": {
+        "adjudicationError": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "statePolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state_id",
+            "predicate",
+            "controller_state",
+            "ledger_state",
+            "gate_state",
+            "apply_allowed",
+            "retry_allowed",
+            "exit_allowed",
+            "restoration_allowed",
+            "rollback_automatic",
+            "owner_required",
+            "required_evidence",
+            "next_action"
+          ],
+          "properties": {
+            "state_id": {},
+            "predicate": {},
+            "controller_state": {},
+            "ledger_state": {},
+            "gate_state": {},
+            "apply_allowed": {
+              "type": "boolean"
+            },
+            "retry_allowed": {
+              "type": "boolean"
+            },
+            "exit_allowed": {
+              "type": "boolean"
+            },
+            "restoration_allowed": {
+              "type": "boolean"
+            },
+            "rollback_automatic": {
+              "type": "boolean"
+            },
+            "owner_required": {
+              "type": "boolean"
+            },
+            "required_evidence": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "next_action": {}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state_id",
+            "predicate",
+            "apply_allowed",
+            "retry_allowed",
+            "restoration_allowed",
+            "rollback_auto_allowed",
+            "owner_required",
+            "quiescence_state",
+            "required_evidence",
+            "next_action"
+          ],
+          "properties": {
+            "state_id": {},
+            "predicate": {},
+            "apply_allowed": {
+              "type": "boolean"
+            },
+            "retry_allowed": {
+              "type": "boolean"
+            },
+            "restoration_allowed": {
+              "type": "boolean"
+            },
+            "rollback_auto_allowed": {
+              "type": "boolean"
+            },
+            "owner_required": {
+              "type": "boolean"
+            },
+            "quiescence_state": {},
+            "required_evidence": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "next_action": {}
+          }
+        }
+      ]
+    },
+    "serverObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entryClassification",
+        "gateState",
+        "applyClassification",
+        "snapshot",
+        "policy",
+        "steps"
+      ],
+      "properties": {
+        "entryClassification": {
+          "enum": [
+            "ENTRY_COMMITTED_CONFIRMED",
+            "ENTRY_CONFIRMED_NOT_COMMITTED",
+            "OWNER_REQUIRED_FAIL_CLOSED"
+          ]
+        },
+        "gateState": {
+          "$ref": "#/$defs/gateState"
+        },
+        "applyClassification": {
+          "type": "string"
+        },
+        "snapshot": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/serverSnapshotFailure"
+            },
+            {
+              "$ref": "#/$defs/serverSnapshotSuccess"
+            }
+          ]
+        },
+        "policy": {
+          "$ref": "#/$defs/statePolicy"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/serverCaptureStep"
+              },
+              {
+                "$ref": "#/$defs/adjudicationError"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "comparatorExpected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "gateManifestSha256",
+        "finalLedgerSha256",
+        "finalStructureSha256",
+        "databaseT0",
+        "maximumQuiescenceWindowSeconds"
+      ],
+      "properties": {
+        "result": {
+          "enum": [
+            "PASS_WHILE_QUIESCED",
+            "PASS_RESTORED"
+          ]
+        },
+        "gateManifestSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "finalLedgerSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "finalStructureSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "databaseT0": {
+          "$ref": "#/$defs/utc"
+        },
+        "maximumQuiescenceWindowSeconds": {
+          "const": 600
+        }
+      }
+    },
+    "grant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grantee",
+        "privilege",
+        "grantable"
+      ],
+      "properties": {
+        "grantee": {},
+        "privilege": {},
+        "grantable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "postApplyProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt",
+        "transaction_read_only",
+        "captured_at_utc",
+        "backend_pid",
+        "table_oid",
+        "function_count",
+        "function_oid",
+        "function_owner",
+        "function_execute_grants",
+        "function_definition_sha256",
+        "trigger_count",
+        "trigger_oid",
+        "trigger_table_owner",
+        "trigger_enabled",
+        "trigger_definition_sha256",
+        "truncate_trigger_count",
+        "truncate_trigger_oid",
+        "truncate_trigger_table_oid",
+        "truncate_trigger_enabled",
+        "truncate_trigger_definition_sha256",
+        "flags_id_status_count",
+        "flags_id_status_sha256",
+        "history_count",
+        "history_sha256",
+        "ledger_count",
+        "ledger_unique_count",
+        "ledger_latest_version",
+        "ledger_ordered_version_name_sha256",
+        "phase03b_versions",
+        "phase03b_rows",
+        "phase03b_constraint_index_sha256",
+        "database_t0",
+        "pg_net_ttl",
+        "pg_net_ttl_seconds",
+        "http_queue_count",
+        "http_response_count",
+        "http_response_sha256",
+        "http_response_new_since_t0_count"
+      ],
+      "properties": {
+        "receipt": {},
+        "transaction_read_only": {},
+        "captured_at_utc": {
+          "$ref": "#/$defs/utc"
+        },
+        "backend_pid": {},
+        "table_oid": {},
+        "function_count": {},
+        "function_oid": {},
+        "function_owner": {},
+        "function_execute_grants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grant"
+          }
+        },
+        "function_definition_sha256": {},
+        "trigger_count": {},
+        "trigger_oid": {},
+        "trigger_table_owner": {},
+        "trigger_enabled": {},
+        "trigger_definition_sha256": {},
+        "truncate_trigger_count": {},
+        "truncate_trigger_oid": {},
+        "truncate_trigger_table_oid": {},
+        "truncate_trigger_enabled": {},
+        "truncate_trigger_definition_sha256": {},
+        "flags_id_status_count": {},
+        "flags_id_status_sha256": {},
+        "history_count": {},
+        "history_sha256": {},
+        "ledger_count": {},
+        "ledger_unique_count": {},
+        "ledger_latest_version": {},
+        "ledger_ordered_version_name_sha256": {},
+        "phase03b_versions": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "phase03b_rows": {
+          "$ref": "#/$defs/migrationRows"
+        },
+        "phase03b_constraint_index_sha256": {},
+        "database_t0": {
+          "$ref": "#/$defs/utc"
+        },
+        "pg_net_ttl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pg_net_ttl_seconds": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "http_queue_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "http_response_new_since_t0_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      }
+    },
+    "postExitProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt",
+        "transaction_read_only",
+        "captured_at_utc",
+        "function_count",
+        "reserved_trigger_count",
+        "ledger_count",
+        "ledger_unique_count",
+        "ledger_latest_version",
+        "ledger_ordered_version_name_sha256",
+        "phase03b_versions",
+        "phase03b_rows",
+        "phase03b_constraint_index_sha256",
+        "flags_id_status_count",
+        "flags_id_status_sha256",
+        "history_count",
+        "history_sha256",
+        "database_t0",
+        "pg_net_ttl",
+        "pg_net_ttl_seconds",
+        "http_queue_count",
+        "http_response_count",
+        "http_response_sha256",
+        "http_response_new_since_t0_count"
+      ],
+      "properties": {
+        "receipt": {},
+        "transaction_read_only": {},
+        "captured_at_utc": {
+          "$ref": "#/$defs/utc"
+        },
+        "function_count": {},
+        "reserved_trigger_count": {},
+        "ledger_count": {},
+        "ledger_unique_count": {},
+        "ledger_latest_version": {},
+        "ledger_ordered_version_name_sha256": {},
+        "phase03b_versions": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "phase03b_rows": {
+          "$ref": "#/$defs/migrationRows"
+        },
+        "phase03b_constraint_index_sha256": {},
+        "flags_id_status_count": {},
+        "flags_id_status_sha256": {},
+        "history_count": {},
+        "history_sha256": {},
+        "database_t0": {
+          "$ref": "#/$defs/utc"
+        },
+        "pg_net_ttl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pg_net_ttl_seconds": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "http_queue_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "http_response_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "http_response_new_since_t0_count": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      }
+    },
+    "comparatorStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "comparatorError"
+          ],
+          "properties": {
+            "comparatorError": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "command",
+            "startedAt",
+            "endedAt",
+            "exitCode",
+            "signal",
+            "timedOut"
+          ],
+          "properties": {
+            "command": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "startedAt": {
+              "$ref": "#/$defs/utc"
+            },
+            "endedAt": {
+              "$ref": "#/$defs/utc"
+            },
+            "exitCode": {
+              "$ref": "#/$defs/nullableInteger"
+            },
+            "signal": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "timedOut": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "command",
+            "childPid",
+            "startedAt",
+            "endedAt",
+            "timeoutMs",
+            "timedOut",
+            "exitCode",
+            "signal",
+            "error",
+            "stdoutPath",
+            "stderrPath"
+          ],
+          "properties": {
+            "command": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "childPid": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "startedAt": {
+              "$ref": "#/$defs/utc"
+            },
+            "endedAt": {
+              "$ref": "#/$defs/utc"
+            },
+            "timeoutMs": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "timedOut": {
+              "type": "boolean"
+            },
+            "exitCode": {
+              "$ref": "#/$defs/nullableInteger"
+            },
+            "signal": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "error": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "stdoutPath": {},
+            "stderrPath": {}
+          }
+        }
+      ]
+    },
+    "postApplyObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proof",
+        "normalizedStructureSha256",
+        "steps"
+      ],
+      "properties": {
+        "proof": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/postApplyProof"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "normalizedStructureSha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/comparatorStep"
+          }
+        }
+      }
+    },
+    "postExitObserved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proof",
+        "normalizedStructureSha256",
+        "steps"
+      ],
+      "properties": {
+        "proof": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/postExitProof"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "normalizedStructureSha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/comparatorStep"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "ENTRY_RECEIPT"
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "checkName": {
+            "const": "entry-and-immediate-proof"
+          },
+          "sourceArtifact": {
+            "const": "execute_cutover_controller.mjs"
+          },
+          "producer": {
+            "const": "phase03b-r8-cutover-controller"
+          },
+          "expected": {
+            "$ref": "#/$defs/entryExpected"
+          },
+          "observed": {
+            "$ref": "#/$defs/entryObserved"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "SERVER_STATE_CLASSIFICATION"
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "checkName": {
+            "const": "ambiguous-server-state"
+          },
+          "sourceArtifact": {
+            "const": "adjudicate_server_state.mjs"
+          },
+          "producer": {
+            "const": "phase03b-r8-server-adjudicator"
+          },
+          "expected": {
+            "$ref": "#/$defs/serverExpected"
+          },
+          "observed": {
+            "$ref": "#/$defs/serverObserved"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "POST_APPLY_COMPARATOR"
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "checkName": {
+            "const": "post-apply-exact-quiesced-state"
+          },
+          "sourceArtifact": {
+            "const": "verify_post_apply.mjs"
+          },
+          "producer": {
+            "const": "phase03b-r8-post-apply-verifier"
+          },
+          "expected": {
+            "$ref": "#/$defs/comparatorExpected"
+          },
+          "observed": {
+            "$ref": "#/$defs/postApplyObserved"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "POST_EXIT_COMPARATOR"
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "checkName": {
+            "const": "post-exit-write-restoration"
+          },
+          "sourceArtifact": {
+            "const": "verify_post_exit.mjs"
+          },
+          "producer": {
+            "const": "phase03b-r8-post-exit-verifier"
+          },
+          "expected": {
+            "$ref": "#/$defs/comparatorExpected"
+          },
+          "observed": {
+            "$ref": "#/$defs/postExitObserved"
+          }
+        }
+      }
+    }
+  ]
+}

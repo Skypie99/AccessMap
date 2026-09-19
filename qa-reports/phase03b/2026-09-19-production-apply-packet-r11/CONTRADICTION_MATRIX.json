@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R11",
+  "policy": "No envelope may contain two mutually incompatible truths; every rejection occurs before control-flow use.",
+  "cases": [
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status with nonzero numericExit", "test": "r8_09_entryPassNonzeroExitRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status with timedOut true", "test": "r8_10_entryPassTimedOutRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status with non-null signal", "test": "r8_11_entryPassSignalRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "committed status without both successful captured steps", "test": "r8_12_entryMissingSuccessfulStepRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "successful outer receipt with timed-out and signaled nested step", "test": "r8_14_entryContradictoryNestedTimeoutRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "ENTRY_RECEIPT", "contradiction": "entry object identity differs from immediate proof identity", "test": "r8_15_entryProofIdentityMismatchRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "definitive classification differs from classification recomputed from exact evidence", "test": "r8_23_serverClassificationContradictionRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "committed classification with mismatched function definition hash", "test": "r8_24_gateHashMismatchCannotClaimCommitted", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "gate-absent classification with live object identity", "test": "r8_25_absentClassificationWithLiveObjectsRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "committed classification with incomplete expected object proof", "test": "r8_26_committedClassificationIncompleteObjectsRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "querySucceeded false with definitive not-committed classification", "test": "r8_27_unknownEvidenceCannotBeDefinitive", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "server snapshot changed after parse but before adjudication", "test": "r8_31_rawInvalidServerCannotDriveAdjudication", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "policy differs from policy derived from apply classification", "test": "r8_34_serverPolicyMismatchRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_CLASSIFICATION", "contradiction": "envelope classification was produced for apply not spawned but consumer context says apply spawned", "test": "r8_35_serverApplySpawnedContextMismatchRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "required querySucceeded discriminator is absent", "test": "r8s_03_missingDiscriminatorRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "success snapshot also claims failure discriminator and captureError", "test": "r8s_04_contradictoryBranchPropertiesRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "failure branch satisfies success branch", "test": "r8s_05_failureCannotSatisfySuccess", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "success branch satisfies failure branch", "test": "r8s_06_successCannotSatisfyFailure", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "unknown top-level snapshot key", "test": "r8s_07_unknownSnapshotKeyRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "unknown nested candidate backend key", "test": "r8s_08_unknownNestedKeyRejected", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "raw CLI array reaches snapshot schema", "test": "r8s_09_rawArrayCannotReachSnapshotSchema", "expected": "FAIL_CLOSED_INVALID_ENVELOPE" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "success snapshot also claims failure discriminator before classification", "test": "r10_04_contradictoryDiscriminatorZeroCalls", "expected": "FAIL_CLOSED_INVALID_ENVELOPE with zero classifier and comparator calls" },
+    { "family": "SERVER_STATE_SNAPSHOT", "contradiction": "gate-absent counts retain live object identity before classification", "test": "r10_11_gateAbsentIdentityContradictionZeroCalls", "expected": "FAIL_CLOSED_INVALID_ENVELOPE with zero classifier and comparator calls" }
+  ]
+}

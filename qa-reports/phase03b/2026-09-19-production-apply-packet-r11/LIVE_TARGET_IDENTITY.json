@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "capturedDate": "2026-09-19",
+  "requestedProjectRef": "kldlwszpfkdmsjrjhjym",
+  "observedProjectRef": "kldlwszpfkdmsjrjhjym",
+  "projectName": "Accessable City App",
+  "status": "ACTIVE_HEALTHY",
+  "region": "us-west-2",
+  "postgresEngine": "17",
+  "targetIdentity": "PASS"
+}

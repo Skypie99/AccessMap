@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "classification": "DIAGNOSTIC_HISTORY_ONLY",
+  "authorizationUse": "FORBIDDEN",
+  "entries": [
+    {
+      "responseCount": 6,
+      "sha256": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8"
+    },
+    {
+      "responseCount": 6,
+      "sha256": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031"
+    },
+    {
+      "responseCount": 3,
+      "sha256": "14d0617d38d7625f9470ed931c4c7e849bba5d9472bc8e39983dd1a359118dfd"
+    }
+  ]
+}

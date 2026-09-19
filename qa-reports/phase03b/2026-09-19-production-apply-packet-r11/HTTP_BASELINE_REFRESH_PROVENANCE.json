@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R11",
+  "historicalSourcePacket": "R10",
+  "pgNetProvenanceEvidenceCommit": "64ee3b24e270a590656590e55312a1dd7326ab88",
+  "r10OwnerAcceptedResponseCount": 6,
+  "r10OwnerAcceptedFingerprint": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031",
+  "laterObservedResponseCount": 3,
+  "laterObservedFingerprint": "14d0617d38d7625f9470ed931c4c7e849bba5d9472bc8e39983dd1a359118dfd",
+  "historicalClassification": "DIAGNOSTIC_HISTORY_ONLY",
+  "authorizationUse": "FORBIDDEN",
+  "r10AbsoluteEqualityGate": "SUPERSEDED_BY_R11_RUN_RELATIVE_INVARIANT",
+  "productionApplyAuthorized": false,
+  "productionMutations": "NONE"
+}
