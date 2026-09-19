@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "cli": "2.116.0",
+  "acceptedLedgerPlan": [
+    "20240202000000_new_pending.sql"
+  ],
+  "afterHistoricalLedgerRowRemovedPlan": [
+    "20240101000000_historical_support.sql",
+    "20240202000000_new_pending.sql"
+  ],
+  "historicalSupportBecamePending": true,
+  "productionInputsAccepted": false,
+  "productionMutations": "NONE",
+  "temporaryInfrastructureDestroyed": true
+}
