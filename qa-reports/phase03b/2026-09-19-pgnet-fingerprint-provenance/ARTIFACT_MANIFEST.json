@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "promptId": "FLAGSTONE-P03B-PGNET-FINGERPRINT-PROVENANCE-20260919",
+  "root": "qa-reports/phase03b/2026-09-19-pgnet-fingerprint-provenance",
+  "artifactCount": 4,
+  "artifacts": [
+    {
+      "path": "PG_NET_CALLSITE_READ_ONLY.sql",
+      "sha256": "4723521433e69594d28c0cd43b8558d636c613041230dbfb23d2607950f1b43e"
+    },
+    {
+      "path": "PG_NET_CORRELATION_READ_ONLY.sql",
+      "sha256": "cc1d68d66ea606db6fd629ec055e4d3f92a88f8e8cf6bd991adf6e252b6421b0"
+    },
+    {
+      "path": "PG_NET_FINGERPRINT_PROVENANCE_RESOLUTION.json",
+      "sha256": "1ff1a0f67a97e6626797043adec7af08dac383da83ef71ff0542da238c856d6b"
+    },
+    {
+      "path": "PG_NET_PROVENANCE_READ_ONLY.sql",
+      "sha256": "980451a2132ce9066286c1c50de3ed0f256628d64ea53e8ed2c238c970457cb5"
+    }
+  ]
+}

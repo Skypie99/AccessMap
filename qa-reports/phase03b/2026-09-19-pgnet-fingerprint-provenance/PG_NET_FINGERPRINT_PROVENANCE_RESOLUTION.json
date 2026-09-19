@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "promptId": "FLAGSTONE-P03B-PGNET-FINGERPRINT-PROVENANCE-20260919",
+  "outcome": "PASS",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "targetIdentity": {
+    "status": "PASS",
+    "projectId": "kldlwszpfkdmsjrjhjym",
+    "projectRef": "kldlwszpfkdmsjrjhjym",
+    "projectStatus": "ACTIVE_HEALTHY",
+    "databaseHost": "db.kldlwszpfkdmsjrjhjym.supabase.co",
+    "region": "us-west-2",
+    "queryTransport": "supabase db query --linked --project-ref kldlwszpfkdmsjrjhjym",
+    "queryTransactionReadOnly": true
+  },
+  "sourceLineage": {
+    "r10Packet": "0ba40b4ff027e043edf441ea24fe2be1eae5f9bc",
+    "r10Report": "17c411ece55cc831f647e7d9d1dfba620cb5e9ed",
+    "sourceR9Review": "097e5a6acbf8d78e54d94032b9b2d5edc90760eb",
+    "r10PacketIsAncestor": true
+  },
+  "fingerprints": {
+    "algorithm": "SHA-256 of UTF-8 rows ordered by id NULLS FIRST, created; each row is id<TAB>created_utc_microseconds<TAB>status_code<TAB>timed_out<TAB>ERROR|NO_ERROR joined by LF with no terminal LF",
+    "historicalAccepted": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8",
+    "r10Observed": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031",
+    "current": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031",
+    "currentMatchesR10": true,
+    "locallyRecomputedByIndependentSql": true
+  },
+  "finalSnapshot": {
+    "capturedAtUtc": "2026-09-19T08:10:52.956024Z",
+    "transactionReadOnly": "on",
+    "httpQueueCount": 0,
+    "httpQueueRequestIds": [],
+    "httpResponseCount": 6,
+    "httpResponseFingerprint": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031",
+    "activeSessionsExcludingSelf": [],
+    "nonInternalResponseTriggers": [],
+    "customResponseRoutines": [],
+    "customResponseViews": [],
+    "pgCronInstalled": false,
+    "pgNetVersion": "0.20.0",
+    "pgNetTtl": "6 hours",
+    "pgNetBatchSize": 200
+  },
+  "historicalBaselineDisposition": {
+    "missingHistoricalIds": [67, 68, 69, 70, 71, 72],
+    "missingCount": 6,
+    "classification": "ASYNC_TTL_CLEANUP_WHEN_LATER_REQUESTS_WOKE_WORKER",
+    "reason": "All six accepted rows were older than pg_net.ttl. The later request batch caused normal worker processing; pg_net deletes waiting queue rows on execution, stores responses, and retains responses for a bounded TTL. No deletion or cleanup was invoked by this adjudication or by R10."
+  },
+  "currentRows": [
+    {
+      "responseRowIdentity": 73,
+      "requestId": 73,
+      "createdUtc": "2026-09-19T07:50:52.527715Z",
+      "statusCode": 200,
+      "timedOut": false,
+      "hasError": false,
+      "ageSecondsAtFinalSnapshot": 1200,
+      "correspondingQueueEntryExists": false,
+      "historyCreatedUtc": "2026-09-19T07:50:52.446681Z",
+      "responseDelayMs": 81.034,
+      "historyIdentitySha256": "ab58adf15469c46d26ad34c548252b3b9108d1aedc5adb3f8daf1153477b7a65",
+      "flagIdentitySha256": "1564f8101b7f02166a3de92fd54e8e330a94c1283859a5fcc13166d90281888f",
+      "statusTransition": "open->resolved",
+      "classification": "TERMINAL_INERT_RETAINED_PG_NET_RESPONSE_HISTORY"
+    },
+    {
+      "responseRowIdentity": 74,
+      "requestId": 74,
+      "createdUtc": "2026-09-19T07:51:02.898610Z",
+      "statusCode": 400,
+      "timedOut": false,
+      "hasError": false,
+      "ageSecondsAtFinalSnapshot": 1190,
+      "correspondingQueueEntryExists": false,
+      "historyCreatedUtc": "2026-09-19T07:51:02.886284Z",
+      "responseDelayMs": 12.326,
+      "historyIdentitySha256": "50981d976219eaaa9b184ac51140ea5283a0b575e90b879d40328db18059035a",
+      "flagIdentitySha256": "5f12bd0cdeb766d01da18e7abce1f2e0a94a14e57023c1806527fd8a898eb565",
+      "statusTransition": "open->resolved",
+      "classification": "TERMINAL_INERT_RETAINED_PG_NET_RESPONSE_HISTORY"
+    },
+    {
+      "responseRowIdentity": 75,
+      "requestId": 75,
+      "createdUtc": "2026-09-19T07:51:13.807611Z",
+      "statusCode": 400,
+      "timedOut": false,
+      "hasError": false,
+      "ageSecondsAtFinalSnapshot": 1179,
+      "correspondingQueueEntryExists": false,
+      "historyCreatedUtc": "2026-09-19T07:51:13.802452Z",
+      "responseDelayMs": 5.159,
+      "historyIdentitySha256": "7e8d42776cd9ada6e8bee34115300fe72fcfa0357a9d0b2314346a25ba9f2717",
+      "flagIdentitySha256": "32016636ca873eb0584dac901e39abfef5aad5258380e1634a2da31feedb0436",
+      "statusTransition": "verified->resolved",
+      "classification": "TERMINAL_INERT_RETAINED_PG_NET_RESPONSE_HISTORY"
+    },
+    {
+      "responseRowIdentity": 76,
+      "requestId": 76,
+      "createdUtc": "2026-09-19T07:51:22.334513Z",
+      "statusCode": 400,
+      "timedOut": false,
+      "hasError": false,
+      "ageSecondsAtFinalSnapshot": 1171,
+      "correspondingQueueEntryExists": false,
+      "historyCreatedUtc": "2026-09-19T07:51:22.328131Z",
+      "responseDelayMs": 6.382,
+      "historyIdentitySha256": "ee931aa616de1f0d6b439a9529c1dabc2013b2586153aa95a971c5e78a151a13",
+      "flagIdentitySha256": "53e8931ae3328ca53fa00bba8ece0ff789302ba36fb53c4eeaf1eb10cf4520b5",
+      "statusTransition": "open->resolved",
+      "classification": "TERMINAL_INERT_RETAINED_PG_NET_RESPONSE_HISTORY"
+    },
+    {
+      "responseRowIdentity": 77,
+      "requestId": 77,
+      "createdUtc": "2026-09-19T07:51:27.802633Z",
+      "statusCode": 200,
+      "timedOut": false,
+      "hasError": false,
+      "ageSecondsAtFinalSnapshot": 1165,
+      "correspondingQueueEntryExists": false,
+      "historyCreatedUtc": "2026-09-19T07:51:27.796848Z",
+      "responseDelayMs": 5.785,
+      "historyIdentitySha256": "dfb3c9c85aaf6dfb62bb738658ebcdcabd8cd44f5f9c488c758904fc203852cb",
+      "flagIdentitySha256": "d36f10309718b2b8f5ede0aa28fd5b4ac0d8da550c53dc6af5040e242d95d137",
+      "statusTransition": "open->resolved",
+      "classification": "TERMINAL_INERT_RETAINED_PG_NET_RESPONSE_HISTORY"
+    },
+    {
+      "responseRowIdentity": 78,
+      "requestId": 78,
+      "createdUtc": "2026-09-19T07:53:20.534177Z",
+      "statusCode": 200,
+      "timedOut": false,
+      "hasError": false,
+      "ageSecondsAtFinalSnapshot": 1052,
+      "correspondingQueueEntryExists": false,
+      "historyCreatedUtc": "2026-09-19T07:53:20.468055Z",
+      "responseDelayMs": 66.122,
+      "historyIdentitySha256": "9869d6ca4564d93c6c3ef137e97a18400e4c658ac6278e9889cda220f8b605bc",
+      "flagIdentitySha256": "7977734123eff0eb0263b8f354c7ebe6225dc9e7a0ecfc7a419bdb4763ee5963",
+      "statusTransition": "open->verified",
+      "classification": "TERMINAL_INERT_RETAINED_PG_NET_RESPONSE_HISTORY"
+    }
+  ],
+  "provenance": {
+    "status": "COMPLETE",
+    "newOrChangedCurrentRowCount": 6,
+    "symmetricIdentityDifferenceCount": 12,
+    "allRowsTerminal": true,
+    "allRowsInertNow": true,
+    "allRowsHaveNoQueueEntry": true,
+    "allSixStatusHistoryPairsWithin100ms": true,
+    "origin": "Six public.flags status updates committed between 07:50:52Z and 07:53:20Z. The single enabled AFTER UPDATE FOR EACH ROW trigger public.flag_status_notify_trigger invoked public.notify_flag_status_webhook(), whose production definition calls net.http_post using a Vault-backed scoped endpoint.",
+    "triggerDefinitionSha256": "fccf3b0ad6af97f1a22aa2610d7901c5241a1936b0c1c0b039602914751680d0",
+    "functionDefinitionSha256": "144ebfd0bd81a2f448382a6961447b5cc393a68fe7b175fc61f91a3f140dab49",
+    "userAndRawFlagIdentitiesQueried": false,
+    "predatesR7": false,
+    "predatesR8": false,
+    "predatesR9": false,
+    "predatesR10Work": false,
+    "occurredDuringR10Work": true,
+    "createdByR10Preflight": false,
+    "createdByCurrentPhase03BProcess": false,
+    "phase03bReason": "All six responses predate the R10 live query; the last response was created at 07:53:20.534177Z and the target-pinned R10 transaction-read-only query began at 07:53:22.080Z. The R10 operation log contains no production write, controller run, quiescence, gate, or outbound HTTP action; it records local artifact work followed by the read-only query."
+  },
+  "r10OperationAudit": {
+    "sessionId": "01a0b89d-4bfd-7772-a589-3bca05a83270",
+    "sessionSha256": "90bc0e99c78287d29146c81d47d08e5fe6a855f133892c44f3995bdb4407918d",
+    "r10LiveQueryBeganUtc": "2026-09-19T07:53:22.080Z",
+    "r10LiveQueryEndedUtc": "2026-09-19T07:53:24.394Z",
+    "r10LiveQueryTransactionReadOnly": true,
+    "productionControllerExecuted": false,
+    "quiescenceEntered": false,
+    "productionMutation": false,
+    "outboundHttpInvokedByR10": false
+  },
+  "activeSideEffectAssessment": {
+    "risk": "NONE",
+    "pendingPgNetRequests": 0,
+    "reason": "The queue is empty in the R10 snapshot and in both fresh snapshots; every current response is terminal with no timeout or pg_net error and no corresponding queue row. There are no response-table triggers, custom response-reading routines or views, or pg_cron. Response rows cannot themselves enqueue or retry work."
+  },
+  "baselineUpdate": {
+    "safe": true,
+    "acceptedCandidateCount": 6,
+    "acceptedCandidateFingerprint": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031",
+    "boundedUse": "Use only as the exact HTTP response baseline for a separately owner-authorized R10 read-only preflight rerun. Require queue zero and exact fingerprint equality immediately before and after; HOLD on any drift. This artifact does not authorize quiescence, controller execution, migration apply, deploy, release, or Phase 03C."
+  },
+  "evidence": {
+    "r10ServerStateSha256": "3163fdf61c9c9908574c58d7da1d8a9068aff36bd51f74c3c3d679c89a5bb118",
+    "r10SummarySha256": "40ec03181c3a38c0cd287df56572f68c4cc1d63ce95b5508d7b9eb68eadfdfd7",
+    "provenanceSqlSha256": "980451a2132ce9066286c1c50de3ed0f256628d64ea53e8ed2c238c970457cb5",
+    "callsiteSqlSha256": "4723521433e69594d28c0cd43b8558d636c613041230dbfb23d2607950f1b43e",
+    "correlationSqlSha256": "cc1d68d66ea606db6fd629ec055e4d3f92a88f8e8cf6bd991adf6e252b6421b0",
+    "successfulReadOnlyCapturesUtc": [
+      "2026-09-19T08:04:44.264259Z",
+      "2026-09-19T08:08:14.856504Z",
+      "2026-09-19T08:09:35.980442Z",
+      "2026-09-19T08:10:52.956024Z"
+    ],
+    "failedReadOnlyQuery": {
+      "errorCode": "42P01",
+      "reason": "Initial call-site query used the wrong pg_stat_statements schema; no data was returned and the transaction was read only.",
+      "productionMutation": false
+    }
+  },
+  "scopeDeclarations": {
+    "productionMutations": "NONE",
+    "quiescenceEntered": false,
+    "productionApplyExecuted": false,
+    "oneRunAuthorizationStatus": "UNUSED",
+    "pushes": "NONE",
+    "mainMerges": "NONE",
+    "phase03cStarted": false,
+    "credentialsHeadersBodiesOrPrivatePayloadsCaptured": false
+  },
+  "nextSafeAction": "OWNER_AUTHORIZE_R10_HTTP_BASELINE_REFRESH_AND_READ_ONLY_PREFLIGHT_RERUN_PINNING_DB09CD0F61B4405A2540BE7541B690DF4FA52BD7697C98C1E7E88D37A3F99031"
+}
