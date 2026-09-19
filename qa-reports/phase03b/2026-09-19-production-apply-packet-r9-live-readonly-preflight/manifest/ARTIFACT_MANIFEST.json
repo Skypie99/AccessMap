@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R9",
+  "root": "/Users/skypie/AccessMap-codex/flagstone-p03b-r9-transport-exactness-20260918/qa-reports/phase03b/2026-09-19-production-apply-packet-r9-live-readonly-preflight",
+  "artifactCount": 5,
+  "artifacts": [
+    {
+      "path": "LIVE_READ_ONLY_PREFLIGHT_SUMMARY.json",
+      "size": 1984,
+      "sha256": "b3a88352106b73bc87f28f1f90fe13cf3426911a814a51cf091ebe37bcd2647c"
+    },
+    {
+      "path": "PRIVACY_SCAN.json",
+      "size": 192,
+      "sha256": "260100249dfa1995595e6d295b2dbd9e72cf1f43724366af479152ef4f1ee542"
+    },
+    {
+      "path": "SERVER_STATE_CLASSIFICATION.json",
+      "size": 5811,
+      "sha256": "f37e2f6a61f78135dbe876c8ba6d49b62a66100cd71652e58c8edbaab7323c2d"
+    },
+    {
+      "path": "server-state.stderr.log",
+      "size": 254,
+      "sha256": "2a0d79f732708c11678f9a21c9764d6a6a7a81d66e983920e296e9cb43176f15"
+    },
+    {
+      "path": "server-state.stdout.log",
+      "size": 3097,
+      "sha256": "1a2bdc1b6b6a81d715e12ff3cd9b2c21d2fbc196b56356985bb11c76252a013b"
+    }
+  ]
+}

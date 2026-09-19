@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R9",
+  "evidenceDirectory": "qa-reports/phase03b/2026-09-19-production-apply-packet-r9-live-readonly-preflight",
+  "evidenceManifestSha256": "461b18d51242b809dd532c824ff323fd13808e4e194daa162346a413ee9a7a66",
+  "evidenceHashListSha256": "e27e8818fa83b0fc40e8b9fde8dd8e54082dc803837df9127c42ef1bdc511867",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "transportContainerExactValidation": "PASS",
+  "transportRowExactKeyValidation": "PASS",
+  "liveReadOnlyServerStatePreflight": "PASS",
+  "liveTransactionReadOnly": true,
+  "entryClassification": "ENTRY_CONFIRMED_NOT_COMMITTED",
+  "gateState": "GATE_ABSENT",
+  "applyClassification": "APPLY_NOT_STARTED",
+  "productionMutations": "NONE",
+  "quiescenceEntered": false,
+  "productionApplyExecuted": false
+}

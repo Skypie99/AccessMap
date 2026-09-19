@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R9",
+  "localValidationChildren": 4,
+  "numericChildExits": [0, 0, 0, 0],
+  "allDisposableValidationRootsDestroyed": true,
+  "productionObjectsCreated": 0,
+  "stagingObjectsCreated": 0,
+  "quiescenceEntered": false,
+  "productionApplyExecuted": false,
+  "productionMutations": "NONE",
+  "stagingMutations": "NONE",
+  "status": "PASS"
+}

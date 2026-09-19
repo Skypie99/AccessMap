@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R9",
+  "sourceR8PacketCommit": "d2632f1dcf9b21f67f95c27fa37794d84dc96391",
+  "sourceR8IndependentReviewCommit": "f7d62d482372ae062b58d1bd240cdc5cc5e229bb",
+  "rootDefectCount": 1,
+  "entries": [
+    {
+      "id": "R9-D1",
+      "finding": "R8 resultRow exact-checked row cardinality but only checked presence of the requested row key. It accepted unknown sibling transport keys in both proven wrappers and accepted an unproven bare keyed-object fallback.",
+      "exactFailureShapes": [
+        "[{phase03b_server_state_r8: <snapshot>, unexpected_transport_key: true}]",
+        "{boundary: <hex>, rows: [{phase03b_server_state_r8: <snapshot>, unexpected_transport_key: true}], warning: <bound warning>}",
+        "{phase03b_server_state_r8: <snapshot>}"
+      ],
+      "reviewEvidencePath": "qa-reports/phase03b/2026-09-18-production-apply-packet-r8-independent-review/ARRAY_NORMALIZATION_REVIEW.json",
+      "repair": "Accept only the two independently evidenced transport containers: a one-row array or the exact boundary/rows/warning wrapper. Require exactly one plain-object row whose sole key is the requested receipt key. Remove the bare-object fallback.",
+      "acceptance": "Nineteen R9 transport tests cover exact accepted forms, cardinality, type, unknown and missing keys, legacy aliases, wrapper binding, snapshot exactness, contradictions, bare-object rejection, and proof that invalid transport cannot reach classification.",
+      "candidateChangeRequired": false
+    }
+  ],
+  "preservedR8AndR7": {
+    "status": "PASS_NOT_REOPENED",
+    "replay": "The R9 validator preserves all 182 accepted R8 checks and executes the untouched 172-check source R7 replay from the source R7 packet directory.",
+    "controls": [
+      "EXACT_KEY_VALIDATION",
+      "UNKNOWN_KEY_REJECTION",
+      "NESTED_UNKNOWN_KEY_REJECTION",
+      "CONTRADICTION_REJECTION",
+      "SERVER_STATE_CLASSIFIER_HASH_PINNING",
+      "MAX_QUIESCENCE_HARD_LATCH",
+      "MAX_QUIESCENCE_LATCH_IRREVERSIBLE",
+      "SINGLE_RESTORATION_DISPATCHER",
+      "RESTORATION_AFTER_600S",
+      "ERROR_PATH_RESTORATION_BYPASS"
+    ]
+  }
+}

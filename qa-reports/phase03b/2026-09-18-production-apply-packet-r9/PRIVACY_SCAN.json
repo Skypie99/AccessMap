@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R9",
+  "privacySafe": true,
+  "matchingValuesRetained": false,
+  "scannedFileCount": 55,
+  "findingCount": 0,
+  "findings": [],
+  "status": "PASS"
+}
