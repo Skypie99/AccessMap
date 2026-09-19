@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R8",
+  "sourceR7PacketCommit": "4dd4ebd7ae6295c8ebb204583f42932db7fb4c95",
+  "sourceR7IndependentReviewCommit": "f39e126f7573d8e218e0fbbf49326c395cb301e2",
+  "rootDefectCount": 1,
+  "entries": [
+    {
+      "id": "R8-D1",
+      "finding": "resultRow accepted only the object rows wrapper and direct keyed object forms. The owner preflight returned a one-element row array, so the whole array reached observed.snapshot and matched zero object branches.",
+      "exactFailureShape": "[{phase03b_server_state_r7: <snapshot object>}]",
+      "schemaPath": "#/$defs/serverObserved/properties/snapshot/oneOf",
+      "branchA": "serverSnapshotFailure: closed object requiring querySucceeded=false and captureError",
+      "branchB": "serverSnapshotSuccess: closed object requiring querySucceeded=true plus the exact read-only capture keys",
+      "overlap": "NONE. The required querySucceeded const values are mutually exclusive; the reported oneOf error was a zero-match container-shape failure, not a two-match schema overlap.",
+      "repair": "Strictly unwrap exactly one CLI row from the legacy array wrapper, current rows wrapper, or direct keyed row; reject missing, malformed, or multi-row containers before schema validation.",
+      "acceptance": "The retained owner array fixture extracts to one object and matches exactly the success branch. Missing discriminator, contradictory branch properties, raw arrays, unknown snapshot keys, unknown nested keys, and multi-row wrappers fail closed.",
+      "candidateChangeRequired": false
+    }
+  ],
+  "preservedR7": {
+    "status": "PASS_NOT_REOPENED",
+    "replay": "The untouched source R7 SQL and control validators are executed from the source R7 packet directory.",
+    "controls": [
+      "EXACT_KEY_VALIDATION",
+      "UNKNOWN_KEY_REJECTION",
+      "NESTED_UNKNOWN_KEY_REJECTION",
+      "CONTRADICTION_REJECTION",
+      "SERVER_STATE_CLASSIFIER_HASH_PINNING",
+      "MAX_QUIESCENCE_HARD_LATCH",
+      "MAX_QUIESCENCE_LATCH_IRREVERSIBLE",
+      "SINGLE_RESTORATION_DISPATCHER",
+      "RESTORATION_AFTER_600S",
+      "ERROR_PATH_RESTORATION_BYPASS"
+    ]
+  }
+}
