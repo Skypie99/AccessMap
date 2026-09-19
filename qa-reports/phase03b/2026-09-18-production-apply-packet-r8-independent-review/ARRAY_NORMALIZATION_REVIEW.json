@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "review": "FLAGSTONE-P03B-R8-INDEPENDENT-REVIEW-20260918",
+  "sourceCommit": "d2632f1dcf9b21f67f95c27fa37794d84dc96391",
+  "implementation": "qa-reports/phase03b/2026-09-18-production-apply-packet-r8/r8_control_lib.mjs:334-350",
+  "status": "HOLD",
+  "rootCauseClaim": {
+    "count": 1,
+    "classification": "ARRAY_WRAPPER_NORMALIZATION_DEFECT",
+    "independentlyConfirmed": true
+  },
+  "cases": [
+    {
+      "name": "exact_one_row_live_shaped_array",
+      "expected": "ACCEPT",
+      "observed": "ACCEPT",
+      "pass": true
+    },
+    {
+      "name": "empty_array",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "pass": true
+    },
+    {
+      "name": "two_row_array",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "pass": true
+    },
+    {
+      "name": "scalar",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "pass": true
+    },
+    {
+      "name": "null",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "pass": true
+    },
+    {
+      "name": "one_row_array_with_expected_key_and_unknown_sibling_key",
+      "expected": "REJECT",
+      "observed": "ACCEPT",
+      "pass": false,
+      "finding": "resultRow checks presence of the expected key but not the exact row-wrapper key set"
+    },
+    {
+      "name": "one_row_array_missing_expected_key",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "pass": true
+    },
+    {
+      "name": "bare_direct_keyed_object",
+      "expected": "REJECT_UNLESS_REQUIRED_AND_PROVEN",
+      "observed": "ACCEPT",
+      "pass": false,
+      "finding": "the live and fixture contracts prove array and rows wrappers, not a bare keyed object"
+    },
+    {
+      "name": "current_rows_wrapper_exact_one",
+      "expected": "ACCEPT",
+      "observed": "ACCEPT",
+      "pass": true
+    },
+    {
+      "name": "current_rows_wrapper_row_with_unknown_sibling_key",
+      "expected": "REJECT",
+      "observed": "ACCEPT",
+      "pass": false,
+      "finding": "the current rows transport has the same non-exact row-wrapper acceptance"
+    }
+  ],
+  "schemaResults": {
+    "successBranchMatches": 1,
+    "failureBranchMatches": 1,
+    "contradictoryStateMatches": 0,
+    "mutuallyExclusiveBranches": true,
+    "unknownSnapshotKeyRejected": true,
+    "nestedUnknownSnapshotKeyRejected": true
+  },
+  "conclusion": "R8 fixes cardinality and extraction, but does not satisfy exact wrapper-key rejection and retains an unproven bare-object fallback."
+}

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "review": "FLAGSTONE-P03B-R8-INDEPENDENT-REVIEW-20260918",
+  "r8PacketEvidenceCommit": "d2632f1dcf9b21f67f95c27fa37794d84dc96391",
+  "r8ReportCommit": "25b5f3e8e42b382695611ae653187616d9ea9089",
+  "sourceR7PacketCommit": "4dd4ebd7ae6295c8ebb204583f42932db7fb4c95",
+  "sourceR7IndependentReviewCommit": "f39e126f7573d8e218e0fbbf49326c395cb301e2",
+  "candidateSha": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTreeExpected": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "candidateTreeObserved": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "packetManifest": {
+    "verified": 48,
+    "failed": 0
+  },
+  "nonQaDeltaFromCandidateToR8PacketCount": 0,
+  "candidateBytesChanged": false,
+  "exactTwoMigrationsOnly": true,
+  "migrations": [
+    {
+      "filename": "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "sha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11"
+    },
+    {
+      "filename": "20260915210413_phase03b_points_integrity.sql",
+      "sha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5"
+    }
+  ],
+  "typescriptEnvironmentLimitation": "NON_BLOCKING_ENVIRONMENT_LIMITATION",
+  "typescriptRationale": "The R8 executable path is JavaScript and SQL using Node built-ins, repository-local modules, and the pinned Supabase CLI; the independent local replay and live read-only path both executed without the three unresolved application packages."
+}

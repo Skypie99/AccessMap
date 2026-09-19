@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "review": "FLAGSTONE-P03B-R8-INDEPENDENT-REVIEW-20260918",
+  "capturedAtUtc": "2026-09-19T06:30:17.974Z",
+  "sourceCommit": "d2632f1dcf9b21f67f95c27fa37794d84dc96391",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "targetIdentity": "PASS",
+  "command": [
+    "supabase",
+    "db",
+    "query",
+    "--linked",
+    "--project-ref",
+    "kldlwszpfkdmsjrjhjym",
+    "--file",
+    "qa-reports/phase03b/2026-09-18-production-apply-packet-r8/SERVER_STATE_ADJUDICATE.sql",
+    "--output-format",
+    "json"
+  ],
+  "cliVersion": "2.116.0",
+  "step": {
+    "beganUtc": "2026-09-19T06:30:15.949Z",
+    "endedUtc": "2026-09-19T06:30:17.973Z",
+    "exitCode": 0,
+    "timedOut": false
+  },
+  "transportShape": {
+    "topLevelType": "object",
+    "topLevelKeys": [
+      "boundary",
+      "rows",
+      "warning"
+    ],
+    "rowsLength": 1,
+    "rowKeys": [
+      "phase03b_server_state_r8"
+    ],
+    "snapshotType": "object"
+  },
+  "classification": {
+    "status": "ENTRY_CONFIRMED_NOT_COMMITTED",
+    "entryClassification": "ENTRY_CONFIRMED_NOT_COMMITTED",
+    "gateState": "GATE_ABSENT",
+    "applyClassification": "APPLY_NOT_STARTED",
+    "transactionReadOnly": "on",
+    "ledgerCount": 85,
+    "ledgerUniqueCount": 85,
+    "ledgerDigest": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+    "phase03bVersions": [],
+    "candidateBackendCount": 0,
+    "httpQueueCount": 0,
+    "httpResponseCount": 6,
+    "httpResponseDigest": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8",
+    "temporaryFunctionCount": 0,
+    "rowTriggerCount": 0,
+    "truncateTriggerCount": 0,
+    "strictEnvelopeValidation": "VALIDATED_R8"
+  },
+  "privacyScan": {
+    "scannedFileCount": 3,
+    "findingCount": 0,
+    "matchingValuesRetained": false
+  },
+  "sourceEvidenceSha256": {
+    "SERVER_STATE_CLASSIFICATION.json": "f9c725154afc7a074eba83fe55e5bbfdd262e945ae4852f9654d48e5e5eaddd9",
+    "server-state.stdout.log": "c4d225352c72b0ae7c355ef86958b9a4963b702264860d51a30287922b2c349b",
+    "server-state.stderr.log": "2a0d79f732708c11678f9a21c9764d6a6a7a81d66e983920e296e9cb43176f15"
+  },
+  "productionMutations": "NONE",
+  "quiescenceEntered": false,
+  "productionApplyExecuted": false
+}

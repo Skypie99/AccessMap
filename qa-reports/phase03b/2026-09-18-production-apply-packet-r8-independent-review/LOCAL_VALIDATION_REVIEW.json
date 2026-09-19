@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "review": "FLAGSTONE-P03B-R8-INDEPENDENT-REVIEW-20260918",
+  "sourceCommit": "d2632f1dcf9b21f67f95c27fa37794d84dc96391",
+  "runner": "qa-reports/phase03b/2026-09-18-production-apply-packet-r8/run_local_validation.mjs",
+  "result": "PASS",
+  "localReplayCheckCount": 182,
+  "preservedR7ReplayCheckCount": 172,
+  "preservedR5BranchTests": {
+    "passed": 30,
+    "total": 30
+  },
+  "preservedR6BranchTests": {
+    "passed": 40,
+    "total": 40
+  },
+  "newR8ValidatorTests": {
+    "passed": 35,
+    "total": 35
+  },
+  "newR8SchemaTests": {
+    "passed": 10,
+    "total": 10
+  },
+  "numericChildExits": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "validationInfrastructureDestroyed": true,
+  "receiptSha256": "2aecefb8470c15ef14c8b4755b1a121aa11c6b600bfc72f0641ad4816dc22884",
+  "independentAdditionalProbes": {
+    "status": "HOLD",
+    "reason": "The authored 10/10 suite does not test exact keys on the transport row wrapper or reject the bare keyed-object fallback."
+  },
+  "preservedSafetyControls": {
+    "entryReceiptExactValidation": true,
+    "entryReceiptContradictionRejection": true,
+    "serverStateClassifierHashPinning": true,
+    "maximumQuiescenceHardLatch": true,
+    "maximumQuiescenceLatchIrreversible": true,
+    "singleRestorationDispatcher": true,
+    "restorationAfter600SecondsBlocked": true,
+    "partialApplyFailureMatrix": true,
+    "postApplyVerificationWhileQuiesced": true,
+    "quiescenceExitAtomicity": true,
+    "writeRestorationVerification": true
+  }
+}
