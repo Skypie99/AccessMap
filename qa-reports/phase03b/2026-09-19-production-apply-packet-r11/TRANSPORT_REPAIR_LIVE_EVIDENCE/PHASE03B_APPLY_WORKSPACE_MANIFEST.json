@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R11-TRANSPORT-REPAIR",
+  "target": "kldlwszpfkdmsjrjhjym",
+  "candidate": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "historySourceCommit": "cf683eac2f50a284d8dc897db98a91290e9b6bc0",
+  "historyLedgerSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+  "historySupportCount": 85,
+  "pendingMigrationCount": 2,
+  "pendingMigrations": [
+    "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+    "20260915210413_phase03b_points_integrity.sql"
+  ],
+  "pendingInventorySha256": "04aa33e53cb01b2419085a3b800b159b2528166fbdbd608cbdf3610aa46f0314",
+  "reconciledInventorySha256": "1c565520948cbc805564483cac7ec39d48907102a342e60355cbeccc2a725195"
+}

@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "target": "socket-only disposable PostgreSQL 17",
+  "tcpDisabled": true,
+  "productionInputsAccepted": false,
+  "checks": {
+    "pgNetPreflightUsesDatabaseT0": true,
+    "gateEnteredAlways": true,
+    "controllerEnvelopeGeneratedFromRawEntryAndProof": true,
+    "serverAdjudicationPinsExactGate": true,
+    "serverAdjudicationCapturesDefinitionHashes": true,
+    "insertBlocked": true,
+    "deleteBlocked": true,
+    "truncateBlocked": true,
+    "idChangeBlocked": true,
+    "statusChangeBlocked": true,
+    "replicaModeStatusChangeBlocked": true,
+    "unrelatedUpdateAllowed": true,
+    "migrationOneAppliedWithGate": true,
+    "migrationTwoAppliedWithGate": true,
+    "phase03bConstraintsAndIndexesPinned": true,
+    "statusAndHistoryStableWhileQuiesced": true,
+    "entryInvariantStable": true,
+    "preDropOidOwnerHashVerification": true,
+    "exitRefusesIdentityDriftAndDropsNothing": true,
+    "gateRemovedAtomically": true,
+    "postExitReadOnlyProofExecutable": true,
+    "writeRestoredAfterExit": true
+  },
+  "databaseT0": "2026-09-19T20:27:04.504073Z",
+  "pgNetTtl": "6h",
+  "adjudicatedGate": {
+    "state": "GATE_PRESENT_EXACT",
+    "mismatches": [],
+    "runtimeBindings": {
+      "functionOid": 17167,
+      "tableOid": 16528,
+      "rowTriggerOid": 17168,
+      "truncateTriggerOid": 17169
+    }
+  },
+  "phase03bConstraintIndexSha256": "cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a",
+  "tempDestroyed": true
+}

@@ -16,6 +16,10 @@ export const EXPECTED_GATE_IDENTITIES = JSON.parse(gateManifestBytes.toString('u
 export const GATE_MANIFEST_SHA256 = createHash('sha256').update(gateManifestBytes).digest('hex');
 export const EXPECTED_FILENAMES = EXPECTED.migrations.map((migration) => migration.filename);
 export const TARGET = EXPECTED.productionTarget;
+export const EXPECTED_PRODUCTION_LEDGER = JSON.parse(readFileSync(join(
+  PACKET,
+  '../../phase03a/2026-09-15-production-apply/PRODUCTION_EXPECTED_POST_LEDGER.json',
+), 'utf8'));
 export const MAXIMUM_QUIESCENCE_WINDOW_SECONDS = EXPECTED.pgNet.maximumQuiescenceWindowSeconds;
 export const ENVELOPE_SCHEMA_VERSION = 'flagstone.phase03b.r8-envelope.v1';
 export const PRODUCER_VERSION = 'flagstone.phase03b.packet-r8.v1';
@@ -58,6 +62,11 @@ const INVENTORY_KEYS = [
   'migrationFileCount', 'seedFiles', 'roleFiles', 'otherSqlFiles', 'files',
 ];
 const INVENTORY_FILE_KEYS = ['relativePath', 'filename', 'size', 'sha256'];
+const PRODUCTION_LEDGER_KEYS = [
+  'receipt', 'captured_at_utc', 'transaction_read_only', 'ledger_count', 'ledger_unique_count',
+  'ledger_latest_version', 'ledger_ordered_version_name_sha256', 'rows',
+];
+const PRODUCTION_LEDGER_ROW_KEYS = ['version', 'name'];
 const DEADLINE_KEYS = [
   'originMonoMs', 'entryCompleteMonoMs', 'applyCompleteMonoMs',
   'postApplyVerificationCompleteMonoMs', 'maximumQuiescenceEscalationMonoMs',
@@ -437,6 +446,38 @@ export function resultRow(payload, key) {
   return row[key];
 }
 
+export function validateProductionMigrationLedger(ledger) {
+  assertExactKeys(ledger, PRODUCTION_LEDGER_KEYS, 'R11 production migration ledger');
+  requireExact(ledger, {
+    receipt: 'phase03b_r11_production_migration_ledger_read_only',
+    transaction_read_only: 'on',
+    ledger_count: EXPECTED_PRODUCTION_LEDGER.expectedRowCount,
+    ledger_unique_count: EXPECTED_PRODUCTION_LEDGER.expectedRowCount,
+    ledger_latest_version: EXPECTED.baseline.ledgerLatestVersion,
+    ledger_ordered_version_name_sha256: EXPECTED_PRODUCTION_LEDGER.expectedOrderedSha256,
+  }, 'R11 production migration ledger');
+  requireUtc(ledger.captured_at_utc, 'R11 production migration ledger captured_at_utc');
+  if (!Array.isArray(ledger.rows) || ledger.rows.length !== EXPECTED_PRODUCTION_LEDGER.expectedRowCount) {
+    throw new Error('R11 production migration ledger row count mismatch');
+  }
+  const seen = new Set();
+  for (const [index, row] of ledger.rows.entries()) {
+    assertExactKeys(row, PRODUCTION_LEDGER_ROW_KEYS, `R11 production migration ledger row[${index}]`);
+    if (!/^\d{14}$/.test(row.version) || typeof row.name !== 'string' || row.name.length === 0) {
+      throw new Error(`R11 production migration ledger row[${index}] is malformed`);
+    }
+    if (seen.has(row.version)) throw new Error(`R11 production migration ledger duplicate version: ${row.version}`);
+    seen.add(row.version);
+    if (index > 0 && ledger.rows[index - 1].version >= row.version) {
+      throw new Error('R11 production migration ledger rows are not strictly ordered');
+    }
+  }
+  const digest = sha256Text(`${ledger.rows.map((row) => `${row.version}\t${row.name}`).join('\n')}\n`);
+  if (digest !== ledger.ledger_ordered_version_name_sha256) throw new Error('R11 production migration ledger self-digest mismatch');
+  if (!deepEqual(ledger.rows, EXPECTED_PRODUCTION_LEDGER.rows)) throw new Error('R11 production migration ledger drift');
+  return 'VALIDATED_R11_PRODUCTION_LEDGER';
+}
+
 export function validateServerStateSnapshot(snapshot) {
   try {
     const branch = validateCompiledR8ServerSnapshot(snapshot);
@@ -520,6 +561,9 @@ export function assertExactInventory(inventory) {
 }
 
 export function validateDryRunPlan(payload) {
+  if (payload?._tag === 'Error' && payload?.error?.code === 'LegacyDbPushMissingLocalError') {
+    throw new Error('FAIL_CLOSED_LEGACY_DB_PUSH_MISSING_LOCAL: remote migration versions are absent from the reconciled workspace');
+  }
   if (payload.dryRun !== true || payload.upToDate !== false) throw new Error('Pre-apply plan is not a pending dry-run');
   if (JSON.stringify(payload.migrations) !== JSON.stringify(EXPECTED_FILENAMES)) throw new Error('Pre-apply dry-run did not propose the exact frozen pair');
   if (!Array.isArray(payload.seeds) || payload.seeds.length !== 0 || !Array.isArray(payload.roles) || payload.roles.length !== 0) {

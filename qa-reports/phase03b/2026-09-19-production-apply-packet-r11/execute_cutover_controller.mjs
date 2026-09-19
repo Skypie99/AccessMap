@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildHermeticWorkdir } from './build_hermetic_workdir.mjs';
+import { verifyWorkdirAgainstManifest } from './build_hermetic_workdir.mjs';
 import { generateEvidenceManifest } from './generate_evidence_manifest.mjs';
 import {
   EXPECTED,
@@ -33,6 +33,7 @@ import {
   validateDryRunPlan,
   validateEntryAndImmediateProof,
   validateMonitorAgainstEntry,
+  validateProductionMigrationLedger,
   validateR8Envelope,
   validateServerStateEnvelope,
 } from './r8_control_lib.mjs';
@@ -71,6 +72,7 @@ const receipt = {
   automaticRetryAuthorized: false,
   automaticDestructiveRollbackAuthorized: false,
   quiescenceAutomaticallyReleasedOnTimeout: false,
+  migrationTransport: 'R11_RECONCILED_HISTORY_SUPPORT_PLUS_EXACT_TWO_PENDING',
   productionInnerApplyCommand: [
     'supabase', 'db', 'push', '--workdir', WORKDIR, '--linked', '--project-ref', TARGET,
     '--skip-vault', '--include-all', '--yes', '--output-format', 'json',
@@ -357,13 +359,28 @@ async function adjudicate(reason) {
 
 try {
   setControllerState('PREFLIGHT');
+  const ledgerStep = await runCaptured('00-preflight/production-ledger-read-only', 'supabase', [
+    'db', 'query', '--linked', '--project-ref', TARGET,
+    '--file', join(PACKET, 'PRODUCTION_MIGRATION_LEDGER_READ_ONLY.sql'), '--output-format', 'json',
+  ], monoMs() + 60_000, true);
+  requireSuccess(ledgerStep, 'production migration ledger read-only capture');
+  const productionLedger = resultRow(
+    parseCliJson(readFileSync(ledgerStep.stdoutPath, 'utf8')),
+    'phase03b_r11_production_migration_ledger_read_only',
+  );
+  validateProductionMigrationLedger(productionLedger);
+  const productionLedgerPath = join(evidence, '00-preflight/PRODUCTION_MIGRATION_LEDGER.json');
+  writeJson('00-preflight/PRODUCTION_MIGRATION_LEDGER.json', productionLedger);
+
   const builderDeadline = monoMs() + 30_000;
   const builderStep = await runCaptured('00-preflight/hermetic-builder', process.execPath, [
-    join(PACKET, 'build_hermetic_workdir.mjs'), `--output=${WORKDIR}`,
+    join(PACKET, 'build_hermetic_workdir.mjs'), `--output=${WORKDIR}`, `--ledger=${productionLedgerPath}`,
   ], builderDeadline);
   requireSuccess(builderStep);
   const inventory = readJson(join(WORKDIR, 'MIGRATION_INVENTORY.json'));
   writeJson('00-preflight/MIGRATION_INVENTORY.json', inventory);
+  writeJson('00-preflight/HISTORY_SUPPORT_INVENTORY.json', readJson(join(WORKDIR, 'HISTORY_SUPPORT_INVENTORY.json')));
+  writeJson('00-preflight/PHASE03B_APPLY_WORKSPACE_MANIFEST.json', readJson(join(WORKDIR, 'PHASE03B_APPLY_WORKSPACE_MANIFEST.json')));
 
   const planStep = await runCaptured('00-preflight/exact-plan', 'supabase', [
     'db', 'push', '--workdir', WORKDIR, '--linked', '--project-ref', TARGET,
@@ -443,6 +460,17 @@ try {
   setControllerState('ENTRY_COMMITTED_CONFIRMED_NORMAL_PATH');
 
   assertAutomationAllowed(escalationLatch, 'migration apply');
+  const preApplyWorkspace = verifyWorkdirAgainstManifest(WORKDIR, productionLedger);
+  writeJson('02-apply/PRE_APPLY_WORKSPACE_GUARD.json', {
+    status: 'PASS',
+    historyLedgerSha256: productionLedger.ledger_ordered_version_name_sha256,
+    historySupportCount: preApplyWorkspace.reconciledInventory.historySupportFileCount,
+    pendingMigrationCount: preApplyWorkspace.reconciledInventory.pendingMigrationFileCount,
+    pendingMigrations: preApplyWorkspace.reconciledInventory.files
+      .filter((file) => file.classification === 'PENDING_PHASE03B')
+      .map((file) => ({ filename: file.filename, sha256: file.sha256 })),
+    manifest: preApplyWorkspace.manifest,
+  });
   applySpawned = true;
   setControllerState('APPLY_SPAWNED');
   const applyStep = await runCaptured('02-apply/apply', 'supabase', [
