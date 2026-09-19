@@ -33,6 +33,7 @@ import {
   validateDryRunPlan,
   validateEntryAndImmediateProof,
   validateMonitorAgainstEntry,
+  validatePreApplyProductionMigrationLedger,
   validateProductionMigrationLedger,
   validateR8Envelope,
   validateServerStateEnvelope,
@@ -460,10 +461,23 @@ try {
   setControllerState('ENTRY_COMMITTED_CONFIRMED_NORMAL_PATH');
 
   assertAutomationAllowed(escalationLatch, 'migration apply');
-  const preApplyWorkspace = verifyWorkdirAgainstManifest(WORKDIR, productionLedger);
+  const preApplyLedgerStep = await runCaptured('02-apply/pre-apply-production-ledger-read-only', 'supabase', [
+    'db', 'query', '--linked', '--project-ref', TARGET,
+    '--file', join(PACKET, 'PRODUCTION_MIGRATION_LEDGER_READ_ONLY.sql'), '--output-format', 'json',
+  ], deadlines.applyCompleteMonoMs, false, true);
+  requireSuccess(preApplyLedgerStep, 'pre-apply production migration ledger read-only capture');
+  const preApplyProductionLedger = resultRow(
+    parseCliJson(readFileSync(preApplyLedgerStep.stdoutPath, 'utf8')),
+    'phase03b_r11_production_migration_ledger_read_only',
+  );
+  validatePreApplyProductionMigrationLedger(productionLedger, preApplyProductionLedger);
+  writeJson('02-apply/PRE_APPLY_PRODUCTION_MIGRATION_LEDGER.json', preApplyProductionLedger);
+
+  const preApplyWorkspace = verifyWorkdirAgainstManifest(WORKDIR, preApplyProductionLedger);
   writeJson('02-apply/PRE_APPLY_WORKSPACE_GUARD.json', {
     status: 'PASS',
-    historyLedgerSha256: productionLedger.ledger_ordered_version_name_sha256,
+    historySupportMode: preApplyWorkspace.manifest.historySupportMode,
+    historyLedgerSha256: preApplyProductionLedger.ledger_ordered_version_name_sha256,
     historySupportCount: preApplyWorkspace.reconciledInventory.historySupportFileCount,
     pendingMigrationCount: preApplyWorkspace.reconciledInventory.pendingMigrationFileCount,
     pendingMigrations: preApplyWorkspace.reconciledInventory.files

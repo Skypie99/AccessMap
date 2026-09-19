@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Local-only R11 transport builder. The workspace contains the exact accepted
 // production history support plus exactly two pending Phase 03B migrations.
-// History support is read from one immutable Git commit and is never an apply
-// candidate. This module performs no network operation.
+// History filenames are read from one immutable Git commit, but historical SQL
+// bodies are never copied. Each support file is an abort-first tripwire so an
+// unexpected pending selection cannot execute historical work.
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -19,6 +20,8 @@ import {
 const PACKET = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(PACKET, '../../..');
 export const HISTORY_SOURCE_COMMIT = 'cf683eac2f50a284d8dc897db98a91290e9b6bc0';
+export const HISTORY_SUPPORT_MODE = 'ABORT_FIRST_TRIPWIRE';
+export const HISTORY_SUPPORT_TRIPWIRE_ERROR = 'PHASE03B_HISTORY_SUPPORT_SELECTED_PENDING';
 const HISTORY_SOURCE_PATTERN = /^supabase\/(?:migrations|migrations-next|migrations-next\/phase03a)\/(\d{14})_[^/]+\.sql$/;
 const RECONCILED_INVENTORY_KEYS = [
   'schemaVersion', 'packetVersion', 'target', 'candidate', 'candidateTree', 'historySourceCommit',
@@ -34,6 +37,22 @@ function sha256Bytes(value) {
 
 function sha256File(file) {
   return sha256Bytes(readFileSync(file));
+}
+
+export function historySupportTripwire(version, filename) {
+  if (!/^\d{14}$/.test(version) || !/^\d{14}_[^/]+\.sql$/.test(filename) || !filename.startsWith(`${version}_`)) {
+    throw new Error('Invalid history-support tripwire identity');
+  }
+  return [
+    '-- PHASE03B HISTORY-SUPPORT TRIPWIRE. This is not a historical migration body.',
+    '-- If selected as pending, abort before any historical DDL, DML, or privilege change.',
+    'do $phase03b_history_support_tripwire$',
+    'begin',
+    `  raise exception '${HISTORY_SUPPORT_TRIPWIRE_ERROR}: ${version} ${filename}' using errcode = 'P0001';`,
+    'end',
+    '$phase03b_history_support_tripwire$;',
+    '',
+  ].join('\n');
 }
 
 function exactKeys(value, expected, label) {
@@ -165,6 +184,7 @@ export function validateReconciledWorkspaceInventory(inventory, ledgerInput = nu
   const history = inventory.files.filter((file) => file.classification === 'HISTORY_SUPPORT');
   const pending = inventory.files.filter((file) => file.classification === 'PENDING_PHASE03B');
   const expectedHistoryVersions = ledger.rows.map((row) => row.version);
+  const expectedHistorySources = historySourcePaths(ledger);
   if (inventory.totalMigrationFileCount !== ledger.rows.length + EXPECTED.migrations.length ||
       inventory.files.length !== inventory.totalMigrationFileCount ||
       inventory.historySupportFileCount !== ledger.rows.length || history.length !== ledger.rows.length ||
@@ -177,6 +197,14 @@ export function validateReconciledWorkspaceInventory(inventory, ledgerInput = nu
   }
   if (inventory.historyLedgerSha256 !== ledger.ledger_ordered_version_name_sha256) {
     throw new Error('Reconciled workspace history ledger digest mismatch');
+  }
+  for (const [index, file] of history.entries()) {
+    const expectedFilename = basename(expectedHistorySources[index].sourcePath);
+    const expectedBytes = historySupportTripwire(expectedHistorySources[index].version, expectedFilename);
+    if (file.filename !== expectedFilename || file.size !== Buffer.byteLength(expectedBytes) ||
+        file.sha256 !== sha256Bytes(expectedBytes)) {
+      throw new Error(`History-support tripwire mismatch: ${file.filename}`);
+    }
   }
   if (JSON.stringify(pending.map((file) => file.filename)) !== JSON.stringify(EXPECTED_FILENAMES) ||
       JSON.stringify(inventory.pendingVersions) !== JSON.stringify(EXPECTED.migrations.map((migration) => migration.version))) {
@@ -222,6 +250,7 @@ export function verifyWorkdirAgainstManifest(outputPath, ledgerInput = null) {
   const reconciledSha256 = sha256Bytes(JSON.stringify(reconciledInventory));
   if (manifest.pendingInventorySha256 !== pendingSha256 || manifest.reconciledInventorySha256 !== reconciledSha256 ||
       manifest.historyLedgerSha256 !== ledger.ledger_ordered_version_name_sha256 ||
+      manifest.historySupportMode !== HISTORY_SUPPORT_MODE ||
       manifest.historySupportCount !== ledger.rows.length || manifest.pendingMigrationCount !== EXPECTED.migrations.length) {
     throw new Error('Reconciled workspace changed after validation');
   }
@@ -246,8 +275,12 @@ export function buildHermeticWorkdir(outputPath, ledgerInput = null) {
 
   const historySources = historySourcePaths(ledger);
   for (const source of historySources) {
-    const bytes = git(['show', `${HISTORY_SOURCE_COMMIT}:${source.sourcePath}`], null);
-    writeFileSync(join(output, 'supabase/migrations', basename(source.sourcePath)), bytes, { mode: 0o600, flag: 'wx' });
+    const filename = basename(source.sourcePath);
+    writeFileSync(
+      join(output, 'supabase/migrations', filename),
+      historySupportTripwire(source.version, filename),
+      { mode: 0o600, flag: 'wx' },
+    );
   }
   for (const expected of EXPECTED.migrations) {
     const source = join(ROOT, 'supabase/migrations-next/phase03b', expected.filename);
@@ -266,6 +299,7 @@ export function buildHermeticWorkdir(outputPath, ledgerInput = null) {
     candidate: EXPECTED.candidate,
     candidateTree: EXPECTED.candidateTree,
     historySourceCommit: HISTORY_SOURCE_COMMIT,
+    historySupportMode: HISTORY_SUPPORT_MODE,
     historyLedgerSha256: ledger.ledger_ordered_version_name_sha256,
     historySupportCount: ledger.rows.length,
     pendingMigrationCount: EXPECTED.migrations.length,

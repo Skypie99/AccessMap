@@ -169,7 +169,7 @@ try {
     controller.includes('`--ledger=${productionLedgerPath}`') &&
     controller.includes("'db', 'push', '--workdir', WORKDIR, '--linked', '--project-ref', TARGET,\n    '--dry-run'");
   result.checks.controllerApplyUsesSameValidatedWorkspaceManifest =
-    controller.includes('verifyWorkdirAgainstManifest(WORKDIR, productionLedger)') &&
+    controller.includes('verifyWorkdirAgainstManifest(WORKDIR, preApplyProductionLedger)') &&
     controller.includes("'db', 'push', '--workdir', WORKDIR, '--linked', '--project-ref', TARGET,\n    '--skip-vault'") &&
     controller.includes('PRE_APPLY_WORKSPACE_GUARD.json');
   result.checks.controllerCapturesLedgerReadOnlyBeforeBuilder =

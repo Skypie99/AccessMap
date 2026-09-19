@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "promptId": "FLAGSTONE-P03B-R11-EXECUTION-TRANSPORT-REPAIR-20260919",
+  "status": "PASS",
+  "target": "kldlwszpfkdmsjrjhjym",
+  "supabaseCli": "2.116.0",
+  "productionLedger": {
+    "validation": "PASS_EXACT_ACCEPTED_85_ROW_LEDGER",
+    "transactionReadOnly": "on",
+    "rowCount": 85,
+    "latestVersion": "20260911120000",
+    "orderedVersionNameSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec"
+  },
+  "reconciledWorkspace": {
+    "validation": "PASS",
+    "historySourceCommit": "cf683eac2f50a284d8dc897db98a91290e9b6bc0",
+    "historySupportCount": 85,
+    "pendingMigrationCount": 2,
+    "pendingMigrations": [
+      {
+        "filename": "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+        "sha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11"
+      },
+      {
+        "filename": "20260915210413_phase03b_points_integrity.sql",
+        "sha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5"
+      }
+    ],
+    "historyLedgerSha256": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+    "pendingInventorySha256": "dd5cee3cfdf54677183ec3576b6554742dcc55832c707a580d71ccd74d93b8ce",
+    "reconciledInventorySha256": "c824eb5965094f13ebbdc61bbbc19b9f9acca372c485f3af0dfd05ec428c4a33"
+  },
+  "authoritativeDryRunPlan": {
+    "validation": "PASS_EXACT_TWO_PENDING_ONLY",
+    "dryRun": true,
+    "upToDate": false,
+    "pendingMigrationCount": 2,
+    "migrations": [
+      "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "20260915210413_phase03b_points_integrity.sql"
+    ],
+    "exactExpectedOrder": true,
+    "seeds": [],
+    "roles": []
+  },
+  "numericChildExits": {
+    "supabase-version": 0,
+    "production-ledger-read-only": 0,
+    "target-pinned-db-push-dry-run": 0
+  },
+  "productionMutations": "NONE",
+  "quiescenceEntered": false,
+  "controllerExecuted": false,
+  "productionApplyExecuted": false,
+  "temporaryWorkspaceDestroyed": true,
+  "capturedAtUtc": "2026-09-19T20:56:40.516Z",
+  "error": null
+}

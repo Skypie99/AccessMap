@@ -478,6 +478,16 @@ export function validateProductionMigrationLedger(ledger) {
   return 'VALIDATED_R11_PRODUCTION_LEDGER';
 }
 
+export function validatePreApplyProductionMigrationLedger(preflightLedger, preApplyLedger) {
+  validateProductionMigrationLedger(preflightLedger);
+  validateProductionMigrationLedger(preApplyLedger);
+  if (!deepEqual(preApplyLedger.rows, preflightLedger.rows) ||
+      preApplyLedger.ledger_ordered_version_name_sha256 !== preflightLedger.ledger_ordered_version_name_sha256) {
+    throw new Error('Production migration ledger changed between accepted plan and apply boundary');
+  }
+  return 'VALIDATED_R11_PRE_APPLY_PRODUCTION_LEDGER';
+}
+
 export function validateServerStateSnapshot(snapshot) {
   try {
     const branch = validateCompiledR8ServerSnapshot(snapshot);
@@ -563,6 +573,13 @@ export function assertExactInventory(inventory) {
 export function validateDryRunPlan(payload) {
   if (payload?._tag === 'Error' && payload?.error?.code === 'LegacyDbPushMissingLocalError') {
     throw new Error('FAIL_CLOSED_LEGACY_DB_PUSH_MISSING_LOCAL: remote migration versions are absent from the reconciled workspace');
+  }
+  const historyVersions = new Set(EXPECTED_PRODUCTION_LEDGER.rows.map((row) => row.version));
+  const selectedHistorySupport = Array.isArray(payload?.migrations)
+    ? payload.migrations.find((filename) => historyVersions.has(/^(\d{14})_/.exec(filename)?.[1]))
+    : null;
+  if (selectedHistorySupport) {
+    throw new Error(`FAIL_CLOSED_HISTORY_SUPPORT_SELECTED_PENDING: ${selectedHistorySupport}`);
   }
   if (payload.dryRun !== true || payload.upToDate !== false) throw new Error('Pre-apply plan is not a pending dry-run');
   if (JSON.stringify(payload.migrations) !== JSON.stringify(EXPECTED_FILENAMES)) throw new Error('Pre-apply dry-run did not propose the exact frozen pair');
