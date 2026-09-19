@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R10",
+  "ownerAcceptedFingerprint": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031",
+  "pgNetProvenanceEvidenceCommit": "64ee3b24e270a590656590e55312a1dd7326ab88",
+  "provenanceOutcome": "PASS",
+  "provenanceCurrentMatchesR10": true,
+  "provenanceLocallyRecomputedByIndependentSql": true,
+  "baselineUpdateSafe": true,
+  "provenanceSnapshotOnly": true,
+  "queueRequirement": 0,
+  "responseCountRequirement": 6,
+  "freshRerunOutcome": "HOLD",
+  "freshRerunObservedResponseCount": 3,
+  "freshRerunObservedFingerprint": "14d0617d38d7625f9470ed931c4c7e849bba5d9472bc8e39983dd1a359118dfd",
+  "freshRerunBaselineRepinned": false,
+  "scope": "Exact HTTP baseline refresh and read-only R10 preflight rerun only",
+  "productionApplyAuthorized": false,
+  "productionMutations": "NONE"
+}

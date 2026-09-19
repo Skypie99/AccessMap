@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "candidateSha": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "exactTwoMigrationsOnly": true,
+  "candidateBytesChanged": false,
+  "migrations": [
+    {
+      "order": 1,
+      "path": "supabase/migrations-next/phase03b/20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "sha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11"
+    },
+    {
+      "order": 2,
+      "path": "supabase/migrations-next/phase03b/20260915210413_phase03b_points_integrity.sql",
+      "sha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5"
+    }
+  ],
+  "verification": "sha256sum matched both frozen hashes; git diff --exit-code against candidate for both files returned 0; phase03b top-level migration inventory contained exactly these two SQL files"
+}

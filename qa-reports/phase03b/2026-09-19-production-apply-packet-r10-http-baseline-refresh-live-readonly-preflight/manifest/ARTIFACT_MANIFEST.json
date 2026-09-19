@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R10",
+  "root": "/Users/skypie/AccessMap-codex/flagstone-p03b-r10-preclassification-validation-20260919/qa-reports/phase03b/2026-09-19-production-apply-packet-r10-http-baseline-refresh-live-readonly-preflight",
+  "artifactCount": 5,
+  "artifacts": [
+    {
+      "path": "LIVE_READ_ONLY_PREFLIGHT_SUMMARY.json",
+      "size": 2356,
+      "sha256": "93f5061182d1320df2204cf13f95f120f2ce1592a04c9d6320b5b103b932c807"
+    },
+    {
+      "path": "PRIVACY_SCAN.json",
+      "size": 193,
+      "sha256": "ed3ffabf3c79db7d2b289b0a2c5795cb841f515325509c395a277b006da6ccd0"
+    },
+    {
+      "path": "SERVER_STATE_CLASSIFICATION.json",
+      "size": 5912,
+      "sha256": "e6d8909d23abe88353a25b2a2e515a272b47d52b1079bc302536e17a991c5538"
+    },
+    {
+      "path": "server-state.stderr.log",
+      "size": 254,
+      "sha256": "2a0d79f732708c11678f9a21c9764d6a6a7a81d66e983920e296e9cb43176f15"
+    },
+    {
+      "path": "server-state.stdout.log",
+      "size": 3097,
+      "sha256": "9ce113068d688e37e2c546fe1b68e8472d40d9cd3dc8ff9e87e462c86e1ada97"
+    }
+  ]
+}

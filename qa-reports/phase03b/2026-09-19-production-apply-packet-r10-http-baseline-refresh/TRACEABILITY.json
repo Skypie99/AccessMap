@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R10",
+  "sourceR9PacketCommit": "28f54e37ae018ab33fe8326a556cd1209794e484",
+  "sourceR9IndependentReviewCommit": "097e5a6acbf8d78e54d94032b9b2d5edc90760eb",
+  "rootDefectCount": 1,
+  "entries": [
+    {
+      "id": "R10-D1",
+      "finding": "PRE_CLASSIFICATION_SNAPSHOT_VALIDATION_ORDER",
+      "reviewEvidencePath": "qa-reports/2026-09-19_Codex_Phase03B_R9_IndependentReview.md",
+      "exactBypassPath": "qa-reports/phase03b/2026-09-18-production-apply-packet-r9/adjudicate_server_state.mjs:91-120",
+      "before": "The extracted snapshot reached entry classification, comparator dispatch predicates, apply classification, and policy derivation before strict snapshot validation at line 147.",
+      "repair": "The R10 adjudicator routes the extracted snapshot through classifyValidatedServerState, which requires validateServerStateSnapshot to return VALIDATED_R10 before invoking any classifier, comparator, or policy consumer.",
+      "acceptance": "Sixteen R10 cases cover the required valid and invalid shapes, explicit zero classifier/comparator/result/transition counters, executable source ordering, absence of direct raw classifier calls, and the committed-entry/lost-output path.",
+      "candidateChangeRequired": false
+    }
+  ],
+  "preservedR9AndEarlier": {
+    "status": "PASS_NOT_REOPENED",
+    "localReplayCheckCount": 201,
+    "sourceR7ReplayCheckCount": 172,
+    "controls": [
+      "TRANSPORT_CONTAINER_EXACT_VALIDATION",
+      "EXACT_SINGLE_ROW_REQUIREMENT",
+      "TRANSPORT_ROW_EXACT_KEY_VALIDATION",
+      "TRANSPORT_UNKNOWN_KEY_REJECTION",
+      "TRANSPORT_MISSING_KEY_REJECTION",
+      "BARE_OBJECT_FALLBACK_REMOVED",
+      "SERVER_STATE_CLASSIFIER_HASH_PINNING",
+      "MAX_QUIESCENCE_HARD_LATCH",
+      "MAX_QUIESCENCE_LATCH_IRREVERSIBLE",
+      "SINGLE_RESTORATION_DISPATCHER",
+      "RESTORATION_AFTER_600S_BLOCKED",
+      "ERROR_PATH_RESTORATION_BYPASS_BLOCKED",
+      "EXACT_TWO_MIGRATIONS_ONLY",
+      "PARTIAL_APPLY_FAILURE_MATRIX",
+      "POST_APPLY_VERIFICATION_WHILE_QUIESCED",
+      "QUIESCENCE_EXIT_ATOMICITY",
+      "WRITE_RESTORATION_VERIFICATION"
+    ]
+  }
+}
