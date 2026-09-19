@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R10",
+  "source": "LOCAL_R10_CONTROL_VALIDATION.json",
+  "newR10ValidationOrderTests": {
+    "passed": 16,
+    "total": 16
+  },
+  "invalidSnapshotClassifierCallCount": 0,
+  "invalidSnapshotComparatorCallCount": 0,
+  "invalidSnapshotConsumedResultCount": 0,
+  "invalidSnapshotControllerTransitionCount": 0,
+  "validSnapshotValidationMarker": "VALIDATED_R10",
+  "entryCommittedLostOutputCase": "PASS",
+  "status": "PASS"
+}

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "packetVersion": "R10",
+  "capturedAtUtc": "2026-09-19T07:53:24.398Z",
+  "sourceR9PacketCommit": "28f54e37ae018ab33fe8326a556cd1209794e484",
+  "sourceR9IndependentReviewCommit": "097e5a6acbf8d78e54d94032b9b2d5edc90760eb",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "cliVersion": "2.116.0",
+  "step": {
+    "beganUtc": "2026-09-19T07:53:22.080Z",
+    "endedUtc": "2026-09-19T07:53:24.394Z",
+    "exitCode": 0,
+    "signal": null,
+    "timedOut": false,
+    "spawnError": null,
+    "targetPinned": true
+  },
+  "classification": {
+    "status": "ENTRY_CONFIRMED_NOT_COMMITTED",
+    "entryClassification": "ENTRY_CONFIRMED_NOT_COMMITTED",
+    "gateState": "GATE_ABSENT",
+    "applyClassification": "APPLY_NOT_STARTED",
+    "transactionReadOnly": "on",
+    "snapshotPreclassificationValidation": "VALIDATED_R10",
+    "ledgerCount": 85,
+    "ledgerUniqueCount": 85,
+    "ledgerDigest": "811ab9813806cc37b0def61c6029579841170d904094e354951c239882a642ec",
+    "phase03bVersions": [],
+    "candidateBackendCount": 0,
+    "httpQueueCount": 0,
+    "httpResponseCount": 6,
+    "expectedHttpResponseDigest": "709e04c5b05c3fb7986689366b007591ba9ca0740256358bbfe864314c59a2e8",
+    "observedHttpResponseDigest": "db09cd0f61b4405a2540be7541b690df4fa52bd7697c98c1e7e88d37a3f99031",
+    "httpResponseFingerprintMatch": false,
+    "temporaryFunctionCount": 0,
+    "rowTriggerCount": 0,
+    "truncateTriggerCount": 0
+  },
+  "sourceEvidenceSha256": {
+    "SERVER_STATE_CLASSIFICATION.json": "3163fdf61c9c9908574c58d7da1d8a9068aff36bd51f74c3c3d679c89a5bb118",
+    "server-state.stdout.log": "0a4c0edc4536b32c3414d084e4a95c2fda1f5f781ec6d56634e55589ad7b2c1b",
+    "server-state.stderr.log": "2a0d79f732708c11678f9a21c9764d6a6a7a81d66e983920e296e9cb43176f15"
+  },
+  "canonicalAdjudicatorExit": "PASS",
+  "liveReadOnlyServerStatePreflight": "HOLD",
+  "holdReason": "Pinned six-row pg_net fingerprint drifted while row count remained unchanged.",
+  "liveTransactionReadOnly": true,
+  "productionMutations": "NONE",
+  "quiescenceEntered": false,
+  "productionApplyExecuted": false
+}
