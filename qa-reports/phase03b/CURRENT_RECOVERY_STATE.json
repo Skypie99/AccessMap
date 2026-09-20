@@ -51,13 +51,34 @@
     "status": "PASS",
     "exact_excluded_table_count": 7,
     "exact_excluded_tables": [
-      { "schema": "public", "table": "bk_2026_08_22_flags" },
-      { "schema": "public", "table": "bk_2026_08_22_flag_comments" },
-      { "schema": "public", "table": "bk_2026_08_22_flag_edit_history" },
-      { "schema": "public", "table": "bk_2026_08_22_flag_photos" },
-      { "schema": "public", "table": "bk_2026_08_22_flag_status_history" },
-      { "schema": "public", "table": "bk_2026_08_22_flag_verifications" },
-      { "schema": "public", "table": "bk_2026_08_22_point_links" }
+      {
+        "schema": "public",
+        "table": "bk_2026_08_22_flags"
+      },
+      {
+        "schema": "public",
+        "table": "bk_2026_08_22_flag_comments"
+      },
+      {
+        "schema": "public",
+        "table": "bk_2026_08_22_flag_edit_history"
+      },
+      {
+        "schema": "public",
+        "table": "bk_2026_08_22_flag_photos"
+      },
+      {
+        "schema": "public",
+        "table": "bk_2026_08_22_flag_status_history"
+      },
+      {
+        "schema": "public",
+        "table": "bk_2026_08_22_flag_verifications"
+      },
+      {
+        "schema": "public",
+        "table": "bk_2026_08_22_point_links"
+      }
     ],
     "wildcard_exclusion_used": false,
     "prefix_exclusion_used": false,
@@ -70,7 +91,11 @@
       "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/verify_post_apply.mjs",
       "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/verify_post_exit.mjs"
     ],
-    "focused_exclusion_tests": { "passed": 17, "total": 17, "path": "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/validate_preexisting_structure_exclusions.mjs" },
+    "focused_exclusion_tests": {
+      "passed": 17,
+      "total": 17,
+      "path": "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/validate_preexisting_structure_exclusions.mjs"
+    },
     "offline_replay": {
       "status": "PASS",
       "path": "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/replay_preexisting_structure_exclusion_offline.mjs",
@@ -79,8 +104,14 @@
       "residual_count": 0,
       "identical": true
     },
-    "prior_ledger_identity_tests_rerun": { "passed": 23, "total": 23 },
-    "prior_recovery_transport_tests_rerun": { "passed": 13, "total": 13 },
+    "prior_ledger_identity_tests_rerun": {
+      "passed": 23,
+      "total": 23
+    },
+    "prior_recovery_transport_tests_rerun": {
+      "passed": 13,
+      "total": 13
+    },
     "narrow_independent_review": "PASS"
   },
   "INDEPENDENT_REVIEW_RESULT": {
@@ -92,10 +123,22 @@
     "migration_apply_retried": false,
     "candidate_bytes_changed": false,
     "security_or_semantic_scope_weakened": false,
-    "focused_exclusion_tests_rerun": { "passed": 17, "total": 17 },
-    "prior_ledger_identity_tests_rerun": { "passed": 23, "total": 23 },
-    "prior_recovery_transport_tests_rerun": { "passed": 13, "total": 13 },
-    "offline_structure_replay_rerun": { "status": "PASS", "residual_count": 0 },
+    "focused_exclusion_tests_rerun": {
+      "passed": 17,
+      "total": 17
+    },
+    "prior_ledger_identity_tests_rerun": {
+      "passed": 23,
+      "total": 23
+    },
+    "prior_recovery_transport_tests_rerun": {
+      "passed": 13,
+      "total": 13
+    },
+    "offline_structure_replay_rerun": {
+      "status": "PASS",
+      "residual_count": 0
+    },
     "report_path": "qa-reports/phase03b/2026-09-20-preexisting-drift-exclusion-independent-review/REVIEW.md",
     "receipt_path": "qa-reports/phase03b/2026-09-20-preexisting-drift-exclusion-independent-review/independent_review_receipt.json",
     "third_live_read_only_verification": "READY_FOR_OWNER_AUTHORIZATION"
@@ -117,7 +160,7 @@
     "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json",
     "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/ (new directory, 7 files)"
   ],
-  "NEXT_EXACT_ACTION": "The evidence-aggregation defect in compare_captured_results.mjs has been repaired (narrow fix, see EVIDENCE_AGGREGATOR_REPAIR_RESULT) but not yet independently reviewed. Remaining: (1) independent review of this narrow repair; (2) owner runs the prepared, not-yet-executed read-only commands in qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURE_MISSING_EVIDENCE.md to save proof.json and edge_function.json into CAPTURED_FINAL_STRUCTURE/; (3) re-run the fixed compare_captured_results.mjs against all three files and confirm a genuine overall PASS / exit 0; (4) only then request another independent review pass of the restoration runbook itself. Restoration execution still requires that runbook review to PASS plus a separate explicit go-ahead from Sky beyond the read-only authorization already consumed.",
+  "NEXT_EXACT_ACTION": "The evidence-aggregation defect in compare_captured_results.mjs has been repaired and independently reviewed PASS (see EVIDENCE_AGGREGATOR_REPAIR_INDEPENDENT_REVIEW_RESULT). Remaining: (1) owner runs the prepared, not-yet-executed read-only commands in qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURE_MISSING_EVIDENCE.md to save proof.json and edge_function.json into CAPTURED_FINAL_STRUCTURE/; (2) re-run the fixed compare_captured_results.mjs against all three files and confirm a genuine overall PASS / exit 0; (3) only then request an independent review pass of the restoration runbook itself. Restoration execution still requires that runbook review to PASS plus a separate explicit go-ahead from Sky beyond the read-only authorization already consumed.",
   "EXTERNAL_HANDOFF_PACKAGE": {
     "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/",
     "preparedBy": "Claude (Sonnet 5)",
@@ -148,9 +191,14 @@
       }
     },
     "assertedOnlyNotIndependentlyVerifiedRows": [
-      "ledger_count=87", "phase03b_versions_present", "statement_counts_68_23",
-      "temporary_gate_present", "pg_net_ttl_6h", "http_queue_0",
-      "zero_new_http_responses_since_t0", "edge_function_identity_hash"
+      "ledger_count=87",
+      "phase03b_versions_present",
+      "statement_counts_68_23",
+      "temporary_gate_present",
+      "pg_net_ttl_6h",
+      "http_queue_0",
+      "zero_new_http_responses_since_t0",
+      "edge_function_identity_hash"
     ],
     "assertedOnlyReason": "no proof.json or edge_function.json was ever saved to the CAPTURED directories, only structure_catalog.json -- these rows rest on a chat report of an external tool's output, not a file this session could re-derive a hash from",
     "recommendedAction": "re-capture and save proof.json and edge_function.json via the same read-only pattern, then re-run compare_captured_results.mjs to convert these from asserted-only to independently verified before independent review of the restoration runbook"
@@ -188,14 +236,17 @@
     "restorationExecuted": false,
     "evidenceGapClassification": "BLOCKING",
     "blockingDefect": "compare_captured_results.mjs aggregates a NOT_RUN critical section (missing proof.json / edge_function.json) into overall PASS / exit 0 instead of HOLD; reproduced by running it unmodified against the real CAPTURED_FINAL_STRUCTURE/ directory as it exists today",
-    "unaffected": ["PHASE03B_RESTORATION_EXIT.sql do $guard$/do $absence$ blocks", "verify_post_exit.mjs"],
+    "unaffected": [
+      "PHASE03B_RESTORATION_EXIT.sql do $guard$/do $absence$ blocks",
+      "verify_post_exit.mjs"
+    ],
     "restorationSqlRegeneratedAndByteIdentical": true,
     "reportPath": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/REVIEW.md",
     "receiptPath": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/independent_review_receipt.json",
     "supersededByRepairNotYetReReviewed": true
   },
   "EVIDENCE_AGGREGATOR_REPAIR_RESULT": {
-    "status": "REPAIRED_NOT_YET_INDEPENDENTLY_REVIEWED",
+    "status": "REPAIRED_INDEPENDENTLY_REVIEWED_PASS",
     "repairedAtUtc": "2026-09-20T23:30:00Z",
     "repairedAtHeadCommit": "80fe3dd06540b68d54cd04ab7ca4c2c4ad08e850",
     "scope": "NARROW_EVIDENCE_AGGREGATION_ONLY",
@@ -207,7 +258,9 @@
       "EDGE_FUNCTION_IDENTITY"
     ],
     "filesChanged": {
-      "modified": ["qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/compare_captured_results.mjs"],
+      "modified": [
+        "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/compare_captured_results.mjs"
+      ],
       "added": [
         "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/verdict_aggregation.mjs",
         "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/validate_verdict_aggregation.mjs",
@@ -226,15 +279,33 @@
       "coversAllSevenRequiredScenarios": true
     },
     "regressionTestsRerun": {
-      "validate_preexisting_structure_exclusions": { "passed": 17, "total": 17 },
-      "replay_preexisting_structure_exclusion_offline": { "status": "PASS", "residualCount": 0 },
-      "validate_ledger_statement_identity": { "passed": 23, "total": 23 },
-      "validate_post_apply_recovery_transport": { "passed": 13, "total": 13 }
+      "validate_preexisting_structure_exclusions": {
+        "passed": 17,
+        "total": 17
+      },
+      "replay_preexisting_structure_exclusion_offline": {
+        "status": "PASS",
+        "residualCount": 0
+      },
+      "validate_ledger_statement_identity": {
+        "passed": 23,
+        "total": 23
+      },
+      "validate_post_apply_recovery_transport": {
+        "passed": 13,
+        "total": 13
+      }
     },
     "liveReproductionRerun": {
       "target": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURED_FINAL_STRUCTURE (real, on-disk, only structure_catalog.json present)",
-      "beforeFix": { "overall": "PASS", "exitCode": 0 },
-      "afterFix": { "overall": "HOLD", "exitCode": 1 }
+      "beforeFix": {
+        "overall": "PASS",
+        "exitCode": 0
+      },
+      "afterFix": {
+        "overall": "HOLD",
+        "exitCode": 1
+      }
     },
     "ownerEvidenceCaptureCommands": {
       "status": "PREPARED_NOT_EXECUTED",
@@ -247,7 +318,18 @@
     "productionContact": "NONE",
     "productionMutations": "NONE",
     "reviewRepairedTheDefectInThisWindow": true,
-    "note": "This session both found (prior checkpoint) and fixed (this checkpoint) the defect -- that is not the same as an independent review of the fix. Do not treat this repair as self-certifying."
+    "note": "This session both found (prior checkpoint) and fixed (this checkpoint) the defect -- that is not the same as an independent review of the fix. Do not treat this repair as self-certifying.",
+    "independentReviewResult": {
+      "verdict": "PASS",
+      "reviewedAtUtc": "2026-09-20T23:45:00Z",
+      "reviewPath": "qa-reports/phase03b/2026-09-20-evidence-aggregator-repair-independent-review/REVIEW.md",
+      "receiptPath": "qa-reports/phase03b/2026-09-20-evidence-aggregator-repair-independent-review/independent_review_receipt.json",
+      "liveReproductionIndependentlyReproduced": {
+        "overall": "HOLD",
+        "exitCode": 1
+      },
+      "nonBlockingObservation": "owner capture script jq/functions-list extraction lacks explicit content validation (jq -e / non-empty check); traced forward, the unmodified comparator already fails closed (notRun/hold) on resulting null/empty content, so no false PASS results"
+    }
   },
   "DO_NOT_REPEAT": [
     "PRODUCTION_CONTROLLER",
@@ -278,5 +360,5 @@
     "TREATING_THIS_SESSIONS_OWN_REPAIR_AS_AN_INDEPENDENT_REVIEW_OF_ITSELF",
     "WIDENING_THE_AGGREGATION_REPAIR_BEYOND_THE_NOT_RUN_ON_REQUIRED_SECTION_DEFECT"
   ],
-  "LAST_UPDATED_UTC": "2026-09-20T23:30:00Z"
+  "LAST_UPDATED_UTC": "2026-09-20T23:45:00Z"
 }

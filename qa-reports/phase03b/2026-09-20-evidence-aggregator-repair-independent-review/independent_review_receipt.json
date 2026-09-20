@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "flagstone.phase03b.independent-review.v1",
+  "reviewedRepairCommit": "c54bc2492039fd0e2c66c8f98c57f6e9b01d3729",
+  "reviewedAtUtc": "2026-09-20T23:45:00Z",
+  "mode": "FRESH_INDEPENDENT_REVIEW_LOCAL_OFFLINE_ONLY",
+  "verdict": "PASS",
+  "priorHoldReview": {
+    "path": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/REVIEW.md",
+    "atCommit": "80fe3dd06540b68d54cd04ab7ca4c2c4ad08e850",
+    "verdict": "HOLD",
+    "blockingDefect": "compare_captured_results.mjs notRun() never touched `overall`, so a NOT_RUN on LIVE_GATE_AND_LEDGER/EDGE_FUNCTION_IDENTITY rolled up into overall PASS / exit 0"
+  },
+  "requiredLiveSections": [
+    "LIVE_GATE_AND_LEDGER",
+    "FINAL_STRUCTURE_PERMISSIONS_RLS_MODERATION_POINTS",
+    "EDGE_FUNCTION_IDENTITY"
+  ],
+  "independentChecks": {
+    "diffScopeExactlySixFiles": { "result": true, "method": "git show --stat c54bc24: 3 new files, compare_captured_results.mjs (+13/-19), 2 checkpoint docs" },
+    "comparatorChangeIsAggregatorSwapOnly": { "result": true, "method": "full read of compare_captured_results.mjs at HEAD: target-identity, ledger/gate/pg_net field comparison, gate+preexisting structure exclusion+normalize+checksum, edge function identity hash comparison, and the CLIENT_COMPATIBILITY notRun call are byte-identical to the version the prior HOLD review already read" },
+    "requiredLiveSectionsExactSet": { "result": true, "method": "read verdict_aggregation.mjs: REQUIRED_LIVE_SECTIONS = [LIVE_GATE_AND_LEDGER, FINAL_STRUCTURE_PERMISSIONS_RLS_MODERATION_POINTS, EDGE_FUNCTION_IDENTITY], no more no fewer" },
+    "failAlwaysWinsRegardlessOfOrder": { "result": true, "method": "read fail()/hold()/notRun(): fail() unconditionally sets overall='FAIL'; hold()/notRun() only raise overall from 'PASS', guarded by if(overall==='PASS'), so neither can downgrade an existing FAIL" },
+    "exitCodeHasNoAmbiguousNotRunBranch": { "result": true, "method": "exitCode getter is overall==='PASS'?0:1; no code path sets overall to the literal 'NOT_RUN', unlike the pre-repair overall==='PASS'||overall==='NOT_RUN'?0:1 line" },
+    "clientCompatibilityNeverBlocks": { "result": true, "method": "notRun() only affects overall when section is in REQUIRED_LIVE_SECTIONS; CLIENT_COMPATIBILITY is outside that list" },
+    "restorationSqlUnchanged": { "result": true, "method": "independent shasum -a 256 of PHASE03B_RESTORATION_EXIT.sql: 0ae9662fee33765e614c03a8ba9b4363db12e55228ec13a5266aa127c1d6aecd, matches prior review's recorded hash" },
+    "migrationBytesUnchanged": { "result": true, "method": "independent shasum -a 256 of both frozen migration files, matched against CANDIDATE_FREEZE.json (r11): b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11 and 0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5" },
+    "verifyPostExitUnchanged": { "result": true, "method": "git diff c54bc24~1 c54bc24 --stat -- '*verify_post_exit.mjs' is empty" },
+    "restorationRunbookUnchanged": { "result": true, "method": "git diff c54bc24~1 c54bc24 --stat -- '*RESTORATION_RUNBOOK.md' is empty" },
+    "noNewMigrationOrPhase03cFile": { "result": true, "method": "git diff <merge-base-with-main> HEAD -- supabase/migrations/ supabase/migrations-next/ shows only the 2 frozen candidate files + siblings added, zero changes under supabase/migrations/; find for *phase03c* filenames returns nothing" },
+    "ownerCaptureTargetsExactProjectRef": { "result": true, "method": "read CAPTURE_MISSING_EVIDENCE.md: PROJECT_REF hardcoded to kldlwszpfkdmsjrjhjym, explicit refusal if it ever equalled the named forbidden staging ref" },
+    "ownerCaptureReadOnly": { "result": true, "method": "every live call is `supabase db query` against an already-reviewed SELECT-only file, or `supabase functions list` (a list/GET-equivalent call); no ALTER/INSERT/UPDATE/migration-apply/restoration statement anywhere in the file" },
+    "ownerCaptureRefusesOverwriteAndFailsFast": { "result": true, "method": "set -euo pipefail; explicit pre-existence checks on both output paths before any write; .tmp + mv -n (no-clobber) writes" },
+    "ownerCapturePinnedCliVersionChecked": { "result": true, "method": "explicit `supabase --version` compared byte-for-byte against pinned 2.116.0 before any live call" },
+    "ownerCaptureDoesNotPrintLargePayloads": { "result": true, "method": "both live outputs redirected straight to file; only short confirmation lines echoed to stdout" },
+    "fixedComparatorRerunRequiresAllThreeArtifacts": { "result": true, "method": "CAPTURE_MISSING_EVIDENCE.md's closing section states the rerun requires a genuine overall PASS / exit 0 across proof.json + structure_catalog.json + edge_function.json, and that CLIENT_COMPATIBILITY NOT_RUN must not be treated as a blocker" }
+  },
+  "reRunLocalTests": {
+    "focusedVerdictAggregationTests": { "passed": 16, "total": 16, "rerunIndependently": true, "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/validate_verdict_aggregation.mjs" },
+    "scenario1_structurePassProofNotRunEdgeNotRun": { "expected": "HOLD, non-zero", "observed": "HOLD, non-zero" },
+    "scenario2_structurePassProofPassEdgeNotRun": { "expected": "HOLD, non-zero", "observed": "HOLD, non-zero" },
+    "scenario3_structurePassProofNotRunEdgePass": { "expected": "HOLD, non-zero", "observed": "HOLD, non-zero" },
+    "scenario4_allRequiredPass": { "expected": "PASS, exit 0", "observed": "PASS, exit 0" },
+    "scenario5_anyRequiredFail": { "expected": "FAIL, non-zero", "observed": "FAIL, non-zero (all 3 sections individually + both call orders vs a NOT_RUN)" },
+    "scenario6_anyRequiredHold": { "expected": "HOLD, non-zero", "observed": "HOLD, non-zero (all 3 sections individually)" },
+    "scenario7_clientCompatibilityNotRunNonBlocking": { "expected": "PASS, exit 0", "observed": "PASS, exit 0, CLIENT_COMPATIBILITY reported NOT_RUN" },
+    "regressionSuites": {
+      "validate_preexisting_structure_exclusions": { "passed": 17, "total": 17, "rerunIndependently": true },
+      "replay_preexisting_structure_exclusion_offline": { "status": "PASS", "residualCount": 0, "rerunIndependently": true },
+      "validate_ledger_statement_identity": { "passed": 23, "total": 23, "rerunIndependently": true },
+      "validate_post_apply_recovery_transport": { "passed": 13, "total": 13, "rerunIndependently": true }
+    }
+  },
+  "liveReproductionAgainstRealEvidenceDirectory": {
+    "target": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURED_FINAL_STRUCTURE (real, on-disk; only structure_catalog.json present, verified via ls before running)",
+    "beforeFixPerPriorReview": { "overall": "PASS", "exitCode": 0 },
+    "afterFixIndependentlyReproducedThisSession": { "overall": "HOLD", "exitCode": 1 },
+    "matchesClaim": true
+  },
+  "nonBlockingObservation": {
+    "summary": "CAPTURE_MISSING_EVIDENCE.md's jq/functions-list extraction lines have no explicit jq -e or post-capture content validation, so a zero-row query or an empty functions list could write null/[] without a non-zero exit from the capture script itself",
+    "downstreamMitigation": "traced forward into the unmodified compare_captured_results.mjs: a null proof.json is falsy and routes to notRun (HOLD-forcing under this repair); an empty-array edge_function.json is truthy but fails the expectedSelectedCount check and routes to hold() -- both pre-existing, unweakened code paths already prevent a false overall:PASS",
+    "blocking": false
+  },
+  "securityOrSemanticScopeWeakened": false,
+  "structureNormalizationChanged": false,
+  "targetIdentityValidationChanged": false,
+  "ledgerValidationChanged": false,
+  "quiescenceValidationChanged": false,
+  "pgNetValidationChanged": false,
+  "edgeFunctionIdentityValidationChanged": false,
+  "restorationSqlChanged": false,
+  "restorationRunbookScopeChanged": false,
+  "verifyPostExitChanged": false,
+  "migrationFilesChanged": false,
+  "frozenCandidateBytesChanged": false,
+  "productionContact": "NONE",
+  "productionMutations": "NONE",
+  "stagingContact": "NONE",
+  "ownerEvidenceCaptureExecuted": false,
+  "restorationExecuted": false,
+  "gateRemoved": false,
+  "migrationsRerun": false,
+  "productionControllerRerun": false,
+  "phase03cStarted": false,
+  "pushed": false,
+  "merged": false
+}
