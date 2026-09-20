@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "flagstone.phase03b.r8-envelope.v1",
+  "packetVersion": "R8",
+  "candidateSha": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "runId": "ebdba703-2470-41fa-ac6d-44354203b8d1",
+  "controllerPid": 27068,
+  "controllerMonotonicOrigin": 217463476,
+  "phase": "POST_APPLY_COMPARATOR",
+  "checkName": "post-apply-exact-quiesced-state",
+  "expected": {
+    "result": "PASS_WHILE_QUIESCED",
+    "gateManifestSha256": "c3f68ac80207ea6a779b4d89448fa63f8c7292b99ac0721cc9cfdd21db2e45dd",
+    "finalLedgerSha256": "b9fb376947238c4bd3dc3d164337d6b9294df9084eab9008530ba9fd4d4603b5",
+    "finalStructureSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+    "databaseT0": "2026-09-20T06:20:25.216974Z",
+    "maximumQuiescenceWindowSeconds": 600
+  },
+  "observed": {
+    "proof": {
+      "backend_pid": 2558152,
+      "captured_at_utc": "2026-09-20T08:03:53.679918Z",
+      "database_t0": "2026-09-20T06:20:25.216974Z",
+      "flags_id_status_count": 24,
+      "flags_id_status_sha256": "b3b517e8fe5b996d7108d09e6d3fdfaa6143b92fe6c2501ef83f249b5fd0942e",
+      "function_count": 1,
+      "function_definition_sha256": "16555e58ee2cdfce5d54336ef63584116ed1cb798d90ac779c278a5c0e5b0bac",
+      "function_execute_grants": [
+        {
+          "grantable": false,
+          "grantee": "postgres",
+          "privilege": "EXECUTE"
+        }
+      ],
+      "function_oid": "20772",
+      "function_owner": "postgres",
+      "history_count": 49,
+      "history_sha256": "f8533cc1f34588b0556027d759767e4cd1fbdd960071ec16354cd82e37e874f7",
+      "http_queue_count": 0,
+      "http_response_count": 3,
+      "http_response_new_since_t0_count": 0,
+      "http_response_sha256": "14d0617d38d7625f9470ed931c4c7e849bba5d9472bc8e39983dd1a359118dfd",
+      "ledger_count": 87,
+      "ledger_latest_version": "20260915210413",
+      "ledger_ordered_version_name_sha256": "b9fb376947238c4bd3dc3d164337d6b9294df9084eab9008530ba9fd4d4603b5",
+      "ledger_unique_count": 87,
+      "pg_net_ttl": "6 hours",
+      "pg_net_ttl_seconds": 21600,
+      "phase03b_constraint_index_sha256": "cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a",
+      "phase03b_rows": [
+        {
+          "name": "phase03b_moderation_semantics_compatibility_bridge",
+          "statement_count": 68,
+          "statement_sha256": "cbc17a516412859e5fb6ca2fa41e538f1d0c9ae5a10168424431f761b8ca086c",
+          "version": "20260915210256"
+        },
+        {
+          "name": "phase03b_points_integrity",
+          "statement_count": 23,
+          "statement_sha256": "72f8faf6c218a92be5fa14bc9851d0fe035e4e0f4ffd7e9196184f438d479569",
+          "version": "20260915210413"
+        }
+      ],
+      "phase03b_versions": [
+        "20260915210256",
+        "20260915210413"
+      ],
+      "receipt": "phase03b_quiescence_proof_r3",
+      "table_oid": "17575",
+      "transaction_read_only": "on",
+      "trigger_count": 1,
+      "trigger_definition_sha256": "e89ac15de9a1f20a2bd269289fa3ddf3ef22ff529d8c4b929587da5781995bbf",
+      "trigger_enabled": "A",
+      "trigger_oid": "20773",
+      "trigger_table_owner": "postgres",
+      "truncate_trigger_count": 1,
+      "truncate_trigger_definition_sha256": "54e10e11dabd45d1edfdf44a7aa065f2e335c964b230cd41c6138c6ef295c58a",
+      "truncate_trigger_enabled": "A",
+      "truncate_trigger_oid": "20774",
+      "truncate_trigger_table_oid": "17575"
+    },
+    "normalizedStructureSha256": "5060adfbe389716a940e8a09a06d888159a5f94864137c41c42a5d26c42ac766",
+    "steps": [
+      {
+        "command": [
+          "supabase",
+          "db",
+          "query",
+          "--linked",
+          "--project-ref",
+          "kldlwszpfkdmsjrjhjym",
+          "--file",
+          "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/BOUND_QUIESCENCE_VERIFY.sql",
+          "--output-format",
+          "json"
+        ],
+        "childPid": 35280,
+        "startedAt": "2026-09-20T08:03:52.486Z",
+        "endedAt": "2026-09-20T08:03:54.337Z",
+        "timeoutMs": 60000,
+        "timedOut": false,
+        "exitCode": 0,
+        "signal": null,
+        "error": null,
+        "stdoutPath": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/quiescence-proof.stdout.log",
+        "stderrPath": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/quiescence-proof.stderr.log"
+      },
+      {
+        "command": [
+          "supabase",
+          "db",
+          "query",
+          "--linked",
+          "--project-ref",
+          "kldlwszpfkdmsjrjhjym",
+          "--file",
+          "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/STRUCTURAL_CAPTURE_READ_ONLY.sql",
+          "--output-format",
+          "json"
+        ],
+        "childPid": 35287,
+        "startedAt": "2026-09-20T08:03:54.338Z",
+        "endedAt": "2026-09-20T08:03:58.508Z",
+        "timeoutMs": 120000,
+        "timedOut": false,
+        "exitCode": 0,
+        "signal": null,
+        "error": null,
+        "stdoutPath": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/structure.stdout.log",
+        "stderrPath": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/structure.stderr.log"
+      },
+      {
+        "comparatorError": "Final structure differs from accepted revised-staging final artifact"
+      }
+    ]
+  },
+  "status": "HOLD",
+  "capturedAtUtc": "2026-09-20T08:03:58.534Z",
+  "capturedAtMonotonic": 223677664,
+  "sourceArtifact": "verify_post_apply.mjs",
+  "producer": "phase03b-r8-post-apply-verifier",
+  "producerVersion": "flagstone.phase03b.packet-r8.v1",
+  "numericExit": 1,
+  "signal": null,
+  "timedOut": false
+}

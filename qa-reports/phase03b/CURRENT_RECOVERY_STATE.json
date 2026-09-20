@@ -1,36 +1,24 @@
 {
-  "CURRENT_TASK": "Repair only the Phase 03B migration-ledger split-statement identity contract, validate locally, run one fresh live read-only corrected post-apply verification, and prepare but never execute the owner restoration runbook only if verification passes.",
+  "CURRENT_TASK": "Second live read-only corrected post-apply verification of repair commit 25452b72fedc1ca7777a343f57704e80a4e4b675, explicitly authorized by Sky. No mutation, no retry, no restoration attempted.",
   "CURRENT_BRANCH": "codex/flagstone-p03b-post-apply-recovery-20260919",
   "CURRENT_WORKTREE": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919",
-  "CURRENT_HEAD_SHA": "25452b72fedc1ca7777a343f57704e80a4e4b675",
-  "CURRENT_TREE": "8403e343e32f87dac1f75be5677f8a20ba99fa6e",
+  "CURRENT_HEAD_SHA": "1cfb885f6261a732a4471dc46d4055140603fd67",
+  "CURRENT_TREE": "21e024606ba7edde02e9d3469b3a9c201764524d",
   "INCIDENT_RUN_ID": "ebdba703-2470-41fa-ac6d-44354203b8d1",
   "ORIGINAL_DATABASE_T0": "2026-09-20T06:20:25.216974Z",
   "PRODUCTION_APPLY_ATTEMPT_COUNT": 1,
-  "ONE_RUN_AUTHORIZATION_STATUS": "CONSUMED",
+  "ORIGINAL_ONE_RUN_AUTHORIZATION_STATUS": "CONSUMED",
   "CURRENT_LIVE_GATE_STATE": "EXACT_PRESENT",
   "COMPLETED_WORK": [
-    "ROOT_CAUSE_CONFIRMED",
-    "SUPABASE_CLI_2_116_0_PARSER_SOURCE_PINNED",
-    "EXPECTED_ORDERED_STATEMENT_ARRAYS_DERIVED_INDEPENDENTLY",
-    "POST_APPLY_LEDGER_IDENTITY_CONTRACT_REPAIRED",
-    "POST_EXIT_LEDGER_IDENTITY_CONTRACT_REPAIRED",
-    "SINGLE_LIVE_READ_ONLY_VERIFIER_HOLD",
-    "LIVE_JSON_MEMBER_ORDER_DEFECT_REPAIRED_LOCALLY_WITHOUT_RETRY",
-    "STRICT_R8_SCHEMA_UNCHANGED",
-    "LOCAL_VALIDATION_PASS",
-    "REPAIR_EVIDENCE_COMMITTED"
+    "LOCAL_PREREQUISITES_RECONFIRMED",
+    "VALIDATE_EXACT_LEDGER_ROWS_PRESENT",
+    "NO_RAW_JSON_STRINGIFY_COMPARATOR_PRESENT",
+    "SECOND_LIVE_READ_ONLY_VERIFIER_RUN",
+    "NEW_EVIDENCE_DIRECTORY_CAPTURED",
+    "LEDGER_STATEMENT_IDENTITY_PASS_AGAINST_LIVE_DATA",
+    "FINAL_STRUCTURE_MISMATCH_DISCOVERED",
+    "HANDOFF_CHECKPOINTED"
   ],
-  "COMPLETED_TESTS": {
-    "ledger_statement_identity": { "passed": 23, "total": 23 },
-    "recovery_transport": { "passed": 13, "total": 13 },
-    "preserved_transport": { "passed": 22, "total": 22 },
-    "preserved_history_fail_closed": { "passed": 22, "total": 22 },
-    "preserved_r11_controls": "PASS",
-    "disposable_postgresql_replay": "PASS",
-    "numeric_child_exits": [0, 0, 0, 0, 0, 0],
-    "validation_infrastructure_destroyed": true
-  },
   "LIVE_READ_ONLY_RESULTS": {
     "status": "HOLD",
     "run_count": 1,
@@ -43,7 +31,7 @@
     "migration_1_statement_sha256": "cbc17a516412859e5fb6ca2fa41e538f1d0c9ae5a10168424431f761b8ca086c",
     "migration_2_statement_count": 23,
     "migration_2_statement_sha256": "72f8faf6c218a92be5fa14bc9851d0fe035e4e0f4ffd7e9196184f438d479569",
-    "captured_ledger_statement_identity": "PASS",
+    "migration_statement_identity": "PASS",
     "gate_state": "EXACT_PRESENT",
     "function_count": 1,
     "row_trigger_count": 1,
@@ -51,36 +39,30 @@
     "http_queue_count": 0,
     "http_response_new_since_original_t0_count": 0,
     "pg_net_ttl": "6 hours",
-    "hold_reason": "Executed validator compared JSON object insertion order and stopped before structural capture",
-    "structural_capture_reached": false,
-    "final_structure": "NOT_RUN",
+    "pg_net_ttl_exceeds_600s": true,
+    "hold_reason": "Final structure differs from accepted revised-staging final artifact",
+    "structural_capture_reached": true,
+    "final_structure": "HOLD",
+    "final_structure_observed_sha256": "5060adfbe389716a940e8a09a06d888159a5f94864137c41c42a5d26c42ac766",
+    "final_structure_expected_sha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
     "permissions_rls": "NOT_RUN",
     "moderation": "NOT_RUN",
     "points": "NOT_RUN",
     "client_compatibility": "NOT_RUN",
-    "edge_function_identity": "NOT_RUN"
+    "edge_function_identity": "NOT_RUN",
+    "numeric_exit": 1
   },
   "CURRENT_EVIDENCE_PATHS": [
-    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/retained-incident-input",
-    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/local-validation",
-    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/live-post-apply",
-    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/ledger-statement-identity-local-validation",
-    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/live-ledger-statement-identity-post-apply",
-    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/ledger-statement-identity-local-validation-v2",
-    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/LEDGER_IDENTITY_REPAIR_MANIFEST.json"
+    "qa-reports/phase03b/2026-09-20-second-live-post-apply-verification"
   ],
-  "UNCOMMITTED_FILES": [
-    "qa-reports/2026-09-20_Codex_Phase03BRecoveryLedgerStatementIdentity.md",
-    "qa-reports/phase03b/CURRENT_RECOVERY_HANDOFF.md",
-    "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json"
-  ],
-  "NEXT_EXACT_ACTION": "Sky decides whether to authorize a separate second live read-only verifier run of repair commit 25452b72fedc1ca7777a343f57704e80a4e4b675; do not retry automatically.",
+  "UNCOMMITTED_FILES": [],
+  "NEXT_EXACT_ACTION": "HOLD. Offline-diagnose the final-structure divergence against qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/NORMALIZED_STRUCTURE_EXCLUDING_EXACT_GATE.json before any further live contact.",
   "DO_NOT_REPEAT": [
     "PRODUCTION_CONTROLLER",
     "PHASE03B_MIGRATIONS",
     "MIGRATION_APPLY",
     "ORIGINAL_ONE_RUN_AUTHORIZATION",
-    "CONSUMED_SINGLE_LIVE_VERIFIER_RUN",
+    "SECOND_LIVE_VERIFIER_RUN_NOW_CONSUMED",
     "LIVE_VERIFIER_RETRY_WITHOUT_NEW_AUTHORITY"
   ],
   "DO_NOT_DO": [
@@ -92,7 +74,8 @@
     "DB_PULL",
     "PRODUCTION_MUTATION",
     "PHASE03C",
-    "R12"
+    "R12",
+    "AUTOMATIC_STRUCTURAL_REPAIR"
   ],
-  "LAST_UPDATED_UTC": "2026-09-20T07:10:03Z"
+  "LAST_UPDATED_UTC": "2026-09-20T08:03:58Z"
 }
