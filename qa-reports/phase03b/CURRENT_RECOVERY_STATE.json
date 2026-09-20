@@ -1,0 +1,77 @@
+{
+  "CURRENT_TASK": "Repair the R11 post-apply/post-exit CLI row transport defect, validate locally, run one new read-only post-apply verification, and prepare but never execute an owner restoration runbook only if verification passes.",
+  "CURRENT_BRANCH": "codex/flagstone-p03b-post-apply-recovery-20260919",
+  "CURRENT_WORKTREE": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919",
+  "CURRENT_HEAD_SHA": "f374e17db673fe755ca197bdd110c1d7bd01a9e7",
+  "CURRENT_TREE": "355cf3328231e9cc13638d6fa8e788218969d906",
+  "INCIDENT_RUN_ID": "ebdba703-2470-41fa-ac6d-44354203b8d1",
+  "ORIGINAL_DATABASE_T0": "2026-09-20T06:20:25.216974Z",
+  "PRODUCTION_APPLY_ATTEMPT_COUNT": 1,
+  "ONE_RUN_AUTHORIZATION_STATUS": "CONSUMED",
+  "CURRENT_LIVE_GATE_STATE": "EXACT_PRESENT",
+  "COMPLETED_WORK": [
+    "ROOT_CAUSE_CONFIRMED",
+    "POST_APPLY_ARRAY_WRAPPER_BUG_CONFIRMED",
+    "POST_EXIT_SAME_BUG_CONFIRMED",
+    "CANONICAL_RESULT_ROW_REUSED",
+    "LOCAL_VALIDATION_PASS",
+    "LIVE_READ_ONLY_POST_APPLY_VERIFICATION_HOLD"
+  ],
+  "COMPLETED_TESTS": {
+    "recovery_transport": { "passed": 13, "total": 13 },
+    "preserved_transport": { "passed": 22, "total": 22 },
+    "preserved_history_fail_closed": { "passed": 22, "total": 22 },
+    "preserved_r11_controls": "PASS",
+    "disposable_postgresql_replay": "PASS",
+    "numeric_child_exits": [0, 0, 0, 0, 0],
+    "validation_infrastructure_destroyed": true
+  },
+  "LIVE_READ_ONLY_RESULTS": {
+    "status": "HOLD",
+    "transaction_read_only": "on",
+    "ledger_count": 87,
+    "ledger_latest_version": "20260915210413",
+    "phase03b_versions": ["20260915210256", "20260915210413"],
+    "gate_state": "EXACT_PRESENT",
+    "function_count": 1,
+    "row_trigger_count": 1,
+    "truncate_trigger_count": 1,
+    "http_queue_count": 0,
+    "http_response_new_since_original_t0_count": 0,
+    "pg_net_ttl": "6 hours",
+    "hold_reason": "Applied migration statement bytes do not match the frozen pair",
+    "observed_statement_counts": [68, 23],
+    "structural_capture_reached": false
+  },
+  "CURRENT_EVIDENCE_PATHS": [
+    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/retained-incident-input",
+    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/local-validation",
+    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/live-post-apply"
+  ],
+  "UNCOMMITTED_FILES": [
+    "qa-reports/phase03b/2026-09-19-post-apply-recovery-evidence/live-post-apply",
+    "qa-reports/phase03b/CURRENT_RECOVERY_HANDOFF.md",
+    "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json",
+    "qa-reports/2026-09-19_Codex_Phase03BPostApplyRecoveryPreparation.md"
+  ],
+  "NEXT_EXACT_ACTION": "Sky decides whether to authorize a separate bounded correction of the verifier's migration-ledger statement identity contract; until then keep the exact gate present and do not prepare restoration.",
+  "DO_NOT_REPEAT": [
+    "PRODUCTION_CONTROLLER",
+    "PHASE03B_MIGRATIONS",
+    "MIGRATION_APPLY",
+    "ORIGINAL_ONE_RUN_AUTHORIZATION",
+    "CORRECTED_LIVE_VERIFIER_WITHOUT_NEW_AUTHORITY"
+  ],
+  "DO_NOT_DO": [
+    "GATE_REMOVAL",
+    "EXIT_SQL",
+    "RESTORATION",
+    "ROLLBACK",
+    "MIGRATION_REPAIR",
+    "DB_PULL",
+    "PRODUCTION_MUTATION",
+    "PHASE03C",
+    "R12"
+  ],
+  "LAST_UPDATED_UTC": "2026-09-20T06:39:16Z"
+}
