@@ -1,9 +1,8 @@
 {
-  "CURRENT_TASK": "Second live read-only corrected post-apply verification of repair commit 25452b72fedc1ca7777a343f57704e80a4e4b675, explicitly authorized by Sky. No mutation, no retry, no restoration attempted.",
+  "CURRENT_TASK": "Offline diagnosis of the final-structure divergence found by the second live verification. No live contact, no mutation.",
+  "CURRENT_PHASE": "OFFLINE_STRUCTURE_DIAGNOSIS_COMPLETE",
   "CURRENT_BRANCH": "codex/flagstone-p03b-post-apply-recovery-20260919",
   "CURRENT_WORKTREE": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919",
-  "CURRENT_HEAD_SHA": "1cfb885f6261a732a4471dc46d4055140603fd67",
-  "CURRENT_TREE": "21e024606ba7edde02e9d3469b3a9c201764524d",
   "INCIDENT_RUN_ID": "ebdba703-2470-41fa-ac6d-44354203b8d1",
   "ORIGINAL_DATABASE_T0": "2026-09-20T06:20:25.216974Z",
   "PRODUCTION_APPLY_ATTEMPT_COUNT": 1,
@@ -17,7 +16,12 @@
     "NEW_EVIDENCE_DIRECTORY_CAPTURED",
     "LEDGER_STATEMENT_IDENTITY_PASS_AGAINST_LIVE_DATA",
     "FINAL_STRUCTURE_MISMATCH_DISCOVERED",
-    "HANDOFF_CHECKPOINTED"
+    "HANDOFF_CHECKPOINTED",
+    "EXPECTED_ARTIFACT_IDENTIFIED",
+    "OFFLINE_SEMANTIC_DIFF_GENERATED",
+    "ALL_RESIDUALS_TRACED_AND_CLASSIFIED",
+    "OFFLINE_DIAGNOSIS_REPORT_WRITTEN",
+    "OFFLINE_DIAGNOSIS_CHECKPOINTED"
   ],
   "LIVE_READ_ONLY_RESULTS": {
     "status": "HOLD",
@@ -37,7 +41,7 @@
     "row_trigger_count": 1,
     "truncate_trigger_count": 1,
     "http_queue_count": 0,
-    "http_response_new_since_original_t0_count": 0,
+    "http_response_new_original_t0_count": 0,
     "pg_net_ttl": "6 hours",
     "pg_net_ttl_exceeds_600s": true,
     "hold_reason": "Final structure differs from accepted revised-staging final artifact",
@@ -52,11 +56,31 @@
     "edge_function_identity": "NOT_RUN",
     "numeric_exit": 1
   },
+  "OFFLINE_STRUCTURE_DIAGNOSIS_RESULT": {
+    "status": "HOLD_BUT_FULLY_EXPLAINED",
+    "expected_artifact_path": "qa-reports/phase03b/2026-09-15-revised-staging/CATALOG_FIRST_REVISED_APPLY.json",
+    "expected_artifact_source_commit": "aca5fdbb0f5fd151a5c98d5ca1b956954cf83354",
+    "expected_artifact_source_branch": "codex/flagstone-p03b-revised-staging-20260915",
+    "total_structural_differences": 55,
+    "actual_production_structure_defect_count": 0,
+    "stale_or_incorrect_expected_artifact_count": 0,
+    "normalization_or_representation_defect_count": 0,
+    "preexisting_environmental_drift_count": 55,
+    "unknown_difference_count": 0,
+    "temporary_gate_exclusion": "PASS",
+    "frozen_migration_semantics_traced": "PASS",
+    "root_cause": "7 bk_2026_08_22_* backup tables (48 columns) from a Sky-waived one-time production destructive-data cleanup applied 2026-08-23, confirmed present in production before Phase03B via the 2026-09-15 Phase03A preflight capture. Absent from Phase03B staging project (cepayqmsoqxshsiyqnvz), which never received that operation. Neither Phase03B migration references these tables.",
+    "next_action_classification": "PREEXISTING_DRIFT_ADJUDICATION_REQUIRED",
+    "report_path": "qa-reports/2026-09-20_Codex_Phase03BOfflineStructureDivergence.md",
+    "diff_json_path": "qa-reports/phase03b/2026-09-20-structure-divergence-diff.json"
+  },
   "CURRENT_EVIDENCE_PATHS": [
-    "qa-reports/phase03b/2026-09-20-second-live-post-apply-verification"
+    "qa-reports/phase03b/2026-09-20-second-live-post-apply-verification",
+    "qa-reports/phase03b/2026-09-20-structure-divergence-diff.json",
+    "qa-reports/2026-09-20_Codex_Phase03BOfflineStructureDivergence.md"
   ],
   "UNCOMMITTED_FILES": [],
-  "NEXT_EXACT_ACTION": "HOLD. Offline-diagnose the final-structure divergence against qa-reports/phase03b/2026-09-20-second-live-post-apply-verification/NORMALIZED_STRUCTURE_EXCLUDING_EXACT_GATE.json before any further live contact.",
+  "NEXT_EXACT_ACTION": "Sky decides whether to extend the verifier's exclusion list to also exclude the 7 bk_2026_08_22_* tables (adjudication, not repair) before authorizing any further live verification.",
   "DO_NOT_REPEAT": [
     "PRODUCTION_CONTROLLER",
     "PHASE03B_MIGRATIONS",
@@ -73,9 +97,10 @@
     "MIGRATION_REPAIR",
     "DB_PULL",
     "PRODUCTION_MUTATION",
+    "STAGING_MUTATION",
     "PHASE03C",
     "R12",
-    "AUTOMATIC_STRUCTURAL_REPAIR"
+    "AUTOMATIC_EXPECTED_ARTIFACT_OR_EXCLUSION_LIST_UPDATE_WITHOUT_SKY_DECISION"
   ],
-  "LAST_UPDATED_UTC": "2026-09-20T08:03:58Z"
+  "LAST_UPDATED_UTC": "2026-09-20T08:32:00Z"
 }
