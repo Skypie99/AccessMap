@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "liveVerifierRunCount": 1,
+  "liveVerifierStatus": "HOLD",
+  "liveVerifierRetried": false,
+  "liveCaptureTransactionReadOnly": "on",
+  "liveLedgerStatementIdentityObserved": {
+    "versions": [
+      "20260915210256",
+      "20260915210413"
+    ],
+    "rows": [
+      {
+        "version": "20260915210256",
+        "name": "phase03b_moderation_semantics_compatibility_bridge",
+        "statement_count": 68,
+        "statement_sha256": "cbc17a516412859e5fb6ca2fa41e538f1d0c9ae5a10168424431f761b8ca086c"
+      },
+      {
+        "version": "20260915210413",
+        "name": "phase03b_points_integrity",
+        "statement_count": 23,
+        "statement_sha256": "72f8faf6c218a92be5fa14bc9851d0fe035e4e0f4ffd7e9196184f438d479569"
+      }
+    ]
+  },
+  "independentlyDerivedExpectedIdentityMatchesObserved": true,
+  "offlineCurrentValidatorResult": "EXACT_STATEMENT_ARRAY_IDENTITY",
+  "liveHoldCause": "The executed validator compared JSON object insertion order. PostgreSQL jsonb returned the same exact fields and values in a different member order.",
+  "structuralCaptureReached": false,
+  "liveCorrectedPostApplyVerification": "HOLD",
+  "productionMutations": "NONE",
+  "restorationRunbookPrepared": false,
+  "restorationExecuted": false,
+  "evidenceBoundary": "This offline reconciliation proves the captured ledger statement identity only. It is not a live post-apply PASS and does not prove the unexecuted structural or Edge Function steps."
+}

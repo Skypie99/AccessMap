@@ -11,7 +11,18 @@ select jsonb_build_object(
   'ledger_latest_version',(select max(version) from supabase_migrations.schema_migrations),
   'ledger_ordered_version_name_sha256',(select encode(extensions.digest(coalesce(string_agg(version::text||E'\t'||name::text,E'\n' order by version)||E'\n',''),'sha256'),'hex') from supabase_migrations.schema_migrations),
   'phase03b_versions',(select coalesce(jsonb_agg(version order by version),'[]'::jsonb) from supabase_migrations.schema_migrations where version in ('20260915210256','20260915210413')),
-  'phase03b_rows',(select coalesce(jsonb_agg(jsonb_build_object('version',version,'name',name,'statement_count',cardinality(statements),'statement_sha256',encode(extensions.digest(coalesce(statements[1],''),'sha256'),'hex')) order by version),'[]'::jsonb) from supabase_migrations.schema_migrations where version in ('20260915210256','20260915210413')),
+  'phase03b_rows',(select coalesce(jsonb_agg(jsonb_build_object(
+    'version',version,
+    'name',name,
+    'statement_count',cardinality(statements),
+    'statement_sha256',case
+      when statements is null or array_position(statements,null) is not null then null
+      else encode(extensions.digest(coalesce((
+        select string_agg(octet_length(convert_to(statement,'UTF8'))::text||':'||statement,'' order by ordinality)
+        from unnest(statements) with ordinality as ordered_statement(statement,ordinality)
+      ),''),'sha256'),'hex')
+    end
+  ) order by version),'[]'::jsonb) from supabase_migrations.schema_migrations where version in ('20260915210256','20260915210413')),
   'phase03b_constraint_index_sha256',(with objects as (
     select 'constraint' kind,n.nspname schema_name,c.relname relation_name,con.conname object_name,pg_catalog.pg_get_constraintdef(con.oid,true) definition
     from pg_catalog.pg_constraint con join pg_catalog.pg_class c on c.oid=con.conrelid join pg_catalog.pg_namespace n on n.oid=c.relnamespace

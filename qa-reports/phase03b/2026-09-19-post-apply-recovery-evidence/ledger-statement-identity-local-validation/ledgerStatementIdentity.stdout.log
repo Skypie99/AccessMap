@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "method": "Frozen migration bytes parsed by the source-pinned Supabase CLI 2.116.0 SplitAndTrim finite-state-machine contract; ordered arrays use UTF-8 byte-length-prefixed SHA-256.",
+  "parserIdentity": {
+    "cliVersion": "2.116.0",
+    "sourceTag": "v2.116.0",
+    "sourceCommit": "997a1e69a4a83466964ed874d3a604c88a7b3866",
+    "migrationFileSourceSha256": "560a3d2bdcc74acb3e778acc2d76552d7860d3e73de27de9a1ebb6eabe0c2bcb",
+    "parserTokenSourceSha256": "244aea79f3b7065b4151f642c9111cf58b3cb23b792201dbcff80d83491e6f04",
+    "parserStateSourceSha256": "d0dafd2d8661d19c3e058899943d32e785e12eaeed2c127a3eda92f874e1c942",
+    "migrationHistorySourceSha256": "9be7d7a3b22e0fb3606aa24652837a515723f0df5f2c5aebf2a0cb9261c60beb",
+    "officialTypeScriptPortSha256": "3ca3a6e9cb8e7ecbf74af057bf84d6f25727e7a91bacf188cd67699f524e1379"
+  },
+  "rows": [
+    {
+      "version": "20260915210256",
+      "name": "phase03b_moderation_semantics_compatibility_bridge",
+      "statement_count": 68,
+      "statement_sha256": "cbc17a516412859e5fb6ca2fa41e538f1d0c9ae5a10168424431f761b8ca086c"
+    },
+    {
+      "version": "20260915210413",
+      "name": "phase03b_points_integrity",
+      "statement_count": 23,
+      "statement_sha256": "72f8faf6c218a92be5fa14bc9851d0fe035e4e0f4ffd7e9196184f438d479569"
+    }
+  ],
+  "checks": {
+    "pinnedParserSourceIdentity": true,
+    "installedCliVersionPinned": true,
+    "expectedStatementArraysDerivedIndependently": true,
+    "firstMigrationHas68Statements": true,
+    "secondMigrationHas23Statements": true,
+    "missingStatementHolds": true,
+    "extraStatementHolds": true,
+    "reorderedStatementsHold": true,
+    "alteredStatementSameCountHolds": true,
+    "wrongVersionHolds": true,
+    "duplicateVersionHolds": true,
+    "wrongNameHolds": true,
+    "missingMigrationRowHolds": true,
+    "malformedLedgerTransportHolds": true,
+    "malformedStatementsValueHolds": true,
+    "unsupportedParserVersionHolds": true,
+    "unsupportedParserSourceHolds": true,
+    "exactLiveLedgerSummaryTransportPasses": true,
+    "candidateMigrationBytesUnchanged": true,
+    "expectedIdentityArtifactMatchesDerivation": true,
+    "strictSchemaUnchanged": true,
+    "orderedArraySqlContractPinned": true
+  },
+  "passed": 22,
+  "total": 22,
+  "productionMutations": "NONE"
+}

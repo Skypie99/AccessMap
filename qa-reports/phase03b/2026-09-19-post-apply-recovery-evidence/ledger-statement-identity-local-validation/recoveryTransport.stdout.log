@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "passed": 13,
+  "total": 13,
+  "checks": {
+    "oneRowArrayProofWrapper": true,
+    "rowsWrapperProof": true,
+    "malformedArrayHolds": true,
+    "zeroRowsHolds": true,
+    "multipleRowsHold": true,
+    "missingProofKeyHolds": true,
+    "unknownWrapperKeysHold": true,
+    "validPostApplyProofBuildsStrictEnvelope": true,
+    "invalidProofCannotReachPass": true,
+    "postExitUsesSameValidTransport": true,
+    "bothVerifiersUseCanonicalResultRow": true,
+    "strictSchemaUnchanged": true,
+    "candidateMigrationBytesUnchanged": true
+  }
+}

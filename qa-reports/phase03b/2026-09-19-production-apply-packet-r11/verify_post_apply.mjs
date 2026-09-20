@@ -11,11 +11,16 @@ import {
   bindDatabaseT0Sql,
   buildR8Envelope,
   entryFromEnvelope,
+  EXPECTED_PHASE03B_ROWS,
   GATE_MANIFEST_SHA256,
   parseCliJson,
   resultRow,
   validateRunRelativePgNetCheckpoint,
 } from './r8_control_lib.mjs';
+import {
+  assertInstalledSupabaseCliVersion,
+  validateExactLedgerRows,
+} from './phase03b_statement_identity.mjs';
 
 const PACKET = dirname(fileURLToPath(import.meta.url));
 const TARGET = 'kldlwszpfkdmsjrjhjym';
@@ -61,6 +66,7 @@ let proof = null;
 let structureSha256 = null;
 let status = 'HOLD';
 try {
+  assertInstalledSupabaseCliVersion();
   const boundProofSql = join(evidence, 'BOUND_QUIESCENCE_VERIFY.sql');
   writeFileSync(boundProofSql, bindDatabaseT0Sql(readFileSync(join(PACKET, 'PROPOSED_QUIESCENCE_VERIFY.sql'), 'utf8'), entry.database_t0), { flag: 'wx', mode: 0o600 });
   const proofStep = await run('quiescence-proof', ['db', 'query', '--linked', '--project-ref', TARGET, '--file', boundProofSql, '--output-format', 'json']);
@@ -79,11 +85,7 @@ try {
   validateRunRelativePgNetCheckpoint(proof, entry.database_t0, { requireReadOnly: true });
   const versions = proof.phase03b_versions ?? [];
   if (JSON.stringify(versions) !== JSON.stringify(['20260915210256', '20260915210413'])) throw new Error('Exact Phase 03B ledger versions mismatch');
-  const expectedRows = [
-    { version: '20260915210256', name: 'phase03b_moderation_semantics_compatibility_bridge', statement_count: 1, statement_sha256: 'b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11' },
-    { version: '20260915210413', name: 'phase03b_points_integrity', statement_count: 1, statement_sha256: '0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5' },
-  ];
-  if (JSON.stringify(proof.phase03b_rows) !== JSON.stringify(expectedRows)) throw new Error('Applied migration statement bytes do not match the frozen pair');
+  validateExactLedgerRows(proof.phase03b_rows, EXPECTED_PHASE03B_ROWS);
   for (const key of ['function_oid', 'trigger_oid', 'truncate_trigger_oid', 'table_oid', 'flags_id_status_count', 'flags_id_status_sha256', 'history_count', 'history_sha256']) {
     if (proof[key] !== entry[key]) throw new Error(`Entry-to-post-apply mismatch: ${key}`);
   }
@@ -120,7 +122,7 @@ try {
     acceptedStagingArtifactCommit: 'aca5fdbb0f5fd151a5c98d5ca1b956954cf83354',
     acceptedStagingStructureSha256: EXPECTED_FINAL_STRUCTURE_SHA256,
     edgeFunctionIdentitySha256: EXPECTED_EDGE_FUNCTION_SHA256,
-    exactChecks: ['ledger +2 and exact versions', 'full normalized structure excluding only exact temporary gate', 'grants/RLS', 'Build 33 and pinned-web authorization', 'RPC/moderation/points definitions', 'photo_alt boundary', 'admin reject/restore', 'Edge Function identity', 'run-relative outbound-side-effect invariant', 'primary invariant', 'history invariant', 'temporary gate identity', 'no unexpected migration/object'],
+    exactChecks: ['ledger +2 and exact versions', 'Supabase CLI 2.116.0 ordered split-statement identity', 'full normalized structure excluding only exact temporary gate', 'grants/RLS', 'Build 33 and pinned-web authorization', 'RPC/moderation/points definitions', 'photo_alt boundary', 'admin reject/restore', 'Edge Function identity', 'run-relative outbound-side-effect invariant', 'primary invariant', 'history invariant', 'temporary gate identity', 'no unexpected migration/object'],
   });
   status = 'PASS_WHILE_QUIESCED';
 } catch (error) {

@@ -6,6 +6,10 @@ import {
   validateCompiledR8Schema,
   validateCompiledR8ServerSnapshot,
 } from './r8_schema_validator.mjs';
+import {
+  deriveExpectedPhase03bRows,
+  validateExactLedgerRows,
+} from './phase03b_statement_identity.mjs';
 
 const PACKET = dirname(fileURLToPath(import.meta.url));
 export const EXPECTED = JSON.parse(readFileSync(join(PACKET, 'EXPECTED_VALUES.json'), 'utf8'));
@@ -304,12 +308,10 @@ const POST_EXIT_PROOF_KEYS = [
   'http_response_new_since_t0_count',
 ];
 
-const EXPECTED_PHASE03B_ROWS = EXPECTED.migrations.map((migration) => ({
-  version: migration.version,
-  name: migration.filename.replace(/^\d{14}_/, '').replace(/\.sql$/, ''),
-  statement_count: 1,
-  statement_sha256: migration.sha256,
-}));
+export const EXPECTED_PHASE03B_ROWS = deriveExpectedPhase03bRows(
+  join(PACKET, '../../../supabase/migrations-next/phase03b'),
+  EXPECTED.migrations,
+);
 
 function validateComparatorStep(step, phase, index) {
   const label = `${phase} observed.steps[${index}]`;
@@ -374,10 +376,10 @@ function validateComparatorProof(envelope, constraints) {
   }, `${envelope.phase} proof`);
   validateRunRelativePgNetCheckpoint(proof, envelope.expected.databaseT0, { requireReadOnly: true });
   if (!isPostApply && proof.reserved_trigger_count !== 0) throw new Error('POST_EXIT_COMPARATOR proof still contains a reserved gate');
-  if (JSON.stringify(proof.phase03b_versions) !== JSON.stringify(EXPECTED.migrations.map((migration) => migration.version)) ||
-      JSON.stringify(proof.phase03b_rows) !== JSON.stringify(EXPECTED_PHASE03B_ROWS)) {
-    throw new Error(`${envelope.phase} proof migration identity mismatch`);
+  if (JSON.stringify(proof.phase03b_versions) !== JSON.stringify(EXPECTED.migrations.map((migration) => migration.version))) {
+    throw new Error(`${envelope.phase} proof migration version identity mismatch`);
   }
+  validateExactLedgerRows(proof.phase03b_rows, EXPECTED_PHASE03B_ROWS);
   for (const key of ['flags_id_status_count', 'history_count']) requireNonNegativeInteger(proof[key], `${envelope.phase} proof.${key}`);
   for (const key of ['flags_id_status_sha256', 'history_sha256']) requireSha256(proof[key], `${envelope.phase} proof.${key}`);
   if (isPostApply) {

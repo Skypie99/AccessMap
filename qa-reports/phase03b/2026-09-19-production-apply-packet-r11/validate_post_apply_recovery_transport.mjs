@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   EXPECTED,
+  EXPECTED_PHASE03B_ROWS,
   GATE_MANIFEST_SHA256,
   MAXIMUM_QUIESCENCE_WINDOW_SECONDS,
   buildR8Envelope,
@@ -31,12 +32,7 @@ const proofPayload = parseCliJson(readFileSync(proofPath, 'utf8'));
 const transportedProof = resultRow(proofPayload, 'phase03b_quiescence_proof_r3');
 const proof = {
   ...transportedProof,
-  phase03b_rows: EXPECTED.migrations.map((migration) => ({
-    version: migration.version,
-    name: migration.filename.replace(/^\d{14}_/, '').replace(/\.sql$/, ''),
-    statement_count: 1,
-    statement_sha256: migration.sha256,
-  })),
+  phase03b_rows: EXPECTED_PHASE03B_ROWS,
 };
 const boundary = '0123456789abcdef0123456789abcdef';
 const rowsWrapper = { boundary, rows: [{ phase03b_quiescence_proof_r3: proof }], warning: `rows bounded by <${boundary}>` };

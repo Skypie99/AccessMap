@@ -13,6 +13,7 @@ import {
   EXPECTED,
   EXPECTED_FILENAMES,
   EXPECTED_GATE_IDENTITIES,
+  EXPECTED_PHASE03B_ROWS,
   GATE_MANIFEST_SHA256,
   MAXIMUM_QUIESCENCE_WINDOW_SECONDS,
   assertAutomationAllowed,
@@ -305,12 +306,6 @@ function comparatorEnvelope(phase, status, entryEnvelope) {
     command, startedAt: '2026-09-17T18:00:00.600Z', endedAt: '2026-09-17T18:00:00.700Z',
     exitCode: 0, signal: null, timedOut: false,
   };
-  const migrationRows = EXPECTED.migrations.map((migration) => ({
-    version: migration.version,
-    name: migration.filename.replace(/^\d{14}_/, '').replace(/\.sql$/, ''),
-    statement_count: 1,
-    statement_sha256: migration.sha256,
-  }));
   const sharedProof = {
     receipt: isPostApply ? 'phase03b_quiescence_proof_r3' : 'phase03b_post_exit_proof_r3',
     transaction_read_only: 'on', captured_at_utc: '2026-09-17T18:00:00.650Z',
@@ -322,7 +317,7 @@ function comparatorEnvelope(phase, status, entryEnvelope) {
     ledger_latest_version: EXPECTED.final.ledgerLatestVersion,
     ledger_ordered_version_name_sha256: EXPECTED.final.ledgerSha256,
     phase03b_versions: EXPECTED.migrations.map((migration) => migration.version),
-    phase03b_rows: migrationRows,
+    phase03b_rows: EXPECTED_PHASE03B_ROWS,
     phase03b_constraint_index_sha256: EXPECTED.final.phase03bConstraintIndexSha256,
     database_t0: DATABASE_T0,
     pg_net_ttl: '6 hours',

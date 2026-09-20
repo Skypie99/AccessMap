@@ -59,11 +59,11 @@ select jsonb_build_object(
     where n.nspname='public' and (c.relname in ('flag_moderation_events','flag_point_reward_claims','comment_reward_daily','comment_vote_reward_counts') or con.conname in ('flags_last_moderation_reason_code_vocabulary','feedback_moderation_resolution_vocabulary','feedback_moderation_action_intent_vocabulary','feedback_moderation_reason_code_vocabulary','feedback_moderation_review_pairing','feedback_reject_reason_pairing'))
     union all select 'index',schemaname,tablename,indexname,indexdef from pg_catalog.pg_indexes where schemaname='public' and (tablename in ('flag_moderation_events','flag_point_reward_claims','comment_reward_daily','comment_vote_reward_counts') or indexname in ('feedback_moderation_open_idx','flag_moderation_events_one_reversal_idx','flag_moderation_events_flag_created_idx','flag_moderation_events_report_reject_idx'))
   ) select encode(extensions.digest(coalesce(string_agg(kind||E'\t'||schema_name||E'\t'||relation_name||E'\t'||object_name||E'\t'||definition,E'\n' order by kind,schema_name,relation_name,object_name),''),'sha256'),'hex') from objects),
-  'database_t0',to_char('__DATABASE_T0__'::timestamptz at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+  'database_t0',to_char('2026-09-20T06:20:25.216974Z'::timestamptz at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
   'pg_net_ttl',current_setting('pg_net.ttl', true),
   'pg_net_ttl_seconds',extract(epoch from current_setting('pg_net.ttl')::interval)::bigint,
   'http_queue_count',(select count(*) from net.http_request_queue),'http_response_count',(select count(*) from net._http_response),
   'http_response_sha256',(select encode(extensions.digest(coalesce(string_agg(coalesce(id::text,'')||E'\t'||to_char(created at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')||E'\t'||coalesce(status_code::text,'')||E'\t'||coalesce(timed_out::text,'')||E'\t'||case when error_msg is null then 'NO_ERROR' else 'ERROR' end,E'\n' order by id nulls first,created),''),'sha256'),'hex') from net._http_response),
-  'http_response_new_since_t0_count',(select count(*) from net._http_response where created >= '__DATABASE_T0__'::timestamptz)
+  'http_response_new_since_t0_count',(select count(*) from net._http_response where created >= '2026-09-20T06:20:25.216974Z'::timestamptz)
 ) as phase03b_quiescence_proof_r3;
 rollback;

@@ -11,11 +11,16 @@ import {
   bindDatabaseT0Sql,
   buildR8Envelope,
   entryFromEnvelope,
+  EXPECTED_PHASE03B_ROWS,
   GATE_MANIFEST_SHA256,
   parseCliJson,
   resultRow,
   validateRunRelativePgNetCheckpoint,
 } from './r8_control_lib.mjs';
+import {
+  assertInstalledSupabaseCliVersion,
+  validateExactLedgerRows,
+} from './phase03b_statement_identity.mjs';
 
 const PACKET = dirname(fileURLToPath(import.meta.url));
 const TARGET = 'kldlwszpfkdmsjrjhjym';
@@ -48,6 +53,7 @@ let proof = null;
 let structureSha256 = null;
 let status = 'HOLD';
 try {
+  assertInstalledSupabaseCliVersion();
   const boundProofSql = join(evidence, 'BOUND_POST_EXIT_VERIFY.sql');
   writeFileSync(boundProofSql, bindDatabaseT0Sql(readFileSync(join(PACKET, 'POST_EXIT_VERIFY.sql'), 'utf8'), entry.database_t0), { mode: 0o600, flag: 'wx' });
   const proofRun = run('post-exit-proof', ['db', 'query', '--linked', '--project-ref', TARGET, '--file', boundProofSql, '--output-format', 'json']);
@@ -56,11 +62,7 @@ try {
   for (const [key, value] of Object.entries(exact)) if (proof[key] !== value) throw new Error(`Post-exit mismatch: ${key}`);
   validateRunRelativePgNetCheckpoint(proof, entry.database_t0, { requireReadOnly: true });
   if (JSON.stringify(proof.phase03b_versions) !== JSON.stringify(['20260915210256', '20260915210413'])) throw new Error('Post-exit Phase 03B ledger mismatch');
-  const expectedRows = [
-    { version: '20260915210256', name: 'phase03b_moderation_semantics_compatibility_bridge', statement_count: 1, statement_sha256: 'b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11' },
-    { version: '20260915210413', name: 'phase03b_points_integrity', statement_count: 1, statement_sha256: '0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5' },
-  ];
-  if (JSON.stringify(proof.phase03b_rows) !== JSON.stringify(expectedRows)) throw new Error('Post-exit migration statement bytes mismatch');
+  validateExactLedgerRows(proof.phase03b_rows, EXPECTED_PHASE03B_ROWS);
   for (const key of ['flags_id_status_count', 'flags_id_status_sha256', 'history_count', 'history_sha256']) if (proof[key] !== entry[key]) throw new Error(`Post-exit invariant mismatch: ${key}`);
 
   const sqlPath = join(evidence, 'STRUCTURAL_CAPTURE_READ_ONLY.sql');

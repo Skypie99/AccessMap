@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "flagstone.phase03b.statement-identity.v1",
+  "derivedFromProduction": false,
+  "method": "Supabase CLI 2.116.0 parser.SplitAndTrim finite-state-machine behavior applied to the two frozen migration files. Ordered-array SHA-256 hashes the concatenation of UTF-8 byte-length, colon, and statement bytes for each statement in order.",
+  "parserIdentity": {
+    "cliVersion": "2.116.0",
+    "sourceTag": "v2.116.0",
+    "sourceCommit": "997a1e69a4a83466964ed874d3a604c88a7b3866",
+    "migrationFileSourceSha256": "560a3d2bdcc74acb3e778acc2d76552d7860d3e73de27de9a1ebb6eabe0c2bcb",
+    "parserTokenSourceSha256": "244aea79f3b7065b4151f642c9111cf58b3cb23b792201dbcff80d83491e6f04",
+    "parserStateSourceSha256": "d0dafd2d8661d19c3e058899943d32e785e12eaeed2c127a3eda92f874e1c942",
+    "migrationHistorySourceSha256": "9be7d7a3b22e0fb3606aa24652837a515723f0df5f2c5aebf2a0cb9261c60beb",
+    "officialTypeScriptPortSha256": "3ca3a6e9cb8e7ecbf74af057bf84d6f25727e7a91bacf188cd67699f524e1379"
+  },
+  "migrations": [
+    {
+      "version": "20260915210256",
+      "name": "phase03b_moderation_semantics_compatibility_bridge",
+      "filename": "20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "sourceSha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11",
+      "statementCount": 68,
+      "orderedStatementArraySha256": "cbc17a516412859e5fb6ca2fa41e538f1d0c9ae5a10168424431f761b8ca086c"
+    },
+    {
+      "version": "20260915210413",
+      "name": "phase03b_points_integrity",
+      "filename": "20260915210413_phase03b_points_integrity.sql",
+      "sourceSha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5",
+      "statementCount": 23,
+      "orderedStatementArraySha256": "72f8faf6c218a92be5fa14bc9851d0fe035e4e0f4ffd7e9196184f438d479569"
+    }
+  ]
+}
