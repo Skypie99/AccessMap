@@ -1,7 +1,7 @@
 # Phase 03B current recovery handoff
 
-- `CURRENT_TASK`: Bounded verifier-scope repair — exact 7-table preexisting-backup-table exclusion from Phase03B final-structure equivalence, offline-implemented and offline-replayed. No production/staging contact, no mutation.
-- `CURRENT_PHASE`: `PREEXISTING_DRIFT_SCOPE_REPAIR_COMPLETE_AWAITING_INDEPENDENT_REVIEW`
+- `CURRENT_TASK`: Narrow independent review (fresh, local/offline only) of the preexisting-backup-table exclusion repair at commit `3420d87`. No production/staging contact, no mutation, no live verifier run.
+- `CURRENT_PHASE`: `PREEXISTING_DRIFT_SCOPE_REPAIR_INDEPENDENTLY_REVIEWED_PASS`
 - `CURRENT_BRANCH`: `codex/flagstone-p03b-post-apply-recovery-20260919`
 - `CURRENT_WORKTREE`: `/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919`
 - `INCIDENT_RUN_ID`: `ebdba703-2470-41fa-ac6d-44354203b8d1`
@@ -16,10 +16,11 @@
 - `PREEXISTING_DRIFT_SCOPE_REPAIR_RESULT`: **PASS.** Exact 7-table allowlist (`bk_2026_08_22_flags`, `bk_2026_08_22_flag_comments`, `bk_2026_08_22_flag_edit_history`, `bk_2026_08_22_flag_photos`, `bk_2026_08_22_flag_status_history`, `bk_2026_08_22_flag_verifications`, `bk_2026_08_22_point_links`, all schema `public`) proven eligible and wired into both structure comparators. Offline replay against the actual captured production evidence proves the fix is correct: 0 residuals, exact hash match, without touching the accepted staging artifact or the frozen migration bytes.
 - `CURRENT_EVIDENCE_PATHS`: `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json`; `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/preexisting_structure_exclusions.mjs`; `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/validate_preexisting_structure_exclusions.mjs`; `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/replay_preexisting_structure_exclusion_offline.mjs`; modified `verify_post_apply.mjs` and `verify_post_exit.mjs` in the same packet
 - `UNCOMMITTED_FILES`: none after this checkpoint commit
-- `NEXT_EXACT_ACTION`: This repair is ready for ONE fresh narrow independent review (as this task specified — not self-approved). Only after that review passes may Sky separately authorize a third live read-only post-apply verification. Do not run the live verifier before that review.
+- `INDEPENDENT_REVIEW_RESULT`: **PASS.** Reviewed commit `3420d87` fresh, independently, locally, offline. Re-derived migration SHA-256 hashes myself (match pinned constants, byte-identical). Confirmed by grep that neither frozen migration references any excluded table. Read the filter module directly and confirmed the match rule is exact `(schema,table)` equality against a frozen array with a cardinality assertion — no wildcard/prefix logic exists. Independently parsed the 2026-09-15 Phase03A preflight capture and confirmed all 7 tables were already present 5 days before the Phase03B production apply T0. Independently pulled the accepted staging baseline via `git show` from its sibling branch and confirmed zero mentions of the 7 tables and an unmodified checksum. Independently parsed the structure-divergence diff JSON and confirmed all 55 residuals (7 relations + 48 columns) belong exclusively to the 7 pinned tables, zero outliers, zero `only-in-first` residuals (no real defect masked). Re-ran, myself, fresh: focused exclusion tests 17/17 PASS, ledger identity 23/23 PASS, recovery transport 13/13 PASS, offline structure replay PASS with 0 residuals and an exact hash match. Full evidence: `qa-reports/phase03b/2026-09-20-preexisting-drift-exclusion-independent-review/REVIEW.md` and `independent_review_receipt.json`.
+- `NEXT_EXACT_ACTION`: The repair has now passed one fresh narrow independent review. This review does not authorize a live run. Sky must separately authorize exactly one fresh live read-only post-apply verification before it happens.
 - `DO_NOT_REPEAT`: production controller; either Phase 03B migration; migration apply; original one-run authorization; the consumed second live verifier run; any live retry without new explicit authority
-- `DO_NOT_DO`: gate removal; exit SQL; restoration; rollback; migration repair; db pull; production mutation; staging mutation; Phase 03C; R12; broadening the exclusion beyond the exact 7 pinned identities; changing the accepted staging expected-structure value
-- `LAST_UPDATED_UTC`: `2026-09-20T08:50:00Z`
+- `DO_NOT_DO`: gate removal; exit SQL; restoration; rollback; migration repair; db pull; production mutation; staging mutation; Phase 03C; R12; broadening the exclusion beyond the exact 7 pinned identities; changing the accepted staging expected-structure value; running the live verifier without Sky's separate authorization
+- `LAST_UPDATED_UTC`: `2026-09-20T09:15:00Z`
 
 ## DECISIONS FOR SKY
 

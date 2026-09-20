@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "flagstone.phase03b.independent-review.v1",
+  "reviewedRepairCommit": "3420d878eb58658a42a299d228c25f2b617752cd",
+  "reviewedAtUtc": "2026-09-20T09:15:00Z",
+  "mode": "FRESH_INDEPENDENT_REVIEW_LOCAL_OFFLINE_ONLY",
+  "verdict": "PASS",
+  "exactExcludedTableCount": 7,
+  "exactExcludedTables": [
+    { "schema": "public", "table": "bk_2026_08_22_flags" },
+    { "schema": "public", "table": "bk_2026_08_22_flag_comments" },
+    { "schema": "public", "table": "bk_2026_08_22_flag_edit_history" },
+    { "schema": "public", "table": "bk_2026_08_22_flag_photos" },
+    { "schema": "public", "table": "bk_2026_08_22_flag_status_history" },
+    { "schema": "public", "table": "bk_2026_08_22_flag_verifications" },
+    { "schema": "public", "table": "bk_2026_08_22_point_links" }
+  ],
+  "independentChecks": {
+    "exclusionListExactlySeven": { "result": true, "method": "node read of PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json: exclusions.length === 7" },
+    "allSchemaPublic": { "result": true },
+    "noWildcardOrPrefixLogicInFilterModule": { "result": true, "method": "read preexisting_structure_exclusions.mjs: isPinnedExcludedTable does exact (schema,table) equality against a frozen array; no regex/startsWith/includes pattern matching against candidate names" },
+    "migrationBytesUnchanged": {
+      "result": true,
+      "method": "independent shasum -a 256 in this worktree",
+      "migration1Sha256": "b1d7b5a6484a4217f509c3f27d168a8cac07f84833b7d1668a3fb251e7457a11",
+      "migration2Sha256": "0b8ad388dc428ca27c605140b146a454e435fcac7dc0bea49c00f4f928af0ae5",
+      "matchesClaimed": true
+    },
+    "neitherMigrationReferencesExcludedTables": { "result": true, "method": "grep -in bk_2026_08_22 against both migration .sql files: no match (exit 1)" },
+    "allSevenProvenPrePhase03B": {
+      "result": true,
+      "method": "independent node parse of qa-reports/phase03a/2026-09-15-production-preflight/PRODUCTION_CATALOG_CAPTURE.json (captured_at_utc 2026-09-15T03:23:45.369Z, 5 days before Phase03B production apply T0 2026-09-20T06:20:25.216974Z): all 7 bk_2026_08_22_* table names present in the raw capture text",
+      "supportingProvenance": "supabase/nonmanaged/destructive-data/2026-08-22_takedown_junk_flags_APPLIED.sql exists on disk and references bk_2026_08_22_ 39 times"
+    },
+    "absentFromAcceptedStagingBaseline": {
+      "result": true,
+      "method": "git show aca5fdbb0f5fd151a5c98d5ca1b956954cf83354:qa-reports/phase03b/2026-09-15-revised-staging/CATALOG_FIRST_REVISED_APPLY.json (sibling branch, no checkout) into this worktree and scanned for bk_2026_08_22_ substrings: zero matches; artifact's own checksum field f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7 matches the pinned EXPECTED_FINAL_STRUCTURE_SHA256 constant referenced by the repair, confirming the staging artifact itself was not altered"
+    },
+    "exclusionScopeIsStructureEquivalenceOnly": {
+      "result": true,
+      "method": "read PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json scope field and grepped repo for other importers of preexisting_structure_exclusions.mjs; only verify_post_apply.mjs and verify_post_exit.mjs import it, both strictly in the final-structure comparison step"
+    },
+    "allFiftyFiveResidualsAccountedForByExactlyThisSet": {
+      "result": true,
+      "method": "node parse of qa-reports/phase03b/2026-09-20-structure-divergence-diff.json: 55 total residuals = 7 relation entries + 48 column entries, every objectName belongs to one of the 7 pinned tables (zero outliers), all classified D_PREEXISTING_ENVIRONMENTAL_DRIFT, zero only-in-first residuals (nothing expected is missing from production)"
+    },
+    "doesNotSilentlyHideNonExcludedResidualObjects": {
+      "result": true,
+      "method": "focused test suite checks 9 and 10 (rlsAclDifferenceOnNonExcludedObjectStillDetected, triggerDifferenceOnNonExcludedObjectStillDetected) independently re-run and PASS; cardinality assertion in applyPreexistingStructureExclusions throws if removed-relation count != 7, which fails closed rather than silently widening"
+    },
+    "similarNewTableNotExcluded": { "result": true, "method": "focused test 4 (eighthSimilarlyNamedTableNotExcluded) independently re-run and PASS -- bk_2026_08_22_flags_copy2 is not removed" },
+    "wrongSchemaMatchNotExcluded": { "result": true, "method": "focused test 6 (wrongSchemaSameTableNameNotExcluded) independently re-run and PASS -- private.bk_2026_08_22_flags is not removed" },
+    "acceptedStagingArtifactNotModifiedToForceMatch": {
+      "result": true,
+      "method": "commit 3420d87 diff touches only the r11 packet files and the two checkpoint files; EXPECTED_FINAL_STRUCTURE_SHA256 / STRUCTURE_SHA256 constants in verify_post_apply.mjs / verify_post_exit.mjs are unchanged (still f1854953...); the staging baseline file itself is not a file this commit modifies (confirmed via git show diff-stat)"
+    }
+  },
+  "reRunLocalTests": {
+    "focusedExclusionTests": { "passed": 17, "total": 17, "rerunIndependently": true },
+    "priorLedgerIdentityTests": { "passed": 23, "total": 23, "rerunIndependently": true },
+    "priorRecoveryTransportTests": { "passed": 13, "total": 13, "rerunIndependently": true }
+  },
+  "offlineStructureReplay": {
+    "status": "PASS",
+    "rerunIndependently": true,
+    "residualCount": 0,
+    "observedStructureSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+    "expectedStructureSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+    "productionContact": "NONE",
+    "stagingContact": "NONE"
+  },
+  "securityOrSemanticScopeWeakened": false,
+  "candidateBytesChanged": false,
+  "productionContact": "NONE",
+  "productionMutations": "NONE",
+  "migrationApplyRetried": false,
+  "recoveryRestorationExecuted": false,
+  "phase03cStarted": false
+}
