@@ -21,6 +21,10 @@ import {
   assertInstalledSupabaseCliVersion,
   validateExactLedgerRows,
 } from './phase03b_statement_identity.mjs';
+import {
+  PREEXISTING_STRUCTURE_EXCLUSIONS,
+  applyPreexistingStructureExclusions,
+} from './preexisting_structure_exclusions.mjs';
 
 const PACKET = dirname(fileURLToPath(import.meta.url));
 const TARGET = 'kldlwszpfkdmsjrjhjym';
@@ -104,8 +108,14 @@ try {
     item.s === 'public' && item.t === 'flags' && ['aaa_flagstone_phase03b_row_lifecycle_quiescence_r2', 'aaa_flagstone_phase03b_truncate_quiescence_r3'].includes(item.g)
   ));
   if (beforeFunctions - filtered.functions.length !== 1 || beforeTriggers - filtered.triggers.length !== 2) throw new Error('Only-exact-temporary-gate exclusion cardinality mismatch');
-  const normalized = normalizeCatalog(filtered); structureSha256 = checksum(normalized);
-  writeJson('NORMALIZED_STRUCTURE_EXCLUDING_EXACT_GATE.json', { queryHash, excludedExactTemporaryObjects: 3, structureSha256, catalog: normalized });
+  const withPreexistingExcluded = applyPreexistingStructureExclusions(filtered);
+  const normalized = normalizeCatalog(withPreexistingExcluded); structureSha256 = checksum(normalized);
+  writeJson('NORMALIZED_STRUCTURE_EXCLUDING_EXACT_GATE.json', {
+    queryHash, structureSha256, catalog: normalized,
+    excludedExactTemporaryObjects: 3,
+    excludedExactPreexistingTables: PREEXISTING_STRUCTURE_EXCLUSIONS.length,
+    preexistingExclusionsContract: 'PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json',
+  });
   if (structureSha256 !== EXPECTED_FINAL_STRUCTURE_SHA256) throw new Error('Final structure differs from accepted revised-staging final artifact');
 
   const functionStep = await run('edge-function', ['functions', 'list', '--project-ref', TARGET, '--output-format', 'json']);

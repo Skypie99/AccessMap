@@ -21,6 +21,7 @@ import {
   assertInstalledSupabaseCliVersion,
   validateExactLedgerRows,
 } from './phase03b_statement_identity.mjs';
+import { applyPreexistingStructureExclusions } from './preexisting_structure_exclusions.mjs';
 
 const PACKET = dirname(fileURLToPath(import.meta.url));
 const TARGET = 'kldlwszpfkdmsjrjhjym';
@@ -68,9 +69,12 @@ try {
   const sqlPath = join(evidence, 'STRUCTURAL_CAPTURE_READ_ONLY.sql');
   writeFileSync(sqlPath, `begin transaction read only;\n${CATALOG_SQL};\nrollback;\n`, { mode: 0o600, flag: 'wx' });
   const structureRun = run('structure', ['db', 'query', '--linked', '--project-ref', TARGET, '--file', sqlPath, '--output-format', 'json']);
-  steps.push(structureRun.receipt); const normalized = normalizeCatalog(resultRow(structureRun.payload, 'catalog'));
+  steps.push(structureRun.receipt);
+  const rawCatalog = resultRow(structureRun.payload, 'catalog');
+  const withPreexistingExcluded = applyPreexistingStructureExclusions(rawCatalog);
+  const normalized = normalizeCatalog(withPreexistingExcluded);
   structureSha256 = checksum(normalized);
-  writeFileSync(join(evidence, 'NORMALIZED_STRUCTURE.json'), `${JSON.stringify({ structureSha256, catalog: normalized }, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
+  writeFileSync(join(evidence, 'NORMALIZED_STRUCTURE.json'), `${JSON.stringify({ structureSha256, catalog: normalized, preexistingExclusionsContract: 'PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json' }, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
   if (structureSha256 !== STRUCTURE_SHA256) throw new Error('Post-exit structure differs from accepted final structure');
 
   const fnRun = run('edge-function', ['functions', 'list', '--project-ref', TARGET, '--output-format', 'json']); steps.push(fnRun.receipt);
