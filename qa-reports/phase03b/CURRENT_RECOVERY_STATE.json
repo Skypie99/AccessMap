@@ -117,7 +117,7 @@
     "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json",
     "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/ (new directory, 7 files)"
   ],
-  "NEXT_EXACT_ACTION": "Independent review of the restoration runbook returned HOLD (2026-09-20): compare_captured_results.mjs must be fixed so a NOT_RUN critical section cannot leave overall at PASS/exit-0 (reproduced independently against the real on-disk evidence). Fix that tool, re-capture and save proof.json and edge_function.json, re-run the fixed comparator to confirm a genuine PASS from saved artifacts, then request another independent review pass. Restoration execution itself still requires independent review PASS plus a separate explicit go-ahead from Sky beyond the read-only authorization already consumed.",
+  "NEXT_EXACT_ACTION": "The evidence-aggregation defect in compare_captured_results.mjs has been repaired (narrow fix, see EVIDENCE_AGGREGATOR_REPAIR_RESULT) but not yet independently reviewed. Remaining: (1) independent review of this narrow repair; (2) owner runs the prepared, not-yet-executed read-only commands in qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURE_MISSING_EVIDENCE.md to save proof.json and edge_function.json into CAPTURED_FINAL_STRUCTURE/; (3) re-run the fixed compare_captured_results.mjs against all three files and confirm a genuine overall PASS / exit 0; (4) only then request another independent review pass of the restoration runbook itself. Restoration execution still requires that runbook review to PASS plus a separate explicit go-ahead from Sky beyond the read-only authorization already consumed.",
   "EXTERNAL_HANDOFF_PACKAGE": {
     "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/",
     "preparedBy": "Claude (Sonnet 5)",
@@ -191,7 +191,63 @@
     "unaffected": ["PHASE03B_RESTORATION_EXIT.sql do $guard$/do $absence$ blocks", "verify_post_exit.mjs"],
     "restorationSqlRegeneratedAndByteIdentical": true,
     "reportPath": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/REVIEW.md",
-    "receiptPath": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/independent_review_receipt.json"
+    "receiptPath": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/independent_review_receipt.json",
+    "supersededByRepairNotYetReReviewed": true
+  },
+  "EVIDENCE_AGGREGATOR_REPAIR_RESULT": {
+    "status": "REPAIRED_NOT_YET_INDEPENDENTLY_REVIEWED",
+    "repairedAtUtc": "2026-09-20T23:30:00Z",
+    "repairedAtHeadCommit": "80fe3dd06540b68d54cd04ab7ca4c2c4ad08e850",
+    "scope": "NARROW_EVIDENCE_AGGREGATION_ONLY",
+    "rootCause": "notRun() in compare_captured_results.mjs never touched the `overall` accumulator, so a NOT_RUN on a required live section (LIVE_GATE_AND_LEDGER, EDGE_FUNCTION_IDENTITY) rolled up into overall PASS / exit 0",
+    "fix": "aggregation extracted into new pure module verdict_aggregation.mjs; notRun() on a section in REQUIRED_LIVE_SECTIONS now downgrades an as-yet-PASS overall to HOLD (non-zero exit); notRun() on CLIENT_COMPATIBILITY (NOT_RUN live by design, outside the required list) is unaffected; fail() still unconditionally forces overall FAIL from any section including TARGET_IDENTITY (outside the required list), so target-identity validation is unweakened",
+    "requiredLiveSections": [
+      "LIVE_GATE_AND_LEDGER",
+      "FINAL_STRUCTURE_PERMISSIONS_RLS_MODERATION_POINTS",
+      "EDGE_FUNCTION_IDENTITY"
+    ],
+    "filesChanged": {
+      "modified": ["qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/compare_captured_results.mjs"],
+      "added": [
+        "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/verdict_aggregation.mjs",
+        "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/validate_verdict_aggregation.mjs",
+        "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURE_MISSING_EVIDENCE.md"
+      ]
+    },
+    "restorationSqlChanged": false,
+    "verifyPostExitChanged": false,
+    "runbookChanged": false,
+    "migrationBytesChanged": false,
+    "migrationBytesIndependentlyReconfirmed": true,
+    "focusedTests": {
+      "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/validate_verdict_aggregation.mjs",
+      "passed": 16,
+      "total": 16,
+      "coversAllSevenRequiredScenarios": true
+    },
+    "regressionTestsRerun": {
+      "validate_preexisting_structure_exclusions": { "passed": 17, "total": 17 },
+      "replay_preexisting_structure_exclusion_offline": { "status": "PASS", "residualCount": 0 },
+      "validate_ledger_statement_identity": { "passed": 23, "total": 23 },
+      "validate_post_apply_recovery_transport": { "passed": 13, "total": 13 }
+    },
+    "liveReproductionRerun": {
+      "target": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURED_FINAL_STRUCTURE (real, on-disk, only structure_catalog.json present)",
+      "beforeFix": { "overall": "PASS", "exitCode": 0 },
+      "afterFix": { "overall": "HOLD", "exitCode": 1 }
+    },
+    "ownerEvidenceCaptureCommands": {
+      "status": "PREPARED_NOT_EXECUTED",
+      "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURE_MISSING_EVIDENCE.md",
+      "targetsExactly": "kldlwszpfkdmsjrjhjym",
+      "readOnly": true,
+      "refusesOverwrite": true,
+      "pinnedCliVersion": "2.116.0"
+    },
+    "productionContact": "NONE",
+    "productionMutations": "NONE",
+    "reviewRepairedTheDefectInThisWindow": true,
+    "note": "This session both found (prior checkpoint) and fixed (this checkpoint) the defect -- that is not the same as an independent review of the fix. Do not treat this repair as self-certifying."
   },
   "DO_NOT_REPEAT": [
     "PRODUCTION_CONTROLLER",
@@ -199,7 +255,8 @@
     "MIGRATION_APPLY",
     "ORIGINAL_ONE_RUN_AUTHORIZATION",
     "SECOND_LIVE_VERIFIER_RUN_NOW_CONSUMED",
-    "LIVE_VERIFIER_RETRY_WITHOUT_NEW_AUTHORITY"
+    "LIVE_VERIFIER_RETRY_WITHOUT_NEW_AUTHORITY",
+    "RUNNING_OWNER_EVIDENCE_CAPTURE_COMMANDS_FROM_A_NON_OWNER_AUTHORIZED_SESSION"
   ],
   "DO_NOT_DO": [
     "GATE_REMOVAL_WITHOUT_SEPARATE_RESTORATION_AUTHORIZATION",
@@ -217,7 +274,9 @@
     "LIVE_VERIFIER_RUN_WITHOUT_SKYS_SEPARATE_AUTHORIZATION",
     "TREATING_ASSERTED_ONLY_RESULTS_AS_INDEPENDENTLY_VERIFIED",
     "HAND_EDITING_GENERATED_EXIT_SQL",
-    "TRUSTING_COMPARE_CAPTURED_RESULTS_OVERALL_FIELD_UNTIL_ITS_NOT_RUN_AGGREGATION_BUG_IS_FIXED"
+    "TRUSTING_COMPARE_CAPTURED_RESULTS_OVERALL_FIELD_UNTIL_ITS_NOT_RUN_AGGREGATION_BUG_IS_FIXED",
+    "TREATING_THIS_SESSIONS_OWN_REPAIR_AS_AN_INDEPENDENT_REVIEW_OF_ITSELF",
+    "WIDENING_THE_AGGREGATION_REPAIR_BEYOND_THE_NOT_RUN_ON_REQUIRED_SECTION_DEFECT"
   ],
-  "LAST_UPDATED_UTC": "2026-09-20T18:47:28Z"
+  "LAST_UPDATED_UTC": "2026-09-20T23:30:00Z"
 }

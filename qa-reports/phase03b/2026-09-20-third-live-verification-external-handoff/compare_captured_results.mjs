@@ -18,6 +18,7 @@ import {
   PREEXISTING_STRUCTURE_EXCLUSIONS,
   applyPreexistingStructureExclusions,
 } from '../2026-09-19-production-apply-packet-r11/preexisting_structure_exclusions.mjs';
+import { createAggregator } from './verdict_aggregation.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const capturedArg = process.argv.find((v) => v.startsWith('--captured='));
@@ -30,12 +31,8 @@ const stable = (v) => Array.isArray(v) ? v.map(stable) : v && typeof v === 'obje
   ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, stable(v[k])])) : v;
 const hashJson = (v) => createHash('sha256').update(JSON.stringify(stable(v))).digest('hex');
 
-const report = {};
-let overall = 'PASS';
-const fail = (section, detail) => { report[section] = { status: 'FAIL', detail }; overall = 'FAIL'; };
-const pass = (section, detail) => { report[section] = { status: 'PASS', detail }; };
-const hold = (section, detail) => { report[section] = { status: 'HOLD', detail }; if (overall === 'PASS') overall = 'HOLD'; };
-const notRun = (section, detail) => { report[section] = { status: 'NOT_RUN', detail }; };
+const aggregator = createAggregator();
+const { report, fail, pass, hold, notRun } = aggregator;
 
 // ---------- Target identity sanity (from the RETURN_FORMAT note, if present) -----
 const note = readJson(join(CAPTURED, 'note.json'));
@@ -140,5 +137,5 @@ if (!edgeRaw) {
 notRun('CLIENT_COMPATIBILITY', EXPECTED.clientCompatibility.reason);
 
 // ---------- Report -----------------------------------------------------------------
-console.log(JSON.stringify({ overall, generatedAtUtc: new Date().toISOString(), report }, null, 2));
-process.exitCode = overall === 'PASS' || overall === 'NOT_RUN' ? 0 : 1;
+console.log(JSON.stringify({ overall: aggregator.overall, generatedAtUtc: new Date().toISOString(), report }, null, 2));
+process.exitCode = aggregator.exitCode;
