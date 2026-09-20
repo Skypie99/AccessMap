@@ -12,6 +12,8 @@ import {
   buildR8Envelope,
   entryFromEnvelope,
   GATE_MANIFEST_SHA256,
+  parseCliJson,
+  resultRow,
   validateRunRelativePgNetCheckpoint,
 } from './r8_control_lib.mjs';
 
@@ -39,14 +41,6 @@ const stable = (value) => Array.isArray(value) ? value.map(stable) : value && ty
   ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])])) : value;
 const hashJson = (value) => createHash('sha256').update(JSON.stringify(stable(value))).digest('hex');
 const writeJson = (name, value) => writeFileSync(join(evidence, name), `${JSON.stringify(value, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
-const parseCliJson = (text) => {
-  const objectAt = text.indexOf('{'); const arrayAt = text.indexOf('[');
-  const offset = objectAt === -1 ? arrayAt : arrayAt === -1 ? objectAt : Math.min(objectAt, arrayAt);
-  if (offset < 0) throw new Error('CLI output contained no JSON');
-  return JSON.parse(text.slice(offset));
-};
-const resultRow = (payload, key) => payload.rows?.[0]?.[key] ?? payload[key] ?? payload;
-
 async function run(label, args, timeoutMs = 60_000) {
   const stdoutPath = join(evidence, `${label}.stdout.log`); const stderrPath = join(evidence, `${label}.stderr.log`);
   const out = openSync(stdoutPath, 'wx', 0o600); const err = openSync(stderrPath, 'wx', 0o600);

@@ -12,6 +12,8 @@ import {
   buildR8Envelope,
   entryFromEnvelope,
   GATE_MANIFEST_SHA256,
+  parseCliJson,
+  resultRow,
   validateRunRelativePgNetCheckpoint,
 } from './r8_control_lib.mjs';
 
@@ -30,8 +32,6 @@ if (existsSync(evidence)) throw new Error(`Refusing existing evidence path: ${ev
 mkdirSync(evidence, { recursive: false, mode: 0o700 });
 const stable = (v) => Array.isArray(v) ? v.map(stable) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, stable(v[k])])) : v;
 const hashJson = (v) => createHash('sha256').update(JSON.stringify(stable(v))).digest('hex');
-const parse = (text) => { const i = text.search(/[\[{]/); if (i < 0) throw new Error('No JSON in CLI output'); return JSON.parse(text.slice(i)); };
-const row = (payload, key) => payload.rows?.[0]?.[key] ?? payload[key] ?? payload;
 const run = (label, args, timeout = 120_000) => {
   const startedAt = new Date().toISOString();
   const result = spawnSync('supabase', args, { encoding: 'utf8', timeout, maxBuffer: 64 * 1024 * 1024, env: process.env });
@@ -39,7 +39,7 @@ const run = (label, args, timeout = 120_000) => {
   writeFileSync(join(evidence, `${label}.stderr.log`), result.stderr ?? '', { mode: 0o600, flag: 'wx' });
   const receipt = { command: ['supabase', ...args], startedAt, endedAt: new Date().toISOString(), exitCode: result.status, signal: result.signal, timedOut: result.error?.code === 'ETIMEDOUT' };
   if (receipt.exitCode !== 0 || receipt.signal || receipt.timedOut) throw new Error(`${label} failed`);
-  return { receipt, payload: parse(result.stdout) };
+  return { receipt, payload: parseCliJson(result.stdout) };
 };
 
 const monoMs = () => Number(process.hrtime.bigint() / 1_000_000n);
@@ -51,7 +51,7 @@ try {
   const boundProofSql = join(evidence, 'BOUND_POST_EXIT_VERIFY.sql');
   writeFileSync(boundProofSql, bindDatabaseT0Sql(readFileSync(join(PACKET, 'POST_EXIT_VERIFY.sql'), 'utf8'), entry.database_t0), { mode: 0o600, flag: 'wx' });
   const proofRun = run('post-exit-proof', ['db', 'query', '--linked', '--project-ref', TARGET, '--file', boundProofSql, '--output-format', 'json']);
-  steps.push(proofRun.receipt); proof = row(proofRun.payload, 'phase03b_post_exit_proof_r3');
+  steps.push(proofRun.receipt); proof = resultRow(proofRun.payload, 'phase03b_post_exit_proof_r3');
   const exact = { receipt: 'phase03b_post_exit_proof_r3', transaction_read_only: 'on', function_count: 0, reserved_trigger_count: 0, ledger_count: 87, ledger_unique_count: 87, ledger_latest_version: '20260915210413', ledger_ordered_version_name_sha256: LEDGER_SHA256, phase03b_constraint_index_sha256: 'cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a' };
   for (const [key, value] of Object.entries(exact)) if (proof[key] !== value) throw new Error(`Post-exit mismatch: ${key}`);
   validateRunRelativePgNetCheckpoint(proof, entry.database_t0, { requireReadOnly: true });
@@ -66,7 +66,7 @@ try {
   const sqlPath = join(evidence, 'STRUCTURAL_CAPTURE_READ_ONLY.sql');
   writeFileSync(sqlPath, `begin transaction read only;\n${CATALOG_SQL};\nrollback;\n`, { mode: 0o600, flag: 'wx' });
   const structureRun = run('structure', ['db', 'query', '--linked', '--project-ref', TARGET, '--file', sqlPath, '--output-format', 'json']);
-  steps.push(structureRun.receipt); const normalized = normalizeCatalog(row(structureRun.payload, 'catalog'));
+  steps.push(structureRun.receipt); const normalized = normalizeCatalog(resultRow(structureRun.payload, 'catalog'));
   structureSha256 = checksum(normalized);
   writeFileSync(join(evidence, 'NORMALIZED_STRUCTURE.json'), `${JSON.stringify({ structureSha256, catalog: normalized }, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
   if (structureSha256 !== STRUCTURE_SHA256) throw new Error('Post-exit structure differs from accepted final structure');
