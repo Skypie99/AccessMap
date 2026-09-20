@@ -1,7 +1,7 @@
 # Phase 03B current recovery handoff
 
-- `CURRENT_TASK`: Narrow independent review (fresh, local/offline only) of the preexisting-backup-table exclusion repair at commit `3420d87`. No production/staging contact, no mutation, no live verifier run.
-- `CURRENT_PHASE`: `PREEXISTING_DRIFT_SCOPE_REPAIR_INDEPENDENTLY_REVIEWED_PASS`
+- `CURRENT_TASK`: Local-only preparation of an external-execution handoff package (exact read-only SQL, exact expected values, exact 7-table exclusion contract, and an offline comparator) so a different trusted tool with its own connected Supabase access can perform the third fresh live read-only post-apply verification that Sky separately authorized. No production/staging contact was made preparing this package; it does not itself consume the authorization.
+- `CURRENT_PHASE`: `PREEXISTING_DRIFT_SCOPE_REPAIR_INDEPENDENTLY_REVIEWED_PASS_EXTERNAL_HANDOFF_PREPARED`
 - `CURRENT_BRANCH`: `codex/flagstone-p03b-post-apply-recovery-20260919`
 - `CURRENT_WORKTREE`: `/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919`
 - `INCIDENT_RUN_ID`: `ebdba703-2470-41fa-ac6d-44354203b8d1`
@@ -17,10 +17,12 @@
 - `CURRENT_EVIDENCE_PATHS`: `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json`; `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/preexisting_structure_exclusions.mjs`; `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/validate_preexisting_structure_exclusions.mjs`; `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/replay_preexisting_structure_exclusion_offline.mjs`; modified `verify_post_apply.mjs` and `verify_post_exit.mjs` in the same packet
 - `UNCOMMITTED_FILES`: none after this checkpoint commit
 - `INDEPENDENT_REVIEW_RESULT`: **PASS.** Reviewed commit `3420d87` fresh, independently, locally, offline. Re-derived migration SHA-256 hashes myself (match pinned constants, byte-identical). Confirmed by grep that neither frozen migration references any excluded table. Read the filter module directly and confirmed the match rule is exact `(schema,table)` equality against a frozen array with a cardinality assertion — no wildcard/prefix logic exists. Independently parsed the 2026-09-15 Phase03A preflight capture and confirmed all 7 tables were already present 5 days before the Phase03B production apply T0. Independently pulled the accepted staging baseline via `git show` from its sibling branch and confirmed zero mentions of the 7 tables and an unmodified checksum. Independently parsed the structure-divergence diff JSON and confirmed all 55 residuals (7 relations + 48 columns) belong exclusively to the 7 pinned tables, zero outliers, zero `only-in-first` residuals (no real defect masked). Re-ran, myself, fresh: focused exclusion tests 17/17 PASS, ledger identity 23/23 PASS, recovery transport 13/13 PASS, offline structure replay PASS with 0 residuals and an exact hash match. Full evidence: `qa-reports/phase03b/2026-09-20-preexisting-drift-exclusion-independent-review/REVIEW.md` and `independent_review_receipt.json`.
-- `NEXT_EXACT_ACTION`: The repair has now passed one fresh narrow independent review. This review does not authorize a live run. Sky must separately authorize exactly one fresh live read-only post-apply verification before it happens.
+- `NEXT_EXACT_ACTION`: An external-execution handoff package for the third fresh live read-only post-apply verification is prepared at `qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/` (see `HANDOFF.md` there). No live run has happened yet. Once the executing tool returns captured JSON per `RETURN_FORMAT.md`, run `compare_captured_results.mjs` locally against it and record the result here.
 - `DO_NOT_REPEAT`: production controller; either Phase 03B migration; migration apply; original one-run authorization; the consumed second live verifier run; any live retry without new explicit authority
-- `DO_NOT_DO`: gate removal; exit SQL; restoration; rollback; migration repair; db pull; production mutation; staging mutation; Phase 03C; R12; broadening the exclusion beyond the exact 7 pinned identities; changing the accepted staging expected-structure value; running the live verifier without Sky's separate authorization
-- `LAST_UPDATED_UTC`: `2026-09-20T09:15:00Z`
+- `DO_NOT_DO`: gate removal; exit SQL; restoration; rollback; migration repair; db pull; production mutation; staging mutation; Phase 03C; R12; broadening the exclusion beyond the exact 7 pinned identities; changing the accepted staging expected-structure value; running the live verifier without Sky's separate authorization; treating the external tool's own verdict as authoritative instead of running `compare_captured_results.mjs` locally
+- `EXTERNAL_HANDOFF_PACKAGE_PATH`: `qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/`
+- `EXTERNAL_HANDOFF_PREPARED_BY`: Claude (Sonnet 5), local-only, no production/staging contact
+- `LAST_UPDATED_UTC`: `2026-09-20T16:34:00Z`
 
 ## DECISIONS FOR SKY
 
@@ -31,3 +33,11 @@
 - **Why:** Confidence from an offline replay against captured data is strong but not the same as an independent reviewer checking the eligibility proof and the exact-match logic themselves — this saga has specifically been burned before by accepting a fix without that step.
 - **Alternative:** Skip review and directly authorize a third live run — not recommended, since it would be the first time in this saga a structural-comparator change went live without independent review.
 - **Impact:** Until reviewed and re-authorized, permissions/RLS, moderation, points, client-compatibility, and Edge Function identity remain unverified live, and no restoration runbook can be prepared. Production remains quiesced with zero time pressure.
+
+🔴 **The independent review above has since passed (commit `386d363`). A local-only external-execution handoff package now exists for the third live run itself — it has not been executed.**
+
+- **What:** `qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/` packages the exact two read-only SQL files, the exact expected values/hashes, the exact 7-table exclusion contract, and an offline comparator, so a different trusted tool (with its own connected Supabase access) can run the live read-only capture instead of this session, which was directed to stay local-only.
+- **Recommendation:** Before handing this to any executing tool, confirm it will (a) run only the two SQL files as-is, read-only, once each, against `kldlwszpfkdmsjrjhjym` only, and (b) return raw JSON rather than its own verdict. Then run `compare_captured_results.mjs` locally yourself (or have this session do it) rather than trusting the executing tool's own PASS/FAIL claim.
+- **Why:** Splitting "capture" (external, minimal, live) from "judge" (local, offline, reusing this repo's own vetted comparison modules) means a mistake or misrepresentation by the executing tool can't silently produce a false PASS.
+- **Alternative:** Have this session run the live capture directly instead — not done here because the standing instruction for this task was local-only, no Supabase contact, no production access, from this session.
+- **Impact:** Until the executing tool runs and returns capture JSON, and `compare_captured_results.mjs` is run against it, the third live verification has not happened — this handoff being prepared does not by itself change `LIVE_READ_ONLY_RESULTS` or consume the one-run authorization.

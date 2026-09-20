@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Expected values and comparison targets for the third fresh live read-only Phase03B post-apply verification, for an external tool to compare its captured output against, or to hand raw captures back for local comparison via compare_captured_results.mjs.",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "forbiddenStagingTarget": "cepayqmsoqxshsiyqnvz",
+  "databaseT0": "2026-09-20T06:20:25.216974Z",
+  "sourceCommitReviewed": "386d363e1e886f590e2abe3c9968b2b9a6546ca6",
+  "sourceCommitRepair": "3420d878eb58658a42a299d228c25f2b617752cd",
+
+  "quiescenceAndLedgerGate": {
+    "sqlFile": "01_QUIESCENCE_LEDGER_GATE_READ_ONLY.sql",
+    "expectedExactFields": {
+      "receipt": "phase03b_quiescence_proof_r3",
+      "transaction_read_only": "on",
+      "function_count": 1,
+      "function_owner": "postgres",
+      "function_definition_sha256": "16555e58ee2cdfce5d54336ef63584116ed1cb798d90ac779c278a5c0e5b0bac",
+      "trigger_count": 1,
+      "trigger_table_owner": "postgres",
+      "trigger_enabled": "A",
+      "trigger_definition_sha256": "e89ac15de9a1f20a2bd269289fa3ddf3ef22ff529d8c4b929587da5781995bbf",
+      "truncate_trigger_count": 1,
+      "truncate_trigger_enabled": "A",
+      "truncate_trigger_definition_sha256": "54e10e11dabd45d1edfdf44a7aa065f2e335c964b230cd41c6138c6ef295c58a",
+      "ledger_count": 87,
+      "ledger_unique_count": 87,
+      "ledger_latest_version": "20260915210413",
+      "ledger_ordered_version_name_sha256": "b9fb376947238c4bd3dc3d164337d6b9294df9084eab9008530ba9fd4d4603b5",
+      "phase03b_constraint_index_sha256": "cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a"
+    },
+    "expectedPhase03bVersions": ["20260915210256", "20260915210413"],
+    "expectedPhase03bRows": [
+      {
+        "version": "20260915210256",
+        "name": "phase03b_moderation_semantics_compatibility_bridge",
+        "statement_count": 68,
+        "statement_sha256": "cbc17a516412859e5fb6ca2fa41e538f1d0c9ae5a10168424431f761b8ca086c"
+      },
+      {
+        "version": "20260915210413",
+        "name": "phase03b_points_integrity",
+        "statement_count": 23,
+        "statement_sha256": "72f8faf6c218a92be5fa14bc9851d0fe035e4e0f4ffd7e9196184f438d479569"
+      }
+    ],
+    "entryToPostApplyOidFieldsThatMustMatchExactly": [
+      "function_oid", "trigger_oid", "truncate_trigger_oid", "table_oid",
+      "flags_id_status_count", "flags_id_status_sha256", "history_count", "history_sha256"
+    ],
+    "entryValuesFromENTRY_RECEIPT": {
+      "note": "these came from the entry receipt already on file, retained-incident-input/ENTRY_RECEIPT.json -- an external tool does not need to reproduce them, only the post-apply proof must match them",
+      "function_oid": "20772",
+      "trigger_oid": "20773",
+      "truncate_trigger_oid": "20774",
+      "table_oid": "17575",
+      "flags_id_status_count": 24,
+      "flags_id_status_sha256": "b3b517e8fe5b996d7108d09e6d3fdfaa6143b92fe6c2501ef83f249b5fd0942e",
+      "history_count": 49,
+      "history_sha256": "f8533cc1f34588b0556027d759767e4cd1fbdd960071ec16354cd82e37e874f7"
+    },
+    "quiescenceInvariant": "http_queue_count must be 0, http_response_new_since_t0_count must be 0, and pg_net_ttl_seconds must be greater than MAXIMUM_QUIESCENCE_WINDOW_SECONDS (600). http_response_count/http_response_sha256 are DIAGNOSTIC_HISTORY_ONLY -- do not gate on them, they legitimately change as pg_net response history expires under pg_net.ttl."
+  },
+
+  "finalStructure": {
+    "sqlFile": "02_FINAL_STRUCTURE_CAPTURE_READ_ONLY.sql",
+    "note": "This single query's normalized+hashed output is the ONLY check for final structure AND permissions/RLS AND moderation-definition AND points-definition equivalence in this saga. There is no separate live query for RLS, moderation, or points -- all three are sections inside this one catalog (relations.rls/acl, policies.qual/roles, functions.body/secdef/config/acl covering the moderation and points RPCs). Do not treat 'RLS' or 'moderation' or 'points' as separate PASS/HOLD gates from this one; they share this single artifact and its single hash.",
+    "capturedSchemas": ["public", "private", "storage", "limiter"],
+    "expectedCatalogQuerySha256": "7a88aa297ac302a1b9ac1ad90860baf5ae7b51818f81b84e63cc7b8eea3f8106",
+    "expectedFinalStructureSha256AfterAllExclusions": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+    "exclusionsRequiredBeforeHashing": [
+      {
+        "kind": "exact temporary gate objects (3, not a table exclusion file -- hardcoded)",
+        "count": 3,
+        "items": [
+          { "type": "function", "schema": "private", "name": "flagstone_phase03b_block_row_lifecycle_r2", "args": "" },
+          { "type": "trigger", "schema": "public", "table": "flags", "name": "aaa_flagstone_phase03b_row_lifecycle_quiescence_r2" },
+          { "type": "trigger", "schema": "public", "table": "flags", "name": "aaa_flagstone_phase03b_truncate_quiescence_r3" }
+        ]
+      },
+      {
+        "kind": "preexisting production-only backup tables",
+        "count": 7,
+        "contractFile": "PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json",
+        "matchRule": "EXACT (schema, table) equality only -- no wildcard, no prefix"
+      }
+    ],
+    "doNotDo": "Do not widen either exclusion. Do not exclude anything not on these two fixed lists. A cardinality mismatch (more or fewer objects removed than 3 and 7 respectively) must FAIL, not silently adjust."
+  },
+
+  "edgeFunctionIdentity": {
+    "method": "Supabase CLI: `supabase functions list --project-ref kldlwszpfkdmsjrjhjym --output-format json`. This is a CLI/API call, not a SQL query -- if the external tool can only run SQL against Postgres, it cannot perform this check and it should be reported NOT_RUN rather than guessed.",
+    "selectSlug": "notify-flag-status",
+    "fieldsToHashInThisExactKeyOrder": ["id", "slug", "name", "status", "version", "verifyJwt", "createdAt", "updatedAt"],
+    "hashMethod": "sha256 of JSON.stringify of the object with keys sorted alphabetically (see stable()/hashJson() in verify_post_apply.mjs) -- do not hand-roll a different serialization, it will not match",
+    "expectedSha256": "276dcb14c85ca75955058b10ebb38d9d633fc29a21062fbcc181b502db7c2d70",
+    "expectedSelectedCount": 1
+  },
+
+  "clientCompatibility": {
+    "status": "NOT_RUN_LIVE_BY_DESIGN",
+    "reason": "Client-compatibility is verified ONLY via a fully local, disposable, socket-only PostgreSQL cluster (scripts/replay-phase03b.mjs runs supabase/tests/phase03b-compatibility.test.sql as pgTAP). It has never been run against production or staging in this saga and should not start now, because pgTAP suites insert/mutate rows inside a test transaction, which is not compatible with a hard no-mutation live constraint. Report CLIENT_COMPATIBILITY as NOT_RUN for the live verification; its confidence comes entirely from the local replay already on file, not from a live check.",
+    "localOnlyCommand": "node scripts/replay-phase03b.mjs --pgtap-sql=supabase/tests/phase03b-compatibility.test.sql   (run on your own machine, never against kldlwszpfkdmsjrjhjym)"
+  },
+
+  "targetIdentity": {
+    "expectedProjectRef": "kldlwszpfkdmsjrjhjym",
+    "expectedProjectName": "Accessable City App",
+    "expectedRegion": "us-west-2",
+    "expectedPostgresEngine": "17",
+    "note": "Confirm the connected project ref and name match before running anything. Refuse and stop if the tool is pointed at any other project ref, especially cepayqmsoqxshsiyqnvz (staging -- forbidden target for this check)."
+  }
+}

@@ -109,10 +109,33 @@
     "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/validate_preexisting_structure_exclusions.mjs",
     "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/replay_preexisting_structure_exclusion_offline.mjs",
     "qa-reports/phase03b/2026-09-20-preexisting-drift-exclusion-independent-review/REVIEW.md",
-    "qa-reports/phase03b/2026-09-20-preexisting-drift-exclusion-independent-review/independent_review_receipt.json"
+    "qa-reports/phase03b/2026-09-20-preexisting-drift-exclusion-independent-review/independent_review_receipt.json",
+    "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/"
   ],
-  "UNCOMMITTED_FILES": [],
-  "NEXT_EXACT_ACTION": "This repair has passed one fresh narrow independent review. This review does not authorize a live run. Sky must separately authorize exactly one fresh live read-only post-apply verification before the live verifier runs again.",
+  "UNCOMMITTED_FILES": [
+    "qa-reports/phase03b/CURRENT_RECOVERY_HANDOFF.md",
+    "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json",
+    "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/ (new directory, 7 files)"
+  ],
+  "NEXT_EXACT_ACTION": "An external-execution handoff package for the third fresh live read-only post-apply verification is prepared (local-only, no production/staging contact) at qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/. No live run has occurred. Once an executing tool with its own connected Supabase access returns captured JSON per that package's RETURN_FORMAT.md, run compare_captured_results.mjs locally against it and record the outcome here.",
+  "EXTERNAL_HANDOFF_PACKAGE": {
+    "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/",
+    "preparedBy": "Claude (Sonnet 5)",
+    "preparedAtUtc": "2026-09-20T16:34:00Z",
+    "productionOrStagingContactDuringPreparation": "NONE",
+    "consumesOneRunAuthorization": false,
+    "consists_of": [
+      "HANDOFF.md",
+      "01_QUIESCENCE_LEDGER_GATE_READ_ONLY.sql",
+      "02_FINAL_STRUCTURE_CAPTURE_READ_ONLY.sql",
+      "PHASE03B_PREEXISTING_PRODUCTION_STRUCTURE_EXCLUSIONS.json",
+      "EXPECTED_VALUES.json",
+      "RETURN_FORMAT.md",
+      "compare_captured_results.mjs"
+    ],
+    "comparatorValidation": "syntax-checked (node --check) and dry-run against a stub fixture in this session; not run against any real capture",
+    "liveRunStatus": "NOT_EXECUTED"
+  },
   "DO_NOT_REPEAT": [
     "PRODUCTION_CONTROLLER",
     "PHASE03B_MIGRATIONS",
@@ -136,5 +159,5 @@
     "CHANGING_ACCEPTED_STAGING_EXPECTED_STRUCTURE_VALUE",
     "LIVE_VERIFIER_RUN_WITHOUT_SKYS_SEPARATE_AUTHORIZATION"
   ],
-  "LAST_UPDATED_UTC": "2026-09-20T09:15:00Z"
+  "LAST_UPDATED_UTC": "2026-09-20T16:34:00Z"
 }
