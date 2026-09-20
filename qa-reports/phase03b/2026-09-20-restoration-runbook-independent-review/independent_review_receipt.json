@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "flagstone.phase03b.restoration-runbook-independent-review.v1",
+  "reviewedArtifact": "qa-reports/phase03b/2026-09-20-restoration-runbook/RESTORATION_RUNBOOK.md",
+  "reviewedAtUtc": "2026-09-20T18:47:28Z",
+  "reviewedAtHeadCommit": "3fe62ef2925690a66bd530028177aa41c82a2285",
+  "mode": "FRESH_INDEPENDENT_REVIEW_LOCAL_OFFLINE_ONLY",
+  "verdict": "HOLD",
+  "incidentBinding": {
+    "runId": "ebdba703-2470-41fa-ac6d-44354203b8d1",
+    "originalDatabaseT0": "2026-09-20T06:20:25.216974Z",
+    "consistentAcross": [
+      "RESTORATION_RUNBOOK.md section 1",
+      "CURRENT_RECOVERY_HANDOFF.md",
+      "CURRENT_RECOVERY_STATE.json",
+      "ENTRY_RECEIPT.json"
+    ],
+    "productionApplyAttemptCount": 1,
+    "originalOneRunAuthorizationStatus": "CONSUMED",
+    "runbookAuthorizesAnotherMigrationApply": false
+  },
+  "independentChecks": {
+    "generatedExitSqlMatchesDeterministicGenerator": {
+      "result": true,
+      "method": "re-ran committed generate_exit_sql.mjs (r11 packet) against committed ENTRY_RECEIPT.json to a scratch path; diffed against committed PHASE03B_RESTORATION_EXIT.sql",
+      "sha256Both": "0ae9662fee33765e614c03a8ba9b4363db12e55228ec13a5266aa127c1d6aecd",
+      "byteIdentical": true
+    },
+    "restorationSqlScopeExactNoWildcard": {
+      "result": true,
+      "method": "read PHASE03B_RESTORATION_EXIT.sql directly: drops exactly 3 named objects (2 triggers by exact tgname, 1 function by exact regprocedure signature); do $guard$ re-proves owner/OIDs/hashes/ledger(87)/moderation-points shape/pg_net invariant at write time inside the transaction, raising P0001 on any mismatch; do $absence$ confirms exact removal before commit; no ALTER/UPDATE/INSERT, no ledger write, no other product table referenced"
+    },
+    "postExitVerifyReadOnlySqlIsCorrectlyT0Bound": {
+      "result": true,
+      "method": "diff against qa-reports/phase03b/2026-09-19-production-apply-packet-r11/POST_EXIT_VERIFY.sql: only the two __DATABASE_T0__ tokens differ, both bound to 2026-09-20T06:20:25.216974Z"
+    },
+    "postExitVerifierFailsClosed": {
+      "result": true,
+      "method": "read verify_post_exit.mjs in full: status defaults to 'HOLD', only becomes 'PASS_RESTORED' if every check passes without throwing; any mismatch/CLI failure throws, caught, forces non-zero exit while status stays HOLD; grep for retry|while(|for(|setTimeout found nothing"
+    },
+    "structuralComparatorRepairScopeAsClaimed": {
+      "result": true,
+      "method": "git show --stat 3420d878eb58658a42a299d228c25f2b617752cd: exactly 2 new files + verify_post_apply.mjs (+14/-x) + verify_post_exit.mjs (+8/-x) + 2 checkpoint docs; read preexisting_structure_exclusions.mjs: exact (schema,table) equality against a frozen 7-entry array, cardinality-asserted, no wildcard/prefix"
+    },
+    "migrationBytesUnchanged": {
+      "result": true,
+      "method": "independent shasum -a 256 of both files under supabase/migrations-next/phase03b/ in this worktree, compared against CANDIDATE_FREEZE.json",
+      "matchesPinned": true
+    },
+    "noNewMigrationOrPhase03cOnBranch": {
+      "result": true,
+      "method": "git diff --stat <merge-base>..HEAD -- supabase/migrations/ is empty; grep -rli 'phase.?03c' across .sql/.mjs/.ts/.tsx outside qa-reports/ returns nothing; git status --porcelain on supabase/migrations/ is empty"
+    },
+    "evidenceGapClosureMechanismActuallyEnforces": {
+      "result": false,
+      "method": "ran the unmodified compare_captured_results.mjs (external-handoff packet) locally, offline, against the real CAPTURED_FINAL_STRUCTURE/ directory that exists on disk today (only structure_catalog.json present)",
+      "observed": {
+        "overall": "PASS",
+        "exitCode": 0,
+        "LIVE_GATE_AND_LEDGER": "NOT_RUN (proof.json not found)",
+        "EDGE_FUNCTION_IDENTITY": "NOT_RUN (edge_function.json not found)",
+        "FINAL_STRUCTURE_PERMISSIONS_RLS_MODERATION_POINTS": "PASS"
+      },
+      "rootCause": "compare_captured_results.mjs: notRun() never downgrades the `overall` accumulator, and exitCode logic treats overall==='PASS' and overall==='NOT_RUN' identically (both exit 0); a NOT_RUN critical section (missing saved artifact) does not prevent an aggregate PASS",
+      "fileRef": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/compare_captured_results.mjs:37-38,144"
+    }
+  },
+  "evidenceGapClassification": "BLOCKING",
+  "blockingDefect": {
+    "requirement": "4 (pre-restoration gates / evidence-gap review)",
+    "summary": "The tool the runbook names to close its own acknowledged evidence gap (compare_captured_results.mjs) reports an aggregate PASS even when the ledger/gate/pg_net proof and Edge Function identity sections were never captured (NOT_RUN), because NOT_RUN does not affect the `overall` field or the exit code. This was independently reproduced against the actual current on-disk evidence, not asserted.",
+    "doesNotAffect": "The restoration SQL's own do $guard$/do $absence$ blocks and verify_post_exit.mjs are unaffected and remain fail-closed; this defect is isolated to the external pre-restoration evidence-capture comparator named in runbook section 8 step 1."
+  },
+  "secondaryFindingsNotBlocking": [
+    "CURRENT_RECOVERY_HANDOFF.md and CURRENT_RECOVERY_STATE.json record branch and worktree but no explicit git HEAD/tree SHA",
+    "Runbook section 8 owner bash block has no set -euo pipefail and no scripted check on compare_captured_results.mjs's exit code before the (already commented-out) write step"
+  ],
+  "productionContact": "NONE",
+  "stagingContact": "NONE",
+  "productionMutations": "NONE",
+  "restorationExecuted": false,
+  "migrationApplyRetried": false,
+  "phase03cStarted": false,
+  "reviewRepairedTheDefectInThisWindow": false
+}
