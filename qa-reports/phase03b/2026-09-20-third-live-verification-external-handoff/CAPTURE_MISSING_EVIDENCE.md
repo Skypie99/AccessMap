@@ -113,6 +113,10 @@ if ! printf '%s' "$PROOF_JSON" | jq -e 'type == "object"' > /dev/null 2>&1; then
 fi
 printf '%s\n' "$PROOF_JSON" > "$PROOF_OUT.tmp"
 mv -n "$PROOF_OUT.tmp" "$PROOF_OUT"
+if [ -e "$PROOF_OUT.tmp" ]; then
+  echo "REFUSING: proof destination appeared during capture; evidence was not installed" >&2
+  exit 1
+fi
 
 # --- 2. Edge Function identity: read-only list call, exact project. This is
 #        a CLI/API call, not SQL -- there is no separate vetted SQL file for
@@ -139,6 +143,10 @@ if ! printf '%s' "$EDGE_JSON" | jq -e '(type == "array") or (type == "object")' 
 fi
 printf '%s\n' "$EDGE_JSON" > "$EDGE_OUT.tmp"
 mv -n "$EDGE_OUT.tmp" "$EDGE_OUT"
+if [ -e "$EDGE_OUT.tmp" ]; then
+  echo "REFUSING: edge-function destination appeared during capture; evidence was not installed" >&2
+  exit 1
+fi
 
 echo "Saved: $PROOF_OUT"
 echo "Saved: $EDGE_OUT"
