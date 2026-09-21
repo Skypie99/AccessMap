@@ -103,7 +103,12 @@ describe('the control now lives in the ⋯ tool sheet', () => {
     const filter = tasks.indexOf('accessibilityLabel="Filter and sort"');
     const tools = tasks.indexOf('accessibilityLabel="More task tools"');
     const select = tasks.indexOf('accessibilityLabel="Select multiple"');
-    const mine = tasks.indexOf('accessibilityLabel="Show all flags"');
+    // 76ee355 ("fix(final-polish): consolidate sheet and filter repairs")
+    // relabeled this chip from "Show all flags" to "Reports, All" — the
+    // segmented All/Mine toggle now speaks a shared "Reports," group prefix
+    // (its Mine sibling is "Reports, Mine, show only my flags"). Same control,
+    // same position; only the announced text changed.
+    const mine = tasks.indexOf('accessibilityLabel="Reports, All"');
     expect(search).toBeGreaterThan(-1);
     expect(filter).toBeGreaterThan(search);
     expect(tools).toBeGreaterThan(filter);

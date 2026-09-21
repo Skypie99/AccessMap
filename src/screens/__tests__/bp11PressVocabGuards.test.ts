@@ -152,7 +152,19 @@ describe('BP11 / T3 — tab bar: haptic-only + forwards a11y (source contract)',
     expect(tabBarButton).toMatch(/\{\.\.\.rest\}/);
     // Haptic-only: no background fill dim, and PlatformPressable's own opacity
     // dip is disabled (pressOpacity 1) — the near-floor labels can't take a dim.
-    expect(tabBarButton).not.toMatch(/backgroundColor/);
+    //
+    // e1689d5d (VP1, 2026-08-29) added a PERSISTENT active-tab wash: a
+    // decorative, pointerEvents="none" sibling View (styles.selectedFill,
+    // adversarially verified against real iOS in both themes before it
+    // shipped) that signals selection state, not a press. It is unrelated to
+    // the press-dim this assertion guards against, so it is excluded by name
+    // before the sweep — anything else carrying backgroundColor still trips it,
+    // including a backgroundColor added to the Pressable itself.
+    const withoutSelectionWash = tabBarButton.replace(
+      /style=\{\[styles\.selectedFill, selectedFill \? \{ backgroundColor: selectedFill \} : null\]\}/,
+      '',
+    );
+    expect(withoutSelectionWash).not.toMatch(/backgroundColor/);
     expect(tabBarButton).toMatch(/pressOpacity=\{1\}/);
   });
 });

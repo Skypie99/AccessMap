@@ -383,7 +383,9 @@ describe('Explore close targets', () => {
     expect(close).toContain('width: a11y.minTargetSize');
     expect(close).toContain('height: a11y.minTargetSize');
     expect(src).toMatch(/accessibilityLabel="Dismiss heat map notice"/);
-    expect(src).toMatch(/accessibilityLabel="Dismiss empty heat map notice"/);
+    // 0cb5329 ("fix(map): remove duplicate heat notice", 2026-08-31) removed the
+    // separate empty-state notice entirely — MapScreenHeatEmpty.test.ts asserts
+    // its absence directly. This guard only covers the one remaining notice.
   });
 
   it('HomeScreen clear-search keeps hitSlop={14} (A11Y-223)', () => {

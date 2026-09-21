@@ -81,14 +81,15 @@ function liveSurfacesByFile(): Map<string, { surfaces: Surface[]; src: string }>
  * than rotting into a silent hole — the dismissal-standard convention.
  */
 const ALLOWED: { rel: string; marker: string; why: string }[] = [
-  {
-    rel: 'components/AddressSearchModal.tsx',
-    marker: 'aria-label="Search by address"',
-    why:
-      'The autoFocus search input takes first responder on present — the OS ' +
-      'moves SR focus with the keyboard. A title-yank 150ms later would FIGHT ' +
-      'the input focus this surface exists for.',
-  },
+  // AddressSearchModal's own entry (marker aria-label="Search by address")
+  // retired 2026-09-20: 8df6082 ("fix(ui): consolidate build 32
+  // stabilization") moved it off its hand-rolled <Modal> onto the shared
+  // <Sheet> primitive (components/ui/Sheet.tsx — no `<Modal` tag remains in
+  // the file at all). It is now a DELEGATED surface per the block below:
+  // Sheet.tsx runs useFocusOnOpen once for every consumer, so the autoFocus
+  // rationale that justified this exemption no longer has a surface to apply
+  // to — the exemption drain rule (this file's convention) means retiring it
+  // rather than leaving it to rot.
   {
     rel: 'screens/MapScreen.tsx',
     marker: 'aria-label="Name this preset"',

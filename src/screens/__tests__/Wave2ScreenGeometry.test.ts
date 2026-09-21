@@ -18,7 +18,11 @@ describe('Wave 2 — expanded modal adoption', () => {
   });
 
   it('keeps Flag Detail hand-built and gives it expanded safe-area geometry', () => {
-    expect(detail).toContain('<Modal aria-label={`Flag details:');
+    // 8df6082 ("fix(ui): consolidate build 32 stabilization") added an
+    // onDismiss handler to this tag, pushing it past Prettier's line width and
+    // wrapping `aria-label` onto its own line — same tag, same first prop,
+    // just reflowed. Whitespace-tolerant so a future reformat doesn't retrip it.
+    expect(detail).toMatch(/<Modal\s+aria-label=\{`Flag details:/);
     expect(detail).not.toContain('<Sheet\n      visible={visible}');
     expect(detail).toContain('marginTop: insets.top + spacing.sm');
     expect(detail).toContain("maxHeight: '100%'");

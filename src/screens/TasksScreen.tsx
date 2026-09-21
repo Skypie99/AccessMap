@@ -1984,7 +1984,7 @@ const TaskCard = memo(function TaskCard({
       ? [{
           key: 'verify',
           label: 'Verify',
-          a11yLabel: `Verify this flag: ${actionSubject}`,
+          a11yLabel: `Verify this flag — ${actionSubject}`,
           a11yHint: 'Confirms this barrier report is real',
           onPress: () => onSetStatus(flag.id, 'verified', isOwn),
           haptic: 'none',
@@ -2006,7 +2006,7 @@ const TaskCard = memo(function TaskCard({
       ? [{
           key: 'reject',
           label: 'Reject',
-          a11yLabel: `Reject this flag: ${actionSubject}`,
+          a11yLabel: `Reject this flag — ${actionSubject}`,
           a11yHint: 'Dismisses this report; asks you to confirm first',
           onPress: () => onSetStatus(flag.id, 'rejected', isOwn),
           haptic: 'none',
@@ -2015,7 +2015,7 @@ const TaskCard = memo(function TaskCard({
     {
       key: 'details',
       label: 'Details',
-      a11yLabel: `View flag details: ${actionSubject}`,
+      a11yLabel: `View flag details — ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsLink,
@@ -2035,7 +2035,7 @@ const TaskCard = memo(function TaskCard({
     {
       key: 'details',
       label: 'Details',
-      a11yLabel: `View flag details: ${actionSubject}`,
+      a11yLabel: `View flag details — ${actionSubject}`,
       a11yHint: 'Opens a screen with the full report, photo, and more actions',
       onPress: () => onShowDetails(flag),
       btnStyle: styles.detailsLink,

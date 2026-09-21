@@ -32,7 +32,13 @@ describe('FV-1 — focused fields stay in their owning scroller', () => {
     expect(src).toMatch(
       /cardWrap:\s*\{[^}]*maxHeight:\s*'100%'[^}]*flexGrow:\s*1[^}]*flexShrink:\s*1/,
     );
-    expect(src).toContain('marginTop: insets.top + spacing.sm');
+    // 8df6082 ("fix(ui): consolidate build 32 stabilization") moved the card
+    // onto the shared <Sheet presentation="expanded"> primitive, which now
+    // supplies the safe-area top margin itself (Sheet.tsx: expandedTopMargin)
+    // instead of each consumer repeating the formula locally.
+    expect(src).toContain('presentation="expanded"');
+    const sheetSrc = read('components/ui/Sheet.tsx');
+    expect(sheetSrc).toContain('const expandedTopMargin = insets.top + spacing.sm;');
   });
 
   it('Feedback wires both fields without replacing existing focus cues', () => {

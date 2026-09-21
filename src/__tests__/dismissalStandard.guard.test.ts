@@ -302,11 +302,35 @@ const FOCUS_RETURN = [
  * Its own contract is covered by HamburgerDrawer.focus.test.tsx and
  * drawerTrigger.test.tsx. This is a BOUNDARY between two focus-return
  * mechanisms, not a coverage hole.
+ *
+ * 3. Sheet.tsx — the shared multi-consumer primitive (§S5, "no third shell").
+ * Its own `<Modal>` is the ONE structural representative for every `<Sheet>`
+ * consumer (assertions B/C already treat it that way), but unlike a single
+ * opener/trigger surface it has no ONE opener of its own — a dozen unrelated
+ * screens mount it for a dozen unrelated reasons. Its `onDismiss` is pure
+ * passthrough plumbing to whichever caller supplied it; a caller that wants
+ * the G5 contract declares its OWN `useSurfaceTrigger` and hands `<Sheet>`
+ * that restore function, which is a claim about the CALLER, not about this
+ * shared primitive. (None of the three FOCUS_RETURN openers currently route
+ * through `<Sheet>` — each still mounts its own `<Modal>` directly — so this
+ * exemption creates no blind spot today.)
+ *
+ * FlagDetailModal and Sheet.tsx both now wrap their forward through
+ * `useSheetPullDismissLifecycle` (8df6082, "fix(ui): consolidate build 32
+ * stabilization") so a completed pull can reset before the parent's onDismiss
+ * runs — see the matching note on assertion J's forward check. The exemption
+ * match below is whitespace-normalized for the same reason `norm()` exists
+ * elsewhere in this file: byte-parity across a multi-line arrow is the wrong
+ * test.
  */
 const FOCUS_RETURN_EXEMPT = [
   {
     rel: 'components/FlagDetailModal.tsx',
-    handler: 'onDismiss={onDismiss}',
+    handler: 'onDismiss={() => { pullRef.current?.resetAfterDismiss(); onDismiss?.(); }}',
+  },
+  {
+    rel: 'components/ui/Sheet.tsx',
+    handler: 'onDismiss={() => { pullRef.current?.resetAfterDismiss(); onDismiss?.(); }}',
   },
   {
     rel: 'components/HamburgerDrawer.tsx',
@@ -434,7 +458,15 @@ describe('the dismissal standard', () => {
     const offenders: string[] = [];
     for (const s of live) {
       const anim = norm(prop(s.tag, 'animationType'));
-      const gated = /\?\s*'none'\s*:/.test(anim) || anim === "'none'" || anim === '"none"';
+      // `modalAnimationType` is the shared SheetPull dismiss-lifecycle hook's
+      // output (components/ui/SheetPull.tsx: useSheetPullDismissLifecycle) —
+      // `reducedMotion || pullDismissing ? 'none' : 'slide'` — so a surface
+      // wired to it is gated even though the ternary isn't inline on the tag.
+      const gated =
+        /\?\s*'none'\s*:/.test(anim) ||
+        anim === "'none'" ||
+        anim === '"none"' ||
+        anim === 'modalAnimationType';
       if (!gated) offenders.push(`${s.rel}:${s.line} → animationType=${anim || '(absent)'}`);
     }
     expect(offenders).toEqual([]);
@@ -615,8 +647,17 @@ describe('the dismissal standard', () => {
       // Parity, in the spirit of assertion B: the Modal must FORWARD the prop.
       // An ad-hoc arrow here would typecheck, render, and quietly break the
       // opener's contract, since only `onDismiss` is what the opener passes.
+      //
+      // 8df6082 ("fix(ui): consolidate build 32 stabilization") wired every
+      // SheetPull-dismissable surface through useSheetPullDismissLifecycle,
+      // which wraps the forward so a completed pull can reset its native-driven
+      // translation (SheetPull.tsx: resetAfterDismiss) before the parent's own
+      // onDismiss runs. That wrapper still calls the forwarded prop
+      // unconditionally, so it satisfies this parity law exactly as the bare
+      // forward did — it is accepted alongside it, not in place of it.
       const od = norm(prop(s.tag, 'onDismiss'));
-      if (od !== 'onDismiss') {
+      const SHEET_PULL_FORWARD = '() => { pullRef.current?.resetAfterDismiss(); onDismiss?.(); }';
+      if (od !== 'onDismiss' && od !== SHEET_PULL_FORWARD) {
         offenders.push(
           `${d.rel}:${s.line} → Modal onDismiss=${od || '(absent)'}, expected the forwarded prop`,
         );
@@ -693,8 +734,10 @@ describe('the dismissal standard', () => {
     }
 
     // The exemption drains rather than accumulates, same rule as ALLOWED.
+    // Normalized like `od` above — a multi-line arrow's exact indentation is
+    // not the contract, its call graph is.
     for (const e of FOCUS_RETURN_EXEMPT) {
-      const hits = live.filter((s) => s.rel === e.rel && s.tag.includes(e.handler));
+      const hits = live.filter((s) => s.rel === e.rel && norm(s.tag).includes(norm(e.handler)));
       if (hits.length !== 1) {
         offenders.push(`${e.rel} → exemption resolves to ${hits.length} live surfaces, expected 1`);
       }

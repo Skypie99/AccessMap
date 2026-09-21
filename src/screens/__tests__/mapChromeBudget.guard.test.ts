@@ -66,8 +66,12 @@ describe('map-chrome budget — the ONE persistent command bar', () => {
     // use the same raised pad, so callout clearance tracks the raised bar).
     expect(MAP).toContain('const OVERLAY_TOP_PAD = 8;');
     expect(MAP).toContain('paddingTop: insets.top + OVERLAY_TOP_PAD');
+    // 92e0c2d (2026-08-31, "fix(a11y): resolve visual freeze layout failures")
+    // deliberately widened the callout inset to also clear the denied-location
+    // banner (locationBannerInset, 0 unless permissionDenied) — the persistent
+    // command bar is still the ONLY input to chromeBandPx itself (asserted above).
     expect(MAP).toContain(
-      'chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + CALLOUT_CHROME_MARGIN}',
+      'chromeInsetTop={insets.top + OVERLAY_TOP_PAD + chromeBandPx + locationBannerInset + CALLOUT_CHROME_MARGIN}',
     );
   });
 
