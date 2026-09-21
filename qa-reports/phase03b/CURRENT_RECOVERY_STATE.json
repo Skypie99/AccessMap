@@ -1,6 +1,6 @@
 {
-  "CURRENT_TASK": "Local-only, narrow repair of the final restoration-readiness review's F1/F2 (blocking) and F3/F4 (non-blocking) findings, in one bounded pass: hardened the RESTORATION_RUNBOOK.md section-8 step-1 owner preflight bash block (fail-fast, CLI-version guard, ref pin/reject, missing-file refusal, no-overwrite refusal, no bare supabase-into-jq pipe), closed the stale section-2/section-10 evidence-status text now that proof.json/edge_function.json exist and the saved comparator reproduces overall PASS, and documented (without fabricating) the TARGET_IDENTITY caveat. No production/staging contact, no mutation, no live verifier run, no restoration SQL / verify_post_exit.mjs / migration-byte changes.",
-  "CURRENT_PHASE": "RESTORATION_RUNBOOK_HARDENED_F1_F2_REPAIRED_AWAITING_FRESH_INDEPENDENT_REVIEW",
+  "CURRENT_TASK": "A fresh, independent, local-only, offline-only final restoration-readiness review (r2) of hardening commit a134cbb4a08103c5c28a3af140b67847cbcb22e2, which repaired the prior review's F1/F2 (blocking) and F3/F4 (non-blocking) findings. Re-derived every claim from disk: re-ran the saved-evidence comparator fresh (overall PASS), re-read the SS8 step-1 preflight block directly (fail-fast, CLI-version guard, ref pin/reject all confirmed present), independently regenerated PHASE03B_RESTORATION_EXIT.sql (byte-identical, exact 3-object scope), re-read verify_post_exit.mjs (fail-closed, no retry loop), and confirmed via git show --stat that the hardening commit touched only 3 files with the restoration SQL / verify_post_exit.mjs / frozen migrations / exclusion module all unchanged. No production/staging contact, no mutation, no live verifier run, no restoration SQL / verify_post_exit.mjs / migration-byte changes. Verdict: PASS, READY_FOR_OWNER_AUTHORIZATION.",
+  "CURRENT_PHASE": "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_R2_PASS_AWAITING_SKYS_SEPARATE_OWNER_AUTHORIZATION",
   "CURRENT_BRANCH": "codex/flagstone-p03b-post-apply-recovery-20260919",
   "CURRENT_WORKTREE": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919",
   "INCIDENT_RUN_ID": "ebdba703-2470-41fa-ac6d-44354203b8d1",
@@ -160,7 +160,7 @@
     "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json",
     "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/ (new directory, 7 files)"
   ],
-  "NEXT_EXACT_ACTION": "Run one fresh, local-only, independent final restoration-readiness review of the now-hardened runbook (see RESTORATION_RUNBOOK_HARDENING_RESULT above) -- this repair session does not review itself. If that review passes, return to Sky for a separate, explicit owner authorization of the single restoration attempt. Then STOP: do not proceed to Phase 03C, do not uncomment section 8 steps 2-3, do not run any live command.",
+  "NEXT_EXACT_ACTION": "This review (r2) passed. Await Sky's separate, explicit owner authorization for exactly one Phase 03B restoration attempt, followed immediately (same owner session) by post-exit verification. Then STOP: do not proceed to Phase 03C, do not uncomment section 8 steps 2-3, do not run any live command, and do not treat this review as authorization to do so.",
   "EXTERNAL_HANDOFF_PACKAGE": {
     "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/",
     "preparedBy": "Claude (Sonnet 5)",
@@ -244,9 +244,43 @@
     "reportPath": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/REVIEW.md",
     "receiptPath": "qa-reports/phase03b/2026-09-20-restoration-runbook-independent-review/independent_review_receipt.json",
     "supersededByRepairNotYetReReviewed": false,
-    "supersededBy": "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_RESULT"
+    "supersededBy": "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_RESULT_R2 (PASS)"
   },
-  "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_RESULT": {
+  "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_RESULT_R2": {
+    "status": "PASS",
+    "reviewedAtUtc": "2026-09-21T01:35:03Z",
+    "reviewedAtHeadCommit": "a134cbb4a08103c5c28a3af140b67847cbcb22e2",
+    "mode": "FRESH_INDEPENDENT_REVIEW_LOCAL_OFFLINE_ONLY",
+    "productionContact": "NONE",
+    "productionMutations": "NONE",
+    "restorationExecuted": false,
+    "migrationApplyRetried": false,
+    "phase03cStarted": false,
+    "reviewsRepairOf": "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_RESULT_R1 (HOLD, F1/F2 blocking)",
+    "f1FailFastPreflight": "PASS",
+    "f2CliVersionGuard": "PASS",
+    "f3TargetIdentity": "PASS",
+    "f4EvidenceDocumentation": "PASS",
+    "savedEvidenceComparatorRerun": "PASS (independently reproduced, matching hashes f185495387290e1... and 276dcb14c85ca7...); CLIENT_COMPATIBILITY correctly NOT_RUN and non-blocking",
+    "restorationSqlRegeneratedAndByteIdentical": true,
+    "restorationSqlScope": "EXACT_THREE_TEMPORARY_GATE_OBJECTS_ONLY",
+    "blockingDefects": [],
+    "nonBlockingFindings": [],
+    "unaffected": [
+      "PHASE03B_RESTORATION_EXIT.sql do $guard$/do $absence$ blocks (independently regenerated, byte-identical)",
+      "verify_post_exit.mjs (fail-closed, no retry loop, CLI version guard present, untouched since 3420d87)",
+      "frozen Phase03B migration files (20260915210256, 20260915210413) untouched since 2026-09-15, before the incident"
+    ],
+    "hardeningCommitFilesTouched": [
+      "qa-reports/phase03b/2026-09-20-restoration-runbook/RESTORATION_RUNBOOK.md",
+      "qa-reports/phase03b/CURRENT_RECOVERY_HANDOFF.md",
+      "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json"
+    ],
+    "reportPath": "qa-reports/phase03b/2026-09-20-final-restoration-readiness-review-r2/REVIEW.md",
+    "receiptPath": "qa-reports/phase03b/2026-09-20-final-restoration-readiness-review-r2/independent_review_receipt.json",
+    "verdict": "RESTORATION_RUNBOOK: READY_FOR_OWNER_AUTHORIZATION"
+  },
+  "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_RESULT_R1": {
     "status": "HOLD",
     "reviewedAtUtc": "2026-09-21T00:29:42Z",
     "reviewedAtHeadCommit": "8fdbd2dd332d023602cebf30c278f45a3b9b0cad",
@@ -459,5 +493,5 @@
     "WEAKENING_ANY_GATE_BECAUSE_EVIDENCE_IS_NOW_PRESENT",
     "UNCOMMENTING_SECTION_8_STEPS_2_OR_3"
   ],
-  "LAST_UPDATED_UTC": "2026-09-21T01:15:00Z"
+  "LAST_UPDATED_UTC": "2026-09-21T01:35:03Z"
 }
