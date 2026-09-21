@@ -1,0 +1,14 @@
+{
+ "M1_no_ui_reentrancy_lock": "KILLED | Tests:       1 failed, 12 passed, 13 total",
+ "M2_no_lib_single_flight": "KILLED | Tests:       2 failed, 39 passed, 41 total",
+ "M3_deleted_not_success": "KILLED | Tests:       19 failed, 35 passed, 54 total",
+ "M4_auto_retry_network": "KILLED | Tests:       8 failed, 46 passed, 54 total",
+ "M5_success_on_unconfirmed": "KILLED | Tests:       7 failed, 6 passed, 13 total",
+ "M6_no_terminal_short_circuit": "KILLED | Tests:       3 failed, 38 passed, 41 total",
+ "M7_signin_calls_status_when_absent": "KILLED | Tests:       2 failed, 13 passed, 15 total",
+ "M8_no_lib_status_gate": "KILLED | Tests:       1 failed, 12 passed, 13 total",
+ "M9_signout_on_unconfirmed": "KILLED | Tests:       23 failed, 31 passed, 54 total",
+ "M10_cleanup_failure_reported_as_failure": "KILLED | Tests:       1 failed, 12 passed, 13 total",
+ "M11_requested_accepted_without_capability": "KILLED | Tests:       3 failed, 51 passed, 54 total",
+ "M12_modal_left_open_after_settle": "KILLED | Tests:       7 failed, 6 passed, 13 total"
+}
