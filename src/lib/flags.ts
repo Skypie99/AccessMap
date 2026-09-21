@@ -1519,6 +1519,22 @@ export class FlagDeleteRefusedError extends Error {
 }
 
 /**
+ * Required (fail-closed) Storage cleanup for deleteFlag — Phase 04A repair,
+ * Sky's D-04A-1: "keep the flag row until its associated public photos are
+ * proven removed." Unlike removeUploadedFlagPhotos (best-effort, never
+ * throws — used for a submit-time upload that never became a published
+ * report), a photo that WAS public must actually come down before the row
+ * that made it discoverable disappears. A swallowed Storage error here would
+ * let the row vanish while the photo stays live and unreachable from the UI
+ * forever — the exact SR-050 takedown hole this decision closes. So this
+ * throws on any error, and the caller must not proceed to the row DELETE.
+ */
+async function removeRequiredFlagPhotos(paths: string[]): Promise<void> {
+  const { error } = await supabase.storage.from(FLAG_PHOTOS_BUCKET).remove(paths);
+  if (error) throw error;
+}
+
+/**
  * Delete a flag via a versioned, strict direct Data API DELETE adapter
  * (Phase 04A / FDA-002). The narrow `delete-flag` Edge route this used to call
  * was never deployed (client-only regression — main briefly called an absent
@@ -1527,29 +1543,34 @@ export class FlagDeleteRefusedError extends Error {
  * 2026-09-04 production catalog capture) — this client never infers owner or
  * admin privilege itself.
  *
- * Sequence:
- *   1. Snapshot every canonical photo object this flag may reference BEFORE
- *      deleting anything — `flag_photos` rows are gone once the row cascades,
- *      so cleanup must know its exact target set up front, never guess after.
- *   2. DELETE ... RETURNING id. A returned row is the only proof the delete
- *      actually happened; RLS refusing the row (non-owner/non-admin) or the
- *      row already being gone both come back as `data: []`, not an error —
- *      collapsing that into "resolved" would be a false success.
- *   3. Best-effort media cleanup AFTER the row delete is confirmed. Mirrors
- *      removeUploadedFlagPhotos's own contract (never throws, never reverses
- *      a confirmed delete): an object orphaned here is invisible to every
- *      user and safe for a later sweep, whereas failing a deletion that
- *      already succeeded would be the worse lie. `flag_photos` rows cascade
- *      via `ON DELETE CASCADE` — no separate junction-table delete is issued.
- *
- * Cleanup only removes objects it can derive with certainty: `object_key`
- * columns are exact paths, and legacy `url`-only rows are resolved through
- * storagePathFromPublicUrl against the FLAG OWNER's uid (objects always live
- * under `<owner-uid>/...`, including ones an admin deletes on someone else's
- * flag). An anonymous flag has no owner uid to validate against, so its
- * legacy url-only gallery photos (community-contributed; object_key-bearing
- * ones are still exact) are left for a server-side sweep rather than guessed
- * at — the same fail-closed rule storagePathFromPublicUrl already documents.
+ * Sequence (D-04A-1: cleanup PROVEN before the row goes, not best-effort
+ * after — repaired 2026-09-21 from an earlier delete-then-cleanup order that
+ * an independent review correctly held as a public-photo takedown risk):
+ *   1. Read the flag row. Not found (already gone, or hidden by the
+ *      always-true `flags readable by authenticated` SELECT policy simply
+ *      never matching) refuses immediately — there is nothing to determine
+ *      cleanup requirements from, so there is nothing safe to delete.
+ *   2. Snapshot every gallery photo (`flag_photos` rows are gone once the row
+ *      cascades, so cleanup must know its exact target set up front).
+ *   3. Determine the exact Storage path each photo REQUIRES removed:
+ *      `object_key` columns are exact; legacy `url`-only rows are resolved
+ *      through storagePathFromPublicUrl against the FLAG OWNER's uid (objects
+ *      always live under `<owner-uid>/...`, including ones an admin deletes
+ *      on someone else's flag). If a photo exists but its path cannot be
+ *      derived with certainty (no owner uid to validate against, a foreign
+ *      folder, a malformed URL), that is "required absence cannot be
+ *      established" — refuse the delete rather than silently leave a public
+ *      photo behind with no flag pointing at it and no future UI path to
+ *      remove it.
+ *   4. Remove every required path BEFORE touching the row. A Storage error
+ *      here throws and the row is never touched (removeRequiredFlagPhotos
+ *      never swallows an error the way removeUploadedFlagPhotos does).
+ *   5. Only now DELETE ... RETURNING id. A returned row bearing this exact
+ *      flagId is the only proof the delete actually happened; RLS refusing
+ *      the row (non-owner/non-admin) or the row already being gone both come
+ *      back as `data: []`, not an error — collapsing that into "resolved"
+ *      would be a false success. `flag_photos` rows cascade via
+ *      `ON DELETE CASCADE` — no separate junction-table delete is issued.
  */
 export async function deleteFlag(flagId: string): Promise<void> {
   const { data: flagRow, error: flagReadErr } = await supabase
@@ -1558,15 +1579,46 @@ export async function deleteFlag(flagId: string): Promise<void> {
     .eq('id', flagId)
     .maybeSingle();
   if (flagReadErr) throw flagReadErr;
+  if (!flagRow) {
+    // Nothing to determine required cleanup from, and nothing to delete —
+    // the same refusal a zero-row DELETE would produce, never a silent
+    // "succeeded at deleting nothing."
+    throw new FlagDeleteRefusedError();
+  }
 
-  let galleryPhotos: { url: string | null; object_key?: string | null }[] = [];
-  if (flagRow) {
-    const { data: photoRows, error: photoReadErr } = await supabase
-      .from('flag_photos')
-      .select('url, object_key')
-      .eq('flag_id', flagId);
-    if (photoReadErr) throw photoReadErr;
-    galleryPhotos = photoRows ?? [];
+  const { data: photoRows, error: photoReadErr } = await supabase
+    .from('flag_photos')
+    .select('url, object_key')
+    .eq('flag_id', flagId);
+  if (photoReadErr) throw photoReadErr;
+  const galleryPhotos = photoRows ?? [];
+
+  const owner = flagRow.user_id ?? null;
+  const requiredPaths: string[] = [];
+  let hasUnresolvedPhoto = false;
+  const noteRequiredPhoto = (url: string | null | undefined, objectKey: string | null | undefined) => {
+    if (objectKey) {
+      requiredPaths.push(objectKey);
+      return;
+    }
+    if (!url) return; // no photo at this slot — nothing required
+    const derived = owner ? storagePathFromPublicUrl(url, owner) : null;
+    if (derived) {
+      requiredPaths.push(derived);
+    } else {
+      hasUnresolvedPhoto = true;
+    }
+  };
+  noteRequiredPhoto(flagRow.photo_url, flagRow.photo_object_key);
+  for (const photo of galleryPhotos) {
+    noteRequiredPhoto(photo.url, photo.object_key);
+  }
+
+  if (hasUnresolvedPhoto) {
+    throw new FlagDeleteRefusedError();
+  }
+  if (requiredPaths.length > 0) {
+    await removeRequiredFlagPhotos(requiredPaths);
   }
 
   const { data: deletedRows, error: deleteErr } = await supabase
@@ -1575,23 +1627,8 @@ export async function deleteFlag(flagId: string): Promise<void> {
     .eq('id', flagId)
     .select('id');
   if (deleteErr) throw deleteErr;
-  if (!deletedRows || deletedRows.length === 0) {
+  if (!Array.isArray(deletedRows) || !deletedRows.some((row) => row.id === flagId)) {
     throw new FlagDeleteRefusedError();
-  }
-
-  const owner = flagRow?.user_id ?? null;
-  const paths: string[] = [];
-  const primaryPath =
-    flagRow?.photo_object_key ??
-    (flagRow?.photo_url && owner ? storagePathFromPublicUrl(flagRow.photo_url, owner) : null);
-  if (primaryPath) paths.push(primaryPath);
-  for (const photo of galleryPhotos) {
-    const path =
-      photo.object_key ?? (photo.url && owner ? storagePathFromPublicUrl(photo.url, owner) : null);
-    if (path) paths.push(path);
-  }
-  if (paths.length > 0) {
-    await removeUploadedFlagPhotos(paths);
   }
 }
 

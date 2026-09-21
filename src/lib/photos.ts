@@ -1,6 +1,11 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
-import { commitFlagPhotoUpload, removeUploadedFlagPhotos, uploadFlagPhoto } from './flags';
+import {
+  cancelFlagPhotoUpload,
+  commitFlagPhotoUpload,
+  removeUploadedFlagPhotos,
+  uploadFlagPhoto,
+} from './flags';
 import { trackEvent } from './analytics';
 
 export type FlagPhoto = {
@@ -126,10 +131,47 @@ export async function addFlagPhoto(
 }
 
 /**
+ * FDA-019 orphan repair (Phase 04A, 2026-09-21): every photo passed in here
+ * already has real bytes sitting in Storage (uploadFlagPhoto already ran).
+ * When one fails to attach, every OTHER photo that is not yet a confirmed
+ * `flag_photos` row is just as orphaned as the one that failed — a later
+ * photo in the array was never even attempted, but it is exactly as
+ * pointer-less as the one whose insert was denied. Cleans up:
+ *   - intent-based uploads (`intentId` set): cancelFlagPhotoUpload marks the
+ *     durable server-side intent ambiguous for reconciliation — mirrors
+ *     ReportFlagModal's own pre-createFlag failure handling. Never client-
+ *     inferred absence, so a cancel failure here is swallowed (best-effort;
+ *     the intent hold is what actually protects the object).
+ *   - legacy uploads (`intentId: null`): removeUploadedFlagPhotos deletes the
+ *     real Storage object directly — there is no server-side intent tracking
+ *     it, so best-effort client cleanup is the only cleanup there is.
+ * Already-attached photos (before the failing position) are never touched.
+ * The CURRENTLY failing legacy entry is deliberately excluded from this
+ * helper's input by its one caller below — insertLegacyFlagPhoto already
+ * cleans up its own object on its own failure; passing it again here would
+ * just be a redundant remove call, not a behavior difference.
+ */
+async function cleanupUnattachedFlagPhotos(
+  photos: { intentId: string | null; path?: string }[],
+): Promise<void> {
+  const intentIds = photos.filter((p) => p.intentId).map((p) => p.intentId as string);
+  const legacyPaths = photos.filter((p) => !p.intentId && p.path).map((p) => p.path as string);
+  await Promise.allSettled([
+    ...intentIds.map((id) => cancelFlagPhotoUpload(id)),
+    legacyPaths.length > 0 ? removeUploadedFlagPhotos(legacyPaths) : Promise.resolve(),
+  ]);
+}
+
+/**
  * Commit prepared intents after the report exists. A client does not insert a
  * public URL for the intent path: the server verifies exact object key,
  * bucket, and owner_id. `intentId: null` entries are the FDA-019 legacy
  * fallback (see uploadFlagPhoto) and are inserted directly instead.
+ *
+ * On a failure at any position, every photo from that position onward —
+ * the one that just failed AND every one after it that was never even
+ * attempted — gets cleaned up before the error propagates (FDA-019). Photos
+ * before that position already succeeded and are left alone.
  */
 export async function batchInsertFlagPhotos(
   flagId: string,
@@ -137,13 +179,24 @@ export async function batchInsertFlagPhotos(
 ): Promise<void> {
   if (photos.length === 0) return;
   for (const [position, photo] of photos.entries()) {
-    if (photo.intentId) {
-      await commitFlagPhotoUpload(photo.intentId, flagId, position, photo.alt, position === 0);
-      continue;
+    try {
+      if (photo.intentId) {
+        await commitFlagPhotoUpload(photo.intentId, flagId, position, photo.alt, position === 0);
+        continue;
+      }
+      if (!photo.url || !photo.path) {
+        throw new Error('Legacy photo upload is missing its Storage location.');
+      }
+      await insertLegacyFlagPhoto(flagId, photo.url, photo.path, position, photo.alt ?? null);
+    } catch (err) {
+      // The photo AT `position` needs its own cleanup here only when it's
+      // intent-based (nothing else cancels it); a legacy failure already
+      // cleaned itself inside insertLegacyFlagPhoto (or never had a path to
+      // clean). Every later photo was never even attempted — clean all of
+      // those regardless of kind.
+      const current = photo.intentId ? [photo] : [];
+      await cleanupUnattachedFlagPhotos([...current, ...photos.slice(position + 1)]);
+      throw err;
     }
-    if (!photo.url || !photo.path) {
-      throw new Error('Legacy photo upload is missing its Storage location.');
-    }
-    await insertLegacyFlagPhoto(flagId, photo.url, photo.path, position, photo.alt ?? null);
   }
 }

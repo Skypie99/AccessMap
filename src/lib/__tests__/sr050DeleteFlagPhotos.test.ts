@@ -4,7 +4,7 @@
  * legacy `flags.photo_url` / `flag_photos.url` into an exact Storage path
  * before best-effort cleanup after a confirmed row delete.
  */
-import { deleteFlag, storagePathFromPublicUrl } from '../flags';
+import { deleteFlag, FlagDeleteRefusedError, storagePathFromPublicUrl } from '../flags';
 
 const UID = '11111111-1111-4111-8111-111111111111';
 const OTHER = '99999999-9999-4999-8999-999999999999';
@@ -92,7 +92,7 @@ describe('Phase 04A deleteFlag — storagePathFromPublicUrl drives its legacy ph
     expect(mockRemove).toHaveBeenCalledWith([`${UID}/1700000000000.jpg`]);
   });
 
-  it('refuses to guess at a foreign-folder legacy URL and leaves it uncleaned (warns, does not delete)', async () => {
+  it('refuses to guess at a foreign-folder legacy URL and refuses the delete instead (D-04A-1: fail closed, warns, does NOT delete the row either)', async () => {
     mockDeleteFlagFrom({
       flagResult: {
         data: { id: 'f1', user_id: UID, photo_url: `${BASE}/${OTHER}/1.jpg`, photo_object_key: null },
@@ -100,7 +100,10 @@ describe('Phase 04A deleteFlag — storagePathFromPublicUrl drives its legacy ph
       },
       deleteResult: { data: [{ id: 'f1' }], error: null },
     });
-    await deleteFlag('f1');
+    // Phase 04A repair, 2026-09-21: a photo that exists but cannot be safely
+    // mapped to a Storage path is "required absence cannot be established" —
+    // the row must NOT be deleted either, not just the photo left uncleaned.
+    await expect(deleteFlag('f1')).rejects.toThrow(FlagDeleteRefusedError);
     expect(mockRemove).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalled();
   });

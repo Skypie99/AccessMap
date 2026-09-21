@@ -81,34 +81,80 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
   const absentRpc: string[] = deployed.rpc.absentAtAnySignature;
   const absentEdge: string[] = deployed.edgeFunctions.absent;
 
-  it('FDA-019 — flag photo upload is hard-broken, avatar upload is not', () => {
-    // Rev 2. Rev 1 lumped these together and asserted `.some(hard)`, which
-    // stayed green while two avatar sites were misclassified. They are
-    // genuinely different surfaces: the avatar path has a legacy fallback that
-    // works in production; the flag path has none.
+  it('FDA-019 — flag photo upload has a proven graceful fallback, same as avatar upload, and no longer orphans partial-batch uploads', () => {
+    // Rev 3 (Phase 04A repair, 2026-09-21): rev 2 pinned the PRE-04A shape —
+    // prepare_flag_photo_upload absence was hard-broken. That was accepted
+    // and fixed in the same milestone the manifest already documents (see
+    // photo-upload-flag's phase04aNote): the flag-photo surface now mirrors
+    // avatar upload's graceful legacy fallback exactly. Keeping the old
+    // 'hard' pin here would just re-assert a bug this repository has already
+    // fixed and tested — see photos.test.ts's FDA-019 orphan-repair suite.
     const flagPhoto = surfaces.find((s) => s.surface === 'photo-upload-flag')!;
     const avatar = surfaces.find((s) => s.surface === 'photo-upload-avatar')!;
 
-    expect(flagPhoto.finding).toBe('FDA-019');
     const prepare = flagPhoto.callSites.find(
       (c) => c.name === 'prepare_flag_photo_upload' && c.file === 'src/lib/flags.ts',
     )!;
-    expect(prepare.onAbsent).toBe('hard');
+    expect(prepare.onAbsent).toBe('graceful');
     expect(absentRpc).toContain('prepare_flag_photo_upload');
 
-    // The avatar surface must stay classified as recovering, not broken —
-    // if someone removes that fallback, this fails.
+    const commit = flagPhoto.callSites.find(
+      (c) => c.name === 'commit_flag_photo_upload' && c.file === 'src/lib/flags.ts',
+    )!;
+    expect(commit.onAbsent).toBe('unreachable');
+
+    // The legacy row-insert fallback itself must be declared, not implied.
+    const legacyTable = flagPhoto.callSites.find(
+      (c) => c.kind === 'table' && c.name === 'flag_photos' && c.file === 'src/lib/photos.ts',
+    )!;
+    expect(legacyTable).toBeDefined();
+
+    // Missing-function behavior must route into the secure legacy fallback
+    // exactly like the avatar surface it mirrors, not into a hard failure.
+    expect(flagPhoto.finding).toBe('FDA-019');
     expect(avatar.finding).toBeNull();
     const avatarPrepare = avatar.callSites.find((c) => c.name === 'prepare_flag_photo_upload')!;
     expect(avatarPrepare.onAbsent).toBe('graceful');
     expect(avatar.productionImpact).toMatch(/^WORKING/);
+
+    // A WORKING claim on the flag-photo surface may only stand now that the
+    // partial-batch orphan bug (a later, never-attempted upload left
+    // pointer-less in Storage) is fixed and tested — not merely that the
+    // fallback path itself works.
+    expect(flagPhoto.productionImpact).toMatch(/^WORKING/);
+    expect(flagPhoto.productionImpact).toMatch(/orphan/i);
+    expect((flagPhoto as unknown as { phase04aRepairNote?: string }).phase04aRepairNote).toMatch(
+      /orphan/i,
+    );
   });
 
-  it('FDA-002 — flag deletion invokes an Edge Function that is not deployed', () => {
+  it('FDA-002 — flag deletion no longer depends on any undeployed Edge Function; it uses the accepted direct-DELETE compatibility path', () => {
+    // Rev 3 (Phase 04A repair, 2026-09-21): rev 2 pinned the PRE-04A bug
+    // (deleteFlag calling the never-deployed delete-flag Edge Function, every
+    // call site 'hard'). That bug is fixed: deleteFlag issues a direct Data
+    // API DELETE, authorized entirely by live RLS. Re-asserting 'hard'/edge
+    // here would just re-pin the bug this repository already fixed.
     const del = surfaces.find((s) => s.surface === 'flag-delete')!;
     expect(absentEdge).toContain('delete-flag');
-    expect(del.callSites.every((c) => c.onAbsent === 'hard')).toBe(true);
+
+    // No edge callsite anywhere on this surface any more.
+    expect(del.callSites.every((c) => c.kind !== 'edge')).toBe(true);
+    expect(del.callSites.every((c) => c.name !== 'delete-flag')).toBe(true);
+
+    // A deployed direct flags-table DELETE call site exists.
+    const rowDelete = del.callSites.find((c) => c.kind === 'table' && c.name === 'flags' && c.deployed === true)!;
+    expect(rowDelete).toBeDefined();
+
     expect(del.finding).toBe('FDA-002');
+
+    // The manifest must accurately describe the strict direct-delete
+    // compatibility path, and must NOT describe required photo cleanup as
+    // best-effort any more (D-04A-1: fail-closed, before the row delete).
+    expect(del.productionImpact).not.toMatch(/best-effort/i);
+    expect(del.productionImpact).toMatch(/fails closed/i);
+    expect((del as unknown as { phase04aRepairNote?: string }).phase04aRepairNote).not.toMatch(
+      /best-effort/i,
+    );
   });
 
   it('FDA-003 — deletion status polls an absent route while delete-account v4 is live', () => {

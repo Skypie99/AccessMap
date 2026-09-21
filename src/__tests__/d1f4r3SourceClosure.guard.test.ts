@@ -127,7 +127,48 @@ describe('D1F4R3 source-closure database contracts', () => {
     expect(ordinaryDelete).toContain("rpc('account_deletion_prepare_flag_delete'");
     expect(ordinaryDelete).toContain('await exactObject(item.objectKey)');
     expect(ordinaryDelete).toContain("rpc('account_deletion_finalize_flag_delete'");
-    expect(flags).toContain("supabase.functions.invoke('delete-flag'");
+    // This D1F4R3 lineage's own delete-flag Edge Function (supabase/functions/
+    // delete-flag/index.ts, asserted above) is a separate, still-undeployed
+    // account-deletion-worker route — it is not what src/lib/flags.ts's
+    // ordinary report deletion calls. That call was removed in Phase 04A
+    // (accepted 2026-09-03, P04-D01): never deploy it merely to satisfy the
+    // client.
+    expect(flags).not.toContain("supabase.functions.invoke('delete-flag'");
     expect(flags).not.toContain('collectFlagPhotoCleanupPlan');
+  });
+
+  it('Phase 04A repair (D-04A-1): src/lib/flags.ts proves required photo cleanup before the flags row DELETE, and never swallows a cleanup failure into a delete', () => {
+    // The static source-order counterpart to flags.supabase.test.ts's
+    // LOCKING behavior tests (BLOCKER D1) — this guard pins the SOURCE
+    // ordering; the behavior tests pin the RUNTIME ordering. Both must hold.
+    const deleteFlagAt = flags.indexOf('export async function deleteFlag(flagId: string)');
+    expect(deleteFlagAt).toBeGreaterThan(-1);
+    const deleteFlagEnd = flags.indexOf('\n}', flags.indexOf('export async function fetchFlagById'));
+    const body = flags.slice(deleteFlagAt, deleteFlagEnd);
+
+    // The required-cleanup call and the row DELETE call must both be present,
+    // in that order — cleanup first, DELETE only after.
+    const cleanupAt = body.indexOf('removeRequiredFlagPhotos(');
+    const rowDeleteAt = body.indexOf(".from('flags')\n    .delete()");
+    expect(cleanupAt).toBeGreaterThan(-1);
+    expect(rowDeleteAt).toBeGreaterThan(-1);
+    expect(rowDeleteAt).toBeGreaterThan(cleanupAt);
+
+    // A photo whose exact path cannot be established refuses the delete
+    // rather than silently skipping cleanup (D-04A-1: required absence must
+    // be established, not guessed at).
+    expect(body).toContain('hasUnresolvedPhoto');
+    expect(body.indexOf('hasUnresolvedPhoto')).toBeLessThan(rowDeleteAt);
+
+    // removeRequiredFlagPhotos itself must throw on a Storage error — no
+    // swallowed cleanup failure may reach the row DELETE. Contrast with
+    // removeUploadedFlagPhotos, whose whole contract is the opposite
+    // (best-effort, never throws) for a pre-publish upload that never became
+    // a flag photo.
+    const helperAt = flags.indexOf('async function removeRequiredFlagPhotos(paths: string[])');
+    const helperEnd = flags.indexOf('\n}', helperAt);
+    const helperBody = flags.slice(helperAt, helperEnd);
+    expect(helperBody).toContain('if (error) throw error;');
+    expect(helperBody).not.toContain('console.warn');
   });
 });

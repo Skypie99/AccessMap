@@ -18,11 +18,12 @@ function mockDeleteFlagFrom(opts: {
   deleteResult: { data: unknown; error: unknown };
 }) {
   const photosResult = opts.photosResult ?? { data: [], error: null };
+  const deleteEq = jest.fn(() => ({ select: jest.fn().mockResolvedValue(opts.deleteResult) }));
   mockFrom.mockImplementation((table: unknown) => {
     if (table === 'flags') {
       return {
         select: jest.fn(() => ({ eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue(opts.flagResult) })) })),
-        delete: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn().mockResolvedValue(opts.deleteResult) })) })),
+        delete: jest.fn(() => ({ eq: deleteEq })),
       };
     }
     if (table === 'flag_photos') {
@@ -30,6 +31,7 @@ function mockDeleteFlagFrom(opts: {
     }
     throw new Error(`unexpected table ${String(table)}`);
   });
+  return { deleteEq };
 }
 
 jest.mock('../supabase', () => ({
@@ -70,5 +72,17 @@ describe('D1F4R3 -> Phase 04A canonical ordinary report deletion client seam', (
       deleteResult: { data: null, error },
     });
     await expect(deleteFlag('f3')).rejects.toMatchObject(error);
+  });
+
+  it('LOCKING (BLOCKER D3, mutation safety): the destructive DELETE targets the flag\'s own id, never the actor\'s user_id', async () => {
+    const { deleteEq } = mockDeleteFlagFrom({
+      flagResult: { data: { id: 'f4', user_id: 'owner-1', photo_url: null, photo_object_key: null }, error: null },
+      deleteResult: { data: [{ id: 'f4' }], error: null },
+    });
+    await deleteFlag('f4');
+    // A mutation from .eq('id', flagId) to .eq('user_id', flagId) must fail
+    // this assertion — the whole point of pinning the exact call args.
+    expect(deleteEq).toHaveBeenCalledWith('id', 'f4');
+    expect(deleteEq).not.toHaveBeenCalledWith('user_id', 'f4');
   });
 });

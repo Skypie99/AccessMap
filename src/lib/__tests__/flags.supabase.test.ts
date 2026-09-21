@@ -295,7 +295,10 @@ describe('updateFlagStatus', () => {
 });
 
 // ---------------------------------------------------------------------------
-// deleteFlag — FDA-002 direct Data API DELETE adapter (Phase 04A)
+// deleteFlag — FDA-002 direct Data API DELETE adapter (Phase 04A), repaired
+// 2026-09-21 (D-04A-1): required photo cleanup now happens BEFORE the flags
+// row DELETE and fails closed (no DELETE) on any cleanup problem, instead of
+// best-effort cleanup after a confirmed delete.
 // ---------------------------------------------------------------------------
 
 describe('deleteFlag', () => {
@@ -304,7 +307,10 @@ describe('deleteFlag', () => {
   // deleteFlag issues three distinct supabase.from() calls (flags select,
   // flag_photos select, flags delete). The shared makeChain() proxy used
   // elsewhere in this file only supports ONE static per-table shape, so this
-  // describe block wires its own per-table, per-verb mock instead.
+  // describe block wires its own per-table, per-verb mock instead. Returns
+  // the delete-branch's `eq` spy so tests can prove exactly what the DELETE
+  // was filtered by (BLOCKER D3: a generic no-arg-checking mock let
+  // `.eq('id', flagId)` silently regress to `.eq('user_id', flagId)`).
   function mockDeleteFlagFrom(opts: {
     flagResult: { data: unknown; error: unknown };
     photosResult?: { data: unknown; error: unknown };
@@ -312,6 +318,9 @@ describe('deleteFlag', () => {
   }) {
     const photosResult = opts.photosResult ?? { data: [], error: null };
     const deleteResult = opts.deleteResult ?? { data: [{ id: 'f1' }], error: null };
+    const deleteEq = jest.fn(() => ({
+      select: jest.fn().mockResolvedValue(deleteResult),
+    }));
     mockFrom.mockImplementation((table: unknown) => {
       if (table === 'flags') {
         return {
@@ -321,9 +330,7 @@ describe('deleteFlag', () => {
             })),
           })),
           delete: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              select: jest.fn().mockResolvedValue(deleteResult),
-            })),
+            eq: deleteEq,
           })),
         };
       }
@@ -336,6 +343,7 @@ describe('deleteFlag', () => {
       }
       throw new Error(`deleteFlag test: unexpected table ${String(table)}`);
     });
+    return { deleteEq };
   }
 
   it('owner success: returns without throwing and cleans up the primary + gallery photo objects', async () => {
@@ -395,7 +403,19 @@ describe('deleteFlag', () => {
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
-  it('does not attempt media cleanup for an anonymous flag\'s url-only gallery photo (no owner uid to validate against)', async () => {
+  it('wrong-id refusal: a DELETE that returns rows but not the intended flag id is treated as failure, not success', async () => {
+    mockDeleteFlagFrom({
+      flagResult: { data: { id: 'f3b', user_id: 'u1', photo_url: null, photo_object_key: null }, error: null },
+      // A corrupted/foreign response — proves the check inspects the
+      // returned row's id rather than merely its length (closes the
+      // `.length !== 0`-only mutation gap).
+      deleteResult: { data: [{ id: 'some-other-flag' }], error: null },
+    });
+
+    await expect(deleteFlag('f3b')).rejects.toBeInstanceOf(FlagDeleteRefusedError);
+  });
+
+  it('refuses to delete an anonymous flag whose url-only gallery photo has no owner uid to validate against (D-04A-1: fail closed, not a silent sweep-later)', async () => {
     mockDeleteFlagFrom({
       flagResult: { data: { id: 'f4', user_id: null, photo_url: null, photo_object_key: null }, error: null },
       photosResult: {
@@ -405,19 +425,82 @@ describe('deleteFlag', () => {
       deleteResult: { data: [{ id: 'f4' }], error: null },
     });
 
-    await expect(deleteFlag('f4')).resolves.toBeUndefined();
-    // No uid to validate the derived path against — fail closed, leave it for a sweep.
+    // Required absence cannot be established (no owner uid to validate the
+    // derived path against) — the row must NOT be deleted, not "delete now,
+    // sweep the photo later." This is the exact SR-050 public-photo takedown
+    // gap D-04A-1 closes.
+    await expect(deleteFlag('f4')).rejects.toBeInstanceOf(FlagDeleteRefusedError);
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
-  it('still resolves the confirmed delete even when best-effort media cleanup fails', async () => {
+  it('refuses to delete when a legacy photo URL cannot be safely mapped to a Storage path (foreign-folder / malformed) even though an owner uid exists', async () => {
     mockDeleteFlagFrom({
+      flagResult: {
+        data: { id: 'f4b', user_id: 'u1', photo_url: `${BASE}/some-other-uid/evidence.jpg`, photo_object_key: null },
+        error: null,
+      },
+      deleteResult: { data: [{ id: 'f4b' }], error: null },
+    });
+
+    await expect(deleteFlag('f4b')).rejects.toBeInstanceOf(FlagDeleteRefusedError);
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it('LOCKING (D-04A-1 / BLOCKER D1): a required Storage cleanup failure prevents the flags DELETE from ever being issued', async () => {
+    const { deleteEq } = mockDeleteFlagFrom({
       flagResult: { data: { id: 'f5', user_id: 'u1', photo_url: null, photo_object_key: 'u1/1.jpg' }, error: null },
       deleteResult: { data: [{ id: 'f5' }], error: null },
     });
     mockRemove.mockResolvedValueOnce({ data: null, error: { message: 'Storage unavailable' } });
 
-    await expect(deleteFlag('f5')).resolves.toBeUndefined();
+    await expect(deleteFlag('f5')).rejects.toMatchObject({ message: 'Storage unavailable' });
+    // The whole point of fail-closed ordering: a swallowed cleanup error must
+    // never let the destructive DELETE fire anyway.
+    expect(deleteEq).not.toHaveBeenCalled();
+  });
+
+  it('LOCKING (BLOCKER D1): required Storage cleanup happens before the flags DELETE is issued, not after', async () => {
+    const callOrder: string[] = [];
+    mockRemove.mockImplementationOnce(async () => {
+      callOrder.push('storage-remove');
+      return { data: [], error: null };
+    });
+    const deleteEq = jest.fn(() => {
+      callOrder.push('flags-delete');
+      return { select: jest.fn().mockResolvedValue({ data: [{ id: 'f10' }], error: null }) };
+    });
+    mockFrom.mockImplementation((table: unknown) => {
+      if (table === 'flags') {
+        return {
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({
+              maybeSingle: jest.fn().mockResolvedValue({
+                data: { id: 'f10', user_id: 'u1', photo_url: null, photo_object_key: 'u1/1.jpg' },
+                error: null,
+              }),
+            })),
+          })),
+          delete: jest.fn(() => ({ eq: deleteEq })),
+        };
+      }
+      if (table === 'flag_photos') {
+        return { select: jest.fn(() => ({ eq: jest.fn().mockResolvedValue({ data: [], error: null }) })) };
+      }
+      throw new Error(`unexpected table ${String(table)}`);
+    });
+
+    await deleteFlag('f10');
+    expect(callOrder).toEqual(['storage-remove', 'flags-delete']);
+  });
+
+  it('LOCKING (BLOCKER D3): the flags DELETE filters by the flag\'s own id, never by user_id', async () => {
+    const { deleteEq } = mockDeleteFlagFrom({
+      flagResult: { data: { id: 'f9', user_id: 'u1', photo_url: null, photo_object_key: null }, error: null },
+      deleteResult: { data: [{ id: 'f9' }], error: null },
+    });
+
+    await deleteFlag('f9');
+    expect(deleteEq).toHaveBeenCalledWith('id', 'f9');
   });
 
   it('throws when the row DELETE itself errors', async () => {

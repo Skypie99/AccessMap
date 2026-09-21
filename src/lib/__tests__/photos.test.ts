@@ -7,6 +7,7 @@ const mockGetUser = jest.fn();
 const mockUploadFlagPhoto = jest.fn();
 const mockCommitFlagPhotoUpload = jest.fn();
 const mockRemoveUploadedFlagPhotos = jest.fn();
+const mockCancelFlagPhotoUpload = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
@@ -21,6 +22,7 @@ jest.mock('../flags', () => ({
   uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
   commitFlagPhotoUpload: (...args: unknown[]) => mockCommitFlagPhotoUpload(...args),
   removeUploadedFlagPhotos: (...args: unknown[]) => mockRemoveUploadedFlagPhotos(...args),
+  cancelFlagPhotoUpload: (...args: unknown[]) => mockCancelFlagPhotoUpload(...args),
 }));
 
 function selectChain(data: unknown, error: unknown = null) {
@@ -34,6 +36,7 @@ function insertOnlyChain(result: { data?: unknown; error: unknown }) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockRemoveUploadedFlagPhotos.mockResolvedValue(undefined);
+  mockCancelFlagPhotoUpload.mockResolvedValue(undefined);
 });
 
 describe('listFlagPhotos', () => {
@@ -189,5 +192,98 @@ describe('FDA-019 legacy uid-folder fallback (Phase 04A)', () => {
       batchInsertFlagPhotos('flag-1', [{ intentId: null, alt: null }]),
     ).rejects.toThrow('missing its Storage location');
     expect(mockFrom).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FDA-019 orphan repair (Phase 04A repair, 2026-09-21): a partial photo-row
+// insert failure must never leave a LATER, never-even-attempted upload
+// orphaned in Storage. Covers failure at the first, middle, and final photo,
+// and a mixed intent/legacy batch.
+// ---------------------------------------------------------------------------
+
+describe('FDA-019 orphan repair — batchInsertFlagPhotos cleans up every unattached photo', () => {
+  it('failure at the FIRST photo cleans up every later uploaded-but-unattached photo', async () => {
+    mockCommitFlagPhotoUpload.mockRejectedValueOnce(new Error('denied'));
+    const legacyInsertChain = insertOnlyChain({ error: null });
+    mockFrom.mockReturnValue(legacyInsertChain);
+
+    await expect(
+      batchInsertFlagPhotos('flag-1', [
+        { intentId: 'intent-0', alt: null },
+        { intentId: null, url: 'https://cdn/u1/1.jpg', path: 'u1/1.jpg', alt: null },
+        { intentId: 'intent-2', alt: null },
+      ]),
+    ).rejects.toThrow('denied');
+
+    // The failing photo itself (intent-0) is cancelled...
+    expect(mockCancelFlagPhotoUpload).toHaveBeenCalledWith('intent-0');
+    // ...and every later, never-attempted photo is cleaned up too.
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['u1/1.jpg']);
+    expect(mockCancelFlagPhotoUpload).toHaveBeenCalledWith('intent-2');
+    // Nothing was ever attached for photo 1 or 2.
+    expect(legacyInsertChain.insert).not.toHaveBeenCalled();
+  });
+
+  it('failure at a MIDDLE photo leaves the earlier success alone and cleans up the rest', async () => {
+    mockCommitFlagPhotoUpload
+      .mockResolvedValueOnce(undefined) // position 0 succeeds
+      .mockRejectedValueOnce(new Error('commit failed')); // position 1 fails
+
+    await expect(
+      batchInsertFlagPhotos('flag-1', [
+        { intentId: 'intent-0', alt: null },
+        { intentId: 'intent-1', alt: null },
+        { intentId: null, url: 'https://cdn/u1/2.jpg', path: 'u1/2.jpg', alt: null },
+      ]),
+    ).rejects.toThrow('commit failed');
+
+    // The already-succeeded first photo is NEVER cancelled.
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalledWith('intent-0');
+    // The failing photo and the never-attempted one after it are cleaned up.
+    expect(mockCancelFlagPhotoUpload).toHaveBeenCalledWith('intent-1');
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['u1/2.jpg']);
+  });
+
+  it('failure at the FINAL photo does not touch any earlier success (nothing left to orphan)', async () => {
+    const legacyInsertChain = insertOnlyChain({ error: { message: 'permission denied' } });
+    mockCommitFlagPhotoUpload
+      .mockResolvedValueOnce(undefined) // position 0 succeeds
+      .mockResolvedValueOnce(undefined); // position 1 succeeds
+    mockFrom.mockReturnValue(legacyInsertChain);
+
+    await expect(
+      batchInsertFlagPhotos('flag-1', [
+        { intentId: 'intent-0', alt: null },
+        { intentId: 'intent-1', alt: null },
+        { intentId: null, url: 'https://cdn/u1/3.jpg', path: 'u1/3.jpg', alt: null },
+      ]),
+    ).rejects.toEqual({ message: 'permission denied' });
+
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalledWith('intent-0');
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalledWith('intent-1');
+    // The legacy failure cleans up its own object (inside insertLegacyFlagPhoto).
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['u1/3.jpg']);
+    // No orphan cleanup call was made for a photo that doesn't exist past it.
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalled();
+  });
+
+  it('does not orphan a legacy upload that failed to insert while a later intent upload was never attempted', async () => {
+    const legacyInsertChain = insertOnlyChain({ error: { message: 'permission denied' } });
+    mockFrom.mockReturnValue(legacyInsertChain);
+
+    await expect(
+      batchInsertFlagPhotos('flag-1', [
+        { intentId: null, url: 'https://cdn/u1/0.jpg', path: 'u1/0.jpg', alt: null },
+        { intentId: 'intent-1', alt: null },
+      ]),
+    ).rejects.toEqual({ message: 'permission denied' });
+
+    // Legacy failure cleans up exactly once (insertLegacyFlagPhoto's own
+    // cleanup) — not a redundant second call from the outer batch cleanup.
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledTimes(1);
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['u1/0.jpg']);
+    // The never-attempted intent photo after it is still cancelled.
+    expect(mockCancelFlagPhotoUpload).toHaveBeenCalledWith('intent-1');
   });
 });
