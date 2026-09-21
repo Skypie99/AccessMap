@@ -1064,9 +1064,9 @@ function withDisplayPhotoUrls(rows: FlagRow[]): FlagRow[] {
  *
  * PRIVACY: lat+lng+category is sensitive (location + disability context).
  * user_id is included because the Map callout and Tasks card show ownership
- * context (e.g. "your flag", edit/delete affordances). RLS on the flags
- * table ensures only authenticated users can read rows; PostgREST enforces
- * this before the data reaches the client.
+ * context (e.g. "your flag", edit/delete affordances). Guests read these rows
+ * too: anon RLS returns every non-rejected flag, all columns. This list is not
+ * a privacy boundary; supabase/tests/phase03c-anon-contract.test.sql is.
  */
 export async function listFlags(statuses: FlagStatus[] = ['open', 'verified']) {
   const { data, error } = await supabase
