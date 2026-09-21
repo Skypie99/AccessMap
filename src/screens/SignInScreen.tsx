@@ -31,8 +31,10 @@ import PrivacyScreen from '@/screens/PrivacyScreen';
 import TermsScreen from '@/screens/TermsScreen';
 import { track } from '@/lib/analytics';
 import LogoMark from '@/components/LogoMark';
+import { accountDeletionAsyncStatusAvailable } from '@/lib/accountDeletionAvailability';
 import {
   clearAccountDeletionReceipt,
+  clearConfirmedAccountDeletionReceipts,
   getAccountDeletionStatus,
   loadAccountDeletionReceipt,
   type AccountDeletionReceipt,
@@ -86,6 +88,22 @@ export default function SignInScreen({
   const [checkingDeletionStatus, setCheckingDeletionStatus] = useState(false);
 
   const refreshDeletionStatus = useCallback(async () => {
+    if (!accountDeletionAsyncStatusAvailable()) {
+      // FDA-003 / Phase 04B: no async status route is deployed (delete-account
+      // v4 deletes synchronously), so there is no status workflow to show and
+      // nothing to call. A receipt the server already confirmed is terminal —
+      // its one-time confirmation was shown when deletion finished — so it is
+      // dropped quietly; an unconfirmed receipt is left untouched.
+      setDeletionStatus(null);
+      setDeletionReceipt(null);
+      setDeletionStatusUnavailable(false);
+      try {
+        await clearConfirmedAccountDeletionReceipts();
+      } catch {
+        // Best-effort housekeeping; a terminal receipt is never shown or sent.
+      }
+      return;
+    }
     setCheckingDeletionStatus(true);
     try {
       const receipt = await loadAccountDeletionReceipt();

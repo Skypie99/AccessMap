@@ -285,12 +285,15 @@ describe('deleteAccount() — duplicate activation', () => {
     const first = deleteAccount(USER_ID);
     const second = deleteAccount(USER_ID);
     const third = deleteAccount(USER_ID);
+    resolveInvoke({ data: { status: 'deleted' }, error: null });
+    const settled = await Promise.allSettled([first, second, third]);
+
     expect(second).toBe(first);
     expect(third).toBe(first);
-
-    resolveInvoke({ data: { status: 'deleted' }, error: null });
-    await expect(Promise.all([first, second, third])).resolves.toEqual([
-      { status: 'deleted' }, { status: 'deleted' }, { status: 'deleted' },
+    expect(settled).toEqual([
+      { status: 'fulfilled', value: { status: 'deleted' } },
+      { status: 'fulfilled', value: { status: 'deleted' } },
+      { status: 'fulfilled', value: { status: 'deleted' } },
     ]);
     expect(mockReceipt).toHaveBeenCalledTimes(1);
     expect(mockInvoke).toHaveBeenCalledTimes(1);
@@ -304,8 +307,13 @@ describe('deleteAccount() — duplicate activation', () => {
     const first = deleteAccount(USER_ID);
     const second = deleteAccount(USER_ID);
     resolveInvoke({ data: null, error: fetchError('TypeError') });
-    await expect(first).rejects.toBeInstanceOf(AccountDeletionUnconfirmedError);
-    await expect(second).rejects.toBeInstanceOf(AccountDeletionUnconfirmedError);
+    const settled = await Promise.allSettled([first, second]);
+
+    expect(second).toBe(first);
+    for (const result of settled) {
+      expect(result.status).toBe('rejected');
+      expect((result as PromiseRejectedResult).reason).toBeInstanceOf(AccountDeletionUnconfirmedError);
+    }
     expect(mockInvoke).toHaveBeenCalledTimes(1);
   });
 });
