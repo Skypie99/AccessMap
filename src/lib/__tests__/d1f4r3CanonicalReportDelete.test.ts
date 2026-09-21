@@ -1,37 +1,74 @@
-import { deleteFlag } from '../flags';
+/**
+ * Phase 04A (FDA-002): ordinary report deletion moved OFF the never-deployed
+ * `delete-flag` Edge route and onto a versioned, strict direct Data API
+ * DELETE adapter, authorized entirely by the live 'flags delete own' /
+ * 'admin delete any flag' RLS (confirmed in the 2026-09-04 production catalog
+ * capture — see supabase/contract/client-expectations.v1.json's flag-delete
+ * surface). This file's name predates that move; it still owns the core
+ * owner/admin deletion client-seam contract.
+ */
+import { deleteFlag, FlagDeleteRefusedError } from '../flags';
 
-const mockInvoke = jest.fn();
+const mockFrom = jest.fn();
+const mockRemove = jest.fn();
+
+function mockDeleteFlagFrom(opts: {
+  flagResult: { data: unknown; error: unknown };
+  photosResult?: { data: unknown; error: unknown };
+  deleteResult: { data: unknown; error: unknown };
+}) {
+  const photosResult = opts.photosResult ?? { data: [], error: null };
+  mockFrom.mockImplementation((table: unknown) => {
+    if (table === 'flags') {
+      return {
+        select: jest.fn(() => ({ eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue(opts.flagResult) })) })),
+        delete: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn().mockResolvedValue(opts.deleteResult) })) })),
+      };
+    }
+    if (table === 'flag_photos') {
+      return { select: jest.fn(() => ({ eq: jest.fn().mockResolvedValue(photosResult) })) };
+    }
+    throw new Error(`unexpected table ${String(table)}`);
+  });
+}
 
 jest.mock('../supabase', () => ({
   __esModule: true,
   supabase: {
-    functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
+    from: (...args: unknown[]) => mockFrom(...args),
+    storage: { from: () => ({ remove: (...args: unknown[]) => mockRemove(...args) }) },
   },
 }));
 jest.mock('../analytics', () => ({ __esModule: true, trackEvent: jest.fn() }));
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockInvoke.mockResolvedValue({ data: { status: 'deleted' }, error: null });
+  mockRemove.mockResolvedValue({ data: [], error: null });
 });
 
-describe('D1F4R3 canonical ordinary report deletion client seam', () => {
-  it('uses the narrow server route for the owner and does not assemble a client Storage plan', async () => {
-    await expect(deleteFlag('00000000-0000-4000-8000-000000000001')).resolves.toBeUndefined();
-    expect(mockInvoke).toHaveBeenCalledWith('delete-flag', {
-      body: { flagId: '00000000-0000-4000-8000-000000000001' },
+describe('D1F4R3 -> Phase 04A canonical ordinary report deletion client seam', () => {
+  it('deletes via the owner/admin-authorized direct DELETE and does not assemble a client Storage plan up front', async () => {
+    mockDeleteFlagFrom({
+      flagResult: { data: { id: 'f1', user_id: 'owner-1', photo_url: null, photo_object_key: null }, error: null },
+      deleteResult: { data: [{ id: 'f1' }], error: null },
     });
+    await expect(deleteFlag('f1')).resolves.toBeUndefined();
   });
 
-  it('does not claim success for an incomplete or partial server outcome', async () => {
-    mockInvoke.mockResolvedValueOnce({ data: { status: 'pending' }, error: null });
-    await expect(deleteFlag('00000000-0000-4000-8000-000000000002'))
-      .rejects.toThrow('confirmed terminal result');
+  it('does not claim success for a silently-refused (zero-row) delete', async () => {
+    mockDeleteFlagFrom({
+      flagResult: { data: { id: 'f2', user_id: 'someone-else', photo_url: null, photo_object_key: null }, error: null },
+      deleteResult: { data: [], error: null },
+    });
+    await expect(deleteFlag('f2')).rejects.toBeInstanceOf(FlagDeleteRefusedError);
   });
 
-  it('surfaces a refused owner/admin route rather than erasing relational UI state optimistically', async () => {
-    const error = new Error('Forbidden');
-    mockInvoke.mockResolvedValueOnce({ data: null, error });
-    await expect(deleteFlag('00000000-0000-4000-8000-000000000003')).rejects.toBe(error);
+  it('surfaces a genuine DELETE error rather than erasing relational UI state optimistically', async () => {
+    const error = { message: 'Forbidden', code: '42501' };
+    mockDeleteFlagFrom({
+      flagResult: { data: { id: 'f3', user_id: 'owner-1', photo_url: null, photo_object_key: null }, error: null },
+      deleteResult: { data: null, error },
+    });
+    await expect(deleteFlag('f3')).rejects.toMatchObject(error);
   });
 });

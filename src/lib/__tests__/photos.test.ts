@@ -6,6 +6,7 @@ const mockFrom = jest.fn();
 const mockGetUser = jest.fn();
 const mockUploadFlagPhoto = jest.fn();
 const mockCommitFlagPhotoUpload = jest.fn();
+const mockRemoveUploadedFlagPhotos = jest.fn();
 
 jest.mock('../supabase', () => ({
   __esModule: true,
@@ -19,12 +20,21 @@ jest.mock('../flags', () => ({
   __esModule: true,
   uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
   commitFlagPhotoUpload: (...args: unknown[]) => mockCommitFlagPhotoUpload(...args),
+  removeUploadedFlagPhotos: (...args: unknown[]) => mockRemoveUploadedFlagPhotos(...args),
 }));
 
 function selectChain(data: unknown, error: unknown = null) {
   return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), order: jest.fn().mockResolvedValue({ data, error }) };
 }
-beforeEach(() => jest.clearAllMocks());
+// insertLegacyFlagPhoto does `.from('flag_photos').insert({...})` with no
+// further chaining — the insert call itself is the thenable terminal.
+function insertOnlyChain(result: { data?: unknown; error: unknown }) {
+  return { insert: jest.fn().mockResolvedValue(result) };
+}
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockRemoveUploadedFlagPhotos.mockResolvedValue(undefined);
+});
 
 describe('listFlagPhotos', () => {
   it('reads object_key alongside legacy URLs and derives a display URL only for presentation', async () => {
@@ -96,5 +106,88 @@ describe('D1F4 photo intent finalization', () => {
     await batchInsertFlagPhotos('flag-1', [{ intentId: 'intent-a', alt: 'Entry' }, { intentId: 'intent-b', alt: null }]);
     expect(mockCommitFlagPhotoUpload).toHaveBeenNthCalledWith(1, 'intent-a', 'flag-1', 0, 'Entry', true);
     expect(mockCommitFlagPhotoUpload).toHaveBeenNthCalledWith(2, 'intent-b', 'flag-1', 1, null, false);
+  });
+});
+
+describe('FDA-019 legacy uid-folder fallback (Phase 04A)', () => {
+  it('addFlagPhoto inserts the flag_photos row directly when uploadFlagPhoto returns intentId: null', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockFrom
+      .mockReturnValueOnce(selectChain([])) // listFlagPhotos (existing count)
+      .mockReturnValueOnce(insertOnlyChain({ error: null })); // insertLegacyFlagPhoto
+    mockUploadFlagPhoto.mockResolvedValue({
+      intentId: null,
+      path: 'user-1/1700000000000.jpg',
+      url: 'https://cdn/user-1/1700000000000.jpg',
+    });
+
+    const result = await addFlagPhoto('flag-1', 'file:///photo.jpg', undefined, undefined, 'Door lip');
+
+    expect(mockCommitFlagPhotoUpload).not.toHaveBeenCalled();
+    const insertChain = mockFrom.mock.results[1]!.value as { insert: jest.Mock };
+    expect(insertChain.insert).toHaveBeenCalledWith({
+      flag_id: 'flag-1',
+      url: 'https://cdn/user-1/1700000000000.jpg',
+      position: 0,
+      alt_text: 'Door lip',
+    });
+    expect(result).toMatchObject({
+      flag_id: 'flag-1',
+      position: 0,
+      alt_text: 'Door lip',
+      object_key: null,
+    });
+  });
+
+  it('addFlagPhoto cleans up the just-uploaded object when the legacy row insert is denied', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mockFrom
+      .mockReturnValueOnce(selectChain([]))
+      .mockReturnValueOnce(insertOnlyChain({ error: { message: 'permission denied' } }));
+    mockUploadFlagPhoto.mockResolvedValue({
+      intentId: null,
+      path: 'user-1/1700000000000.jpg',
+      url: 'https://cdn/user-1/1700000000000.jpg',
+    });
+
+    await expect(addFlagPhoto('flag-1', 'file:///photo.jpg')).rejects.toEqual({ message: 'permission denied' });
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['user-1/1700000000000.jpg']);
+  });
+
+  it('batchInsertFlagPhotos inserts a legacy entry directly, in position order alongside intent entries', async () => {
+    mockCommitFlagPhotoUpload.mockResolvedValue(undefined);
+    const legacyInsertChain = insertOnlyChain({ error: null });
+    mockFrom.mockReturnValue(legacyInsertChain);
+
+    await batchInsertFlagPhotos('flag-1', [
+      { intentId: 'intent-a', alt: 'Entry' },
+      { intentId: null, url: 'https://cdn/user-1/2.jpg', path: 'user-1/2.jpg', alt: null },
+    ]);
+
+    expect(mockCommitFlagPhotoUpload).toHaveBeenCalledWith('intent-a', 'flag-1', 0, 'Entry', true);
+    expect(legacyInsertChain.insert).toHaveBeenCalledWith({
+      flag_id: 'flag-1',
+      url: 'https://cdn/user-1/2.jpg',
+      position: 1,
+      alt_text: null,
+    });
+  });
+
+  it('batchInsertFlagPhotos cleans up the object when a legacy insert is denied and rejects', async () => {
+    mockFrom.mockReturnValue(insertOnlyChain({ error: { message: 'permission denied' } }));
+
+    await expect(
+      batchInsertFlagPhotos('flag-1', [
+        { intentId: null, url: 'https://cdn/user-1/1.jpg', path: 'user-1/1.jpg', alt: null },
+      ]),
+    ).rejects.toEqual({ message: 'permission denied' });
+    expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['user-1/1.jpg']);
+  });
+
+  it('batchInsertFlagPhotos throws if a legacy entry is missing its Storage location', async () => {
+    await expect(
+      batchInsertFlagPhotos('flag-1', [{ intentId: null, alt: null }]),
+    ).rejects.toThrow('missing its Storage location');
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 });

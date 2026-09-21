@@ -859,13 +859,22 @@ export async function uploadStrippedImage(
   return { url: data.publicUrl, path: filePath };
 }
 
+/**
+ * `intentId: null` marks the FDA-019 legacy uid-folder fallback: the
+ * upload-intent RPCs were absent on this backend, so the caller must insert
+ * the `flag_photos` row directly (see photos.ts's batchInsertFlagPhotos)
+ * instead of calling commitFlagPhotoUpload — there is no intent to commit.
+ */
+export type UploadedFlagPhoto = { intentId: string | null; url: string; path: string };
+
 export async function uploadFlagPhoto(
   userId: string,
   localUri: string,
   srcWidth?: number,
   srcHeight?: number,
-): Promise<{ intentId: string; url: string; path: string }> {
+): Promise<UploadedFlagPhoto> {
   let intentId = '';
+  let useLegacyOwnerPath = false;
   try {
     const upload = await uploadStrippedImage(
       userId,
@@ -874,6 +883,17 @@ export async function uploadFlagPhoto(
         const { data, error } = await supabase
           .rpc('prepare_flag_photo_upload', { p_extension: finalExt, p_kind: 'flag_photo' })
           .single();
+        // FDA-019: some backends predate the upload-intent RPCs. Mirror
+        // uploadAvatar's (users.ts) fallback exactly — preserve the proven
+        // pre-intent owner-scoped Storage path (`<uid>/<ts>.<ext>`, matching
+        // the live `flag-photos auth upload` uid-folder policy) only for that
+        // exact deployment gap. This runs after the shared strip/sanitize/
+        // verify gates above, so the fallback can never upload unstripped
+        // bytes.
+        if (error && isFunctionMissing(error)) {
+          useLegacyOwnerPath = true;
+          return `${userId}/${Date.now()}.${finalExt}`;
+        }
         if (error || !data) throw error ?? new Error('Photo upload could not be prepared.');
         intentId = data.intent_id;
         return data.object_key;
@@ -882,6 +902,9 @@ export async function uploadFlagPhoto(
       srcWidth,
       srcHeight,
     );
+    if (useLegacyOwnerPath) {
+      return { intentId: null, ...upload };
+    }
     if (!intentId) throw new Error('Photo upload intent was not created.');
     return { ...upload, intentId };
   } catch (error) {
@@ -1481,26 +1504,94 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
 }
 
 /**
- * Delete a flag and its canonical public objects through the narrow
- * `delete-flag` Edge route. The route derives and rechecks the owner/admin
- * actor server-side, obtains canonical keys before the relational erase, and
- * only finalizes that erase after exact Storage absence is established.
- *
- * Legacy URLs deliberately remain outside this ordinary-report deletion path:
- * URL shape is association evidence for the account-deletion workflow, never
- * client-side authority to remove a moderator's or another person's object.
+ * Thrown when a direct Data API DELETE against `flags` returns zero rows.
+ * Postgres RLS silently *filters* a row a policy refuses rather than raising
+ * an error, so a `.delete()` with no matching `using()` grant resolves with
+ * `error: null, data: []` — indistinguishable from "nothing to delete" unless
+ * the caller explicitly checks for it. Collapsing that into a generic success
+ * would be a false-success report for a refused owner/admin request (FDA-002).
  */
-export async function deleteFlag(flagId: string) {
-  // Owner and moderator deletion share one server-authorized route. It reads
-  // canonical keys before relational deletion, verifies exact Storage owner
-  // metadata and exact absence after removal, then finalizes the row delete.
-  // The client never derives a legacy URL into an admin deletion capability.
-  const { data, error } = await supabase.functions.invoke('delete-flag', {
-    body: { flagId },
-  });
-  if (error) throw error;
-  if (!data || typeof data !== 'object' || (data as { status?: unknown }).status !== 'deleted') {
-    throw new Error('Flag deletion did not reach a confirmed terminal result.');
+export class FlagDeleteRefusedError extends Error {
+  constructor() {
+    super("This flag couldn't be deleted. It may already be gone, or you may not have permission.");
+    this.name = 'FlagDeleteRefusedError';
+  }
+}
+
+/**
+ * Delete a flag via a versioned, strict direct Data API DELETE adapter
+ * (Phase 04A / FDA-002). The narrow `delete-flag` Edge route this used to call
+ * was never deployed (client-only regression — main briefly called an absent
+ * Edge Function). Authorization is enforced entirely server-side by the live
+ * `flags delete own` / `admin delete any flag` RLS policies (confirmed in the
+ * 2026-09-04 production catalog capture) — this client never infers owner or
+ * admin privilege itself.
+ *
+ * Sequence:
+ *   1. Snapshot every canonical photo object this flag may reference BEFORE
+ *      deleting anything — `flag_photos` rows are gone once the row cascades,
+ *      so cleanup must know its exact target set up front, never guess after.
+ *   2. DELETE ... RETURNING id. A returned row is the only proof the delete
+ *      actually happened; RLS refusing the row (non-owner/non-admin) or the
+ *      row already being gone both come back as `data: []`, not an error —
+ *      collapsing that into "resolved" would be a false success.
+ *   3. Best-effort media cleanup AFTER the row delete is confirmed. Mirrors
+ *      removeUploadedFlagPhotos's own contract (never throws, never reverses
+ *      a confirmed delete): an object orphaned here is invisible to every
+ *      user and safe for a later sweep, whereas failing a deletion that
+ *      already succeeded would be the worse lie. `flag_photos` rows cascade
+ *      via `ON DELETE CASCADE` — no separate junction-table delete is issued.
+ *
+ * Cleanup only removes objects it can derive with certainty: `object_key`
+ * columns are exact paths, and legacy `url`-only rows are resolved through
+ * storagePathFromPublicUrl against the FLAG OWNER's uid (objects always live
+ * under `<owner-uid>/...`, including ones an admin deletes on someone else's
+ * flag). An anonymous flag has no owner uid to validate against, so its
+ * legacy url-only gallery photos (community-contributed; object_key-bearing
+ * ones are still exact) are left for a server-side sweep rather than guessed
+ * at — the same fail-closed rule storagePathFromPublicUrl already documents.
+ */
+export async function deleteFlag(flagId: string): Promise<void> {
+  const { data: flagRow, error: flagReadErr } = await supabase
+    .from('flags')
+    .select('id, user_id, photo_url, photo_object_key')
+    .eq('id', flagId)
+    .maybeSingle();
+  if (flagReadErr) throw flagReadErr;
+
+  let galleryPhotos: { url: string | null; object_key?: string | null }[] = [];
+  if (flagRow) {
+    const { data: photoRows, error: photoReadErr } = await supabase
+      .from('flag_photos')
+      .select('url, object_key')
+      .eq('flag_id', flagId);
+    if (photoReadErr) throw photoReadErr;
+    galleryPhotos = photoRows ?? [];
+  }
+
+  const { data: deletedRows, error: deleteErr } = await supabase
+    .from('flags')
+    .delete()
+    .eq('id', flagId)
+    .select('id');
+  if (deleteErr) throw deleteErr;
+  if (!deletedRows || deletedRows.length === 0) {
+    throw new FlagDeleteRefusedError();
+  }
+
+  const owner = flagRow?.user_id ?? null;
+  const paths: string[] = [];
+  const primaryPath =
+    flagRow?.photo_object_key ??
+    (flagRow?.photo_url && owner ? storagePathFromPublicUrl(flagRow.photo_url, owner) : null);
+  if (primaryPath) paths.push(primaryPath);
+  for (const photo of galleryPhotos) {
+    const path =
+      photo.object_key ?? (photo.url && owner ? storagePathFromPublicUrl(photo.url, owner) : null);
+    if (path) paths.push(path);
+  }
+  if (paths.length > 0) {
+    await removeUploadedFlagPhotos(paths);
   }
 }
 

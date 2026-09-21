@@ -1,19 +1,45 @@
 /**
- * The legacy URL helper still protects failed-upload cleanup. Ordinary report
- * deletion moved to the server-authorized canonical route in D1F4R3, so these
- * tests also pin that it no longer treats URL parsing as delete authority.
+ * The legacy URL helper still protects failed-upload cleanup, and is now also
+ * the mechanism deleteFlag itself uses (Phase 04A / FDA-002) to resolve a
+ * legacy `flags.photo_url` / `flag_photos.url` into an exact Storage path
+ * before best-effort cleanup after a confirmed row delete.
  */
 import { deleteFlag, storagePathFromPublicUrl } from '../flags';
 
 const UID = '11111111-1111-4111-8111-111111111111';
 const OTHER = '99999999-9999-4999-8999-999999999999';
 const BASE = 'https://abc.supabase.co/storage/v1/object/public/flag-photos';
-const mockInvoke = jest.fn();
+const mockFrom = jest.fn();
+const mockRemove = jest.fn();
 const mockTrackEvent = jest.fn();
+
+function mockDeleteFlagFrom(opts: {
+  flagResult: { data: unknown; error: unknown };
+  photosResult?: { data: unknown; error: unknown };
+  deleteResult?: { data: unknown; error: unknown };
+}) {
+  const photosResult = opts.photosResult ?? { data: [], error: null };
+  const deleteResult = opts.deleteResult ?? { data: [{ id: 'f1' }], error: null };
+  mockFrom.mockImplementation((table: unknown) => {
+    if (table === 'flags') {
+      return {
+        select: jest.fn(() => ({ eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue(opts.flagResult) })) })),
+        delete: jest.fn(() => ({ eq: jest.fn(() => ({ select: jest.fn().mockResolvedValue(deleteResult) })) })),
+      };
+    }
+    if (table === 'flag_photos') {
+      return { select: jest.fn(() => ({ eq: jest.fn().mockResolvedValue(photosResult) })) };
+    }
+    throw new Error(`unexpected table ${String(table)}`);
+  });
+}
 
 jest.mock('../supabase', () => ({
   __esModule: true,
-  supabase: { functions: { invoke: (...args: unknown[]) => mockInvoke(...args) } },
+  supabase: {
+    from: (...args: unknown[]) => mockFrom(...args),
+    storage: { from: () => ({ remove: (...args: unknown[]) => mockRemove(...args) }) },
+  },
 }));
 jest.mock('../analytics', () => ({
   __esModule: true,
@@ -24,7 +50,7 @@ let warn: jest.SpyInstance;
 beforeEach(() => {
   jest.clearAllMocks();
   warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-  mockInvoke.mockResolvedValue({ data: { status: 'deleted' }, error: null });
+  mockRemove.mockResolvedValue({ data: [], error: null });
 });
 afterEach(() => warn.mockRestore());
 
@@ -53,16 +79,41 @@ describe('storagePathFromPublicUrl — the one legacy cleanup carve-out', () => 
   });
 });
 
-describe('D1F4R3 ordinary report deletion', () => {
-  it('uses the canonical server route instead of a client Storage remove', async () => {
-    await deleteFlag('00000000-0000-4000-8000-000000000001');
-    expect(mockInvoke).toHaveBeenCalledWith('delete-flag', {
-      body: { flagId: '00000000-0000-4000-8000-000000000001' },
+describe('Phase 04A deleteFlag — storagePathFromPublicUrl drives its legacy photo cleanup', () => {
+  it('cleans up a legacy flags.photo_url using the exact same recovery this file already pins', async () => {
+    mockDeleteFlagFrom({
+      flagResult: {
+        data: { id: 'f1', user_id: UID, photo_url: `${BASE}/${UID}/1700000000000.jpg`, photo_object_key: null },
+        error: null,
+      },
+      deleteResult: { data: [{ id: 'f1' }], error: null },
     });
+    await deleteFlag('f1');
+    expect(mockRemove).toHaveBeenCalledWith([`${UID}/1700000000000.jpg`]);
   });
 
-  it('does not treat a generic route success as a completed deletion', async () => {
-    mockInvoke.mockResolvedValueOnce({ data: { status: 'error' }, error: null });
-    await expect(deleteFlag('00000000-0000-4000-8000-000000000002')).rejects.toThrow('confirmed terminal result');
+  it('refuses to guess at a foreign-folder legacy URL and leaves it uncleaned (warns, does not delete)', async () => {
+    mockDeleteFlagFrom({
+      flagResult: {
+        data: { id: 'f1', user_id: UID, photo_url: `${BASE}/${OTHER}/1.jpg`, photo_object_key: null },
+        error: null,
+      },
+      deleteResult: { data: [{ id: 'f1' }], error: null },
+    });
+    await deleteFlag('f1');
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('prefers the exact object_key over URL-derivation when both are present', async () => {
+    mockDeleteFlagFrom({
+      flagResult: {
+        data: { id: 'f1', user_id: UID, photo_url: `${BASE}/${UID}/stale.jpg`, photo_object_key: `${UID}/canonical.jpg` },
+        error: null,
+      },
+      deleteResult: { data: [{ id: 'f1' }], error: null },
+    });
+    await deleteFlag('f1');
+    expect(mockRemove).toHaveBeenCalledWith([`${UID}/canonical.jpg`]);
   });
 });

@@ -1,7 +1,8 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
-  "revision": 5,
+  "revision": 6,
+  "phase04aRevisionNote": "Phase 04A (2026-09-21, accepted 2026-09-03 direction): FDA-002 (flag-delete) and FDA-019 (photo-upload-flag) client compatibility repairs landed — both surfaces now WORKING via patterns already proven elsewhere in this manifest (the direct-DELETE RLS deployedAlternative and the avatar-upload legacy fallback, respectively). FDA-004 (moderation-queue) is reconciled with dated evidence only, not deployed. No Phase03A/03B RPC-dependent surface (flag-status-transition, leaderboard) or FDA-003 (account-deletion, owned by 04B) changed. See each surface's phase04aNote for exact evidence and file:line citations. contractManifest.guard.test.ts's FDA-002/FDA-019 'reproduce from the manifest' assertions (onAbsent: 'hard') now fail BY DESIGN — that is the shared, edit-forbidden regression pin for the exact bug this milestone fixes; it needs a follow-up edit outside 04A's file ownership before merge.",
   "phase03bRevisionNote": "Local Phase03B candidate replaces direct status and moderation-column writes with actor-bound RPCs. The moderation queue fails closed when its list RPC is absent; normal status actions require backend-first deployment of transition_flag_status. This manifest does not mark any Phase03B RPC deployed.",
   "phase03aPrivilegeRevisionNote": "FDA012 source review narrows the local application/service grant proposal. Notification provenance is corrected below: current push-token callers use pushNotifications.ts; preference writes are a preserved RLS contract with no current direct TypeScript caller. All deployment classifications refer to the captured baseline; the Phase03A privilege changes are not deployed.",
   "phase03aRevisionNote": "Local candidate adds caller-scoped admin/rank, bounded leaderboard, and comment-context author RPC requirements. This revision does not mark any candidate RPC deployed. Prior revision notes and historical production capture remain unchanged.",
@@ -30,43 +31,51 @@
         "web"
       ],
       "finding": "FDA-019",
+      "phase04aNote": "Phase 04A (2026-09-21): uploadFlagPhoto now mirrors uploadAvatar's isFunctionMissing fallback exactly \u2014 prepare_flag_photo_upload absence is detected and the proven pre-intent uid-folder Storage path is used instead, with a direct flag_photos row insert (photos.ts insertLegacyFlagPhoto) replacing the commit RPC. The upload-intent path is unchanged and still used when the RPCs are present.",
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 875,
+          "line": 884,
           "kind": "rpc",
           "name": "prepare_flag_photo_upload",
-          "onAbsent": "hard",
-          "note": "No fallback. Throws at 870, rethrown at 891. Signed-in flag-photo reporting fails."
+          "onAbsent": "graceful",
+          "note": "flags.ts:893-896 detects isFunctionMissing, sets useLegacyOwnerPath and returns a uid-folder key (matches uploadAvatar's users.ts:107-110 pattern exactly). Upload proceeds via the live 'flag-photos auth upload' storage policy, then photos.ts inserts the flag_photos row directly. The EXIF/re-encode gates run BEFORE this, so the fallback can never upload unstripped bytes."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 892,
+          "line": 915,
           "kind": "rpc",
           "name": "cancel_flag_photo_upload",
           "onAbsent": "swallowed",
-          "note": "Inner try/catch preserves the original upload error."
+          "note": "Inner try/catch preserves the original upload error. Guarded by `if (intentId)`, which is empty on the legacy path (mirrors users.ts:144)."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 908,
+          "line": 931,
           "kind": "rpc",
           "name": "commit_flag_photo_upload",
-          "onAbsent": "hard",
-          "alsoDegradedVia": "batchInsertFlagPhotos -> ReportFlagModal.tsx:743 F57 catch keeps the report filed and shows 'Report filed. Photos not attached'",
-          "note": "Hard via photos.ts:73 addFlagPhoto; degraded via the report submit path."
+          "onAbsent": "unreachable",
+          "note": "Only called from photos.ts when uploadFlagPhoto returned an intentId; the legacy branch (intentId: null) calls insertLegacyFlagPhoto (a direct flag_photos INSERT) instead. Not reachable under a partial deployment (prepare present, commit absent) that the deployed contract says does not exist \u2014 mirrors commit_avatar_photo_upload's classification."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 920,
+          "line": 943,
           "kind": "rpc",
           "name": "cancel_flag_photo_upload",
           "onAbsent": "swallowed",
-          "note": "Throws, but its only caller (ReportFlagModal.tsx:793) is void Promise.all(...).catch(() => undefined). No user-visible action fails."
+          "note": "Throws, but its only caller (ReportFlagModal.tsx) is void Promise.all(...).catch(() => undefined) \u2014 legacy uploads in the same failure path are cleaned up via removeUploadedFlagPhotos instead, since there is no intent to cancel. No user-visible action fails."
+        },
+        {
+          "file": "src/lib/photos.ts",
+          "line": 77,
+          "kind": "table",
+          "name": "flag_photos",
+          "onAbsent": "n/a",
+          "note": "insertLegacyFlagPhoto's direct INSERT (FDA-019 legacy path). Authorized by the live 'flag_photos: authenticated insert' policy (WITH CHECK true); writes only the legacy url/position/alt_text shape \u2014 object_key is server-guarded and never set by this insert. On failure the just-uploaded Storage object is removed (no server-side intent tracks it)."
         }
       ],
-      "deployedAlternative": "storage policy 'flag-photos auth upload' (uid-folder INSERT) is live and authorized \u2014 not wired up on this path",
-      "productionImpact": "BROKEN \u2014 a signed-in user cannot attach a photo to a flag report."
+      "deployedAlternative": "storage policy 'flag-photos auth upload' (uid-folder INSERT) + 'flag_photos: authenticated insert' \u2014 live, authorized, and now wired up as the FDA-019 fallback",
+      "productionImpact": "WORKING \u2014 signed-in flag-photo reporting succeeds via the legacy uid-folder path when the upload-intent RPCs are absent, mirroring the avatar surface."
     },
     {
       "surface": "photo-upload-avatar",
@@ -112,18 +121,36 @@
         "admin"
       ],
       "finding": "FDA-002",
+      "phase04aNote": "Phase 04A (2026-09-21): deleteFlag no longer calls the undeployed delete-flag Edge Function (P04-D01, accepted 2026-09-03 \u2014 do not deploy D1F4 merely to satisfy the client). It now issues a strict direct Data API DELETE authorized entirely by the live RLS below, requires a returned id (zero rows = FlagDeleteRefusedError, never a silent/false success), and best-effort cleans up every derivable photo object AFTER the row delete is confirmed. The 2026-09-04 deployed-contract.v1.json capture independently confirmed 'flags delete own', 'admin delete any flag', 'flag-photos owner delete', and 'flag-photos admin delete' all live (authorization.flagsPolicies / storage.objectPolicies) \u2014 this was previously only a documented deployedAlternative, now exercised.",
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1498,
-          "kind": "edge",
-          "name": "delete-flag",
-          "onAbsent": "hard",
-          "note": "No fallback wired. All three callers surface the error."
+          "line": 1556,
+          "kind": "table",
+          "name": "flags",
+          "onAbsent": "n/a",
+          "note": "Snapshot read (id, user_id, photo_url, photo_object_key) before any delete, so media cleanup knows its exact target set. flags SELECT is 'flags readable by authenticated' (true) \u2014 always live."
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "line": 1565,
+          "kind": "table",
+          "name": "flag_photos",
+          "onAbsent": "n/a",
+          "note": "Snapshot read of gallery photo url/object_key before the row (and its ON DELETE CASCADE flag_photos rows) are gone. flag_photos SELECT is 'flag_photos: authenticated read' (true) \u2014 always live."
+        },
+        {
+          "file": "src/lib/flags.ts",
+          "line": 1573,
+          "kind": "table",
+          "name": "flags",
+          "onAbsent": "n/a",
+          "deployed": true,
+          "note": "DELETE ... RETURNING id. Authorization is 'flags delete own' (auth.uid() = user_id) OR 'admin delete any flag' (users.is_admin) \u2014 both confirmed live in deployed-contract.v1.json authorization.flagsPolicies. Zero returned rows (RLS refusal or already-gone) throws FlagDeleteRefusedError; this client never infers owner/admin privilege itself."
         }
       ],
-      "deployedAlternative": "RLS 'flags delete own' + 'admin delete any flag' + 'flag-photos owner/admin delete' permit a direct Data API DELETE",
-      "productionImpact": "BROKEN \u2014 owner and admin flag deletion both fail."
+      "deployedAlternative": "RLS 'flags delete own' + 'admin delete any flag' + 'flag-photos owner/admin delete' permit a direct Data API DELETE \u2014 confirmed live and now wired up",
+      "productionImpact": "WORKING \u2014 owner and admin flag deletion both succeed via the direct-DELETE adapter; media cleanup is best-effort."
     },
     {
       "surface": "account-deletion",
@@ -161,6 +188,7 @@
         "admin"
       ],
       "finding": "FDA-004",
+      "phase04aNote": "Phase 04A (2026-09-21) reconciliation, NOT a deployment change: this manifest's deployed:false predates the 2026-09-21 02:20 UTC Phase 03B post-exit structural capture, which independently proved list_open_moderation_reports(p_limit integer), moderate_report(...), and the three feedback.moderation_* columns exist with authenticated EXECUTE (qa-reports/phase03b/2026-09-20-restoration-runbook/POST_EXIT_EVIDENCE_20260921T022040Z/NORMALIZED_STRUCTURE.json; closure commit aed2981 is an ancestor of canonical main). deployed-contract.v1.json (this file's cross-check counterpart) is a separate, still-stale 2026-09-04 capture that this local-only milestone is not authorized to re-capture or assert live-verified — flipping deployed:true here without a fresh production catalog capture would be exactly the false-success inference this manifest exists to prevent. Current client behavior (fail-closed capability gate, no direct feedback access) already satisfies the compatibility contract either way; no source change was made for FDA-004. FUTURE_LIVE_PROOF_REQUIRED: a post-closure admin queue/action smoke against production.",
       "callSites": [
         {
           "file": "src/lib/adminReports.ts",
@@ -195,7 +223,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1421,
+          "line": 1444,
           "kind": "rpc",
           "name": "transition_flag_status",
           "onAbsent": "hard",
@@ -216,7 +244,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1732,
+          "line": 1823,
           "kind": "rpc",
           "name": "list_public_leaderboard",
           "onAbsent": "hard",
@@ -225,7 +253,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 1752,
+          "line": 1843,
           "kind": "rpc",
           "name": "get_my_leaderboard_rank",
           "onAbsent": "optional_omitted",
@@ -291,7 +319,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1461,
+          "line": 1484,
           "kind": "rpc",
           "name": "increment_reopen_request",
           "onAbsent": "graceful",

@@ -138,12 +138,16 @@ const mockSubscribeContextTagsCapability = jest.fn(() => () => {});
 // server to resolve that intent; the client never treats local cleanup as proof.
 const mockUploadFlagPhoto = jest.fn();
 const mockCancelFlagPhotoUpload = jest.fn();
+// FDA-019: a legacy (intentId: null) upload has no server-side intent, so a
+// total-failure cleanup removes the real Storage object directly instead.
+const mockRemoveUploadedFlagPhotos = jest.fn();
 
 jest.mock('@/lib/flags', () => ({
   createAnonFlag: (...args: unknown[]) => mockCreateAnonFlag(...args),
   createFlag: (...args: unknown[]) => mockCreateFlag(...args),
   uploadFlagPhoto: (...args: unknown[]) => mockUploadFlagPhoto(...args),
   cancelFlagPhotoUpload: (...args: unknown[]) => mockCancelFlagPhotoUpload(...args),
+  removeUploadedFlagPhotos: (...args: unknown[]) => mockRemoveUploadedFlagPhotos(...args),
   subscribeContextTagsCapability: (...args: unknown[]) => mockSubscribeContextTagsCapability(...args),
   getContextTagsCapability: jest.fn().mockReturnValue('unknown'),
   CATEGORY_LABELS: {
@@ -477,6 +481,7 @@ beforeEach(() => {
     });
   });
   mockCancelFlagPhotoUpload.mockResolvedValue(undefined);
+  mockRemoveUploadedFlagPhotos.mockResolvedValue(undefined);
   mockBatchInsertFlagPhotos.mockResolvedValue(undefined);
   (validReportTemplates as jest.Mock).mockReturnValue([]);
 });
@@ -775,6 +780,28 @@ describe('uncommitted photo intent handling on failed submit (auth path)', () =>
     });
     expect(mockCancelFlagPhotoUpload).toHaveBeenNthCalledWith(1, 'intent-p1.jpg');
     expect(mockCancelFlagPhotoUpload).toHaveBeenNthCalledWith(2, 'intent-p2.jpg');
+  });
+
+  // FDA-019 (Phase 04A): a legacy uid-folder upload (intentId: null) has no
+  // server-side intent to cancel — the object is already real bytes in
+  // Storage, so total-failure cleanup must remove it directly instead.
+  it('removes the uploaded object directly for a legacy (intentId: null) upload when createFlag fails', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+
+    mockUploadFlagPhoto.mockResolvedValueOnce({
+      intentId: null,
+      url: 'http://example.com/user-abc/p1.jpg',
+      path: 'user-abc/p1.jpg',
+    });
+    mockCreateFlag.mockRejectedValueOnce(new Error('insert failed'));
+
+    fireEvent.press(utils.getByLabelText('Submit report'));
+
+    await waitFor(() => {
+      expect(mockRemoveUploadedFlagPhotos).toHaveBeenCalledWith(['user-abc/p1.jpg']);
+    });
+    expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalled();
   });
 
   it('still surfaces the original submit error to the user after cleanup', async () => {

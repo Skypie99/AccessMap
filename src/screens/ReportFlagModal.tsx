@@ -47,6 +47,7 @@ import {
   createAnonFlag,
   createFlag,
   type ContextTagsCapability,
+  removeUploadedFlagPhotos,
   severityColor,
   SEVERITY_DESCRIPTIONS,
   SEVERITY_LABELS,
@@ -711,7 +712,7 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     // Authenticated path. Every photo gets a durable intent before direct
     // Storage receives bytes; a failed submit preserves that uncertainty for
     // server reconciliation rather than deleting based on client timing.
-    const preparedPhotos: { intentId: string; url: string; path: string }[] = [];
+    const preparedPhotos: { intentId: string | null; url: string; path: string }[] = [];
     try {
       for (const uri of photoUris) {
         const dims = photoDimsRef.current[uri];
@@ -744,6 +745,8 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
           result.row.id,
           preparedPhotos.map((photo, i) => ({
             intentId: photo.intentId,
+            url: photo.url,
+            path: photo.path,
             alt: photoUris[i] ? photoAlts[photoUris[i]] || null : null,
           })),
         );
@@ -789,8 +792,18 @@ export default function ReportFlagModal({ visible, location, onClose, onCreated,
     } catch (e) {
       // Server cancellation records AMBIGUOUS, never client-inferred absence.
       // The operation can later be reviewed on the same deletion request.
-      if (preparedPhotos.length > 0) {
-        void Promise.all(preparedPhotos.map((photo) => cancelFlagPhotoUpload(photo.intentId))).catch(() => undefined);
+      // FDA-019 legacy uploads (intentId: null) have no server-side intent to
+      // cancel — the object is already real bytes in Storage with no DB
+      // pointer, so it must be removed directly instead.
+      const intentPhotos = preparedPhotos.filter(
+        (photo): photo is { intentId: string; url: string; path: string } => photo.intentId !== null,
+      );
+      const legacyPhotoPaths = preparedPhotos.filter((photo) => photo.intentId === null).map((photo) => photo.path);
+      if (intentPhotos.length > 0) {
+        void Promise.all(intentPhotos.map((photo) => cancelFlagPhotoUpload(photo.intentId))).catch(() => undefined);
+      }
+      if (legacyPhotoPaths.length > 0) {
+        void removeUploadedFlagPhotos(legacyPhotoPaths).catch(() => undefined);
       }
       // §SKY-7: same coherence fix as the comment path — a description
       // rejected by the filter now offers the guidelines it was judged

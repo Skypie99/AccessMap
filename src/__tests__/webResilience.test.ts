@@ -126,9 +126,14 @@ describe('L7 — ReportFlagModal releases draft blob URLs post-settle only', () 
 
   it('the submit FAILURE path does not release — drafts must survive for retry', () => {
     // D1F4 delegates uncertain upload outcomes to the server, but must still
-    // retain draft blob URLs for a report retry.
-    const catchBlock = around(report, 'void Promise.all(preparedPhotos.map', 500);
+    // retain draft blob URLs for a report retry. Phase 04A (FDA-019) split
+    // cleanup by upload kind: intent-based uploads are cancelled server-side
+    // (cancelFlagPhotoUpload); legacy uid-folder uploads have no server
+    // intent, so their real Storage object is removed directly instead —
+    // neither path releases a draft blob URL.
+    const catchBlock = around(report, 'void Promise.all(intentPhotos.map', 600);
     expect(catchBlock).toContain('cancelFlagPhotoUpload');
+    expect(catchBlock).toContain('removeUploadedFlagPhotos');
     expect(catchBlock).not.toContain('releaseUri');
     expect(catchBlock).not.toContain('revokeObjectURL');
   });

@@ -1015,6 +1015,98 @@ describe('uploadFlagPhoto — codec-emitted APP1 is sanitized (native path)', ()
 });
 
 // ---------------------------------------------------------------------------
+// FDA-019 (Phase 04A): uploadFlagPhoto's legacy uid-folder fallback, mirroring
+// uploadAvatar's (users.ts) isFunctionMissing -> useLegacyOwnerPath pattern
+// exactly. Reference test: src/lib/__tests__/users.test.ts "uses the
+// sanitized owner path when the upload-intent RPC is not deployed".
+// ---------------------------------------------------------------------------
+describe('uploadFlagPhoto — FDA-019 legacy uid-folder fallback', () => {
+  const USER_ID = 'user-456';
+
+  beforeEach(() => {
+    mockStorageUpload.mockReset();
+    mockStorageGetPublicUrl.mockReset();
+    mockStorageFrom.mockReset().mockReturnValue({
+      upload: mockStorageUpload,
+      getPublicUrl: mockStorageGetPublicUrl,
+    });
+    mockRpc.mockReset();
+  });
+
+  afterEach(() => {
+    (global as unknown as { fetch: unknown }).fetch = undefined as unknown as typeof fetch;
+  });
+
+  it('falls back to the uid-folder path and returns intentId: null when the RPC is absent', async () => {
+    const buffer = jpegOf({});
+    (global as unknown as { fetch: unknown }).fetch = jest.fn(async () => ({
+      arrayBuffer: async () => buffer,
+    }));
+    mockRpc.mockImplementation((name: unknown) => ({
+      single: jest.fn().mockResolvedValue(
+        name === 'prepare_flag_photo_upload'
+          ? { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } }
+          : { data: null, error: new Error(`Unexpected RPC: ${String(name)}`) },
+      ),
+    }));
+    mockStorageUpload.mockResolvedValueOnce({ error: null });
+    mockStorageGetPublicUrl.mockReturnValueOnce({
+      data: { publicUrl: `https://cdn.example.com/${USER_ID}/1234567890.jpg` },
+    });
+
+    const result = await uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg');
+
+    expect(result.intentId).toBeNull();
+    expect(result.url).toMatch(/^https:\/\//);
+    expect(mockStorageUpload).toHaveBeenCalledTimes(1);
+    const [path] = mockStorageUpload.mock.calls[0];
+    // Matches the documented pre-intent scheme (CLAUDE.md): <uid>/<ts>.<ext> —
+    // no /avatar/ segment, distinguishing it from uploadAvatar's own fallback.
+    expect(path).toMatch(new RegExp(`^${USER_ID}/\\d+\\.jpg$`));
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('never calls cancel_flag_photo_upload for a legacy-path Storage failure (there is no intent to cancel)', async () => {
+    const buffer = jpegOf({});
+    (global as unknown as { fetch: unknown }).fetch = jest.fn(async () => ({
+      arrayBuffer: async () => buffer,
+    }));
+    mockRpc.mockImplementation((name: unknown) => ({
+      single: jest.fn().mockResolvedValue(
+        name === 'prepare_flag_photo_upload'
+          ? { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } }
+          : { data: null, error: new Error(`Unexpected RPC: ${String(name)}`) },
+      ),
+    }));
+    const storageError = { message: 'Bucket not found', status: 404 };
+    mockStorageUpload.mockResolvedValueOnce({ error: storageError });
+
+    await expect(uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg')).rejects.toEqual(storageError);
+    // Only the one (missing) prepare RPC call — no cancel_flag_photo_upload.
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('an unrelated RPC error (not function-missing) still throws instead of silently falling back', async () => {
+    const buffer = jpegOf({});
+    (global as unknown as { fetch: unknown }).fetch = jest.fn(async () => ({
+      arrayBuffer: async () => buffer,
+    }));
+    mockRpc.mockImplementation((name: unknown) => ({
+      single: jest.fn().mockResolvedValue(
+        name === 'prepare_flag_photo_upload'
+          ? { data: null, error: { code: '42501', message: 'permission denied' } }
+          : { data: null, error: new Error(`Unexpected RPC: ${String(name)}`) },
+      ),
+    }));
+
+    await expect(uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg')).rejects.toMatchObject({
+      code: '42501',
+    });
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Section 4b — B8 (L7-05) resize helpers: resizeActionFor (native manipulate
 // action) + scaledCanvasDims (web canvas dims). Pure functions — the downscale
 // math is unit-tested here without a native codec or a canvas mock.
