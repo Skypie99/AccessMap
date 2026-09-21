@@ -1,0 +1,78 @@
+{
+  "reportPath": "qa-reports/phase03b/2026-09-20-phase03b-closure/CLOSURE_REPORT.md",
+  "preparedBy": "Claude (Sonnet 5)",
+  "mode": "LOCAL_ONLY_OFFLINE_ONLY",
+  "productionOrStagingContactThisSession": "NONE",
+  "runId": "ebdba703-2470-41fa-ac6d-44354203b8d1",
+  "controllerPid": 27068,
+  "controllerMonotonicOrigin": 217463476,
+  "originalDatabaseT0": "2026-09-20T06:20:25.216974Z",
+  "ownerAuthorization": {
+    "restorationAuthorizedBySky": true,
+    "authorizedScope": "EXACT_THREE_TEMPORARY_GATE_OBJECTS_ONLY_NO_MIGRATION_APPLY_NO_RETRY_IMMEDIATE_POST_EXIT_VERIFICATION_NO_PHASE03C",
+    "confirmedInChat": true
+  },
+  "sourceEvidence": {
+    "preExitCheckpoint": "qa-reports/phase03b/2026-09-20-restoration-runbook/EXIT_RUN_RECEIPT.json",
+    "postExitVerifierReceipt": "qa-reports/phase03b/2026-09-20-restoration-runbook/POST_EXIT_EVIDENCE_20260921T022040Z/POST_EXIT_VERIFIER_RECEIPT.json",
+    "normalizedStructure": "qa-reports/phase03b/2026-09-20-restoration-runbook/POST_EXIT_EVIDENCE_20260921T022040Z/NORMALIZED_STRUCTURE.json",
+    "verifierScriptActuallyReferenced": "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/verify_post_exit.mjs",
+    "staleScriptRuledOut": "qa-reports/phase03b/2026-09-18-production-apply-packet-r8/verify_post_exit.mjs (superseded packet; hardcodes stale http_response_count/statement_count constants that do not apply -- confirmed not the script the runbook names)"
+  },
+  "predicates": {
+    "temporaryGateFunctionAbsent": { "result": "ABSENT", "observed": { "function_count": 0 } },
+    "rowLifecycleQuiescenceTriggerAbsent": { "result": "ABSENT", "observed": { "reserved_trigger_count": 0 } },
+    "truncateQuiescenceTriggerAbsent": { "result": "ABSENT", "observed": { "reserved_trigger_count": 0 }, "preExitConfirmedPresent": { "trigger_oid": 20773, "truncate_trigger_oid": 20774 } },
+    "ledgerCount": { "result": "PASS", "expected": 87, "observed": 87, "observedUnique": 87 },
+    "phase03bMigrationIdentityUnchanged": {
+      "result": "PASS",
+      "versions": ["20260915210256", "20260915210413"],
+      "note": "comparator recomputes expected statement hashes live from frozen migration files; no comparatorError recorded"
+    },
+    "finalStructure": {
+      "result": "PASS",
+      "observedSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+      "expectedSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7"
+    },
+    "permissionsRls": {
+      "result": "PASS",
+      "basis": "structural-catalog.mjs includes relrowsecurity/relforcerowsecurity, pg_policies, and ACL/grants at table/column/function/schema/role level in the hashed catalog; catalog hash matched exactly"
+    },
+    "moderation": {
+      "result": "PASS",
+      "phase03bConstraintIndexSha256": "cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a",
+      "scopeIncludes": ["flag_moderation_events", "moderation vocabulary/pairing constraints and indexes"]
+    },
+    "points": {
+      "result": "PASS",
+      "phase03bConstraintIndexSha256": "cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a",
+      "scopeIncludes": ["flag_point_reward_claims", "comment_reward_daily", "comment_vote_reward_counts"]
+    },
+    "pgNetHttpSafety": {
+      "result": "PASS",
+      "observed": {
+        "http_queue_count": 0,
+        "http_response_new_since_t0_count": 0,
+        "transaction_read_only": "on",
+        "pg_net_ttl_seconds": 21600
+      },
+      "requiredBy": "validateRunRelativePgNetCheckpoint() in r8_control_lib.mjs (requires queue=0, new-since-t0=0, read-only transaction, ttl_seconds > 600)"
+    },
+    "restorationAttemptCountExactlyOne": {
+      "result": "CONFIRMED_STRUCTURALLY",
+      "basis": "exactly one POST_EXIT_EVIDENCE_* directory, one EXIT_RUN_RECEIPT.json, one CAPTURED_PRE_RESTORATION_* directory found anywhere in the worktree; single controllerPid/controllerMonotonicOrigin/runId throughout; verifier refuses to reuse/overwrite an existing evidence directory"
+    },
+    "noMigrationApplyRetry": { "result": "CONFIRMED", "basis": "ledger count and latest version unchanged; restoration SQL scope is DROP-only against 3 named objects" },
+    "noProductionControllerRerun": { "result": "CONFIRMED", "basis": "single controllerPid (27068) / controllerMonotonicOrigin (217463476) found everywhere recorded, no second value anywhere" },
+    "phase03cNotStarted": { "result": "CONFIRMED", "basis": "find across worktree for phase03c / phase_03c returns nothing" }
+  },
+  "overall": "PASS",
+  "PHASE_03B_CLOSURE_STATUS": "CLOSED",
+  "restrictionsOnThisReport": [
+    "Does not authorize or recommend any merge to main/canonical",
+    "Does not authorize Phase 03C",
+    "No production or staging contact made while producing this report"
+  ],
+  "nextSafeAction": "Await Sky's separate owner decision and authorization for the Phase 03B merge into main/canonical.",
+  "capturedAtUtc": "2026-09-20T19:40:00Z"
+}

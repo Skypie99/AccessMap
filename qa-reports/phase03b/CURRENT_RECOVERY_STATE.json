@@ -1,6 +1,6 @@
 {
-  "CURRENT_TASK": "A fresh, independent, local-only, offline-only final restoration-readiness review (r2) of hardening commit a134cbb4a08103c5c28a3af140b67847cbcb22e2, which repaired the prior review's F1/F2 (blocking) and F3/F4 (non-blocking) findings. Re-derived every claim from disk: re-ran the saved-evidence comparator fresh (overall PASS), re-read the SS8 step-1 preflight block directly (fail-fast, CLI-version guard, ref pin/reject all confirmed present), independently regenerated PHASE03B_RESTORATION_EXIT.sql (byte-identical, exact 3-object scope), re-read verify_post_exit.mjs (fail-closed, no retry loop), and confirmed via git show --stat that the hardening commit touched only 3 files with the restoration SQL / verify_post_exit.mjs / frozen migrations / exclusion module all unchanged. No production/staging contact, no mutation, no live verifier run, no restoration SQL / verify_post_exit.mjs / migration-byte changes. Verdict: PASS, READY_FOR_OWNER_AUTHORIZATION.",
-  "CURRENT_PHASE": "INDEPENDENT_FINAL_RESTORATION_READINESS_REVIEW_R2_PASS_AWAITING_SKYS_SEPARATE_OWNER_AUTHORIZATION",
+  "CURRENT_TASK": "Sky personally authorized and personally executed exactly one Phase 03B production restoration attempt against kldlwszpfkdmsjrjhjym (confirmed by Sky in chat), immediately followed by the reviewed post-exit verifier in the same session. This checkpoint is a fresh, independent, local-only, offline-only closure review of the resulting on-disk evidence -- not the session that ran the restoration. Independently re-derived every predicate from the saved POST_EXIT_VERIFIER_RECEIPT.json and related evidence files rather than trusting the incoming closure request's own assertions: confirmed temporary gate function and both quiescence triggers absent, ledger count unchanged at 87, Phase03B migration identity unchanged (recomputed live from frozen migration files by the comparator), final structure hash matches the pre-incident accepted value exactly (which structurally covers RLS/permissions, moderation, and points objects), pg_net/HTTP checkpoint clean (0 queued, 0 new responses since original T0), and exactly one restoration attempt with no controller rerun and no Phase03C anywhere in the worktree. Full detail: qa-reports/phase03b/2026-09-20-phase03b-closure/CLOSURE_REPORT.md and closure_receipt.json.",
+  "CURRENT_PHASE": "PHASE_03B_RESTORATION_CLOSED_AWAITING_SKYS_SEPARATE_MERGE_DECISION",
   "CURRENT_BRANCH": "codex/flagstone-p03b-post-apply-recovery-20260919",
   "CURRENT_WORKTREE": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919",
   "INCIDENT_RUN_ID": "ebdba703-2470-41fa-ac6d-44354203b8d1",
@@ -160,7 +160,7 @@
     "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json",
     "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/ (new directory, 7 files)"
   ],
-  "NEXT_EXACT_ACTION": "This review (r2) passed. Await Sky's separate, explicit owner authorization for exactly one Phase 03B restoration attempt, followed immediately (same owner session) by post-exit verification. Then STOP: do not proceed to Phase 03C, do not uncomment section 8 steps 2-3, do not run any live command, and do not treat this review as authorization to do so.",
+  "NEXT_EXACT_ACTION_SUPERSEDED_HISTORY": "(Superseded -- kept for history.) This review (r2) passed. Await Sky's separate, explicit owner authorization for exactly one Phase 03B restoration attempt, followed immediately (same owner session) by post-exit verification. Then STOP: do not proceed to Phase 03C, do not uncomment section 8 steps 2-3, do not run any live command, and do not treat this review as authorization to do so.",
   "EXTERNAL_HANDOFF_PACKAGE": {
     "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/",
     "preparedBy": "Claude (Sonnet 5)",
@@ -491,7 +491,37 @@
     "WIDENING_THE_AGGREGATION_REPAIR_BEYOND_THE_NOT_RUN_ON_REQUIRED_SECTION_DEFECT",
     "FABRICATING_A_NOTE_JSON_FOR_THE_HISTORICAL_ALREADY_CAPTURED_EVIDENCE_DIRECTORY",
     "WEAKENING_ANY_GATE_BECAUSE_EVIDENCE_IS_NOW_PRESENT",
-    "UNCOMMENTING_SECTION_8_STEPS_2_OR_3"
+    "UNCOMMENTING_SECTION_8_STEPS_2_OR_3",
+    "DECIDING_OR_RECOMMENDING_THE_MERGE_TO_MAIN_ON_SKYS_BEHALF",
+    "PUSHING",
+    "MERGING",
+    "STARTING_PHASE03C"
   ],
-  "LAST_UPDATED_UTC": "2026-09-21T01:35:03Z"
+  "PHASE_03B_CLOSURE_RESULT": {
+    "status": "PASS",
+    "PHASE_03B_CLOSURE_STATUS": "CLOSED",
+    "closedAtUtc": "2026-09-20T19:40:00Z",
+    "restorationAuthorizedAndExecutedBySky": true,
+    "restorationAttemptCount": 1,
+    "migrationApplyRetried": false,
+    "productionControllerRerun": false,
+    "phase03cStarted": false,
+    "temporaryGateFunctionAbsent": true,
+    "rowLifecycleQuiescenceTriggerAbsent": true,
+    "truncateQuiescenceTriggerAbsent": true,
+    "ledgerCount": 87,
+    "phase03bMigrationIdentityUnchanged": true,
+    "finalStructure": "PASS",
+    "permissionsRls": "PASS",
+    "moderation": "PASS",
+    "points": "PASS",
+    "pgNetHttpSafety": "PASS",
+    "reportPath": "qa-reports/phase03b/2026-09-20-phase03b-closure/CLOSURE_REPORT.md",
+    "receiptPath": "qa-reports/phase03b/2026-09-20-phase03b-closure/closure_receipt.json",
+    "reviewedBy": "Claude (Sonnet 5), fresh session independent of the restoration-executing session",
+    "productionOrStagingContactThisSession": "NONE",
+    "note": "This closes the restoration only. It does not decide, authorize, or recommend the separate Phase 03B merge into main/canonical -- that decision remains Sky's alone."
+  },
+  "NEXT_EXACT_ACTION": "Await Sky's separate owner decision and authorization for the Phase 03B merge into main/canonical. Do not push. Do not merge. Do not start Phase 03C.",
+  "LAST_UPDATED_UTC": "2026-09-20T19:40:00Z"
 }

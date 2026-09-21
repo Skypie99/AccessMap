@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "flagstone.phase03b.r8-envelope.v1",
+  "packetVersion": "R8",
+  "candidateSha": "9d638456fa8e679678c54f131fe8f0db723eda72",
+  "candidateTree": "cfc76206f7cf7af6a7127a6329620d2ee1dc4da8",
+  "productionTarget": "kldlwszpfkdmsjrjhjym",
+  "runId": "ebdba703-2470-41fa-ac6d-44354203b8d1",
+  "controllerPid": 27068,
+  "controllerMonotonicOrigin": 217463476,
+  "phase": "POST_EXIT_COMPARATOR",
+  "checkName": "post-exit-write-restoration",
+  "expected": {
+    "result": "PASS_RESTORED",
+    "gateManifestSha256": "c3f68ac80207ea6a779b4d89448fa63f8c7292b99ac0721cc9cfdd21db2e45dd",
+    "finalLedgerSha256": "b9fb376947238c4bd3dc3d164337d6b9294df9084eab9008530ba9fd4d4603b5",
+    "finalStructureSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+    "databaseT0": "2026-09-20T06:20:25.216974Z",
+    "maximumQuiescenceWindowSeconds": 600
+  },
+  "observed": {
+    "proof": {
+      "captured_at_utc": "2026-09-21T02:20:45.181889Z",
+      "database_t0": "2026-09-20T06:20:25.216974Z",
+      "flags_id_status_count": 24,
+      "flags_id_status_sha256": "b3b517e8fe5b996d7108d09e6d3fdfaa6143b92fe6c2501ef83f249b5fd0942e",
+      "function_count": 0,
+      "history_count": 49,
+      "history_sha256": "f8533cc1f34588b0556027d759767e4cd1fbdd960071ec16354cd82e37e874f7",
+      "http_queue_count": 0,
+      "http_response_count": 3,
+      "http_response_new_since_t0_count": 0,
+      "http_response_sha256": "14d0617d38d7625f9470ed931c4c7e849bba5d9472bc8e39983dd1a359118dfd",
+      "ledger_count": 87,
+      "ledger_latest_version": "20260915210413",
+      "ledger_ordered_version_name_sha256": "b9fb376947238c4bd3dc3d164337d6b9294df9084eab9008530ba9fd4d4603b5",
+      "ledger_unique_count": 87,
+      "pg_net_ttl": "6 hours",
+      "pg_net_ttl_seconds": 21600,
+      "phase03b_constraint_index_sha256": "cdcf1cb106f7dd12e1aac53f6cc910fdfd6f8b0b38a4c7ee9cc3e40fb32bac3a",
+      "phase03b_rows": [
+        {
+          "name": "phase03b_moderation_semantics_compatibility_bridge",
+          "statement_count": 68,
+          "statement_sha256": "cbc17a516412859e5fb6ca2fa41e538f1d0c9ae5a10168424431f761b8ca086c",
+          "version": "20260915210256"
+        },
+        {
+          "name": "phase03b_points_integrity",
+          "statement_count": 23,
+          "statement_sha256": "72f8faf6c218a92be5fa14bc9851d0fe035e4e0f4ffd7e9196184f438d479569",
+          "version": "20260915210413"
+        }
+      ],
+      "phase03b_versions": [
+        "20260915210256",
+        "20260915210413"
+      ],
+      "receipt": "phase03b_post_exit_proof_r3",
+      "reserved_trigger_count": 0,
+      "transaction_read_only": "on"
+    },
+    "normalizedStructureSha256": "f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7",
+    "steps": [
+      {
+        "command": [
+          "supabase",
+          "db",
+          "query",
+          "--linked",
+          "--project-ref",
+          "kldlwszpfkdmsjrjhjym",
+          "--file",
+          "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-restoration-runbook/POST_EXIT_EVIDENCE_20260921T022040Z/BOUND_POST_EXIT_VERIFY.sql",
+          "--output-format",
+          "json"
+        ],
+        "startedAt": "2026-09-21T02:20:44.149Z",
+        "endedAt": "2026-09-21T02:20:45.804Z",
+        "exitCode": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "command": [
+          "supabase",
+          "db",
+          "query",
+          "--linked",
+          "--project-ref",
+          "kldlwszpfkdmsjrjhjym",
+          "--file",
+          "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-restoration-runbook/POST_EXIT_EVIDENCE_20260921T022040Z/STRUCTURAL_CAPTURE_READ_ONLY.sql",
+          "--output-format",
+          "json"
+        ],
+        "startedAt": "2026-09-21T02:20:45.805Z",
+        "endedAt": "2026-09-21T02:20:47.528Z",
+        "exitCode": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "command": [
+          "supabase",
+          "functions",
+          "list",
+          "--project-ref",
+          "kldlwszpfkdmsjrjhjym",
+          "--output-format",
+          "json"
+        ],
+        "startedAt": "2026-09-21T02:20:47.556Z",
+        "endedAt": "2026-09-21T02:20:48.532Z",
+        "exitCode": 0,
+        "signal": null,
+        "timedOut": false
+      }
+    ]
+  },
+  "status": "PASS_RESTORED",
+  "capturedAtUtc": "2026-09-21T02:20:48.532Z",
+  "capturedAtMonotonic": 289486840,
+  "sourceArtifact": "verify_post_exit.mjs",
+  "producer": "phase03b-r8-post-exit-verifier",
+  "producerVersion": "flagstone.phase03b.packet-r8.v1",
+  "numericExit": 0,
+  "signal": null,
+  "timedOut": false
+}

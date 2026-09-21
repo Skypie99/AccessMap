@@ -1,0 +1,22 @@
+[
+  {
+    "phase03b_quiescence_pre_exit_r3": {
+      "captured_at_utc": "2026-09-21T02:20:42.313089Z",
+      "database_t0": "2026-09-20T06:20:25.216974Z",
+      "flags_count": 24,
+      "flags_sha256": "b3b517e8fe5b996d7108d09e6d3fdfaa6143b92fe6c2501ef83f249b5fd0942e",
+      "function_oid": 20772,
+      "history_count": 49,
+      "history_sha256": "f8533cc1f34588b0556027d759767e4cd1fbdd960071ec16354cd82e37e874f7",
+      "http_queue_count": 0,
+      "http_response_count": 3,
+      "http_response_new_since_t0_count": 0,
+      "http_response_sha256": "14d0617d38d7625f9470ed931c4c7e849bba5d9472bc8e39983dd1a359118dfd",
+      "pg_net_ttl": "6 hours",
+      "pg_net_ttl_seconds": 21600,
+      "receipt": "phase03b_quiescence_pre_exit_r3",
+      "trigger_oid": 20773,
+      "truncate_trigger_oid": 20774
+    }
+  }
+]
