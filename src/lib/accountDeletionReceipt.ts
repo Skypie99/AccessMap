@@ -1,11 +1,11 @@
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { accountDeletionAsyncStatusAvailable } from './accountDeletionAvailability';
 import { supabase } from './supabase';
 
 const RECEIPT_INDEX_STORAGE_KEY = 'flagstone.accountDeletionReceipt.index.v2';
 const RECEIPT_STORAGE_PREFIX = 'flagstone.accountDeletionReceipt.v2.';
-const OPERATION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type AccountDeletionReceipt = {
   operationId: string;
@@ -66,7 +66,7 @@ async function getOrCreateNativeReceipt(subjectId: string): Promise<AccountDelet
 export async function loadAccountDeletionReceipt(subjectId?: string): Promise<AccountDeletionReceipt | null> {
   if (Platform.OS === 'web') return null;
   const receipts = await loadNativeReceipts();
-  return subjectId ? receipts.find((receipt) => receipt.subjectId === subjectId) ?? null : receipts[0] ?? null;
+  return subjectId ? receipts.find((receipt) => receipt.subjectId === subjectId) ?? null : receipts.find(isUnconfirmedReceipt) ?? null;
 }
 
 export async function loadAccountDeletionReceipts(): Promise<AccountDeletionReceipt[]> {
@@ -84,7 +84,7 @@ export async function clearAccountDeletionReceipt(receipt?: Pick<AccountDeletion
   await mutateReceiptIndex((existing) => existing.filter((operationId) => !operationIds.includes(operationId)));
 }
 
-export async function getAccountDeletionStatus(receipt: AccountDeletionReceipt): Promise<AccountDeletionStatus> {
+async function requestAccountDeletionStatus(receipt: AccountDeletionReceipt): Promise<AccountDeletionStatus> {
   const { data, error } = await supabase.functions.invoke('account-deletion-status', {
     method: 'POST', body: { operationId: receipt.operationId, receiptSecret: receipt.receiptSecret },
   });
@@ -96,6 +96,59 @@ export async function getAccountDeletionStatus(receipt: AccountDeletionReceipt):
   };
 }
 
+/** Thrown instead of a network call while the async status route is absent. */
+export class AccountDeletionStatusUnavailableError extends Error {
+  constructor() {
+    super('Account-deletion status is not available in this version of Flagstone.');
+    this.name = 'AccountDeletionStatusUnavailableError';
+  }
+}
+
+/** FDA-003 / Phase 04B: the only way to read async deletion status. While the
+ * Phase 05 capability is absent this fails closed WITHOUT contacting the
+ * network, so no caller can reach the undeployed `account-deletion-status`
+ * route by accident. */
+export async function getAccountDeletionStatus(receipt: AccountDeletionReceipt): Promise<AccountDeletionStatus> {
+  if (!accountDeletionAsyncStatusAvailable()) throw new AccountDeletionStatusUnavailableError();
+  return requestAccountDeletionStatus(receipt);
+}
+
+/** A receipt whose deletion the server already CONFIRMED (deployed
+ * `delete-account` v4 answered `status: 'deleted'`). It is terminal: it must
+ * never drive another deletion request or a status call. It is kept only so a
+ * device that could not finish signing out still knows the truth after a
+ * relaunch, and it is cleared once local sign-out completes. */
+export type ConfirmedAccountDeletionReceipt = AccountDeletionReceipt & { confirmedDeletedAt: string };
+
+export function isConfirmedAccountDeletionReceipt(
+  receipt: AccountDeletionReceipt | null | undefined,
+): receipt is ConfirmedAccountDeletionReceipt {
+  const confirmedDeletedAt = (receipt as { confirmedDeletedAt?: unknown } | null | undefined)?.confirmedDeletedAt;
+  return typeof confirmedDeletedAt === 'string' && confirmedDeletedAt.length > 0;
+}
+
+/** Records the server's confirmation on this operation's own secure record
+ * (same opaque key, no new identifier) before local sign-out starts. */
+export async function markAccountDeletionReceiptConfirmed(receipt: AccountDeletionReceipt): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const confirmed: ConfirmedAccountDeletionReceipt = { ...receipt, confirmedDeletedAt: new Date().toISOString() };
+  await SecureStore.setItemAsync(receiptStorageKey(receipt.operationId), JSON.stringify(confirmed));
+  await mutateReceiptIndex((operationIds) => [...new Set([...operationIds, receipt.operationId])]);
+}
+
+/** Drops every terminal (server-confirmed) receipt. The signed-out surface
+ * calls this: each confirmation was already shown once when deletion
+ * finished, and an unconfirmed receipt is never touched here. */
+export async function clearConfirmedAccountDeletionReceipts(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const confirmed = (await loadNativeReceipts()).filter(isConfirmedAccountDeletionReceipt);
+  for (const receipt of confirmed) await clearAccountDeletionReceipt(receipt);
+}
+
+function isUnconfirmedReceipt(receipt: AccountDeletionReceipt): boolean {
+  return !isConfirmedAccountDeletionReceipt(receipt);
+}
+
 async function loadNativeReceipts(): Promise<AccountDeletionReceipt[]> {
   const operationIds = await loadReceiptIndex();
   const values = await Promise.all(operationIds.map(async (operationId) => {
@@ -104,6 +157,8 @@ async function loadNativeReceipts(): Promise<AccountDeletionReceipt[]> {
   }));
   return values.filter((receipt): receipt is AccountDeletionReceipt => receipt !== null);
 }
+
+const OPERATION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 async function loadReceiptIndex(): Promise<string[]> {
   const raw = await SecureStore.getItemAsync(RECEIPT_INDEX_STORAGE_KEY);
