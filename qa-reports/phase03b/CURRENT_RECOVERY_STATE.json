@@ -1,6 +1,6 @@
 {
-  "CURRENT_TASK": "Narrow independent review (fresh, local/offline only) of the preexisting-backup-table exclusion repair at commit 3420d87. No production/staging contact, no mutation, no live verifier run.",
-  "CURRENT_PHASE": "FINAL_RESTORATION_READINESS_REVIEW_HOLD_F1_F2_PENDING_REPAIR",
+  "CURRENT_TASK": "Local-only, narrow repair of the final restoration-readiness review's F1/F2 (blocking) and F3/F4 (non-blocking) findings, in one bounded pass: hardened the RESTORATION_RUNBOOK.md section-8 step-1 owner preflight bash block (fail-fast, CLI-version guard, ref pin/reject, missing-file refusal, no-overwrite refusal, no bare supabase-into-jq pipe), closed the stale section-2/section-10 evidence-status text now that proof.json/edge_function.json exist and the saved comparator reproduces overall PASS, and documented (without fabricating) the TARGET_IDENTITY caveat. No production/staging contact, no mutation, no live verifier run, no restoration SQL / verify_post_exit.mjs / migration-byte changes.",
+  "CURRENT_PHASE": "RESTORATION_RUNBOOK_HARDENED_F1_F2_REPAIRED_AWAITING_FRESH_INDEPENDENT_REVIEW",
   "CURRENT_BRANCH": "codex/flagstone-p03b-post-apply-recovery-20260919",
   "CURRENT_WORKTREE": "/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919",
   "INCIDENT_RUN_ID": "ebdba703-2470-41fa-ac6d-44354203b8d1",
@@ -160,7 +160,7 @@
     "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json",
     "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/ (new directory, 7 files)"
   ],
-  "NEXT_EXACT_ACTION": "The final independent restoration-readiness review (2026-09-21, qa-reports/phase03b/2026-09-20-final-restoration-readiness-review/) reproduced the saved-evidence comparator PASS Sky reported and confirmed the restoration SQL regenerates byte-identical with exact 3-object scope, but found two literal gaps against Step 9 requirements: F1 (section 8 owner preflight block lacks fail-fast shell behavior) and F2 (no CLI version guard on the preflight/comparator path). Neither puts production at risk today (the exit SQL guards itself live, and the actual write step is separately gated behind manual uncomment + explicit Sky authorization), but both are Require-list violations, so this review reads HOLD / NOT_READY_FOR_OWNER_AUTHORIZATION. Recommended next step: add set -euo pipefail (or && chaining) and an explicit supabase --version check to the section 8 step-1 preflight block, refresh RESTORATION_RUNBOOK.md section 2/section 10 to reflect that proof.json/edge_function.json now exist and pass, then request one more independent review pass before any owner authorization.",
+  "NEXT_EXACT_ACTION": "Run one fresh, local-only, independent final restoration-readiness review of the now-hardened runbook (see RESTORATION_RUNBOOK_HARDENING_RESULT above) -- this repair session does not review itself. If that review passes, return to Sky for a separate, explicit owner authorization of the single restoration attempt. Then STOP: do not proceed to Phase 03C, do not uncomment section 8 steps 2-3, do not run any live command.",
   "EXTERNAL_HANDOFF_PACKAGE": {
     "path": "qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/",
     "preparedBy": "Claude (Sonnet 5)",
@@ -275,6 +275,71 @@
     "reportPath": "qa-reports/phase03b/2026-09-20-final-restoration-readiness-review/REVIEW.md",
     "receiptPath": "qa-reports/phase03b/2026-09-20-final-restoration-readiness-review/independent_review_receipt.json"
   },
+  "RESTORATION_RUNBOOK_HARDENING_RESULT": {
+    "status": "REPAIRED_NOT_YET_INDEPENDENTLY_REVIEWED",
+    "repairedAtUtc": "2026-09-21T01:15:00Z",
+    "scope": "NARROW_RUNBOOK_HARDENING_AND_DOCUMENTATION_ONLY",
+    "findingsAddressed": {
+      "F1": "Section 8 step-1 bash block now opens with set -euo pipefail; every supabase-piped-into-jq construct replaced with a separate checked capture command followed by a separate checked jq -e extraction, so a failed capture cannot be masked by a downstream jq that still exits 0",
+      "F2": "Added an explicit ACTUAL_CLI_VERSION=\"$(supabase --version)\" check against the pinned 2.116.0, refusing before any live-capable command, mirroring assertInstalledSupabaseCliVersion() semantics",
+      "F3": "Did not fabricate a note.json for the historical CAPTURED_FINAL_STRUCTURE evidence (the external capture tool never produced one); documented the caveat in section 2, referencing the already-existing, already-verified LIVE_TARGET_IDENTITY.json (captured 2026-09-19); the hardened section-8 script now self-attests its own project ref into a fresh note.json for every future run",
+      "F4": "Rewrote section 2's evidence table from asserted-only to independently verified for all three live-evidence rows, backed by a fresh local rerun of compare_captured_results.mjs reproducing overall PASS with both accepted hashes; rewrote the stale section-10 decision block"
+    },
+    "additionalHardeningBeyondNamedFindings": [
+      "explicit refusal if the production ref is not exactly kldlwszpfkdmsjrjhjym or equals the rejected staging ref cepayqmsoqxshsiyqnvz",
+      "refusal on any of the 3 required input files missing",
+      "refusal to reuse or overwrite an existing timestamped evidence output directory"
+    ],
+    "filesChanged": {
+      "modified": [
+        "qa-reports/phase03b/2026-09-20-restoration-runbook/RESTORATION_RUNBOOK.md",
+        "qa-reports/phase03b/CURRENT_RECOVERY_HANDOFF.md",
+        "qa-reports/phase03b/CURRENT_RECOVERY_STATE.json"
+      ],
+      "added": [],
+      "unchanged": [
+        "qa-reports/phase03b/2026-09-20-restoration-runbook/PHASE03B_RESTORATION_EXIT.sql",
+        "qa-reports/phase03b/2026-09-20-restoration-runbook/PHASE03B_POST_EXIT_VERIFY_READ_ONLY.sql",
+        "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/generate_exit_sql.mjs",
+        "qa-reports/phase03b/2026-09-19-production-apply-packet-r11/verify_post_exit.mjs",
+        "supabase/migrations-next/phase03b/20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+        "supabase/migrations-next/phase03b/20260915210413_phase03b_points_integrity.sql"
+      ]
+    },
+    "restorationSqlChanged": false,
+    "verifyPostExitChanged": false,
+    "migrationBytesChanged": false,
+    "exclusionScopeChanged": false,
+    "comparatorAggregationSemanticsChanged": false,
+    "productionContact": "NONE",
+    "productionMutations": "NONE",
+    "restorationExecuted": false,
+    "localValidation": {
+      "shellSyntaxCheck": "PASS (bash -n on the extracted section-8 step-1 block)",
+      "stubbedFailFastTests": {
+        "happyPath": "PASS -- produces proof.json, structure_catalog.json, edge_function.json, note.json; calls comparator; exit 0",
+        "wrongCliVersion": "PASS -- refused before any live-capable call; 0 calls made; no evidence directory created",
+        "simulatedFailingSupabaseCall": "PASS -- halted immediately after exactly 1 live-capable call attempt; no second call, no jq extraction, no comparator run",
+        "stagingProjectRef": "PASS -- refused before any live-capable call; 0 calls made",
+        "missingRequiredFile": "PASS -- refused before any live-capable call; 0 calls made",
+        "preExistingEvidenceDirectory": "PASS -- refused before any live-capable call; 0 calls made"
+      },
+      "restorationSqlRegeneratedByteIdentical": true,
+      "restorationSqlDropScopeExactThreeObjects": true,
+      "zeroUnresolvedTemplateTokens": true,
+      "verifyPostExitUnchangedVsHead": true,
+      "frozenMigrationHashesUnchangedVsAllPinnedConstants": true,
+      "noPhase03CFileOrCommitExists": true,
+      "savedComparatorRerunLocally": {
+        "overall": "PASS",
+        "LIVE_GATE_AND_LEDGER": "PASS",
+        "FINAL_STRUCTURE_PERMISSIONS_RLS_MODERATION_POINTS": "PASS",
+        "EDGE_FUNCTION_IDENTITY": "PASS",
+        "CLIENT_COMPATIBILITY": "NOT_RUN (non-blocking, by design)"
+      }
+    },
+    "note": "This session both found the F1-F4 gaps' fix (via the prior review) and applied the fix in this checkpoint -- that is not the same as an independent review of the fix. Do not treat this repair as self-certifying; it requires its own fresh independent review pass before any restoration authorization."
+  },
   "EVIDENCE_AGGREGATOR_REPAIR_RESULT": {
     "status": "REPAIRED_INDEPENDENTLY_REVIEWED_PASS",
     "repairedAtUtc": "2026-09-20T23:30:00Z",
@@ -368,7 +433,8 @@
     "ORIGINAL_ONE_RUN_AUTHORIZATION",
     "SECOND_LIVE_VERIFIER_RUN_NOW_CONSUMED",
     "LIVE_VERIFIER_RETRY_WITHOUT_NEW_AUTHORITY",
-    "RUNNING_OWNER_EVIDENCE_CAPTURE_COMMANDS_FROM_A_NON_OWNER_AUTHORIZED_SESSION"
+    "RUNNING_OWNER_EVIDENCE_CAPTURE_COMMANDS_FROM_A_NON_OWNER_AUTHORIZED_SESSION",
+    "TREATING_THIS_RUNBOOK_HARDENING_REPAIR_AS_AN_INDEPENDENT_REVIEW_OF_ITSELF"
   ],
   "DO_NOT_DO": [
     "GATE_REMOVAL_WITHOUT_SEPARATE_RESTORATION_AUTHORIZATION",
@@ -388,7 +454,10 @@
     "HAND_EDITING_GENERATED_EXIT_SQL",
     "TRUSTING_COMPARE_CAPTURED_RESULTS_OVERALL_FIELD_UNTIL_ITS_NOT_RUN_AGGREGATION_BUG_IS_FIXED",
     "TREATING_THIS_SESSIONS_OWN_REPAIR_AS_AN_INDEPENDENT_REVIEW_OF_ITSELF",
-    "WIDENING_THE_AGGREGATION_REPAIR_BEYOND_THE_NOT_RUN_ON_REQUIRED_SECTION_DEFECT"
+    "WIDENING_THE_AGGREGATION_REPAIR_BEYOND_THE_NOT_RUN_ON_REQUIRED_SECTION_DEFECT",
+    "FABRICATING_A_NOTE_JSON_FOR_THE_HISTORICAL_ALREADY_CAPTURED_EVIDENCE_DIRECTORY",
+    "WEAKENING_ANY_GATE_BECAUSE_EVIDENCE_IS_NOW_PRESENT",
+    "UNCOMMENTING_SECTION_8_STEPS_2_OR_3"
   ],
-  "LAST_UPDATED_UTC": "2026-09-21T00:29:42Z"
+  "LAST_UPDATED_UTC": "2026-09-21T01:15:00Z"
 }

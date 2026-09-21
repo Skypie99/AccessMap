@@ -21,7 +21,7 @@ was made preparing this document or its SQL artifacts.
 | Original one-run production-apply authorization | `CONSUMED` (unchanged — this runbook does not touch it) |
 | Structural repair reviewed | commit `3420d87`, independent review PASS at `386d363` |
 | Third live read-only post-apply verification | reported complete by Sky, 2026-09-20 (see §2 for what is and isn't independently confirmed) |
-| Production target | `kldlwszpfkdmsjrjhjym` only — never `cepayqmsoqxshsiyqnvz` |
+| Production target | `kldlwszpfkdmsjrjhjym` (project name `Accessable City App`, region `us-west-2`, Postgres engine `17`) only — never staging `cepayqmsoqxshsiyqnvz`. Identity captured 2026-09-19 in `qa-reports/phase03b/2026-09-19-production-apply-packet-r11/LIVE_TARGET_IDENTITY.json` (`requestedProjectRef` == `observedProjectRef` == `kldlwszpfkdmsjrjhjym`). See §2's `TARGET_IDENTITY` row for what this file does and does not substitute for. |
 
 This runbook is only valid for this run ID and this T0. If either the entry receipt or
 the database T0 changes for any reason, this entire runbook is stale and must be
@@ -31,32 +31,32 @@ regenerated, not hand-edited — see §4.
 
 Before writing "prove before restoration" as a checklist, it matters what "proof" means
 right now, today, in this repo. This saga's own founding rule (`scripts/structural-catalog.mjs`
-header) is **"no original artifact, no identity claim."** Applying that rule honestly to
-the third live verification as currently reported:
+header) is **"no original artifact, no identity claim."** Applying that rule honestly,
+as of this hardening pass, to all three saved evidence files in
+`qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURED_FINAL_STRUCTURE/`:
 
 | Claim | Status | Basis |
 |---|---|---|
-| `FINAL_STRUCTURE_PERMISSIONS_RLS_MODERATION_POINTS`: PASS, hash `f185495387290e1...` | **INDEPENDENTLY VERIFIED** | Raw artifact exists at `qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff/CAPTURED_FINAL_STRUCTURE/structure_catalog.json` (132,102 bytes, valid JSON, correct top-level shape). This session ran `compare_captured_results.mjs` against it directly, locally, offline, and it independently reproduced `PASS` with the exact same hash Sky reported. |
-| Ledger count 87, both Phase03B versions present, statement counts 68/23, gate present, pg_net TTL 6h, HTTP queue 0, 0 new responses since T0 | **ASSERTED ONLY, NOT INDEPENDENTLY VERIFIED FROM A SAVED ARTIFACT** | No `proof.json` was ever saved to the `CAPTURED/` or `CAPTURED_FINAL_STRUCTURE/` directory (only `structure_catalog.json` exists). These values come from Sky's report of what ChatGPT's connector said, not from a file this session could re-derive a hash from. |
-| Edge Function identity PASS, hash `276dcb14c8...` | **ASSERTED ONLY, NOT INDEPENDENTLY VERIFIED FROM A SAVED ARTIFACT** | Same reason — no `edge_function.json` was saved. |
+| `FINAL_STRUCTURE_PERMISSIONS_RLS_MODERATION_POINTS`: PASS, hash `f185495387290e1effaeda12bf3381a55fba7a67d8610940581927412acb38e7` | **INDEPENDENTLY VERIFIED** | Raw artifact `structure_catalog.json` exists, valid JSON, correct top-level shape. `compare_captured_results.mjs` run directly, locally, offline, against it reproduces `PASS` with this exact hash. |
+| Ledger count 87, both Phase03B versions present, statement counts 68/23, gate present, pg_net TTL 6h, HTTP queue 0, 0 new responses since T0 | **INDEPENDENTLY VERIFIED** | `proof.json` is now saved in the same directory. `compare_captured_results.mjs` run directly, locally, offline, against it reproduces `LIVE_GATE_AND_LEDGER: PASS`. |
+| Edge Function identity PASS, hash `276dcb14c85ca75955058b10ebb38d9d633fc29a21062fbcc181b502db7c2d70` | **INDEPENDENTLY VERIFIED** | `edge_function.json` is now saved in the same directory. `compare_captured_results.mjs` run directly, locally, offline, against it reproduces `EDGE_FUNCTION_IDENTITY: PASS` with this exact hash. |
+| `TARGET_IDENTITY` (comparator's automated check) | **STRUCTURALLY CAVEATED, NOT A DEFECT** | `compare_captured_results.mjs` only reads a genuine PASS for this section when a `note.json` with `projectRef` sits in the captured directory. The external tool that produced the three files above never wrote one, so the comparator correctly (not incorrectly) reports "no note.json supplied — unverified, treat as HOLD manually" for that historical capture — this document does not retroactively fabricate a `note.json` for evidence that was never accompanied by one. The actual identity proof for that capture is `LIVE_TARGET_IDENTITY.json` (§1), captured 2026-09-19, independently confirming `requestedProjectRef == observedProjectRef == kldlwszpfkdmsjrjhjym`, `Accessable City App`, `us-west-2`, Postgres `17`. Going forward, the hardened §8 step-1 preflight script (below) writes its own `note.json`, truthfully self-attesting the project ref *that specific run* used — so any future preflight reproof run through this runbook gets a real, non-caveated `TARGET_IDENTITY: PASS` from the comparator, not just from the `--project-ref` flag on each CLI call. |
 
-**This is a real gap, not a formality.** It is the same gap this saga has caught and
-fixed in itself multiple times (e.g. the R4/round-4 collisions in
-`structural-catalog.mjs`, the pg_net response-history HOLD that led to R11). Recommend
-closing it before an independent reviewer is asked to sign off on restoration: re-run
-`01_QUIESCENCE_LEDGER_GATE_READ_ONLY.sql` and the `supabase functions list` call one
-more time (same read-only, zero-mutation pattern already used), save `proof.json` and
-`edge_function.json` next to the existing `structure_catalog.json`, and run
-`compare_captured_results.mjs` against the complete set. Until that's done, treat the
-ledger/gate/edge-function rows above as **HOLD-pending-artifact**, not PASS, however
-confident the chat report reads.
+`compare_captured_results.mjs --captured=.../CAPTURED_FINAL_STRUCTURE` was re-run fresh
+during this hardening pass and reproduces `overall: PASS` with `CLIENT_COMPATIBILITY`
+correctly `NOT_RUN` (non-blocking, by design — see the comparator's own message). The
+evidence gap this section used to describe (missing `proof.json`/`edge_function.json`)
+is closed; nothing here is asserted-only any more.
 
 ## 3. Prove before restoration (preflight gate)
 
 Immediately before the actual restoration attempt — not hours or days earlier — reprove,
 fresh, from the same read-only artifacts already built:
 
-1. Target identity exact (`kldlwszpfkdmsjrjhjym`, matches `LIVE_TARGET_IDENTITY.json`).
+1. Target identity exact (`kldlwszpfkdmsjrjhjym`, matches `LIVE_TARGET_IDENTITY.json`;
+   the §8 step-1 script additionally self-attests the ref it used into a fresh
+   `note.json`, which `compare_captured_results.mjs` reads for a real, non-caveated
+   `TARGET_IDENTITY: PASS` — see §2).
 2. Ledger still exactly 87, both Phase03B versions present, statement identity unchanged
    (`01_QUIESCENCE_LEDGER_GATE_READ_ONLY.sql` in the external-handoff directory).
 3. Exact temporary gate (1 function + 2 triggers) still present, owned by `postgres`,
@@ -181,15 +181,92 @@ authenticated to `kldlwszpfkdmsjrjhjym`. **None of these have been executed.** R
 them requires a separate, explicit go-ahead from Sky beyond what authorized the
 read-only verification — restoration is a write, not a read.
 
+Step 1's block below is a hardened, fail-fast shell script (`set -euo pipefail`, no
+bare pipe into `jq` that could mask a failed capture, an explicit CLI-version guard,
+an explicit staging-ref rejection, and refusal on any missing input file or on an
+evidence directory that already exists) — added during the 2026-09-21 readiness-review
+repair (F1/F2). It replaces the previous four-line, non-fail-fast version. Nothing
+about its *scope* changed: it is still exactly the same three read-only captures plus
+the local, offline comparator, still not wired to run automatically, still requiring a
+human to read the printed `overall` before doing anything else.
+
 ```bash
-# --- 1. Fresh preflight reproof (read-only, safe to run any time, no authorization needed beyond the standing read-only one) ---
-HANDOFF="/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff"
-RUNBOOK="/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-restoration-runbook"
-mkdir -p "$HANDOFF/CAPTURED_PRE_RESTORATION"
-supabase db query --linked --project-ref kldlwszpfkdmsjrjhjym --file "$HANDOFF/01_QUIESCENCE_LEDGER_GATE_READ_ONLY.sql" --output-format json | jq '.[0].phase03b_quiescence_proof_r3' > "$HANDOFF/CAPTURED_PRE_RESTORATION/proof.json"
-supabase db query --linked --project-ref kldlwszpfkdmsjrjhjym --file "$HANDOFF/02_FINAL_STRUCTURE_CAPTURE_READ_ONLY.sql" --output-format json | jq '.[0].catalog' > "$HANDOFF/CAPTURED_PRE_RESTORATION/structure_catalog.json"
-supabase functions list --project-ref kldlwszpfkdmsjrjhjym --output-format json > "$HANDOFF/CAPTURED_PRE_RESTORATION/edge_function.json"
-node "$HANDOFF/compare_captured_results.mjs" --captured="$HANDOFF/CAPTURED_PRE_RESTORATION"
+#!/usr/bin/env bash
+# --- 1. Fresh preflight reproof (read-only, safe to run any time, no authorization
+#        needed beyond the standing read-only one). Fail-fast: any error anywhere in
+#        this block halts it immediately -- it does not depend on a human noticing a
+#        bad line in the printed output. ---
+set -euo pipefail
+
+readonly EXPECTED_CLI_VERSION="2.116.0"
+readonly PRODUCTION_PROJECT_REF="kldlwszpfkdmsjrjhjym"
+readonly REJECTED_STAGING_PROJECT_REF="cepayqmsoqxshsiyqnvz"
+
+readonly HANDOFF="/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-third-live-verification-external-handoff"
+readonly RUNBOOK="/Users/skypie/AccessMap-codex/flagstone-p03b-post-apply-recovery-20260919/qa-reports/phase03b/2026-09-20-restoration-runbook"
+readonly SQL_LEDGER_GATE="$HANDOFF/01_QUIESCENCE_LEDGER_GATE_READ_ONLY.sql"
+readonly SQL_STRUCTURE="$HANDOFF/02_FINAL_STRUCTURE_CAPTURE_READ_ONLY.sql"
+readonly COMPARATOR="$HANDOFF/compare_captured_results.mjs"
+readonly OUT="$HANDOFF/CAPTURED_PRE_RESTORATION_$(date -u +%Y%m%dT%H%M%SZ)"
+
+# Pin production, reject staging: refuse to proceed unless the ref this script would
+# use is exactly the pinned production ref and is not the rejected staging ref. Both
+# sides are checked explicitly (not just "trust the constant above") so this guard
+# still does its job if the block is ever copy/pasted or edited carelessly.
+if [ "$PRODUCTION_PROJECT_REF" != "kldlwszpfkdmsjrjhjym" ] || [ "$PRODUCTION_PROJECT_REF" = "$REJECTED_STAGING_PROJECT_REF" ]; then
+  echo "REFUSING: target ref '$PRODUCTION_PROJECT_REF' is not the pinned production ref kldlwszpfkdmsjrjhjym, or equals the rejected staging ref $REJECTED_STAGING_PROJECT_REF." >&2
+  exit 1
+fi
+
+# Explicit CLI version guard -- must match exactly, checked before any live-capable
+# command runs (mirrors assertInstalledSupabaseCliVersion(), currently only enforced
+# inside verify_post_exit.mjs; this closes the gap on the preflight/comparator path).
+ACTUAL_CLI_VERSION="$(supabase --version)"
+if [ "$ACTUAL_CLI_VERSION" != "$EXPECTED_CLI_VERSION" ]; then
+  echo "REFUSING: supabase --version reported '$ACTUAL_CLI_VERSION', required exactly '$EXPECTED_CLI_VERSION'." >&2
+  exit 1
+fi
+
+# Refuse if any required input file is missing.
+for f in "$SQL_LEDGER_GATE" "$SQL_STRUCTURE" "$COMPARATOR"; do
+  if [ ! -f "$f" ]; then
+    echo "REFUSING: required file missing: $f" >&2
+    exit 1
+  fi
+done
+
+# Refuse to silently overwrite or merge into an existing evidence directory.
+if [ -e "$OUT" ]; then
+  echo "REFUSING: evidence output path already exists: $OUT" >&2
+  exit 1
+fi
+mkdir -p "$OUT"
+
+# Each capture is a separate, unpiped command so a failed `supabase` call trips
+# `set -e` directly -- no `cmd | jq` construct whose exit status a downstream `jq`
+# could mask. Each extraction is then independently checked for a non-null result.
+RAW_LEDGER_GATE="$OUT/.raw_ledger_gate.json"
+supabase db query --linked --project-ref "$PRODUCTION_PROJECT_REF" --file "$SQL_LEDGER_GATE" --output-format json > "$RAW_LEDGER_GATE"
+jq -e '.[0].phase03b_quiescence_proof_r3 != null' "$RAW_LEDGER_GATE" > /dev/null
+jq '.[0].phase03b_quiescence_proof_r3' "$RAW_LEDGER_GATE" > "$OUT/proof.json"
+
+RAW_STRUCTURE="$OUT/.raw_structure.json"
+supabase db query --linked --project-ref "$PRODUCTION_PROJECT_REF" --file "$SQL_STRUCTURE" --output-format json > "$RAW_STRUCTURE"
+jq -e '.[0].catalog != null' "$RAW_STRUCTURE" > /dev/null
+jq '.[0].catalog' "$RAW_STRUCTURE" > "$OUT/structure_catalog.json"
+
+supabase functions list --project-ref "$PRODUCTION_PROJECT_REF" --output-format json > "$OUT/edge_function.json"
+jq -e 'type == "array" or type == "object"' "$OUT/edge_function.json" > /dev/null
+
+rm -f "$RAW_LEDGER_GATE" "$RAW_STRUCTURE"
+
+# Self-attested target-identity note: truthfully records the ref THIS invocation used.
+# It does not, and must not, assert anything about any earlier or different capture.
+printf '{"projectRef": "%s", "capturedAtUtc": "%s", "capturedBy": "RESTORATION_RUNBOOK.md \xc2\xa78 step 1 (hardened)"}\n' \
+  "$PRODUCTION_PROJECT_REF" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$OUT/note.json"
+
+# Judge, locally, offline. No retry: a failure here is reported, not re-attempted.
+node "$COMPARATOR" --captured="$OUT"
 # ---> read the printed "overall". If it is not PASS on every non-NOT_RUN section, STOP HERE. ---
 
 # --- 2. THE WRITE. Only after step 1 reads clean AND independent review has signed off AND Sky has separately authorized this specific write. ---
@@ -203,32 +280,46 @@ node "$HANDOFF/compare_captured_results.mjs" --captured="$HANDOFF/CAPTURED_PRE_R
 
 Steps 2 and 3 are commented out deliberately. This runbook does not uncomment them —
 that is the separate authorization act, made by Sky, at the time restoration actually
-happens, not by preparing this document.
+happens, not by preparing this document. Step 1 contains no migration-apply command,
+no production-controller invocation, and no automatic retry of any kind: every failure
+path is `exit 1` with a message on stderr, once, and nothing loops.
 
 ## 9. Checkpoint maintenance
 
 `qa-reports/phase03b/CURRENT_RECOVERY_HANDOFF.md` and `CURRENT_RECOVERY_STATE.json`
-are updated alongside this runbook (same commit) to point here and to record the §2
-evidence-status gap. Neither file claims restoration has happened, because it hasn't.
+are updated alongside this runbook (same commit) to point here and to record this
+hardening pass. Neither file claims restoration has happened, because it hasn't.
 
 ## 10. Decisions for Sky
 
-🔴 **Close the evidence gap in §2 before asking anyone to independently review this
-runbook for a go/no-go on restoration.**
-- **What:** Only the final-structure check has a saved raw artifact this session could
-  independently re-hash. The ledger/gate/pg_net/Edge-Function PASS claims are
-  currently only as strong as the chat report of them.
-- **Recommendation:** Re-run the same read-only capture for `proof.json` and
-  `edge_function.json` (command block in §8, step 1) and save them so
-  `compare_captured_results.mjs` reports PASS across the board from saved evidence,
-  not from narration.
-- **Why:** This is the exact standard the rest of this saga holds itself to — every
-  other accepted artifact in this recovery has a file, a hash, and an independent
-  re-derivation behind it. Skipping that once, here, would be new to this saga's
-  practice, not a continuation of it.
-- **Alternative:** Proceed to independent review with the gap noted as an open risk —
-  workable, but weaker, and it's the kind of shortcut this saga has specifically been
-  burned by before (see the pg_net response-history HOLD that produced R11).
-- **Impact:** Until closed, an independent reviewer is being asked to sign off on a
-  restoration whose preflight gate (§3, item 6) would itself currently read HOLD, not
-  PASS.
+🔴 **The final restoration-readiness review (2026-09-21) read HOLD on two literal
+gaps (F1, F2) in this runbook's §8 preflight block. Both are now repaired in this
+document; this repair still needs its own fresh independent review before any
+restoration authorization.**
+- **What:** F1 (§8 step-1 block had no fail-fast shell behavior) and F2 (no CLI
+  version guard on that path) are closed: the block now uses `set -euo pipefail`,
+  splits every `supabase | jq` pair into a checked capture step followed by a checked
+  `jq -e` extraction step (so a failed `supabase` call can't be masked by a
+  downstream `jq` that still exits 0), and refuses to proceed unless
+  `supabase --version` reads exactly `2.116.0`. It also explicitly pins the
+  production ref and rejects the staging ref by name, refuses on any missing input
+  file, and refuses to overwrite an existing evidence directory. The evidence gap §2
+  used to describe (missing `proof.json`/`edge_function.json`) is also closed — both
+  files exist and `compare_captured_results.mjs` independently reproduces
+  `overall: PASS` against all three saved files, hashes matching. F3 (target-identity
+  check) is documented, not silenced: §2 now explains why the historical capture's
+  `TARGET_IDENTITY` reads a caveat rather than a real PASS, and the hardened §8 script
+  closes it going forward by writing its own truthful `note.json`.
+- **Recommendation:** Request one fresh, independent, local-only readiness review of
+  this hardened runbook. If it passes, the runbook is ready for your separate,
+  explicit restoration go-ahead — distinct from the read-only authorization already
+  consumed.
+- **Why:** This saga's standing practice is that nothing touching a safety-relevant
+  script or comparator is treated as trustworthy until reviewed by someone other than
+  whoever wrote the fix — this repair session does not certify itself.
+- **Alternative:** None recommended — skipping the review pass here would be the
+  first time in this saga a restoration-adjacent change went live without one.
+- **Impact:** Zero production risk today. Restoration has not run and cannot run
+  without your separate explicit go-ahead. The restoration SQL, its live
+  `do $guard$`/`do $absence$` blocks, `verify_post_exit.mjs`, and the frozen
+  Phase03B migration bytes are all unchanged by this repair.
