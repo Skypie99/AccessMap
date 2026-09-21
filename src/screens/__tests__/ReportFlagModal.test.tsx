@@ -804,6 +804,37 @@ describe('uncommitted photo intent handling on failed submit (auth path)', () =>
     expect(mockCancelFlagPhotoUpload).not.toHaveBeenCalled();
   });
 
+  // FDA-019 (Phase 04A FINAL repair, D-04A-2, 2026-09-21): uploadFlagPhoto no
+  // longer falls back to an unsafe legacy Storage upload when the
+  // upload-intent RPC is absent — it throws a distinguishable, truthful
+  // error instead. ReportFlagModal needs no bespoke handling for this: the
+  // existing generic catch/notify path already surfaces it correctly.
+  it('FDA-019 (D-04A-2): a gated photo-attachment error surfaces truthfully and files no report', async () => {
+    const utils = renderAuth();
+    await addPhoto(utils, 'file:///p1.jpg');
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    const gatedError = new Error(
+      'Adding photos to reports is temporarily unavailable. You can still file your report without a photo.',
+    );
+    gatedError.name = 'FlagPhotoAttachmentUnavailableError';
+    mockUploadFlagPhoto.mockRejectedValueOnce(gatedError);
+
+    fireEvent.press(utils.getByLabelText('Submit report'));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        "Couldn't submit your report",
+        'Adding photos to reports is temporarily unavailable. You can still file your report without a photo.',
+      );
+    });
+    // No unsafe upload occurred (uploadFlagPhoto itself is what's mocked to
+    // reject — nothing downstream of it ran), no fake success, and no report
+    // was filed. The user must remove the photo (or retry later) themselves.
+    expect(mockCreateFlag).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
   it('still surfaces the original submit error to the user after cleanup', async () => {
     const utils = renderAuth();
     await addPhoto(utils, 'file:///p1.jpg');

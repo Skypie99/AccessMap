@@ -81,21 +81,22 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
   const absentRpc: string[] = deployed.rpc.absentAtAnySignature;
   const absentEdge: string[] = deployed.edgeFunctions.absent;
 
-  it('FDA-019 — flag photo upload has a proven graceful fallback, same as avatar upload, and no longer orphans partial-batch uploads', () => {
-    // Rev 3 (Phase 04A repair, 2026-09-21): rev 2 pinned the PRE-04A shape —
-    // prepare_flag_photo_upload absence was hard-broken. That was accepted
-    // and fixed in the same milestone the manifest already documents (see
-    // photo-upload-flag's phase04aNote): the flag-photo surface now mirrors
-    // avatar upload's graceful legacy fallback exactly. Keeping the old
-    // 'hard' pin here would just re-assert a bug this repository has already
-    // fixed and tested — see photos.test.ts's FDA-019 orphan-repair suite.
+  it('FDA-019 — flag photo attachment is gated (not a legacy Storage fallback) when the upload-intent RPC is absent; avatar upload is unaffected', () => {
+    // Rev 8 (Phase 04A FINAL repair, D-04A-2, 2026-09-21): rev 7 pinned the
+    // legacy-fallback shape (graceful onAbsent, a WORKING claim resting on
+    // that fallback). An independent review held the fallback itself unsafe
+    // for a brand-new signed-in photo — no server-side hold protects the
+    // object if the row insert after it never happens. uploadFlagPhoto now
+    // gates attachment instead (FlagPhotoAttachmentUnavailableError). Avatar
+    // upload (a separate call site, users.ts) is untouched and keeps its own
+    // graceful legacy fallback.
     const flagPhoto = surfaces.find((s) => s.surface === 'photo-upload-flag')!;
     const avatar = surfaces.find((s) => s.surface === 'photo-upload-avatar')!;
 
     const prepare = flagPhoto.callSites.find(
       (c) => c.name === 'prepare_flag_photo_upload' && c.file === 'src/lib/flags.ts',
     )!;
-    expect(prepare.onAbsent).toBe('graceful');
+    expect(prepare.onAbsent).toBe('fail_closed');
     expect(absentRpc).toContain('prepare_flag_photo_upload');
 
     const commit = flagPhoto.callSites.find(
@@ -103,37 +104,33 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
     )!;
     expect(commit.onAbsent).toBe('unreachable');
 
-    // The legacy row-insert fallback itself must be declared, not implied.
-    const legacyTable = flagPhoto.callSites.find(
-      (c) => c.kind === 'table' && c.name === 'flag_photos' && c.file === 'src/lib/photos.ts',
-    )!;
-    expect(legacyTable).toBeDefined();
-
-    // Missing-function behavior must route into the secure legacy fallback
-    // exactly like the avatar surface it mirrors, not into a hard failure.
+    // The avatar surface's OWN legacy fallback must remain graceful/WORKING —
+    // this finding is scoped to flag photos only.
     expect(flagPhoto.finding).toBe('FDA-019');
     expect(avatar.finding).toBeNull();
     const avatarPrepare = avatar.callSites.find((c) => c.name === 'prepare_flag_photo_upload')!;
     expect(avatarPrepare.onAbsent).toBe('graceful');
     expect(avatar.productionImpact).toMatch(/^WORKING/);
 
-    // A WORKING claim on the flag-photo surface may only stand now that the
-    // partial-batch orphan bug (a later, never-attempted upload left
-    // pointer-less in Storage) is fixed and tested — not merely that the
-    // fallback path itself works.
-    expect(flagPhoto.productionImpact).toMatch(/^WORKING/);
-    expect(flagPhoto.productionImpact).toMatch(/orphan/i);
-    expect((flagPhoto as unknown as { phase04aRepairNote?: string }).phase04aRepairNote).toMatch(
-      /orphan/i,
-    );
+    // The flag-photo surface must NOT claim the legacy fallback is working —
+    // it must truthfully describe gating instead, and must not claim the
+    // (now unreachable) fallback provides orphan-cleanup protection for a
+    // brand-new photo.
+    expect(flagPhoto.productionImpact).not.toMatch(/legacy uid-folder path when the upload-intent/i);
+    expect(flagPhoto.productionImpact).toMatch(/gated|refused/i);
+    const finalNote = (flagPhoto as unknown as { phase04aFinalRepairNote?: string }).phase04aFinalRepairNote;
+    expect(finalNote).toBeDefined();
+    expect(finalNote).toMatch(/gated/i);
+    expect(finalNote).not.toMatch(/orphan.cleanup (is )?guaranteed/i);
   });
 
-  it('FDA-002 — flag deletion no longer depends on any undeployed Edge Function; it uses the accepted direct-DELETE compatibility path', () => {
-    // Rev 3 (Phase 04A repair, 2026-09-21): rev 2 pinned the PRE-04A bug
-    // (deleteFlag calling the never-deployed delete-flag Edge Function, every
-    // call site 'hard'). That bug is fixed: deleteFlag issues a direct Data
-    // API DELETE, authorized entirely by live RLS. Re-asserting 'hard'/edge
-    // here would just re-pin the bug this repository already fixed.
+  it('FDA-002 — flag deletion no longer depends on any undeployed Edge Function; a photo-bearing flag is refused, not deleted on unproven cleanup', () => {
+    // Rev 8 (Phase 04A FINAL repair, D-04A-2, 2026-09-21): rev 7 pinned the
+    // "prove removal via storage.remove(), then delete" ordering. An
+    // independent review held that storage.remove()'s error:null response is
+    // not proof of removal, so that ordering could still report a false
+    // deletion success. The compatibility behavior is now a flat refusal for
+    // any photo-bearing flag — no Storage call is made at all.
     const del = surfaces.find((s) => s.surface === 'flag-delete')!;
     expect(absentEdge).toContain('delete-flag');
 
@@ -141,20 +138,28 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
     expect(del.callSites.every((c) => c.kind !== 'edge')).toBe(true);
     expect(del.callSites.every((c) => c.name !== 'delete-flag')).toBe(true);
 
-    // A deployed direct flags-table DELETE call site exists.
+    // A deployed direct flags-table DELETE call site exists (zero-photo
+    // flags only — see phase04aFinalRepairNote).
     const rowDelete = del.callSites.find((c) => c.kind === 'table' && c.name === 'flags' && c.deployed === true)!;
     expect(rowDelete).toBeDefined();
 
     expect(del.finding).toBe('FDA-002');
 
-    // The manifest must accurately describe the strict direct-delete
-    // compatibility path, and must NOT describe required photo cleanup as
-    // best-effort any more (D-04A-1: fail-closed, before the row delete).
+    // The manifest must NOT claim photo removal is proven by client
+    // remove(), and must NOT claim required media can always be removed —
+    // it must instead describe the fail-closed refusal.
     expect(del.productionImpact).not.toMatch(/best-effort/i);
+    expect(del.productionImpact).not.toMatch(/proven BEFORE the row delete/i);
     expect(del.productionImpact).toMatch(/fails closed/i);
-    expect((del as unknown as { phase04aRepairNote?: string }).phase04aRepairNote).not.toMatch(
-      /best-effort/i,
-    );
+    const repairNote = (del as unknown as { phase04aRepairNote?: string }).phase04aRepairNote;
+    expect(repairNote).not.toMatch(/best-effort/i);
+    // The superseded D-04A-1 note is retained as history but must be clearly
+    // marked superseded, not left standing as the current truth.
+    expect(repairNote).toMatch(/SUPERSEDED/);
+    const finalNote = (del as unknown as { phase04aFinalRepairNote?: string }).phase04aFinalRepairNote;
+    expect(finalNote).toBeDefined();
+    expect(finalNote).not.toMatch(/proven by client remove/i);
+    expect(finalNote).toMatch(/FlagPhotoCleanupUnprovenError/);
   });
 
   it('FDA-003 — deletion status polls an absent route while delete-account v4 is live', () => {

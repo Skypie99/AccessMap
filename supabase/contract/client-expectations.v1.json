@@ -1,7 +1,8 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
-  "revision": 7,
+  "revision": 8,
+  "phase04aFinalRepairRevisionNote": "Phase 04A FINAL REPAIR (2026-09-21, Sky's D-04A-2 decision, after a fresh independent Opus acceptance review held the rev-7 repair as a real defect): rev 7's deleteFlag ordering fix (cleanup PROVEN before the row DELETE) rested on treating a Storage remove() call's `error: null` response as proof the object was actually gone. The review established that is not proof under the flag-photos Storage policies this client can see — a refused or no-op removal can return an empty deleted-object list with no error, so deleteFlag could still delete the row while the public photo stayed live. The fix is not more client-side cleanup logic; it is refusing to claim proof the client cannot obtain. deleteFlag now refuses outright — no Storage call, no row DELETE — for ANY flag with a photo (primary or gallery, resolvable or not); only a zero-photo flag still deletes via the direct-DELETE path. Separately, FDA-019's legacy uid-folder Storage upload fallback (mirroring uploadAvatar's) is no longer used for NEW signed-in flag photos: it has no server-side hold protecting the object the way an upload intent does, so when the upload-intent RPC is absent, photo attachment is gated (FlagPhotoAttachmentUnavailableError) instead of writing an unrecoverable public object. Report submission without a photo, and the avatar surface's own legacy fallback, are both unaffected. See qa-reports/phase04/04A-final-repair-20260921T214936Z/HANDOFF.md.",
   "phase04aRepairRevisionNote": "Phase 04A REPAIR (2026-09-21, after an independent Opus acceptance HOLD on 6b239dd found two real defects): (1) FDA-002 deleteFlag's ordering was inverted — it deleted the flags row first and cleaned up photos best-effort afterward, so a Storage failure could leave a public photo orphaned with the row already gone (the exact SR-050 takedown risk). Per Sky's D-04A-1 decision, required photo cleanup now happens BEFORE the row DELETE and is fail-closed: a Storage error, or a photo whose exact object path cannot be established (no owner uid to validate against, a foreign folder, a malformed URL), now REFUSES the delete instead of proceeding. Nothing in this repair is 'best-effort' any more — every photo this flag's rows reference must be provably removed or the row survives. (2) FDA-019's batchInsertFlagPhotos only cleaned up the ONE photo whose row-insert failed; every already-uploaded photo after it in the batch (never even attempted) was left orphaned in Storage with no DB pointer. batchInsertFlagPhotos now cleans up every unattached photo — the failing one and everything after it — on any failure, leaving already-attached photos untouched. contractManifest.guard.test.ts's FDA-002/FDA-019 sub-tests and the D1F4R3 source-closure/replay guards were updated in the same repair to assert the accepted current contract instead of the pre-04A one; see 04A-repair HANDOFF for the full predicate list.",
   "phase04aRevisionNote": "Phase 04A (2026-09-21, accepted 2026-09-03 direction): FDA-002 (flag-delete) and FDA-019 (photo-upload-flag) client compatibility repairs landed — both surfaces now WORKING via patterns already proven elsewhere in this manifest (the direct-DELETE RLS deployedAlternative and the avatar-upload legacy fallback, respectively). FDA-004 (moderation-queue) is reconciled with dated evidence only, not deployed. No Phase03A/03B RPC-dependent surface (flag-status-transition, leaderboard) or FDA-003 (account-deletion, owned by 04B) changed. See each surface's phase04aNote for exact evidence and file:line citations. SUPERSEDED by phase04aRepairRevisionNote above for the flag-delete and photo-upload-flag surfaces — the delete ordering and orphan-cleanup gaps described there were found by independent review AFTER this note was written.",
   "phase03bRevisionNote": "Local Phase03B candidate replaces direct status and moderation-column writes with actor-bound RPCs. The moderation queue fails closed when its list RPC is absent; normal status actions require backend-first deployment of transition_flag_status. This manifest does not mark any Phase03B RPC deployed.",
@@ -18,7 +19,7 @@
     "degraded": "the call throws but the caller completes the primary action and tells the user what was lost",
     "graceful": "absence is detected and a working alternative path or empty state is used",
     "swallowed": "the error is caught and discarded; no user-visible effect",
-    "silent": "no error check at all \u2014 the failure is invisible to code and user alike",
+    "silent": "no error check at all — the failure is invisible to code and user alike",
     "unreachable": "cannot be called when its prerequisite contract is absent",
     "n/a": "the contract is deployed",
     "fail_closed": "the capability is withheld with a warning and no permissive fallback",
@@ -32,40 +33,41 @@
         "web"
       ],
       "finding": "FDA-019",
-      "phase04aNote": "Phase 04A (2026-09-21): uploadFlagPhoto now mirrors uploadAvatar's isFunctionMissing fallback exactly \u2014 prepare_flag_photo_upload absence is detected and the proven pre-intent uid-folder Storage path is used instead, with a direct flag_photos row insert (photos.ts insertLegacyFlagPhoto) replacing the commit RPC. The upload-intent path is unchanged and still used when the RPCs are present.",
-      "phase04aRepairNote": "Phase 04A REPAIR (2026-09-21): independent review found the legacy fallback above could orphan Storage objects on a multi-photo submit \u2014 batchInsertFlagPhotos (photos.ts) only cleaned up the ONE photo whose flag_photos row-insert failed; every already-uploaded photo AFTER it in the same batch (never even attempted) was left as a real object in the flag-photos bucket with no DB row pointing at it, for any batch mixing intent-based and legacy uploads. Repaired: on any attach failure, every not-yet-attached photo from that point on is now cleaned up too (cancelFlagPhotoUpload for intent-based uploads, removeUploadedFlagPhotos for legacy ones) \u2014 already-attached photos before the failure are left untouched. See src/lib/__tests__/photos.test.ts's 'FDA-019 orphan repair' suite (failure at first/middle/final position, mixed intent+legacy) for the behavioral proof.",
+      "phase04aNote": "Phase 04A (2026-09-21): uploadFlagPhoto now mirrors uploadAvatar's isFunctionMissing fallback exactly — prepare_flag_photo_upload absence is detected and the proven pre-intent uid-folder Storage path is used instead, with a direct flag_photos row insert (photos.ts insertLegacyFlagPhoto) replacing the commit RPC. The upload-intent path is unchanged and still used when the RPCs are present. SUPERSEDED by phase04aFinalRepairNote below — this legacy fallback is no longer taken for new signed-in flag photos.",
+      "phase04aRepairNote": "Phase 04A REPAIR (2026-09-21): independent review found the legacy fallback above could orphan Storage objects on a multi-photo submit — batchInsertFlagPhotos (photos.ts) only cleaned up the ONE photo whose flag_photos row-insert failed; every already-uploaded photo AFTER it in the same batch (never even attempted) was left as a real object in the flag-photos bucket with no DB row pointing at it, for any batch mixing intent-based and legacy uploads. Repaired: on any attach failure, every not-yet-attached photo from that point on is now cleaned up too (cancelFlagPhotoUpload for intent-based uploads, removeUploadedFlagPhotos for legacy ones) — already-attached photos before the failure are left untouched. See src/lib/__tests__/photos.test.ts's 'FDA-019 orphan repair' suite (failure at first/middle/final position, mixed intent+legacy) for the behavioral proof. Still true and unaffected by phase04aFinalRepairNote below (batchInsertFlagPhotos itself is unchanged) — it now simply has no reachable legacy-branch input for a brand-new flag photo.",
+      "phase04aFinalRepairNote": "Phase 04A FINAL REPAIR (2026-09-21, Sky's D-04A-2 decision): the legacy uid-folder Storage upload fallback above has no server-side hold protecting the object the way an upload intent does — if the flag_photos row insert that must follow it never happens or fails ambiguously, the only cleanup is client best-effort, and a public object can be left with no DB row pointing at it. That trade-off was held unacceptable for a BRAND NEW signed-in photo. uploadFlagPhoto (flags.ts) now throws FlagPhotoAttachmentUnavailableError as soon as prepare_flag_photo_upload's absence is detected, BEFORE buildPath returns a path and therefore before uploadStrippedImage's own supabase.storage.upload() call — no Storage object is ever written. photo attachment is gated; ordinary report submission without a photo, and the avatar surface's own separate legacy fallback (users.ts, untouched by this decision), are both unaffected. See src/lib/__tests__/flags.test.ts's 'uploadFlagPhoto — FDA-019 gated when the upload-intent RPC is absent (D-04A-2)' suite.",
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 884,
+          "line": 912,
           "kind": "rpc",
           "name": "prepare_flag_photo_upload",
-          "onAbsent": "graceful",
-          "note": "flags.ts:893-896 detects isFunctionMissing, sets useLegacyOwnerPath and returns a uid-folder key (matches uploadAvatar's users.ts:107-110 pattern exactly). Upload proceeds via the live 'flag-photos auth upload' storage policy, then photos.ts inserts the flag_photos row directly. The EXIF/re-encode gates run BEFORE this, so the fallback can never upload unstripped bytes."
+          "onAbsent": "fail_closed",
+          "note": "flags.ts's uploadFlagPhoto: isFunctionMissing(error) now throws FlagPhotoAttachmentUnavailableError immediately, before buildPath returns and before any Storage call — no legacy uid-folder fallback is taken for a flag photo any more (contrast uploadAvatar's users.ts:107-110, unchanged). The EXIF/re-encode gates already ran before this point but their output is simply discarded, never uploaded."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 915,
+          "line": 936,
           "kind": "rpc",
           "name": "cancel_flag_photo_upload",
           "onAbsent": "swallowed",
-          "note": "Inner try/catch preserves the original upload error. Guarded by `if (intentId)`, which is empty on the legacy path (mirrors users.ts:144)."
+          "note": "Inner try/catch preserves the original upload error. Guarded by `if (intentId)`, which is empty both on a genuine strip/sanitize failure before the RPC ran and on the new FlagPhotoAttachmentUnavailableError gate (intentId is only ever set after a successful prepare_flag_photo_upload call)."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 931,
+          "line": 952,
           "kind": "rpc",
           "name": "commit_flag_photo_upload",
           "onAbsent": "unreachable",
-          "note": "Only called from photos.ts when uploadFlagPhoto returned an intentId; the legacy branch (intentId: null) calls insertLegacyFlagPhoto (a direct flag_photos INSERT) instead. Not reachable under a partial deployment (prepare present, commit absent) that the deployed contract says does not exist \u2014 mirrors commit_avatar_photo_upload's classification."
+          "note": "Only called from photos.ts when uploadFlagPhoto returned an intentId, which it now always does on success — the intentId: null legacy return this used to be paired with (insertLegacyFlagPhoto, a direct flag_photos INSERT) is no longer produced by uploadFlagPhoto for a flag photo. Not reachable under a partial deployment (prepare present, commit absent) that the deployed contract says does not exist — mirrors commit_avatar_photo_upload's classification."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 943,
+          "line": 964,
           "kind": "rpc",
           "name": "cancel_flag_photo_upload",
           "onAbsent": "swallowed",
-          "note": "Throws, but its only caller (ReportFlagModal.tsx) is void Promise.all(...).catch(() => undefined) \u2014 legacy uploads in the same failure path are cleaned up via removeUploadedFlagPhotos instead, since there is no intent to cancel. No user-visible action fails."
+          "note": "Throws, but its only caller (ReportFlagModal.tsx) is void Promise.all(...).catch(() => undefined). No user-visible action fails."
         },
         {
           "file": "src/lib/photos.ts",
@@ -73,11 +75,11 @@
           "kind": "table",
           "name": "flag_photos",
           "onAbsent": "n/a",
-          "note": "insertLegacyFlagPhoto's direct INSERT (FDA-019 legacy path). Authorized by the live 'flag_photos: authenticated insert' policy (WITH CHECK true); writes only the legacy url/position/alt_text shape \u2014 object_key is server-guarded and never set by this insert. On failure the just-uploaded Storage object is removed (no server-side intent tracks it)."
+          "note": "insertLegacyFlagPhoto's direct INSERT. Authorized by the live 'flag_photos: authenticated insert' policy (WITH CHECK true); writes only the legacy url/position/alt_text shape — object_key is server-guarded and never set by this insert. As of the FINAL repair this is no longer reached through uploadFlagPhoto's normal output for a new flag photo (see phase04aFinalRepairNote) — retained as a defensive/unreachable code path, not removed, since photos.ts and its own callers were not proven 04A-only."
         }
       ],
-      "deployedAlternative": "storage policy 'flag-photos auth upload' (uid-folder INSERT) + 'flag_photos: authenticated insert' \u2014 live, authorized, and now wired up as the FDA-019 fallback",
-      "productionImpact": "WORKING \u2014 signed-in flag-photo reporting succeeds via the legacy uid-folder path when the upload-intent RPCs are absent, mirroring the avatar surface, AND (since the 2026-09-21 repair) a partial multi-photo attach failure no longer orphans the photos that were never attempted \u2014 this WORKING claim now covers the orphan-cleanup fix, tested in photos.test.ts."
+      "deployedAlternative": "none — when prepare_flag_photo_upload is absent, signed-in flag-photo attachment is gated (FlagPhotoAttachmentUnavailableError) rather than falling back to the legacy uid-folder Storage upload the avatar surface still uses; report submission without a photo remains available",
+      "productionImpact": "DEGRADED — when the upload-intent RPCs are absent, signed-in report submission without a photo still succeeds normally, but attaching a photo is refused with a truthful capability-unavailable message rather than silently using a legacy upload path whose cleanup on a later failure cannot be guaranteed. When the RPCs are present (the normal case), the durable-intent path is unaffected and still carries the FDA-019 partial-batch orphan-cleanup fix."
     },
     {
       "surface": "photo-upload-avatar",
@@ -112,8 +114,8 @@
           "note": "Guarded by `if (intentId)`, which is empty on the legacy path; inner catch discards."
         }
       ],
-      "deployedAlternative": "legacy uid-folder Storage upload + direct users UPDATE \u2014 live and exercised",
-      "productionImpact": "WORKING \u2014 avatar upload succeeds in production today via the legacy path."
+      "deployedAlternative": "legacy uid-folder Storage upload + direct users UPDATE — live and exercised",
+      "productionImpact": "WORKING — avatar upload succeeds in production today via the legacy path."
     },
     {
       "surface": "flag-delete",
@@ -123,37 +125,38 @@
         "admin"
       ],
       "finding": "FDA-002",
-      "phase04aNote": "Phase 04A (2026-09-21): deleteFlag no longer calls the undeployed delete-flag Edge Function (P04-D01, accepted 2026-09-03 \u2014 do not deploy D1F4 merely to satisfy the client). It now issues a strict direct Data API DELETE authorized entirely by the live RLS below, requires a returned id (zero rows = FlagDeleteRefusedError, never a silent/false success). SUPERSEDED by phase04aRepairNote below \u2014 the original implementation cleaned up photos best-effort AFTER the row delete; that ordering was found unsafe by independent review and has been repaired.",
-      "phase04aRepairNote": "Phase 04A REPAIR (2026-09-21, Sky's D-04A-1 decision): required photo cleanup now happens BEFORE the row DELETE and fails closed on any problem \u2014 it is never optional or deferred to a later sweep. deleteFlag now (1) determines every Storage object this flag's photos require removed, (2) refuses the delete outright (FlagDeleteRefusedError) if any required photo's exact path cannot be established \u2014 no owner uid to validate a legacy URL against, a foreign-folder URL, or a malformed one \u2014 since that means required absence cannot be proven, (3) removes every required object and refuses the delete if that Storage call errors (removeRequiredFlagPhotos throws; nothing here is swallowed), and ONLY THEN (4) issues the flags DELETE, validating that the returned rows actually contain the intended flagId (not merely a non-zero length). This closes the SR-050 public-photo-orphan risk the original delete-the-row-then-clean-up-afterward ordering left open, at the cost of an anonymous flag's uncleanable legacy photo now making that flag undeletable until a server-side sweep resolves it \u2014 an accepted, explicit trade-off under D-04A-1, not an oversight. The 2026-09-04 deployed-contract.v1.json capture independently confirmed 'flags delete own', 'admin delete any flag', 'flag-photos owner delete', and 'flag-photos admin delete' all live (authorization.flagsPolicies / storage.objectPolicies).",
+      "phase04aNote": "Phase 04A (2026-09-21): deleteFlag no longer calls the undeployed delete-flag Edge Function (P04-D01, accepted 2026-09-03 — do not deploy D1F4 merely to satisfy the client). It now issues a strict direct Data API DELETE authorized entirely by the live RLS below, requires a returned id (zero rows = FlagDeleteRefusedError, never a silent/false success). SUPERSEDED by phase04aFinalRepairNote below.",
+      "phase04aRepairNote": "Phase 04A REPAIR (2026-09-21, Sky's D-04A-1 decision): required photo cleanup happened BEFORE the row DELETE and failed closed on any problem, by calling storage.remove() on every required object and treating error:null as proof of removal before issuing the flags DELETE. SUPERSEDED by phase04aFinalRepairNote below — a fresh independent review held that storage.remove()'s error:null response is NOT proof of removal (a refused/no-op delete can return an empty deleted-object list with no error), so this ordering could still delete the row while a public photo stayed live. Do not reintroduce a client-side Storage cleanup step before the flags DELETE on the strength of this note; it describes a superseded, unsafe behavior kept here only as history.",
+      "phase04aFinalRepairNote": "Phase 04A FINAL REPAIR (2026-09-21, Sky's D-04A-2 decision): deleteFlag no longer attempts ANY client-side Storage cleanup. It refuses the delete outright (FlagPhotoCleanupUnprovenError) for a flag with any photo — primary or gallery, exact object_key or legacy url, resolvable or not — leaving both the row and every photo exactly as they were, with no supabase.storage call made at all. Only a flag with zero photos reaches the direct flags DELETE (unchanged from the phase04aNote description: RETURNING id, intended-id validated, zero/wrong-id refuses). This is a stricter, simpler compatibility behavior than the repair note above: it trades an anonymous flag's (or any flag's) photo-bearing report becoming client-undeletable until an accepted backend capability can prove exact Storage removal, for the guarantee that this client can never report a false deletion success while a public photo remains reachable. The 2026-09-04 deployed-contract.v1.json capture's RLS/policy confirmations ('flags delete own', 'admin delete any flag') remain accurate and unaffected — only the client's own required-cleanup logic changed. See src/lib/__tests__/flags.supabase.test.ts's 'deleteFlag' describe block and src/__tests__/d1f4r3SourceClosure.guard.test.ts's D-04A-2 source-order guard.",
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1577,
+          "line": 1605,
           "kind": "table",
           "name": "flags",
           "onAbsent": "n/a",
-          "note": "Read (id, user_id, photo_url, photo_object_key) first. A missing row refuses immediately (FlagDeleteRefusedError) \u2014 nothing to determine required cleanup from. flags SELECT is 'flags readable by authenticated' (true) \u2014 always live."
+          "note": "Read (id, user_id, photo_url, photo_object_key) first. A missing row refuses immediately (FlagDeleteRefusedError) — nothing to determine photo presence from. flags SELECT is 'flags readable by authenticated' (true) — always live."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 1590,
+          "line": 1618,
           "kind": "table",
           "name": "flag_photos",
           "onAbsent": "n/a",
-          "note": "Snapshot read of gallery photo url/object_key before the row (and its ON DELETE CASCADE flag_photos rows) are gone. flag_photos SELECT is 'flag_photos: authenticated read' (true) \u2014 always live."
+          "note": "Snapshot read of gallery photo url/object_key before the row (and its ON DELETE CASCADE flag_photos rows) are gone. flag_photos SELECT is 'flag_photos: authenticated read' (true) — always live. Used ONLY to decide photo presence (any row at all refuses) — the url/object_key values themselves are never resolved to a Storage path any more."
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 1625,
+          "line": 1634,
           "kind": "table",
           "name": "flags",
           "onAbsent": "n/a",
           "deployed": true,
-          "note": "DELETE ... RETURNING id, issued ONLY after every required photo object is proven removed (or none were required). Authorization is 'flags delete own' (auth.uid() = user_id) OR 'admin delete any flag' (users.is_admin) \u2014 both confirmed live in deployed-contract.v1.json authorization.flagsPolicies. A returned-rows set that is empty OR does not contain this exact flagId throws FlagDeleteRefusedError; this client never infers owner/admin privilege itself."
+          "note": "DELETE ... RETURNING id, reached ONLY when the flag has zero photos (D-04A-2) — a photo-bearing flag refuses at the hasAnyPhoto check above and never reaches this call. Authorization is 'flags delete own' (auth.uid() = user_id) OR 'admin delete any flag' (users.is_admin) — both confirmed live in deployed-contract.v1.json authorization.flagsPolicies. A returned-rows set that is empty OR does not contain this exact flagId throws FlagDeleteRefusedError; this client never infers owner/admin privilege itself."
         }
       ],
-      "deployedAlternative": "RLS 'flags delete own' + 'admin delete any flag' + 'flag-photos owner/admin delete' permit a direct Data API DELETE \u2014 confirmed live and now wired up",
-      "productionImpact": "WORKING \u2014 owner and admin flag deletion both succeed via the direct-DELETE adapter; required photo cleanup is proven BEFORE the row delete and fails closed (no delete) on any cleanup problem."
+      "deployedAlternative": "RLS 'flags delete own' + 'admin delete any flag' permit a direct Data API DELETE for zero-photo flags — confirmed live and wired up; a photo-bearing flag has no deployed alternative and is refused client-side",
+      "productionImpact": "WORKING — owner and admin deletion of a zero-photo flag succeeds via the direct-DELETE adapter. A photo-bearing flag's delete FAILS CLOSED (refused, not attempted) until an accepted backend capability can prove exact Storage removal — this is an intentional compatibility limit (D-04A-2), not a bug: the client never claims deletion success while a public photo might still be reachable."
     },
     {
       "surface": "account-deletion",
@@ -179,11 +182,11 @@
           "name": "account-deletion-status",
           "onAbsent": "hard",
           "callerDegrade": "SignInScreen.tsx:99 and ProfileScreen.tsx:736 catch into a designed deletionStatusUnavailable state that retains the receipt",
-          "note": "Hard at the call; the callers have a designed unavailable state, so the user sees 'status unavailable' rather than a crash \u2014 but never a truthful completion."
+          "note": "Hard at the call; the callers have a designed unavailable state, so the user sees 'status unavailable' rather than a crash — but never a truthful completion."
         }
       ],
       "deployedAlternative": "delete-account v4 returns status=deleted synchronously",
-      "productionImpact": "BROKEN \u2014 deletion succeeds but the app cannot confirm it."
+      "productionImpact": "BROKEN — deletion succeeds but the app cannot confirm it."
     },
     {
       "surface": "moderation-queue",
@@ -226,7 +229,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1444,
+          "line": 1465,
           "kind": "rpc",
           "name": "transition_flag_status",
           "onAbsent": "hard",
@@ -247,7 +250,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1860,
+          "line": 1869,
           "kind": "rpc",
           "name": "list_public_leaderboard",
           "onAbsent": "hard",
@@ -256,7 +259,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 1880,
+          "line": 1889,
           "kind": "rpc",
           "name": "get_my_leaderboard_rank",
           "onAbsent": "optional_omitted",
@@ -278,7 +281,11 @@
     },
     {
       "surface": "admin-authorization",
-      "platforms": ["mobile", "web", "admin"],
+      "platforms": [
+        "mobile",
+        "web",
+        "admin"
+      ],
       "finding": "FDA-026",
       "callSites": [
         {
@@ -296,7 +303,10 @@
     },
     {
       "surface": "comment-author-projection",
-      "platforms": ["mobile", "web"],
+      "platforms": [
+        "mobile",
+        "web"
+      ],
       "finding": "FDA-026",
       "callSites": [
         {
@@ -322,7 +332,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1484,
+          "line": 1505,
           "kind": "rpc",
           "name": "increment_reopen_request",
           "onAbsent": "graceful",
@@ -385,7 +395,7 @@
           "historicalLocatorCorrection": "The earlier src/lib/notifications.ts call-site entries named a nonexistent file. The preference table and own-row upsert policies exist; no current app preference call is claimed."
         }
       ],
-      "productionImpact": "TABLE CONTRACT SATISFIED \u2014 the defect is that send-push-notification v6 does not filter recipients by these preferences. Behavioural, not contract-shaped. Phase 07A."
+      "productionImpact": "TABLE CONTRACT SATISFIED — the defect is that send-push-notification v6 does not filter recipients by these preferences. Behavioural, not contract-shaped. Phase 07A."
     }
   ]
 }

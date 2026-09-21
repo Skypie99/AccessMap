@@ -1,10 +1,13 @@
 /**
- * The legacy URL helper still protects failed-upload cleanup, and is now also
- * the mechanism deleteFlag itself uses (Phase 04A / FDA-002) to resolve a
- * legacy `flags.photo_url` / `flag_photos.url` into an exact Storage path
- * before best-effort cleanup after a confirmed row delete.
+ * The legacy URL helper still protects failed-upload cleanup
+ * (removeUploadedFlagPhotos and its callers). deleteFlag itself no longer
+ * calls it (Phase 04A FINAL repair, D-04A-2, 2026-09-21): storage.remove()
+ * returning `error: null` is not proof of removal, so deleteFlag now refuses
+ * outright on ANY photo presence rather than trying to resolve and clean up
+ * an exact path first. See flags.supabase.test.ts's `deleteFlag` describe
+ * block for the full D-04A-2 behavior contract.
  */
-import { deleteFlag, FlagDeleteRefusedError, storagePathFromPublicUrl } from '../flags';
+import { deleteFlag, FlagPhotoCleanupUnprovenError, storagePathFromPublicUrl } from '../flags';
 
 const UID = '11111111-1111-4111-8111-111111111111';
 const OTHER = '99999999-9999-4999-8999-999999999999';
@@ -79,8 +82,8 @@ describe('storagePathFromPublicUrl — the one legacy cleanup carve-out', () => 
   });
 });
 
-describe('Phase 04A deleteFlag — storagePathFromPublicUrl drives its legacy photo cleanup', () => {
-  it('cleans up a legacy flags.photo_url using the exact same recovery this file already pins', async () => {
+describe('Phase 04A FINAL repair (D-04A-2) deleteFlag — any photo presence refuses the delete, storagePathFromPublicUrl is no longer consulted', () => {
+  it('a legacy flags.photo_url that WOULD have resolved cleanly still refuses — deleteFlag never calls storagePathFromPublicUrl any more', async () => {
     mockDeleteFlagFrom({
       flagResult: {
         data: { id: 'f1', user_id: UID, photo_url: `${BASE}/${UID}/1700000000000.jpg`, photo_object_key: null },
@@ -88,11 +91,14 @@ describe('Phase 04A deleteFlag — storagePathFromPublicUrl drives its legacy ph
       },
       deleteResult: { data: [{ id: 'f1' }], error: null },
     });
-    await deleteFlag('f1');
-    expect(mockRemove).toHaveBeenCalledWith([`${UID}/1700000000000.jpg`]);
+    // D-04A-2 (2026-09-21): storage.remove() returning `error: null` is not
+    // proof of removal, so a resolvable legacy URL no longer earns a
+    // best-effort cleanup-then-delete — ANY photo refuses outright.
+    await expect(deleteFlag('f1')).rejects.toThrow(FlagPhotoCleanupUnprovenError);
+    expect(mockRemove).not.toHaveBeenCalled();
   });
 
-  it('refuses to guess at a foreign-folder legacy URL and refuses the delete instead (D-04A-1: fail closed, warns, does NOT delete the row either)', async () => {
+  it('a foreign-folder / unresolvable legacy URL refuses the same way — no special-casing by resolvability', async () => {
     mockDeleteFlagFrom({
       flagResult: {
         data: { id: 'f1', user_id: UID, photo_url: `${BASE}/${OTHER}/1.jpg`, photo_object_key: null },
@@ -100,15 +106,15 @@ describe('Phase 04A deleteFlag — storagePathFromPublicUrl drives its legacy ph
       },
       deleteResult: { data: [{ id: 'f1' }], error: null },
     });
-    // Phase 04A repair, 2026-09-21: a photo that exists but cannot be safely
-    // mapped to a Storage path is "required absence cannot be established" —
-    // the row must NOT be deleted either, not just the photo left uncleaned.
-    await expect(deleteFlag('f1')).rejects.toThrow(FlagDeleteRefusedError);
+    await expect(deleteFlag('f1')).rejects.toThrow(FlagPhotoCleanupUnprovenError);
     expect(mockRemove).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalled();
+    // storagePathFromPublicUrl's own foreign-folder warn (asserted in the
+    // block above) is a property of that pure function called directly —
+    // deleteFlag itself never calls it, so nothing here should warn.
+    expect(warn).not.toHaveBeenCalled();
   });
 
-  it('prefers the exact object_key over URL-derivation when both are present', async () => {
+  it('an exact object_key present alongside a stale legacy url still refuses — deleteFlag never inspects which path would have been "correct"', async () => {
     mockDeleteFlagFrom({
       flagResult: {
         data: { id: 'f1', user_id: UID, photo_url: `${BASE}/${UID}/stale.jpg`, photo_object_key: `${UID}/canonical.jpg` },
@@ -116,7 +122,7 @@ describe('Phase 04A deleteFlag — storagePathFromPublicUrl drives its legacy ph
       },
       deleteResult: { data: [{ id: 'f1' }], error: null },
     });
-    await deleteFlag('f1');
-    expect(mockRemove).toHaveBeenCalledWith([`${UID}/canonical.jpg`]);
+    await expect(deleteFlag('f1')).rejects.toThrow(FlagPhotoCleanupUnprovenError);
+    expect(mockRemove).not.toHaveBeenCalled();
   });
 });

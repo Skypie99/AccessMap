@@ -860,12 +860,41 @@ export async function uploadStrippedImage(
 }
 
 /**
- * `intentId: null` marks the FDA-019 legacy uid-folder fallback: the
- * upload-intent RPCs were absent on this backend, so the caller must insert
- * the `flag_photos` row directly (see photos.ts's batchInsertFlagPhotos)
- * instead of calling commitFlagPhotoUpload — there is no intent to commit.
+ * `intentId: null` is retained in the type for compatibility with existing
+ * callers (photos.ts, ReportFlagModal.tsx) that still branch on a legacy
+ * upload, but uploadFlagPhoto itself never produces it any more — see
+ * FlagPhotoAttachmentUnavailableError below (D-04A-2, Phase 04A FINAL
+ * repair). uploadAvatar (users.ts) is a separate call site and keeps its own
+ * legacy uid-folder fallback untouched; this decision is scoped to NEW
+ * signed-in flag photos only.
  */
 export type UploadedFlagPhoto = { intentId: string | null; url: string; path: string };
+
+/**
+ * Thrown when the upload-intent capability (`prepare_flag_photo_upload`) is
+ * absent and photo attachment must therefore be gated (D-04A-2, Phase 04A
+ * FINAL repair, 2026-09-21). The pre-intent uid-folder legacy Storage upload
+ * this branch used to fall back to (mirroring uploadAvatar's own fallback)
+ * has no server-side hold protecting the object the way an upload intent
+ * does — if the `flag_photos` row insert that must follow never happens or
+ * fails ambiguously, the only cleanup is client best-effort, and a public
+ * object can be left with nothing pointing at it. FDA-019's independent
+ * review held that trade-off as unacceptable for a BRAND NEW signed-in
+ * photo, so instead of writing bytes to Storage this throws before any
+ * Storage call is made (uploadStrippedImage invokes this callback to build
+ * the path BEFORE it uploads anything) — no unsafe object is ever created.
+ * Distinguishable from a generic network/RPC failure so callers can tell the
+ * user truthfully that photo attachment is unavailable, not that their
+ * connection or permissions are the problem.
+ */
+export class FlagPhotoAttachmentUnavailableError extends Error {
+  constructor() {
+    super(
+      'Adding photos to reports is temporarily unavailable. You can still file your report without a photo.',
+    );
+    this.name = 'FlagPhotoAttachmentUnavailableError';
+  }
+}
 
 export async function uploadFlagPhoto(
   userId: string,
@@ -874,7 +903,6 @@ export async function uploadFlagPhoto(
   srcHeight?: number,
 ): Promise<UploadedFlagPhoto> {
   let intentId = '';
-  let useLegacyOwnerPath = false;
   try {
     const upload = await uploadStrippedImage(
       userId,
@@ -883,16 +911,12 @@ export async function uploadFlagPhoto(
         const { data, error } = await supabase
           .rpc('prepare_flag_photo_upload', { p_extension: finalExt, p_kind: 'flag_photo' })
           .single();
-        // FDA-019: some backends predate the upload-intent RPCs. Mirror
-        // uploadAvatar's (users.ts) fallback exactly — preserve the proven
-        // pre-intent owner-scoped Storage path (`<uid>/<ts>.<ext>`, matching
-        // the live `flag-photos auth upload` uid-folder policy) only for that
-        // exact deployment gap. This runs after the shared strip/sanitize/
-        // verify gates above, so the fallback can never upload unstripped
-        // bytes.
+        // D-04A-2: gate attachment instead of taking the legacy uid-folder
+        // fallback — see FlagPhotoAttachmentUnavailableError's doc comment.
+        // This throws before buildPath returns, so uploadStrippedImage never
+        // reaches its own supabase.storage.upload() call below.
         if (error && isFunctionMissing(error)) {
-          useLegacyOwnerPath = true;
-          return `${userId}/${Date.now()}.${finalExt}`;
+          throw new FlagPhotoAttachmentUnavailableError();
         }
         if (error || !data) throw error ?? new Error('Photo upload could not be prepared.');
         intentId = data.intent_id;
@@ -902,9 +926,6 @@ export async function uploadFlagPhoto(
       srcWidth,
       srcHeight,
     );
-    if (useLegacyOwnerPath) {
-      return { intentId: null, ...upload };
-    }
     if (!intentId) throw new Error('Photo upload intent was not created.');
     return { ...upload, intentId };
   } catch (error) {
@@ -1519,19 +1540,30 @@ export class FlagDeleteRefusedError extends Error {
 }
 
 /**
- * Required (fail-closed) Storage cleanup for deleteFlag — Phase 04A repair,
- * Sky's D-04A-1: "keep the flag row until its associated public photos are
- * proven removed." Unlike removeUploadedFlagPhotos (best-effort, never
- * throws — used for a submit-time upload that never became a published
- * report), a photo that WAS public must actually come down before the row
- * that made it discoverable disappears. A swallowed Storage error here would
- * let the row vanish while the photo stays live and unreachable from the UI
- * forever — the exact SR-050 takedown hole this decision closes. So this
- * throws on any error, and the caller must not proceed to the row DELETE.
+ * Thrown when a flag has one or more photos and therefore cannot be deleted
+ * under the currently accepted backend capability (Phase 04A FINAL repair,
+ * Sky's D-04A-2, 2026-09-21). The first repair (D-04A-1) tried to prove
+ * removal by calling storage.remove() and trusting `error: null` as evidence
+ * the object was gone before deleting the row. An independent review held
+ * that this is NOT proof: a refused or no-op Storage delete can return an
+ * empty deleted-object list with no error, under the flag-photos policies
+ * this client currently has visibility into. Rather than invent client-side
+ * proof (a Storage SELECT policy, a new RPC, an Edge Function — all out of
+ * scope for this milestone), the row and its photos are both preserved and
+ * the delete is refused outright. This is the exact SR-050 public-photo
+ * takedown gap, closed the only way currently available: never delete a
+ * photo-bearing flag's row until an accepted backend capability can actually
+ * prove the photos are gone.
  */
-async function removeRequiredFlagPhotos(paths: string[]): Promise<void> {
-  const { error } = await supabase.storage.from(FLAG_PHOTOS_BUCKET).remove(paths);
-  if (error) throw error;
+export class FlagPhotoCleanupUnprovenError extends Error {
+  constructor() {
+    super(
+      'This report has one or more photos attached, and this app version cannot yet confirm ' +
+        'they would be fully removed from public storage. To avoid leaving a photo publicly ' +
+        "visible with nothing pointing at it, the report wasn't deleted.",
+    );
+    this.name = 'FlagPhotoCleanupUnprovenError';
+  }
 }
 
 /**
@@ -1543,34 +1575,30 @@ async function removeRequiredFlagPhotos(paths: string[]): Promise<void> {
  * 2026-09-04 production catalog capture) — this client never infers owner or
  * admin privilege itself.
  *
- * Sequence (D-04A-1: cleanup PROVEN before the row goes, not best-effort
- * after — repaired 2026-09-21 from an earlier delete-then-cleanup order that
- * an independent review correctly held as a public-photo takedown risk):
+ * Sequence (D-04A-2, Phase 04A FINAL repair, 2026-09-21 — supersedes the
+ * D-04A-1 cleanup-then-delete ordering): a fresh independent review held that
+ * storage.remove() returning `error: null` is not proof an object was
+ * actually removed under the flag-photos Storage policies this client can
+ * see, so the earlier "prove removal, then delete" sequence could still
+ * delete the row while the public photo stayed live. Rather than invent
+ * client-side proof this milestone isn't scoped to build, the compatibility
+ * behavior is now a flat split on photo presence:
  *   1. Read the flag row. Not found (already gone, or hidden by the
  *      always-true `flags readable by authenticated` SELECT policy simply
- *      never matching) refuses immediately — there is nothing to determine
- *      cleanup requirements from, so there is nothing safe to delete.
+ *      never matching) refuses immediately — there is nothing to delete.
  *   2. Snapshot every gallery photo (`flag_photos` rows are gone once the row
- *      cascades, so cleanup must know its exact target set up front).
- *   3. Determine the exact Storage path each photo REQUIRES removed:
- *      `object_key` columns are exact; legacy `url`-only rows are resolved
- *      through storagePathFromPublicUrl against the FLAG OWNER's uid (objects
- *      always live under `<owner-uid>/...`, including ones an admin deletes
- *      on someone else's flag). If a photo exists but its path cannot be
- *      derived with certainty (no owner uid to validate against, a foreign
- *      folder, a malformed URL), that is "required absence cannot be
- *      established" — refuse the delete rather than silently leave a public
- *      photo behind with no flag pointing at it and no future UI path to
- *      remove it.
- *   4. Remove every required path BEFORE touching the row. A Storage error
- *      here throws and the row is never touched (removeRequiredFlagPhotos
- *      never swallows an error the way removeUploadedFlagPhotos does).
- *   5. Only now DELETE ... RETURNING id. A returned row bearing this exact
- *      flagId is the only proof the delete actually happened; RLS refusing
- *      the row (non-owner/non-admin) or the row already being gone both come
- *      back as `data: []`, not an error — collapsing that into "resolved"
- *      would be a false success. `flag_photos` rows cascade via
- *      `ON DELETE CASCADE` — no separate junction-table delete is issued.
+ *      cascades, so this must run before the row does).
+ *   3. If the flag has ANY photo — the primary `photo_url`/`photo_object_key`
+ *      or any gallery row — refuse the delete outright
+ *      (FlagPhotoCleanupUnprovenError). The row and every photo are left
+ *      exactly as they were; no Storage call is made at all, so there is no
+ *      reachable path that could mistake a no-op Storage response for proof.
+ *   4. Only a flag with ZERO photos reaches the direct `flags` DELETE
+ *      `... RETURNING id`. A returned row bearing this exact flagId is the
+ *      only proof the delete actually happened; RLS refusing the row
+ *      (non-owner/non-admin) or the row already being gone both come back as
+ *      `data: []`, not an error — collapsing that into "resolved" would be a
+ *      false success.
  */
 export async function deleteFlag(flagId: string): Promise<void> {
   const { data: flagRow, error: flagReadErr } = await supabase
@@ -1593,32 +1621,13 @@ export async function deleteFlag(flagId: string): Promise<void> {
   if (photoReadErr) throw photoReadErr;
   const galleryPhotos = photoRows ?? [];
 
-  const owner = flagRow.user_id ?? null;
-  const requiredPaths: string[] = [];
-  let hasUnresolvedPhoto = false;
-  const noteRequiredPhoto = (url: string | null | undefined, objectKey: string | null | undefined) => {
-    if (objectKey) {
-      requiredPaths.push(objectKey);
-      return;
-    }
-    if (!url) return; // no photo at this slot — nothing required
-    const derived = owner ? storagePathFromPublicUrl(url, owner) : null;
-    if (derived) {
-      requiredPaths.push(derived);
-    } else {
-      hasUnresolvedPhoto = true;
-    }
-  };
-  noteRequiredPhoto(flagRow.photo_url, flagRow.photo_object_key);
-  for (const photo of galleryPhotos) {
-    noteRequiredPhoto(photo.url, photo.object_key);
-  }
-
-  if (hasUnresolvedPhoto) {
-    throw new FlagDeleteRefusedError();
-  }
-  if (requiredPaths.length > 0) {
-    await removeRequiredFlagPhotos(requiredPaths);
+  const hasAnyPhoto =
+    Boolean(flagRow.photo_url) || Boolean(flagRow.photo_object_key) || galleryPhotos.length > 0;
+  if (hasAnyPhoto) {
+    // D-04A-2: required media removal cannot currently be proven client-side
+    // — refuse before touching Storage or the row, rather than delete on an
+    // unproven cleanup attempt.
+    throw new FlagPhotoCleanupUnprovenError();
   }
 
   const { data: deletedRows, error: deleteErr } = await supabase

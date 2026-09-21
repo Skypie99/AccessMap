@@ -28,6 +28,7 @@ import {
   FLAG_READ_SELECT,
   updateFlagContent,
   uploadFlagPhoto,
+  FlagPhotoAttachmentUnavailableError,
   verifyExifStripped,
   stripExifNative,
   stripExifWeb,
@@ -1015,12 +1016,16 @@ describe('uploadFlagPhoto — codec-emitted APP1 is sanitized (native path)', ()
 });
 
 // ---------------------------------------------------------------------------
-// FDA-019 (Phase 04A): uploadFlagPhoto's legacy uid-folder fallback, mirroring
-// uploadAvatar's (users.ts) isFunctionMissing -> useLegacyOwnerPath pattern
-// exactly. Reference test: src/lib/__tests__/users.test.ts "uses the
-// sanitized owner path when the upload-intent RPC is not deployed".
+// FDA-019 (Phase 04A FINAL repair, D-04A-2, 2026-09-21): uploadFlagPhoto no
+// longer falls back to the legacy uid-folder Storage upload when the
+// upload-intent RPC is absent. That fallback has no server-side hold
+// protecting the object the way an upload intent does, so an independent
+// review held it unacceptable for a brand-new signed-in photo. Photo
+// attachment is gated instead — see FlagPhotoAttachmentUnavailableError.
+// uploadAvatar (users.ts) is untouched and keeps its own legacy fallback;
+// see src/lib/__tests__/users.test.ts.
 // ---------------------------------------------------------------------------
-describe('uploadFlagPhoto — FDA-019 legacy uid-folder fallback', () => {
+describe('uploadFlagPhoto — FDA-019 gated when the upload-intent RPC is absent (D-04A-2)', () => {
   const USER_ID = 'user-456';
 
   beforeEach(() => {
@@ -1037,7 +1042,7 @@ describe('uploadFlagPhoto — FDA-019 legacy uid-folder fallback', () => {
     (global as unknown as { fetch: unknown }).fetch = undefined as unknown as typeof fetch;
   });
 
-  it('falls back to the uid-folder path and returns intentId: null when the RPC is absent', async () => {
+  it('throws FlagPhotoAttachmentUnavailableError and never touches Storage when the RPC is absent', async () => {
     const buffer = jpegOf({});
     (global as unknown as { fetch: unknown }).fetch = jest.fn(async () => ({
       arrayBuffer: async () => buffer,
@@ -1049,24 +1054,19 @@ describe('uploadFlagPhoto — FDA-019 legacy uid-folder fallback', () => {
           : { data: null, error: new Error(`Unexpected RPC: ${String(name)}`) },
       ),
     }));
-    mockStorageUpload.mockResolvedValueOnce({ error: null });
-    mockStorageGetPublicUrl.mockReturnValueOnce({
-      data: { publicUrl: `https://cdn.example.com/${USER_ID}/1234567890.jpg` },
-    });
 
-    const result = await uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg');
-
-    expect(result.intentId).toBeNull();
-    expect(result.url).toMatch(/^https:\/\//);
-    expect(mockStorageUpload).toHaveBeenCalledTimes(1);
-    const [path] = mockStorageUpload.mock.calls[0];
-    // Matches the documented pre-intent scheme (CLAUDE.md): <uid>/<ts>.<ext> —
-    // no /avatar/ segment, distinguishing it from uploadAvatar's own fallback.
-    expect(path).toMatch(new RegExp(`^${USER_ID}/\\d+\\.jpg$`));
+    await expect(uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg')).rejects.toBeInstanceOf(
+      FlagPhotoAttachmentUnavailableError,
+    );
+    // No unsafe object may ever be written — the gate fires before buildPath
+    // returns a path, i.e. before uploadStrippedImage's own upload() call.
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+    // Only the one (missing) prepare RPC call — no cancel_flag_photo_upload
+    // (there was never an intent to cancel).
     expect(mockRpc).toHaveBeenCalledTimes(1);
   });
 
-  it('never calls cancel_flag_photo_upload for a legacy-path Storage failure (there is no intent to cancel)', async () => {
+  it('the refusal is distinguishable from a generic network/RPC failure by name', async () => {
     const buffer = jpegOf({});
     (global as unknown as { fetch: unknown }).fetch = jest.fn(async () => ({
       arrayBuffer: async () => buffer,
@@ -1078,12 +1078,10 @@ describe('uploadFlagPhoto — FDA-019 legacy uid-folder fallback', () => {
           : { data: null, error: new Error(`Unexpected RPC: ${String(name)}`) },
       ),
     }));
-    const storageError = { message: 'Bucket not found', status: 404 };
-    mockStorageUpload.mockResolvedValueOnce({ error: storageError });
 
-    await expect(uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg')).rejects.toEqual(storageError);
-    // Only the one (missing) prepare RPC call — no cancel_flag_photo_upload.
-    expect(mockRpc).toHaveBeenCalledTimes(1);
+    await expect(uploadFlagPhoto(USER_ID, 'file:///tmp/photo.jpg')).rejects.toMatchObject({
+      name: 'FlagPhotoAttachmentUnavailableError',
+    });
   });
 
   it('an unrelated RPC error (not function-missing) still throws instead of silently falling back', async () => {
