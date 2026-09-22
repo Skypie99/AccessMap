@@ -179,7 +179,7 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
     expect(deployed.edgeFunctions.deployed.map((f: { slug: string }) => f.slug)).toContain(
       'delete-account',
     );
-    expect(acct.callSites.find((c) => c.name === 'account-deletion-status')!.onAbsent).toBe('hard');
+    expect(acct.callSites.find((c) => c.name === 'account-deletion-status')!.onAbsent).toBe('unreachable');
     expect(acct.finding).toBe('FDA-003');
   });
 

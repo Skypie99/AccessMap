@@ -1,7 +1,8 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
-  "revision": 8,
+  "revision": 9,
+  "phase04bRevisionNote": "Local Phase04B candidate (FDA-003): the account-deletion client accepts deployed delete-account v4 status=deleted as a confirmed synchronous deletion (marks its receipt terminal, signs out, clears the receipt, announces success once). Every other reply is a typed unconfirmed outcome that never signs out and is never re-sent automatically. account-deletion-status is gated before the network by accountDeletionAsyncStatusAvailable() (false). This manifest does not mark any async deletion route deployed.",
   "phase04aFinalRepairRevisionNote": "Phase 04A FINAL REPAIR (2026-09-21, Sky's D-04A-2 decision, after a fresh independent Opus acceptance review held the rev-7 repair as a real defect): rev 7's deleteFlag ordering fix (cleanup PROVEN before the row DELETE) rested on treating a Storage remove() call's `error: null` response as proof the object was actually gone. The review established that is not proof under the flag-photos Storage policies this client can see — a refused or no-op removal can return an empty deleted-object list with no error, so deleteFlag could still delete the row while the public photo stayed live. The fix is not more client-side cleanup logic; it is refusing to claim proof the client cannot obtain. deleteFlag now refuses outright — no Storage call, no row DELETE — for ANY flag with a photo (primary or gallery, resolvable or not); only a zero-photo flag still deletes via the direct-DELETE path. Separately, FDA-019's legacy uid-folder Storage upload fallback (mirroring uploadAvatar's) is no longer used for NEW signed-in flag photos: it has no server-side hold protecting the object the way an upload intent does, so when the upload-intent RPC is absent, photo attachment is gated (FlagPhotoAttachmentUnavailableError) instead of writing an unrecoverable public object. Report submission without a photo, and the avatar surface's own legacy fallback, are both unaffected. See qa-reports/phase04/04A-final-repair-20260921T214936Z/HANDOFF.md.",
   "phase04aRepairRevisionNote": "Phase 04A REPAIR (2026-09-21, after an independent Opus acceptance HOLD on 6b239dd found two real defects): (1) FDA-002 deleteFlag's ordering was inverted — it deleted the flags row first and cleaned up photos best-effort afterward, so a Storage failure could leave a public photo orphaned with the row already gone (the exact SR-050 takedown risk). Per Sky's D-04A-1 decision, required photo cleanup now happens BEFORE the row DELETE and is fail-closed: a Storage error, or a photo whose exact object path cannot be established (no owner uid to validate against, a foreign folder, a malformed URL), now REFUSES the delete instead of proceeding. Nothing in this repair is 'best-effort' any more — every photo this flag's rows reference must be provably removed or the row survives. (2) FDA-019's batchInsertFlagPhotos only cleaned up the ONE photo whose row-insert failed; every already-uploaded photo after it in the batch (never even attempted) was left orphaned in Storage with no DB pointer. batchInsertFlagPhotos now cleans up every unattached photo — the failing one and everything after it — on any failure, leaving already-attached photos untouched. contractManifest.guard.test.ts's FDA-002/FDA-019 sub-tests and the D1F4R3 source-closure/replay guards were updated in the same repair to assert the accepted current contract instead of the pre-04A one; see 04A-repair HANDOFF for the full predicate list.",
   "phase04aRevisionNote": "Phase 04A (2026-09-21, accepted 2026-09-03 direction): FDA-002 (flag-delete) and FDA-019 (photo-upload-flag) client compatibility repairs landed — both surfaces now WORKING via patterns already proven elsewhere in this manifest (the direct-DELETE RLS deployedAlternative and the avatar-upload legacy fallback, respectively). FDA-004 (moderation-queue) is reconciled with dated evidence only, not deployed. No Phase03A/03B RPC-dependent surface (flag-status-transition, leaderboard) or FDA-003 (account-deletion, owned by 04B) changed. See each surface's phase04aNote for exact evidence and file:line citations. SUPERSEDED by phase04aRepairRevisionNote above for the flag-delete and photo-upload-flag surfaces — the delete ordering and orphan-cleanup gaps described there were found by independent review AFTER this note was written.",
@@ -173,20 +174,21 @@
           "name": "delete-account",
           "onAbsent": "n/a",
           "deployed": true,
-          "deployedVersion": 4
+          "deployedVersion": 4,
+          "note": "Phase04B: only a validated {status:'deleted'} is a confirmed success. Network loss, explicit v4/server error, relay error, 401/403, malformed or unknown bodies, and status=requested without the Phase05 capability are typed AccountDeletionUnconfirmedError reasons: no success, no sign-out, no automatic resend. Concurrent calls share one in-flight request; a server-confirmed (terminal) receipt short-circuits any later attempt to local cleanup."
         },
         {
           "file": "src/lib/accountDeletionReceipt.ts",
           "line": 88,
           "kind": "edge",
           "name": "account-deletion-status",
-          "onAbsent": "hard",
-          "callerDegrade": "SignInScreen.tsx:99 and ProfileScreen.tsx:736 catch into a designed deletionStatusUnavailable state that retains the receipt",
-          "note": "Hard at the call; the callers have a designed unavailable state, so the user sees 'status unavailable' rather than a crash — but never a truthful completion."
+          "onAbsent": "unreachable",
+          "callerDegrade": "Phase04B: getAccountDeletionStatus() throws AccountDeletionStatusUnavailableError before any network call while accountDeletionAsyncStatusAvailable() is false; ProfileScreen and SignInScreen never call it and show no status workflow while the capability is absent.",
+          "note": "Unreachable while accountDeletionAsyncStatusAvailable() is false: the only entry point, getAccountDeletionStatus(), fails closed before the network, and both screens skip the status workflow."
         }
       ],
       "deployedAlternative": "delete-account v4 returns status=deleted synchronously",
-      "productionImpact": "BROKEN — deletion succeeds but the app cannot confirm it."
+      "productionImpact": "LOCAL CANDIDATE NOT RELEASED - the Phase04B client confirms a v4 status=deleted reply, signs out and announces the deletion once, and never calls the absent status route. The shipped Build 33 client remains BROKEN (deletion succeeds but the app reports failure) until a build containing this client is released and verified."
     },
     {
       "surface": "moderation-queue",

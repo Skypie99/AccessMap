@@ -61,10 +61,9 @@ export async function listFlagPhotos(
  * NOT NULL column and `object_key` is server-guarded (enforce_flag_photos_
  * object_key_guard rejects a client-supplied non-null value), so this only
  * ever writes the legacy `url` shape — the exact row shape `flag_photos`
- * supported before the upload-intent system existed. The `flag_photos:
- * authenticated insert` policy (`WITH CHECK (true)`) already authorizes any
- * signed-in user to add community evidence photos, same privilege the RPC
- * would have exercised.
+ * supported before the upload-intent system existed. The strict `flag_photos:
+ * authenticated insert` policy requires the user's own Storage folder, an
+ * existing account, and ownership of the related flag.
  *
  * The object was already written to Storage by uploadFlagPhoto before this
  * runs; unlike the RPC path there is no server-side intent tracking it, so a
