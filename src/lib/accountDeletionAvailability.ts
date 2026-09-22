@@ -15,3 +15,16 @@ export function accountDeletionStartAvailability(platform: string): AccountDelet
   }
   return { supported: true };
 }
+
+/** FDA-003 / Phase 04B capability gate for the asynchronous erasure protocol
+ * (a durable REQUESTED reply followed by `account-deletion-status` polling).
+ * The deployed backend has neither: the archived Phase 02A capture lists
+ * `delete-account` v4, which deletes synchronously and answers
+ * `status: 'deleted'`, and no `account-deletion-status` route. While this is
+ * false the client never calls that route, never shows the REQUESTED/status
+ * workflow, and never accepts `status: 'requested'` as an outcome. Only a
+ * separately accepted Phase 05 release that proves the route is deployed may
+ * change it; a local source file is not that proof. */
+export function accountDeletionAsyncStatusAvailable(): boolean {
+  return false;
+}

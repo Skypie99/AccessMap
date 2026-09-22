@@ -1,0 +1,87 @@
+{
+  "status": "PASS",
+  "harness": "scripts/replay-phase03c.mjs",
+  "target": "socket-only disposable PostgreSQL",
+  "tcpDisabled": true,
+  "productionInputsAccepted": false,
+  "pgTap": {
+    "sha256": "d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3",
+    "pinned": "d4f9c8a4b0bfa6f2e29c751ab4deb79208e43f5935bab1948750b95bad3926b3",
+    "version": "1.3.4"
+  },
+  "build": {
+    "bootstrap": [
+      "supabase/replay/00_platform_bootstrap.sql"
+    ],
+    "applied": 71,
+    "next": [
+      "supabase/migrations-next/20260904000000_adopt_private_admin_helper.sql",
+      "supabase/migrations-next/20260904000100_drop_duplicate_status_triggers.sql",
+      "supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql",
+      "supabase/migrations-next/20260904000300_adopt_live_insert_throttles.sql",
+      "supabase/migrations-next/20260904000400_adopt_execute_revokes.sql"
+    ],
+    "stageA": [
+      "supabase/migrations-next/phase03a/20260905055629_phase03a_flag_policies.sql",
+      "supabase/migrations-next/phase03a/20260905055630_phase03a_open_inserts.sql",
+      "supabase/migrations-next/phase03a/20260905055632_phase03a_profile_updates.sql",
+      "supabase/migrations-next/phase03a/20260905055633_phase03a_contextual_profiles.sql",
+      "supabase/migrations-next/phase03a/20260905055635_phase03a_trigger_execute.sql",
+      "supabase/migrations-next/phase03a/20260905055636_phase03a_client_privileges.sql",
+      "supabase/migrations-next/phase03a/20260905073925_phase03a_effective_privileges.sql",
+      "supabase/migrations-next/phase03a/20260909120000_fda028_v4_limiter.sql",
+      "supabase/migrations-next/phase03a/20260911120000_phase03a_webhook_target_env_scoped.sql"
+    ],
+    "phase03b": [
+      "supabase/migrations-next/phase03b/20260915210256_phase03b_moderation_semantics_compatibility_bridge.sql",
+      "supabase/migrations-next/phase03b/20260915210413_phase03b_points_integrity.sql"
+    ],
+    "equivalentLedgerCount": 87
+  },
+  "suites": [
+    {
+      "suite": "phase03b-compatibility.test.sql",
+      "sha256": "619a6152587ca1d9129638284bab8bf50a425cde5bde09d2081d7e4b8b10f082",
+      "planned": 52,
+      "passed": 52,
+      "failed": 0,
+      "outputSha256": "c94c6c5a3af0fbbb0f1c431650517c15dea05a7de4ddcac203935c484f395453"
+    },
+    {
+      "suite": "phase03b-moderation.test.sql",
+      "sha256": "b85f7bba42b7d8ef226202b4d1211eb3d3632fffdac9eb8659dd7a051df3b6c8",
+      "planned": 49,
+      "passed": 49,
+      "failed": 0,
+      "outputSha256": "dfcafec91890cc60799af09836aef8605a3046f6a9c7d8991634a44e3f0c17a8"
+    },
+    {
+      "suite": "phase03b-points.test.sql",
+      "sha256": "a61d722ecaa001b9cdd0f962412445d5bb96af7e3f36f6ca842354fd09478a0c",
+      "planned": 22,
+      "passed": 22,
+      "failed": 0,
+      "outputSha256": "5cd3207b80cb04ff3dc38bfa32ef2b23e52ff50553d800a76e28f4e5c37c60c7"
+    },
+    {
+      "suite": "phase03c-anon-contract.test.sql",
+      "sha256": "91fcf0e4062ca2af182c90e3775009a0524c36409b32d0101dc7c3c020f3dc43",
+      "planned": 85,
+      "passed": 85,
+      "failed": 0,
+      "outputSha256": "9eaa87e4c5c179e93cca832cf9bc8614021ef6e351b71230e6f81733d9cf944f"
+    }
+  ],
+  "pgVersion": "postgres (PostgreSQL) 17.11 (Homebrew)",
+  "locality": {
+    "listenAddresses": "",
+    "socketDirectoryIsTemp": true,
+    "dataDirectoryIsTemp": true
+  },
+  "totals": {
+    "planned": 208,
+    "passed": 208,
+    "failed": 0
+  },
+  "tempDestroyed": true
+}

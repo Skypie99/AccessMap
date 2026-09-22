@@ -1,0 +1,62 @@
+{
+  "purpose": "Phase 04B proposed change to supabase/contract/client-expectations.v1.json. NOT APPLIED. 04A exclusively owns that file during parallel work; apply once, in a fresh integration worktree, AFTER 04A is integrated, then rerun the combined gates.",
+  "target": "supabase/contract/client-expectations.v1.json",
+  "baseRevisionObserved": 5,
+  "locateBy": "surfaces[] entry whose surface == 'account-deletion' (do not rely on its array index; 04A may add or reorder surfaces)",
+  "lineAnchorsUnchanged": {
+    "src/lib/account.ts:19": "supabase.functions.invoke('delete-account', { ... })",
+    "src/lib/accountDeletionReceipt.ts:88": "supabase.functions.invoke('account-deletion-status', { ... })",
+    "proof": "contractManifest.guard.test.ts 'every RPC and Edge call site is declared at its exact file and line' and 'no declared call site points at a file or line that does not hold it' both pass on the 04B candidate without any manifest edit."
+  },
+  "topLevelAdditions": {
+    "revision": "increment by exactly 1 relative to the post-04A manifest (5 -> 6 if 04A does not bump; otherwise 04A's value + 1)",
+    "phase04bRevisionNote": "Local Phase04B candidate (FDA-003): the account-deletion client accepts deployed delete-account v4 status=deleted as a confirmed synchronous deletion (marks its receipt terminal, signs out, clears the receipt, announces success once). Every other reply is a typed unconfirmed outcome that never signs out and is never re-sent automatically. account-deletion-status is gated before the network by accountDeletionAsyncStatusAvailable() (false). This manifest does not mark any async deletion route deployed."
+  },
+  "optionA_textOnly_guardUntouched": {
+    "summary": "Keep onAbsent 'hard' on account-deletion-status because src/__tests__/contractManifest.guard.test.ts:120 pins it; update only descriptive fields.",
+    "surface": {
+      "surface": "account-deletion",
+      "platforms": ["mobile", "web"],
+      "finding": "FDA-003",
+      "callSites": [
+        {
+          "file": "src/lib/account.ts",
+          "line": 19,
+          "kind": "edge",
+          "name": "delete-account",
+          "onAbsent": "n/a",
+          "deployed": true,
+          "deployedVersion": 4,
+          "note": "Phase04B: only a validated {status:'deleted'} is a confirmed success. Network loss, explicit v4/server error, relay error, 401/403, malformed or unknown bodies, and status=requested without the Phase05 capability are typed AccountDeletionUnconfirmedError reasons: no success, no sign-out, no automatic resend. Concurrent calls share one in-flight request; a server-confirmed (terminal) receipt short-circuits any later attempt to local cleanup."
+        },
+        {
+          "file": "src/lib/accountDeletionReceipt.ts",
+          "line": 88,
+          "kind": "edge",
+          "name": "account-deletion-status",
+          "onAbsent": "hard",
+          "callerDegrade": "Phase04B: getAccountDeletionStatus() throws AccountDeletionStatusUnavailableError before any network call while accountDeletionAsyncStatusAvailable() is false; ProfileScreen and SignInScreen never call it and show no status workflow while the capability is absent.",
+          "note": "Unreachable in the local candidate while the Phase05 capability is absent. 'hard' is retained only because contractManifest.guard.test.ts pins it; see optionB."
+        }
+      ],
+      "deployedAlternative": "delete-account v4 returns status=deleted synchronously",
+      "productionImpact": "LOCAL CANDIDATE NOT RELEASED - the Phase04B client confirms a v4 status=deleted reply, signs out and announces the deletion once, and never calls the absent status route. The shipped Build 33 client remains BROKEN (deletion succeeds but the app reports failure) until a build containing this client is released and verified."
+    }
+  },
+  "optionB_truthfulClassification_requiresGuardEdit": {
+    "summary": "RECOMMENDED at integration, mirroring the FDA-004 precedent (Phase03B moved moderation-queue call sites to fail_closed/unreachable and updated the guard in the same change). Same as optionA except account-deletion-status onAbsent becomes 'unreachable', and the shared guard assertion is updated in the SAME serialized integration commit. Neither lane edits the guard now.",
+    "manifestChange": {
+      "path": "surfaces[surface=='account-deletion'].callSites[name=='account-deletion-status'].onAbsent",
+      "from": "hard",
+      "to": "unreachable",
+      "note": "Unreachable while accountDeletionAsyncStatusAvailable() is false: the only entry point, getAccountDeletionStatus(), fails closed before the network, and both screens skip the status workflow."
+    },
+    "guardChange": {
+      "file": "src/__tests__/contractManifest.guard.test.ts",
+      "line": 120,
+      "from": "    expect(acct.callSites.find((c) => c.name === 'account-deletion-status')!.onAbsent).toBe('hard');",
+      "to": "    expect(acct.callSites.find((c) => c.name === 'account-deletion-status')!.onAbsent).toBe('unreachable');",
+      "authority": "shared guard file: requires the integrator's (Sky's) approval; 04B does not edit it."
+    }
+  }
+}

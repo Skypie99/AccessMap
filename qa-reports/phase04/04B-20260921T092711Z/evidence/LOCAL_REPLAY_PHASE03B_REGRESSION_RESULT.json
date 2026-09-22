@@ -1,0 +1,78 @@
+{
+  "status": "PASS",
+  "target": "socket-only disposable PostgreSQL",
+  "tcpDisabled": true,
+  "productionInputsAccepted": false,
+  "tests": [
+    {
+      "phase": "forward",
+      "suites": [
+        {
+          "suite": "phase03b-compatibility.test.sql",
+          "passed": true,
+          "outputSha256": "c94c6c5a3af0fbbb0f1c431650517c15dea05a7de4ddcac203935c484f395453"
+        },
+        {
+          "suite": "phase03b-moderation.test.sql",
+          "passed": true,
+          "outputSha256": "dfcafec91890cc60799af09836aef8605a3046f6a9c7d8991634a44e3f0c17a8"
+        },
+        {
+          "suite": "phase03b-points.test.sql",
+          "passed": true,
+          "outputSha256": "5cd3207b80cb04ff3dc38bfa32ef2b23e52ff50553d800a76e28f4e5c37c60c7"
+        }
+      ]
+    },
+    {
+      "phase": "reapply",
+      "suites": [
+        {
+          "suite": "phase03b-compatibility.test.sql",
+          "passed": true,
+          "outputSha256": "c94c6c5a3af0fbbb0f1c431650517c15dea05a7de4ddcac203935c484f395453"
+        },
+        {
+          "suite": "phase03b-moderation.test.sql",
+          "passed": true,
+          "outputSha256": "dfcafec91890cc60799af09836aef8605a3046f6a9c7d8991634a44e3f0c17a8"
+        },
+        {
+          "suite": "phase03b-points.test.sql",
+          "passed": true,
+          "outputSha256": "5cd3207b80cb04ff3dc38bfa32ef2b23e52ff50553d800a76e28f4e5c37c60c7"
+        }
+      ]
+    }
+  ],
+  "prePointsCompatibility": [
+    {
+      "suite": "phase03b-compatibility.test.sql",
+      "passed": true,
+      "outputSha256": "c94c6c5a3af0fbbb0f1c431650517c15dea05a7de4ddcac203935c484f395453"
+    }
+  ],
+  "safeRollback": {
+    "transition_execute": true,
+    "moderate_execute": false,
+    "list_execute": false,
+    "direct_status_update": true,
+    "vote_delete": false,
+    "audit_table_retained": true,
+    "claims_retained": true,
+    "daily_counter_retained": true,
+    "vote_counter_retained": true,
+    "rejected_hide_policy_retained": true,
+    "penalty_absent": true,
+    "comment_rewards_disabled": true,
+    "vote_rewards_disabled": true,
+    "community_transition_works": true,
+    "direct_bridge_works": true,
+    "photo_alt_boundary_retained": true,
+    "reject_capability_off": true,
+    "disabled_milestone_claims_consumed": 2,
+    "passed": true
+  },
+  "reapplySchemaExact": true,
+  "tempDestroyed": true
+}

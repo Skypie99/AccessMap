@@ -21,10 +21,16 @@ import {
   loadAccountDeletionReceipt,
   getAccountDeletionStatus,
   clearAccountDeletionReceipt,
+  clearConfirmedAccountDeletionReceipts,
   type AccountDeletionReceipt,
   type AccountDeletionStatus,
 } from '@/lib/accountDeletionReceipt';
 import { confirm as confirmMock } from '@/lib/confirm';
+
+// FDA-003 / Phase 04B: the async deletion-status workflow exists only behind
+// the Phase 05 capability, which is absent in production. Each suite below
+// states which world it tests.
+let mockAsyncStatusAvailable = false;
 
 // Matches useComments.test.ts's precedent: the Prompt B B2-R suite below
 // chains two awaited mock resolutions per test, and RTL's 1000ms default
@@ -42,6 +48,11 @@ jest.mock('@/lib/accountDeletionReceipt', () => ({
   loadAccountDeletionReceipt: jest.fn(),
   getAccountDeletionStatus: jest.fn(),
   clearAccountDeletionReceipt: jest.fn(),
+  clearConfirmedAccountDeletionReceipts: jest.fn(async () => undefined),
+}));
+jest.mock('@/lib/accountDeletionAvailability', () => ({
+  ...jest.requireActual('@/lib/accountDeletionAvailability'),
+  accountDeletionAsyncStatusAvailable: () => mockAsyncStatusAvailable,
 }));
 
 // PrivacyScreen pulls in the full policy surface — irrelevant here.
@@ -174,8 +185,20 @@ describe('the show/hide toggle survived the move into the field', () => {
  * before that dismiss runs. Backend/receipt-format/security semantics are
  * unchanged — see accountDeletionReceipt.test.ts and confirm.test.ts for
  * those unchanged contracts.
+ *
+ * Phase 04B: this whole surface is the Phase 05 async status workflow, so it
+ * now runs with that capability explicitly PRESENT. Every assertion below is
+ * unchanged; only the precondition is made explicit. The production default
+ * (capability absent) is pinned by the Phase 04B suite after this one.
  */
 describe('Prompt B B2-R — account-deletion receipt unavailable-state repair', () => {
+  beforeEach(() => {
+    mockAsyncStatusAvailable = true;
+  });
+  afterAll(() => {
+    mockAsyncStatusAvailable = false;
+  });
+
   const RECEIPT: AccountDeletionReceipt = {
     operationId: '11111111-1111-4111-8111-111111111111',
     receiptSecret: 'a'.repeat(64),
@@ -333,5 +356,66 @@ describe('Prompt B B2-R — account-deletion receipt unavailable-state repair', 
     expect(u.queryByLabelText('Check account deletion status')).toBeNull();
     expect(mockStatus).not.toHaveBeenCalled();
     expect(mockClear).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * FDA-003 / Phase 04B — the signed-out surface in production, where the async
+ * status route does not exist (deployed delete-account v4 deletes
+ * synchronously). This is the relaunch surface after a confirmed deletion.
+ */
+describe('Phase 04B — absent async status capability (production default)', () => {
+  const RECEIPT: AccountDeletionReceipt = {
+    operationId: '11111111-1111-4111-8111-111111111111',
+    receiptSecret: 'a'.repeat(64),
+    subjectId: 'user-1',
+    createdAt: '2026-08-01T00:00:00.000Z',
+  };
+  const mockLoad = loadAccountDeletionReceipt as jest.Mock;
+  const mockStatus = getAccountDeletionStatus as jest.Mock;
+  const mockClear = clearAccountDeletionReceipt as jest.Mock;
+  const mockClearConfirmed = clearConfirmedAccountDeletionReceipts as jest.Mock;
+
+  // Everything the Phase 05 status workflow could put on this screen.
+  const STATUS_SURFACE = [
+    'Account deletion status',
+    'Account deletion complete',
+    "This device has a deletion receipt, but status is temporarily unavailable.",
+    'Account deletion status is temporarily unavailable.',
+    'Your deletion request was received and is waiting to begin.',
+    'Your account and associated content have been deleted.',
+    'Account deleted',
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAsyncStatusAvailable = false;
+    jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+    // A receipt is on the device (e.g. an earlier unconfirmed attempt). Without
+    // the capability it must drive nothing: no status call, no card.
+    mockLoad.mockResolvedValue(RECEIPT);
+    mockStatus.mockResolvedValue({ status: 'COMPLETE', requestedAt: null, completedAt: null });
+  });
+
+  it('relaunch: drops server-confirmed receipts once, calls no status route, and shows no status workflow', async () => {
+    const u = render(<SignInScreen />);
+    await waitFor(() => expect(mockClearConfirmed).toHaveBeenCalledTimes(1));
+
+    expect(mockStatus).not.toHaveBeenCalled();
+    expect(mockLoad).not.toHaveBeenCalled();
+    expect(mockClear).not.toHaveBeenCalled();
+    for (const text of STATUS_SURFACE) expect(u.queryByText(text)).toBeNull();
+    expect(u.queryByLabelText('Check account deletion status')).toBeNull();
+    expect(u.queryByLabelText('Dismiss confirmation')).toBeNull();
+    // The ordinary sign-in form is intact.
+    expect(u.getByLabelText('Sign in')).toBeTruthy();
+  });
+
+  it('a failed terminal-receipt cleanup is silent and still shows no workflow', async () => {
+    mockClearConfirmed.mockRejectedValueOnce(new Error('SecureStore unavailable'));
+    const u = render(<SignInScreen />);
+    await waitFor(() => expect(mockClearConfirmed).toHaveBeenCalledTimes(1));
+    expect(mockStatus).not.toHaveBeenCalled();
+    for (const text of STATUS_SURFACE) expect(u.queryByText(text)).toBeNull();
   });
 });

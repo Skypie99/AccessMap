@@ -25,11 +25,19 @@ import { GuestProfile } from './GuestProfile';
 import { getFloatingTabBarContentInset } from '@/navigation/tabBarGeometry';
 import { useDrawer } from '@/lib/drawerContext';
 import { useAuth } from '@/lib/auth';
-import { AccountDeletionRequestSignOutPendingError, deleteAccount } from '@/lib/account';
-import { accountDeletionStartAvailability } from '@/lib/accountDeletionAvailability';
+import {
+  AccountDeletedSignOutPendingError,
+  AccountDeletionNotStartedError,
+  AccountDeletionRequestSignOutPendingError,
+  AccountDeletionUnconfirmedError,
+  completeConfirmedAccountDeletion,
+  deleteAccount,
+} from '@/lib/account';
+import { accountDeletionAsyncStatusAvailable, accountDeletionStartAvailability } from '@/lib/accountDeletionAvailability';
 import {
   AccountDeletionReceiptUnavailableError,
   getAccountDeletionStatus,
+  isConfirmedAccountDeletionReceipt,
   loadAccountDeletionReceipt,
   type AccountDeletionStatus,
 } from '@/lib/accountDeletionReceipt';
@@ -324,6 +332,14 @@ export default function ProfileScreen() {
   const [accountDeletionStatus, setAccountDeletionStatus] = useState<AccountDeletionStatus | null>(null);
   const [accountDeletionStatusUnavailable, setAccountDeletionStatusUnavailable] = useState(false);
   const [checkingAccountDeletionStatus, setCheckingAccountDeletionStatus] = useState(false);
+  // FDA-003: the account the server CONFIRMED deleted while this device could
+  // not finish signing out. Keyed by id so it can never describe a different
+  // account that later signs in on the same device.
+  const [confirmedDeletionUserId, setConfirmedDeletionUserId] = useState<string | null>(null);
+  const [finishingDeletedSignOut, setFinishingDeletedSignOut] = useState(false);
+  // One confirmation press sends at most one deletion request. The ref locks
+  // synchronously, before React can re-render the disabled button.
+  const deletionInFlightRef = useRef(false);
 
   // Edit-name state. nameDraft is what the user is typing; profile?.display_name
   // is the persisted value. A Save button fires only when they actually differ.
@@ -725,10 +741,18 @@ export default function ProfileScreen() {
 
   const refreshAccountDeletionStatus = useCallback(async () => {
     if (!user || Platform.OS === 'web') return;
-    setCheckingAccountDeletionStatus(true);
+    // FDA-003: only the Phase 05 async backend has a status route. While it is
+    // absent there is nothing to call and no status workflow to show.
+    const asyncStatus = accountDeletionAsyncStatusAvailable();
+    if (asyncStatus) setCheckingAccountDeletionStatus(true);
     try {
       const receipt = await loadAccountDeletionReceipt(user.id);
-      if (!receipt) {
+      // A receipt the server already confirmed is terminal: show the account as
+      // deleted, never ask a status route about it, never offer a new request.
+      if (isConfirmedAccountDeletionReceipt(receipt)) {
+        if (mountedRef.current) setConfirmedDeletionUserId(user.id);
+      }
+      if (!receipt || isConfirmedAccountDeletionReceipt(receipt) || !asyncStatus) {
         setAccountDeletionStatus(null);
         setAccountDeletionStatusUnavailable(false);
         return;
@@ -738,7 +762,7 @@ export default function ProfileScreen() {
     } catch {
       // Keep the receipt after a lost first response or a temporary status
       // outage. The signed-in user can retry this visible status action.
-      setAccountDeletionStatusUnavailable(true);
+      if (asyncStatus) setAccountDeletionStatusUnavailable(true);
     } finally {
       if (mountedRef.current) setCheckingAccountDeletionStatus(false);
     }
@@ -756,31 +780,72 @@ export default function ProfileScreen() {
   }, []);
 
   const handleDeleteAccount = useCallback(async () => {
-    if (!user) return;
+    // FDA-003: one press, one request. A second activation while the first is
+    // in flight (double tap, re-render, queued press) returns here.
+    if (!user || deletionInFlightRef.current) return;
+    deletionInFlightRef.current = true;
     setDeletingAccount(true);
+    const asyncStatus = accountDeletionAsyncStatusAvailable();
     try {
-      await deleteAccount(user.id);
-      // Auth state change (SIGNED_OUT) fires automatically; screen unmounts.
+      const outcome = await deleteAccount(user.id);
+      // Resolves only after the server confirmed and this device signed out.
+      // Native then returns to the sign-in gate and unmounts this screen, so
+      // the one-time result is a global notice rather than screen state.
+      if (outcome.status === 'deleted') {
+        notify('Account deleted', 'Your account has been deleted, and this device is signed out.');
+      }
+      // 'requested' (Phase 05 only): SIGNED_OUT fires; the signed-out surface owns status.
     } catch (e) {
+      // Outcomes are announced even if the screen went away: the person must
+      // learn what happened. Only state updates wait on mountedRef.
+      if (e instanceof AccountDeletedSignOutPendingError) {
+        // Deleted, not failed. Keep that on screen and never offer a second request.
+        if (mountedRef.current) setConfirmedDeletionUserId(user.id);
+        notify('Account deleted', e.message);
+      } else if (e instanceof AccountDeletionUnconfirmedError) {
+        notify('Could not confirm deletion request', e.message);
+      } else if (e instanceof AccountDeletionNotStartedError) {
+        notify('Could not start account deletion', e.message);
+      } else if (e instanceof AccountDeletionReceiptUnavailableError) {
+        notify('Account deletion is unavailable in this browser', e.message);
+      } else if (e instanceof AccountDeletionRequestSignOutPendingError) {
+        notify('Deletion requested', e.message);
+      } else {
+        notify(
+          'Could not confirm deletion request',
+          errorMessage(e, asyncStatus
+            ? 'Use Check deletion status below before trying again.'
+            : "Flagstone can't confirm whether your account was deleted. It did not try again."),
+        );
+      }
+      // Nothing is ever re-sent automatically. Only the Phase 05 async surface
+      // has a status to re-read; without it there is nothing to call.
+      if (asyncStatus && mountedRef.current) void refreshAccountDeletionStatus();
+    } finally {
+      deletionInFlightRef.current = false;
       if (mountedRef.current) {
-        if (e instanceof AccountDeletionReceiptUnavailableError) {
-          notify('Account deletion is unavailable in this browser', e.message);
-        } else if (e instanceof AccountDeletionRequestSignOutPendingError) {
-          notify('Deletion requested', e.message);
-        } else {
-          notify(
-            'Could not confirm deletion request',
-            errorMessage(e, 'Use Check deletion status below before trying again.'),
-          );
-        }
-        // The receipt was stored before the request, so a lost response is
-        // ambiguous. Keep still-signed-in recovery visible; do not require a
-        // sign-out or a second destructive press just to learn the outcome.
-        void refreshAccountDeletionStatus();
         setDeletingAccount(false);
+        // A settled attempt closes the confirmation, so another destructive
+        // request always takes a fresh, deliberate Delete → confirm.
+        setDeleteAccountOpen(false);
       }
     }
   }, [refreshAccountDeletionStatus, user]);
+
+  // The local half of a deletion the server already confirmed. It never sends
+  // a deletion request; on failure signOut() has already said why, and the
+  // deleted state stays on screen.
+  const handleFinishDeletedAccountSignOut = useCallback(async () => {
+    if (!user) return;
+    setFinishingDeletedSignOut(true);
+    try {
+      await completeConfirmedAccountDeletion(user.id);
+    } catch {
+      // Still deleted, still signed in here: the card keeps offering this action.
+    } finally {
+      if (mountedRef.current) setFinishingDeletedSignOut(false);
+    }
+  }, [user]);
 
   // Opens My Reports pre-filtered to a single status — wired to the
   // tappable status pills in the breakdown row. Presentation/navigation
@@ -953,6 +1018,8 @@ export default function ProfileScreen() {
     );
   }
 
+  // FDA-003: true only for the signed-in account the server confirmed deleted.
+  const accountDeletionConfirmed = confirmedDeletionUserId === user.id;
   const points = profile?.points ?? 0;
   const {
     next: nextMilestone,
@@ -1960,7 +2027,29 @@ export default function ProfileScreen() {
           <AppText variant="label" style={styles.signOutText}>Sign out</AppText>
         </Pressable>
 
-        {accountDeletionStatus || accountDeletionStatusUnavailable ? (
+        {accountDeletionConfirmed ? (
+          // FDA-003: the server confirmed the deletion; only this device's
+          // sign-out is unfinished. Terminal — no status route, no new request.
+          <GlassSurface style={styles.accountDeletionStatusCard} accessibilityLiveRegion="polite">
+            <AppText variant="label" style={styles.accountDeletionStatusTitle}>Account deleted</AppText>
+            <AppText variant="bodyMedium" style={styles.accountDeletionStatusBody}>
+              Your account has been deleted. This device has not finished signing out.
+            </AppText>
+            <Pressable
+              style={({ pressed }) => [styles.accountDeletionStatusAction, pressed && { opacity: 0.7 }]}
+              onPress={() => void handleFinishDeletedAccountSignOut()}
+              disabled={finishingDeletedSignOut}
+              accessibilityRole="button"
+              accessibilityLabel="Finish signing out"
+              accessibilityHint="Signs this device out of the deleted account"
+              {...a11yToggle({ busy: finishingDeletedSignOut, disabled: finishingDeletedSignOut })}
+            >
+              <AppText variant="label" style={styles.accountDeletionStatusActionText}>
+                {finishingDeletedSignOut ? 'Signing out…' : 'Finish signing out'}
+              </AppText>
+            </Pressable>
+          </GlassSurface>
+        ) : accountDeletionStatus || accountDeletionStatusUnavailable ? (
           <GlassSurface style={styles.accountDeletionStatusCard} accessibilityLiveRegion="polite">
             <AppText variant="label" style={styles.accountDeletionStatusTitle}>Account deletion status</AppText>
             <AppText variant="bodyMedium" style={styles.accountDeletionStatusBody}>
@@ -1993,13 +2082,15 @@ export default function ProfileScreen() {
         <Pressable
           style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.7 }]}
           onPress={handleOpenAccountDeletion}
-          disabled={accountDeletionStatus !== null}
+          disabled={accountDeletionStatus !== null || accountDeletionConfirmed}
           accessibilityRole="button"
           accessibilityLabel="Delete Account"
-          accessibilityHint={accountDeletionStatus
-            ? 'A deletion request is already recorded. Use Check deletion status above.'
-            : 'Opens a confirmation dialog before starting asynchronous account deletion'}
-          {...a11yToggle({ disabled: accountDeletionStatus !== null })}
+          accessibilityHint={accountDeletionConfirmed
+            ? 'Your account has already been deleted. Use Finish signing out above.'
+            : accountDeletionStatus
+              ? 'A deletion request is already recorded. Use Check deletion status above.'
+              : 'Opens a confirmation dialog before starting asynchronous account deletion'}
+          {...a11yToggle({ disabled: accountDeletionStatus !== null || accountDeletionConfirmed })}
         >
           <AppText variant="label" style={styles.deleteAccountText}>Delete Account</AppText>
         </Pressable>
