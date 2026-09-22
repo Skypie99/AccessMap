@@ -1,0 +1,155 @@
+FAIL src/__tests__/d1f4r3SourceClosure.guard.test.ts
+  ● D1F4R3 source-closure database contracts › D-04A-4: ordinary client flag deletion refuses before any read, Storage call, Edge call, or row DELETE
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected substring: not "supabase."
+    Received string:        "export async function deleteFlag(_flagId: string): Promise<void> {
+      await supabase.from('flags').delete();
+      throw new FlagDeletionUnavailableError();
+    }"
+
+      145 |
+      146 |     expect(body).toContain('throw new FlagDeletionUnavailableError()');
+    > 147 |     expect(body).not.toContain('supabase.');
+          |                      ^
+      148 |     expect(body).not.toContain('hasAnyPhoto');
+      149 |     expect(body).not.toContain('storagePathFromPublicUrl');
+      150 |     expect(body).not.toContain(".from('flags')");
+
+      at Object.toContain (src/__tests__/d1f4r3SourceClosure.guard.test.ts:147:22)
+
+FAIL src/lib/__tests__/flags.supabase.test.ts
+  ● deleteFlag › refuses f1 before any database or Storage action
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: "flags"
+
+      322 |   ('refuses %s before any database or Storage action', async (id) => {
+      323 |     await expect(deleteFlag(id)).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+    > 324 |     expect(mockFrom).not.toHaveBeenCalled();
+          |                          ^
+      325 |     expect(deleteRow).not.toHaveBeenCalled();
+      326 |     expect(mockRemove).not.toHaveBeenCalled();
+      327 |   });
+
+      at toHaveBeenCalled (src/lib/__tests__/flags.supabase.test.ts:324:26)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● deleteFlag › refuses admin-target before any database or Storage action
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: "flags"
+
+      322 |   ('refuses %s before any database or Storage action', async (id) => {
+      323 |     await expect(deleteFlag(id)).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+    > 324 |     expect(mockFrom).not.toHaveBeenCalled();
+          |                          ^
+      325 |     expect(deleteRow).not.toHaveBeenCalled();
+      326 |     expect(mockRemove).not.toHaveBeenCalled();
+      327 |   });
+
+      at toHaveBeenCalled (src/lib/__tests__/flags.supabase.test.ts:324:26)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● deleteFlag › refuses owner-target before any database or Storage action
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: "flags"
+
+      322 |   ('refuses %s before any database or Storage action', async (id) => {
+      323 |     await expect(deleteFlag(id)).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+    > 324 |     expect(mockFrom).not.toHaveBeenCalled();
+          |                          ^
+      325 |     expect(deleteRow).not.toHaveBeenCalled();
+      326 |     expect(mockRemove).not.toHaveBeenCalled();
+      327 |   });
+
+      at toHaveBeenCalled (src/lib/__tests__/flags.supabase.test.ts:324:26)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● deleteFlag › refuses arbitrary-id before any database or Storage action
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: "flags"
+
+      322 |   ('refuses %s before any database or Storage action', async (id) => {
+      323 |     await expect(deleteFlag(id)).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+    > 324 |     expect(mockFrom).not.toHaveBeenCalled();
+          |                          ^
+      325 |     expect(deleteRow).not.toHaveBeenCalled();
+      326 |     expect(mockRemove).not.toHaveBeenCalled();
+      327 |   });
+
+      at toHaveBeenCalled (src/lib/__tests__/flags.supabase.test.ts:324:26)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● deleteFlag › refuses  before any database or Storage action
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: "flags"
+
+      322 |   ('refuses %s before any database or Storage action', async (id) => {
+      323 |     await expect(deleteFlag(id)).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+    > 324 |     expect(mockFrom).not.toHaveBeenCalled();
+          |                          ^
+      325 |     expect(deleteRow).not.toHaveBeenCalled();
+      326 |     expect(mockRemove).not.toHaveBeenCalled();
+      327 |   });
+
+      at toHaveBeenCalled (src/lib/__tests__/flags.supabase.test.ts:324:26)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● deleteFlag › repeated activation is harmless even when a zero-photo lookup would succeed
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 2
+
+    1: "flags"
+    2: "flags"
+
+      330 |     await expect(deleteFlag('f1')).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+      331 |     await expect(deleteFlag('f1')).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+    > 332 |     expect(mockFrom).not.toHaveBeenCalled();
+          |                          ^
+      333 |     expect(deleteRow).not.toHaveBeenCalled();
+      334 |     expect(lookup).not.toHaveBeenCalled();
+      335 |   });
+
+      at Object.toHaveBeenCalled (src/lib/__tests__/flags.supabase.test.ts:332:26)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS src/components/__tests__/FlagDetailModal.refusal.test.tsx (6.198 s)
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       7 failed, 53 passed, 60 total
+Snapshots:   0 total
+Time:        6.62 s

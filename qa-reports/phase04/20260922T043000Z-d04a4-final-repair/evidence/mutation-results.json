@@ -1,0 +1,62 @@
+[
+  {
+    "mutation": "M1_direct_flags_delete",
+    "exitCode": 1,
+    "killed": true,
+    "summary": [
+      "FAIL src/__tests__/d1f4r3SourceClosure.guard.test.ts",
+      "FAIL src/lib/__tests__/flags.supabase.test.ts",
+      "PASS src/components/__tests__/FlagDetailModal.refusal.test.tsx (6.198 s)",
+      "Test Suites: 2 failed, 1 passed, 3 total",
+      "Tests:       7 failed, 53 passed, 60 total"
+    ]
+  },
+  {
+    "mutation": "M2_admin_bypass",
+    "exitCode": 1,
+    "killed": true,
+    "summary": [
+      "FAIL src/__tests__/d1f4r3SourceClosure.guard.test.ts",
+      "FAIL src/lib/__tests__/flags.supabase.test.ts",
+      "PASS src/components/__tests__/FlagDetailModal.refusal.test.tsx (6.095 s)",
+      "Test Suites: 2 failed, 1 passed, 3 total",
+      "Tests:       2 failed, 58 passed, 60 total"
+    ]
+  },
+  {
+    "mutation": "M3_owner_bypass",
+    "exitCode": 1,
+    "killed": true,
+    "summary": [
+      "FAIL src/__tests__/d1f4r3SourceClosure.guard.test.ts",
+      "FAIL src/lib/__tests__/flags.supabase.test.ts",
+      "PASS src/components/__tests__/FlagDetailModal.refusal.test.tsx (5.956 s)",
+      "Test Suites: 2 failed, 1 passed, 3 total",
+      "Tests:       2 failed, 58 passed, 60 total"
+    ]
+  },
+  {
+    "mutation": "M4_caller_false_success",
+    "exitCode": 1,
+    "killed": true,
+    "summary": [
+      "PASS src/__tests__/d1f4r3SourceClosure.guard.test.ts",
+      "PASS src/lib/__tests__/flags.supabase.test.ts",
+      "FAIL src/components/__tests__/FlagDetailModal.refusal.test.tsx (5.941 s)",
+      "Test Suites: 1 failed, 2 passed, 3 total",
+      "Tests:       1 failed, 59 passed, 60 total"
+    ]
+  },
+  {
+    "mutation": "M5_photo_check_then_delete",
+    "exitCode": 1,
+    "killed": true,
+    "summary": [
+      "FAIL src/__tests__/d1f4r3SourceClosure.guard.test.ts",
+      "FAIL src/lib/__tests__/flags.supabase.test.ts",
+      "PASS src/components/__tests__/FlagDetailModal.refusal.test.tsx (6.025 s)",
+      "Test Suites: 2 failed, 1 passed, 3 total",
+      "Tests:       7 failed, 53 passed, 60 total"
+    ]
+  }
+]

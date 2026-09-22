@@ -2,12 +2,10 @@
  * The legacy URL helper still protects failed-upload cleanup
  * (removeUploadedFlagPhotos and its callers). deleteFlag itself no longer
  * calls it (Phase 04A FINAL repair, D-04A-2, 2026-09-21): storage.remove()
- * returning `error: null` is not proof of removal, so deleteFlag now refuses
- * outright on ANY photo presence rather than trying to resolve and clean up
- * an exact path first. See flags.supabase.test.ts's `deleteFlag` describe
- * block for the full D-04A-2 behavior contract.
+ * returning `error: null` is not proof of removal. D-04A-4 now refuses all
+ * client flag deletion, including flags with no photos. See flags.supabase.test.ts.
  */
-import { deleteFlag, FlagPhotoCleanupUnprovenError, storagePathFromPublicUrl } from '../flags';
+import { deleteFlag, FlagDeletionUnavailableError, storagePathFromPublicUrl } from '../flags';
 
 const UID = '11111111-1111-4111-8111-111111111111';
 const OTHER = '99999999-9999-4999-8999-999999999999';
@@ -82,7 +80,7 @@ describe('storagePathFromPublicUrl — the one legacy cleanup carve-out', () => 
   });
 });
 
-describe('Phase 04A FINAL repair (D-04A-2) deleteFlag — any photo presence refuses the delete, storagePathFromPublicUrl is no longer consulted', () => {
+describe('D-04A-4 deleteFlag refuses all flags, regardless of photo path', () => {
   it('a legacy flags.photo_url that WOULD have resolved cleanly still refuses — deleteFlag never calls storagePathFromPublicUrl any more', async () => {
     mockDeleteFlagFrom({
       flagResult: {
@@ -94,7 +92,7 @@ describe('Phase 04A FINAL repair (D-04A-2) deleteFlag — any photo presence ref
     // D-04A-2 (2026-09-21): storage.remove() returning `error: null` is not
     // proof of removal, so a resolvable legacy URL no longer earns a
     // best-effort cleanup-then-delete — ANY photo refuses outright.
-    await expect(deleteFlag('f1')).rejects.toThrow(FlagPhotoCleanupUnprovenError);
+    await expect(deleteFlag('f1')).rejects.toThrow(FlagDeletionUnavailableError);
     expect(mockRemove).not.toHaveBeenCalled();
   });
 
@@ -106,7 +104,7 @@ describe('Phase 04A FINAL repair (D-04A-2) deleteFlag — any photo presence ref
       },
       deleteResult: { data: [{ id: 'f1' }], error: null },
     });
-    await expect(deleteFlag('f1')).rejects.toThrow(FlagPhotoCleanupUnprovenError);
+    await expect(deleteFlag('f1')).rejects.toThrow(FlagDeletionUnavailableError);
     expect(mockRemove).not.toHaveBeenCalled();
     // storagePathFromPublicUrl's own foreign-folder warn (asserted in the
     // block above) is a property of that pure function called directly —
@@ -122,7 +120,7 @@ describe('Phase 04A FINAL repair (D-04A-2) deleteFlag — any photo presence ref
       },
       deleteResult: { data: [{ id: 'f1' }], error: null },
     });
-    await expect(deleteFlag('f1')).rejects.toThrow(FlagPhotoCleanupUnprovenError);
+    await expect(deleteFlag('f1')).rejects.toThrow(FlagDeletionUnavailableError);
     expect(mockRemove).not.toHaveBeenCalled();
   });
 });

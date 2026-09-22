@@ -1525,7 +1525,8 @@ export async function requestFlagReopen(flagId: string): Promise<number | null> 
 }
 
 /**
- * Thrown when a direct Data API DELETE against `flags` returns zero rows.
+ * Historical D-04A-2 refusal for a direct Data API DELETE returning zero rows.
+ * Retained for compatibility; D-04A-4 deleteFlag no longer reaches this path.
  * Postgres RLS silently *filters* a row a policy refuses rather than raising
  * an error, so a `.delete()` with no matching `using()` grant resolves with
  * `error: null, data: []` — indistinguishable from "nothing to delete" unless
@@ -1540,8 +1541,9 @@ export class FlagDeleteRefusedError extends Error {
 }
 
 /**
- * Thrown when a flag has one or more photos and therefore cannot be deleted
- * under the currently accepted backend capability (Phase 04A FINAL repair,
+ * Historical D-04A-2 refusal for photo-bearing flags. D-04A-4 now refuses
+ * every flag before checking photos; retained for compatibility.
+ * Under the earlier backend capability (Phase 04A FINAL repair,
  * Sky's D-04A-2, 2026-09-21). The first repair (D-04A-1) tried to prove
  * removal by calling storage.remove() and trusting `error: null` as evidence
  * the object was gone before deleting the row. An independent review held
@@ -1566,79 +1568,17 @@ export class FlagPhotoCleanupUnprovenError extends Error {
   }
 }
 
-/**
- * Delete a flag via a versioned, strict direct Data API DELETE adapter
- * (Phase 04A / FDA-002). The narrow `delete-flag` Edge route this used to call
- * was never deployed (client-only regression — main briefly called an absent
- * Edge Function). Authorization is enforced entirely server-side by the live
- * `flags delete own` / `admin delete any flag` RLS policies (confirmed in the
- * 2026-09-04 production catalog capture) — this client never infers owner or
- * admin privilege itself.
- *
- * Sequence (D-04A-2, Phase 04A FINAL repair, 2026-09-21 — supersedes the
- * D-04A-1 cleanup-then-delete ordering): a fresh independent review held that
- * storage.remove() returning `error: null` is not proof an object was
- * actually removed under the flag-photos Storage policies this client can
- * see, so the earlier "prove removal, then delete" sequence could still
- * delete the row while the public photo stayed live. Rather than invent
- * client-side proof this milestone isn't scoped to build, the compatibility
- * behavior is now a flat split on photo presence:
- *   1. Read the flag row. Not found (already gone, or hidden by the
- *      always-true `flags readable by authenticated` SELECT policy simply
- *      never matching) refuses immediately — there is nothing to delete.
- *   2. Snapshot every gallery photo (`flag_photos` rows are gone once the row
- *      cascades, so this must run before the row does).
- *   3. If the flag has ANY photo — the primary `photo_url`/`photo_object_key`
- *      or any gallery row — refuse the delete outright
- *      (FlagPhotoCleanupUnprovenError). The row and every photo are left
- *      exactly as they were; no Storage call is made at all, so there is no
- *      reachable path that could mistake a no-op Storage response for proof.
- *   4. Only a flag with ZERO photos reaches the direct `flags` DELETE
- *      `... RETURNING id`. A returned row bearing this exact flagId is the
- *      only proof the delete actually happened; RLS refusing the row
- *      (non-owner/non-admin) or the row already being gone both come back as
- *      `data: []`, not an error — collapsing that into "resolved" would be a
- *      false success.
- */
-export async function deleteFlag(flagId: string): Promise<void> {
-  const { data: flagRow, error: flagReadErr } = await supabase
-    .from('flags')
-    .select('id, user_id, photo_url, photo_object_key')
-    .eq('id', flagId)
-    .maybeSingle();
-  if (flagReadErr) throw flagReadErr;
-  if (!flagRow) {
-    // Nothing to determine required cleanup from, and nothing to delete —
-    // the same refusal a zero-row DELETE would produce, never a silent
-    // "succeeded at deleting nothing."
-    throw new FlagDeleteRefusedError();
+/** D-04A-4: no client can atomically exclude a photo insert before row deletion. */
+export class FlagDeletionUnavailableError extends Error {
+  constructor() {
+    super('Flag deletion is temporarily unavailable in this app version. Your report was not deleted.');
+    this.name = 'FlagDeletionUnavailableError';
   }
+}
 
-  const { data: photoRows, error: photoReadErr } = await supabase
-    .from('flag_photos')
-    .select('url, object_key')
-    .eq('flag_id', flagId);
-  if (photoReadErr) throw photoReadErr;
-  const galleryPhotos = photoRows ?? [];
-
-  const hasAnyPhoto =
-    Boolean(flagRow.photo_url) || Boolean(flagRow.photo_object_key) || galleryPhotos.length > 0;
-  if (hasAnyPhoto) {
-    // D-04A-2: required media removal cannot currently be proven client-side
-    // — refuse before touching Storage or the row, rather than delete on an
-    // unproven cleanup attempt.
-    throw new FlagPhotoCleanupUnprovenError();
-  }
-
-  const { data: deletedRows, error: deleteErr } = await supabase
-    .from('flags')
-    .delete()
-    .eq('id', flagId)
-    .select('id');
-  if (deleteErr) throw deleteErr;
-  if (!Array.isArray(deletedRows) || !deletedRows.some((row) => row.id === flagId)) {
-    throw new FlagDeleteRefusedError();
-  }
+/** FDA-002: refuse every flag deletion until a later atomic backend contract exists. */
+export async function deleteFlag(_flagId: string): Promise<void> {
+  throw new FlagDeletionUnavailableError();
 }
 
 /**

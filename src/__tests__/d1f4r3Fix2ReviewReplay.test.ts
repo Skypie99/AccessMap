@@ -185,40 +185,16 @@ describe('D1F4R3-FIX2 direct flag deletion containment', () => {
     expect(schema).not.toMatch(/create policy "flags delete own"[\s\S]{0,160}on public\.flags for delete/i);
   });
 
-  it('ordinary report deletion uses the accepted direct-DELETE client path, not the never-deployed delete-flag Edge Function', () => {
-    // Phase 04A (accepted 2026-09-03, P04-D01): the narrow delete-flag Edge
-    // route this pinned was never deployed and was removed from the client
-    // rather than deployed merely to satisfy this test (D1F4R3's OWN account-
-    // deletion `delete-flag` Edge Function under supabase/functions/delete-
-    // flag/index.ts is a separate, still-undeployed lineage this describe
-    // block's other tests already cover via d1f4r3SourceClosure.guard.test.ts
-    // — this assertion is scoped to src/lib/flags.ts's ordinary report-delete
-    // client seam only).
-    expect(flags).not.toContain("supabase.functions.invoke('delete-flag'");
-    expect(flags).not.toContain('body: { flagId }');
-
-    // Exactly the intended flags-table DELETE path, filtered by the flag's
-    // own id and proving the returned row via .select('id').
-    expect(flags).toMatch(/\.from\(['"]flags['"]\)\s*\n\s*\.delete\(\)/);
-    expect(flags).toContain(".eq('id', flagId)");
-    expect(flags).toContain(".select('id')");
-
-    // Zero rows / a missing intended id must refuse, never silently succeed.
-    expect(flags).toContain('FlagDeleteRefusedError');
-    expect(flags).toMatch(/deletedRows\.some\(\(row\) => row\.id === flagId\)/);
-
-    // This client never infers owner/admin privilege itself — no client-side
-    // is_admin check or auth.getUser() call inside deleteFlag's own body.
-    const deleteFlagAt = flags.indexOf('export async function deleteFlag(flagId: string)');
-    const deleteFlagEnd = flags.indexOf('\n}', flags.indexOf('export async function fetchFlagById'));
+  it('ordinary report deletion is unavailable for every client actor and flag id', () => {
+    const deleteFlagAt = flags.indexOf('export async function deleteFlag(_flagId: string)');
+    const deleteFlagEnd = flags.indexOf('\n}', deleteFlagAt) + 2;
     const deleteFlagBody = flags.slice(deleteFlagAt, deleteFlagEnd);
+    expect(deleteFlagBody).toContain('throw new FlagDeletionUnavailableError()');
+    expect(deleteFlagBody).not.toContain('supabase.');
+    expect(deleteFlagBody).not.toContain('.delete()');
+    expect(deleteFlagBody).not.toContain("functions.invoke('delete-flag')");
     expect(deleteFlagBody).not.toContain('is_admin');
     expect(deleteFlagBody).not.toContain('auth.getUser()');
-
-    // Required photo cleanup ordering itself is enforced by the dedicated
-    // SourceClosure/behavior contracts (d1f4r3SourceClosure.guard.test.ts's
-    // source-order assertion + flags.supabase.test.ts's LOCKING behavior
-    // tests) — not re-duplicated here.
     expect(reviewRoute).not.toContain('verify_jwt = false');
     expect(config).not.toMatch(/\[functions\.delete-flag\][\s\S]*?verify_jwt\s*=\s*false/);
   });

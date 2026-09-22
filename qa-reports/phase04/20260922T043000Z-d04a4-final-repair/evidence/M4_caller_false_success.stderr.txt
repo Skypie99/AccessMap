@@ -1,0 +1,28 @@
+PASS src/__tests__/d1f4r3SourceClosure.guard.test.ts
+PASS src/lib/__tests__/flags.supabase.test.ts
+FAIL src/components/__tests__/FlagDetailModal.refusal.test.tsx (5.941 s)
+  ● keeps any flag visible on repeated deletion refusal
+
+    expect(jest.fn()).not.toHaveBeenCalled()
+
+    Expected number of calls: 0
+    Received number of calls: 1
+
+    1: "11111111-1111-4111-8111-111111111111"
+
+      152 |   );
+      153 |   expect(mockDeleteFlag).toHaveBeenCalledWith(FLAG.id);
+    > 154 |   expect(onDeleted).not.toHaveBeenCalled();
+          |                         ^
+      155 |   expect(onClose).not.toHaveBeenCalled();
+      156 |   expect(screen.getByLabelText('Delete this flag')).toBeTruthy();
+      157 |   fireEvent.press(screen.getByLabelText('Delete this flag'));
+
+      at Object.toHaveBeenCalled (src/components/__tests__/FlagDetailModal.refusal.test.tsx:154:25)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       1 failed, 59 passed, 60 total
+Snapshots:   0 total
+Time:        6.258 s

@@ -137,39 +137,18 @@ describe('D1F4R3 source-closure database contracts', () => {
     expect(flags).not.toContain('collectFlagPhotoCleanupPlan');
   });
 
-  it('Phase 04A FINAL repair (D-04A-2): src/lib/flags.ts refuses to delete any photo-bearing flag rather than trust storage.remove()\'s error:null as proof of removal', () => {
-    // The static source-order counterpart to flags.supabase.test.ts's
-    // LOCKING behavior tests — this guard pins the SOURCE ordering; the
-    // behavior tests pin the RUNTIME ordering. Both must hold.
-    const deleteFlagAt = flags.indexOf('export async function deleteFlag(flagId: string)');
+  it('D-04A-4: ordinary client flag deletion refuses before any read, Storage call, Edge call, or row DELETE', () => {
+    const deleteFlagAt = flags.indexOf('export async function deleteFlag(_flagId: string)');
     expect(deleteFlagAt).toBeGreaterThan(-1);
-    const deleteFlagEnd = flags.indexOf('\n}', flags.indexOf('export async function fetchFlagById'));
+    const deleteFlagEnd = flags.indexOf('\n}', deleteFlagAt) + 2;
     const body = flags.slice(deleteFlagAt, deleteFlagEnd);
 
-    // The photo-presence refusal and the row DELETE call must both be
-    // present, in that order — refusal first, DELETE only reachable when
-    // there was nothing to refuse on.
-    const refusalAt = body.indexOf('FlagPhotoCleanupUnprovenError');
-    const rowDeleteAt = body.indexOf(".from('flags')\n    .delete()");
-    expect(refusalAt).toBeGreaterThan(-1);
-    expect(rowDeleteAt).toBeGreaterThan(-1);
-    expect(refusalAt).toBeLessThan(rowDeleteAt);
-
-    // D-04A-2: no reachable path inside deleteFlag may treat a Storage
-    // remove() call's `error: null` as proof of removal — because it never
-    // makes that call at all any more. The independent review's exact
-    // finding was that an empty/no-op deleted-object result can come back
-    // with no error, so the fix is to never depend on that response.
-    expect(body).not.toContain('.storage.');
-    expect(body).not.toContain('.remove(');
-    expect(body).not.toContain('removeRequiredFlagPhotos');
-    expect(flags).not.toContain('async function removeRequiredFlagPhotos');
-
-    // Photo presence is decided from relational state alone (primary
-    // photo_url/photo_object_key or any gallery row) — never from whether a
-    // legacy URL happens to be resolvable to an exact path.
-    expect(body).toContain('hasAnyPhoto');
-    expect(body.indexOf('hasAnyPhoto')).toBeLessThan(refusalAt);
+    expect(body).toContain('throw new FlagDeletionUnavailableError()');
+    expect(body).not.toContain('supabase.');
+    expect(body).not.toContain('hasAnyPhoto');
     expect(body).not.toContain('storagePathFromPublicUrl');
+    expect(body).not.toContain(".from('flags')");
+    expect(body).not.toContain('.delete()');
+    expect(body).not.toContain("functions.invoke('delete-flag')");
   });
 });

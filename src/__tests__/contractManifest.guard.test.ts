@@ -135,42 +135,19 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
     expect(legacyInsert.note).not.toMatch(/WITH CHECK\s*\(?true\)?/i);
   });
 
-  it('FDA-002 — flag deletion no longer depends on any undeployed Edge Function; a photo-bearing flag is refused, not deleted on unproven cleanup', () => {
-    // Rev 8 (Phase 04A FINAL repair, D-04A-2, 2026-09-21): rev 7 pinned the
-    // "prove removal via storage.remove(), then delete" ordering. An
-    // independent review held that storage.remove()'s error:null response is
-    // not proof of removal, so that ordering could still report a false
-    // deletion success. The compatibility behavior is now a flat refusal for
-    // any photo-bearing flag — no Storage call is made at all.
+  it('FDA-002 — D-04A-4 disables client deletion for every flag until an atomic backend contract exists', () => {
     const del = surfaces.find((s) => s.surface === 'flag-delete')!;
     expect(absentEdge).toContain('delete-flag');
-
-    // No edge callsite anywhere on this surface any more.
-    expect(del.callSites.every((c) => c.kind !== 'edge')).toBe(true);
-    expect(del.callSites.every((c) => c.name !== 'delete-flag')).toBe(true);
-
-    // A deployed direct flags-table DELETE call site exists (zero-photo
-    // flags only — see phase04aFinalRepairNote).
-    const rowDelete = del.callSites.find((c) => c.kind === 'table' && c.name === 'flags' && c.deployed === true)!;
-    expect(rowDelete).toBeDefined();
-
+    expect(del.callSites).toEqual([]);
     expect(del.finding).toBe('FDA-002');
-
-    // The manifest must NOT claim photo removal is proven by client
-    // remove(), and must NOT claim required media can always be removed —
-    // it must instead describe the fail-closed refusal.
-    expect(del.productionImpact).not.toMatch(/best-effort/i);
-    expect(del.productionImpact).not.toMatch(/proven BEFORE the row delete/i);
-    expect(del.productionImpact).toMatch(/fails closed/i);
-    const repairNote = (del as unknown as { phase04aRepairNote?: string }).phase04aRepairNote;
-    expect(repairNote).not.toMatch(/best-effort/i);
-    // The superseded D-04A-1 note is retained as history but must be clearly
-    // marked superseded, not left standing as the current truth.
-    expect(repairNote).toMatch(/SUPERSEDED/);
-    const finalNote = (del as unknown as { phase04aFinalRepairNote?: string }).phase04aFinalRepairNote;
-    expect(finalNote).toBeDefined();
-    expect(finalNote).not.toMatch(/proven by client remove/i);
-    expect(finalNote).toMatch(/FlagPhotoCleanupUnprovenError/);
+    expect(del.productionImpact).toMatch(/temporarily unavailable for every flag/i);
+    expect(del.deployedAlternative).toMatch(/does not call it/i);
+    const note = (del as unknown as { phase04FinalRepairNote: string }).phase04FinalRepairNote;
+    expect(note).toMatch(/FlagDeletionUnavailableError/);
+    expect(note).toMatch(/no photo appears between check and row deletion/i);
+    expect(note).toMatch(/future atomic\/server deletion contract is deferred/i);
+    expect(note).toMatch(/No live backend deployment occurred/i);
+    expect((del as unknown as { phase04aFinalRepairNote: string }).phase04aFinalRepairNote).toMatch(/SUPERSEDED by D-04A-4/);
   });
 
   it('FDA-003 — deletion status polls an absent route while delete-account v4 is live', () => {

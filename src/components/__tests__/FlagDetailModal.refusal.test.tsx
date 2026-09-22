@@ -4,7 +4,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { FlagRow } from '@/types/database';
 import {
   FlagPhotoAttachmentUnavailableError,
-  FlagPhotoCleanupUnprovenError,
+  FlagDeletionUnavailableError,
 } from '@/lib/flags';
 import FlagDetailModal from '../FlagDetailModal';
 
@@ -138,14 +138,14 @@ it('keeps a refused photo attachment pending without announcing attachment succe
   }
 });
 
-it('keeps a photo-bearing flag visible when deletion is refused', async () => {
-  mockDeleteFlag.mockRejectedValueOnce(new FlagPhotoCleanupUnprovenError());
+it('keeps any flag visible on repeated deletion refusal', async () => {
+  mockDeleteFlag.mockRejectedValue(new FlagDeletionUnavailableError());
   const { screen, onDeleted, onClose } = renderDetail();
   await screen.findByLabelText('Delete this flag');
 
   fireEvent.press(screen.getByLabelText('Delete this flag'));
   await waitFor(() => expect(mockNotify).toHaveBeenCalledWith(
-    'Could not delete flag', new FlagPhotoCleanupUnprovenError().message,
+    'Could not delete flag', new FlagDeletionUnavailableError().message,
   ));
   expect(mockConfirm).toHaveBeenCalledWith(
     'Delete this flag?', 'This permanently removes your report. This cannot be undone.', 'Delete', true,
@@ -154,4 +154,8 @@ it('keeps a photo-bearing flag visible when deletion is refused', async () => {
   expect(onDeleted).not.toHaveBeenCalled();
   expect(onClose).not.toHaveBeenCalled();
   expect(screen.getByLabelText('Delete this flag')).toBeTruthy();
+  fireEvent.press(screen.getByLabelText('Delete this flag'));
+  await waitFor(() => expect(mockDeleteFlag).toHaveBeenCalledTimes(2));
+  expect(onDeleted).not.toHaveBeenCalled();
+  expect(onClose).not.toHaveBeenCalled();
 });

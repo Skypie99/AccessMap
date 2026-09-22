@@ -1,7 +1,8 @@
 {
   "$schema": "./contract.schema.json",
   "manifestVersion": 1,
-  "revision": 9,
+  "revision": 10,
+  "phase04FinalRepairRevisionNote": "D-04A-4 (2026-09-21, Sky owner decision): a photo can be inserted after any client photo check and before a flags row DELETE. Phase 04 therefore disables client-side flag deletion for every flag, including zero-photo flags. deleteFlag immediately raises FlagDeletionUnavailableError and performs no query, Storage call, Edge invocation, or row DELETE. A future atomic server deletion contract is deferred; no backend infrastructure was added or deployed in Phase 04. Earlier Phase 04A deletion notes below are preserved as superseded history.",
   "phase04bRevisionNote": "Local Phase04B candidate (FDA-003): the account-deletion client accepts deployed delete-account v4 status=deleted as a confirmed synchronous deletion (marks its receipt terminal, signs out, clears the receipt, announces success once). Every other reply is a typed unconfirmed outcome that never signs out and is never re-sent automatically. account-deletion-status is gated before the network by accountDeletionAsyncStatusAvailable() (false). This manifest does not mark any async deletion route deployed.",
   "phase04aFinalRepairRevisionNote": "Phase 04A FINAL REPAIR (2026-09-21, Sky's D-04A-2 decision, after a fresh independent Opus acceptance review held the rev-7 repair as a real defect): rev 7's deleteFlag ordering fix (cleanup PROVEN before the row DELETE) rested on treating a Storage remove() call's `error: null` response as proof the object was actually gone. The review established that is not proof under the flag-photos Storage policies this client can see — a refused or no-op removal can return an empty deleted-object list with no error, so deleteFlag could still delete the row while the public photo stayed live. The fix is not more client-side cleanup logic; it is refusing to claim proof the client cannot obtain. deleteFlag now refuses outright — no Storage call, no row DELETE — for ANY flag with a photo (primary or gallery, resolvable or not); only a zero-photo flag still deletes via the direct-DELETE path. Separately, FDA-019's legacy uid-folder Storage upload fallback (mirroring uploadAvatar's) is no longer used for NEW signed-in flag photos: it has no server-side hold protecting the object the way an upload intent does, so when the upload-intent RPC is absent, photo attachment is gated (FlagPhotoAttachmentUnavailableError) instead of writing an unrecoverable public object. Report submission without a photo, and the avatar surface's own legacy fallback, are both unaffected. See qa-reports/phase04/04A-final-repair-20260921T214936Z/HANDOFF.md.",
   "phase04aRepairRevisionNote": "Phase 04A REPAIR (2026-09-21, after an independent Opus acceptance HOLD on 6b239dd found two real defects): (1) FDA-002 deleteFlag's ordering was inverted — it deleted the flags row first and cleaned up photos best-effort afterward, so a Storage failure could leave a public photo orphaned with the row already gone (the exact SR-050 takedown risk). Per Sky's D-04A-1 decision, required photo cleanup now happens BEFORE the row DELETE and is fail-closed: a Storage error, or a photo whose exact object path cannot be established (no owner uid to validate against, a foreign folder, a malformed URL), now REFUSES the delete instead of proceeding. Nothing in this repair is 'best-effort' any more — every photo this flag's rows reference must be provably removed or the row survives. (2) FDA-019's batchInsertFlagPhotos only cleaned up the ONE photo whose row-insert failed; every already-uploaded photo after it in the batch (never even attempted) was left orphaned in Storage with no DB pointer. batchInsertFlagPhotos now cleans up every unattached photo — the failing one and everything after it — on any failure, leaving already-attached photos untouched. contractManifest.guard.test.ts's FDA-002/FDA-019 sub-tests and the D1F4R3 source-closure/replay guards were updated in the same repair to assert the accepted current contract instead of the pre-04A one; see 04A-repair HANDOFF for the full predicate list.",
@@ -128,36 +129,11 @@
       "finding": "FDA-002",
       "phase04aNote": "Phase 04A (2026-09-21): deleteFlag no longer calls the undeployed delete-flag Edge Function (P04-D01, accepted 2026-09-03 — do not deploy D1F4 merely to satisfy the client). It now issues a strict direct Data API DELETE authorized entirely by the live RLS below, requires a returned id (zero rows = FlagDeleteRefusedError, never a silent/false success). SUPERSEDED by phase04aFinalRepairNote below.",
       "phase04aRepairNote": "Phase 04A REPAIR (2026-09-21, Sky's D-04A-1 decision): required photo cleanup happened BEFORE the row DELETE and failed closed on any problem, by calling storage.remove() on every required object and treating error:null as proof of removal before issuing the flags DELETE. SUPERSEDED by phase04aFinalRepairNote below — a fresh independent review held that storage.remove()'s error:null response is NOT proof of removal (a refused/no-op delete can return an empty deleted-object list with no error), so this ordering could still delete the row while a public photo stayed live. Do not reintroduce a client-side Storage cleanup step before the flags DELETE on the strength of this note; it describes a superseded, unsafe behavior kept here only as history.",
-      "phase04aFinalRepairNote": "Phase 04A FINAL REPAIR (2026-09-21, Sky's D-04A-2 decision): deleteFlag no longer attempts ANY client-side Storage cleanup. It refuses the delete outright (FlagPhotoCleanupUnprovenError) for a flag with any photo — primary or gallery, exact object_key or legacy url, resolvable or not — leaving both the row and every photo exactly as they were, with no supabase.storage call made at all. Only a flag with zero photos reaches the direct flags DELETE (unchanged from the phase04aNote description: RETURNING id, intended-id validated, zero/wrong-id refuses). This is a stricter, simpler compatibility behavior than the repair note above: it trades an anonymous flag's (or any flag's) photo-bearing report becoming client-undeletable until an accepted backend capability can prove exact Storage removal, for the guarantee that this client can never report a false deletion success while a public photo remains reachable. The 2026-09-04 deployed-contract.v1.json capture's RLS/policy confirmations ('flags delete own', 'admin delete any flag') remain accurate and unaffected — only the client's own required-cleanup logic changed. See src/lib/__tests__/flags.supabase.test.ts's 'deleteFlag' describe block and src/__tests__/d1f4r3SourceClosure.guard.test.ts's D-04A-2 source-order guard.",
-      "callSites": [
-        {
-          "file": "src/lib/flags.ts",
-          "line": 1605,
-          "kind": "table",
-          "name": "flags",
-          "onAbsent": "n/a",
-          "note": "Read (id, user_id, photo_url, photo_object_key) first. A missing row refuses immediately (FlagDeleteRefusedError) — nothing to determine photo presence from. flags SELECT is 'flags readable by authenticated' (true) — always live."
-        },
-        {
-          "file": "src/lib/flags.ts",
-          "line": 1618,
-          "kind": "table",
-          "name": "flag_photos",
-          "onAbsent": "n/a",
-          "note": "Snapshot read of gallery photo url/object_key before the row (and its ON DELETE CASCADE flag_photos rows) are gone. flag_photos SELECT is 'flag_photos: authenticated read' (true) — always live. Used ONLY to decide photo presence (any row at all refuses) — the url/object_key values themselves are never resolved to a Storage path any more."
-        },
-        {
-          "file": "src/lib/flags.ts",
-          "line": 1634,
-          "kind": "table",
-          "name": "flags",
-          "onAbsent": "n/a",
-          "deployed": true,
-          "note": "DELETE ... RETURNING id, reached ONLY when the flag has zero photos (D-04A-2) — a photo-bearing flag refuses at the hasAnyPhoto check above and never reaches this call. Authorization is 'flags delete own' (auth.uid() = user_id) OR 'admin delete any flag' (users.is_admin) — both confirmed live in deployed-contract.v1.json authorization.flagsPolicies. A returned-rows set that is empty OR does not contain this exact flagId throws FlagDeleteRefusedError; this client never infers owner/admin privilege itself."
-        }
-      ],
-      "deployedAlternative": "RLS 'flags delete own' + 'admin delete any flag' permit a direct Data API DELETE for zero-photo flags — confirmed live and wired up; a photo-bearing flag has no deployed alternative and is refused client-side",
-      "productionImpact": "WORKING — owner and admin deletion of a zero-photo flag succeeds via the direct-DELETE adapter. A photo-bearing flag's delete FAILS CLOSED (refused, not attempted) until an accepted backend capability can prove exact Storage removal — this is an intentional compatibility limit (D-04A-2), not a bug: the client never claims deletion success while a public photo might still be reachable."
+      "phase04aFinalRepairNote": "Phase 04A FINAL REPAIR (2026-09-21, Sky's D-04A-2 decision): deleteFlag no longer attempts ANY client-side Storage cleanup. It refuses the delete outright (FlagPhotoCleanupUnprovenError) for a flag with any photo — primary or gallery, exact object_key or legacy url, resolvable or not — leaving both the row and every photo exactly as they were, with no supabase.storage call made at all. Only a flag with zero photos reaches the direct flags DELETE (unchanged from the phase04aNote description: RETURNING id, intended-id validated, zero/wrong-id refuses). This is a stricter, simpler compatibility behavior than the repair note above: it trades an anonymous flag's (or any flag's) photo-bearing report becoming client-undeletable until an accepted backend capability can prove exact Storage removal, for the guarantee that this client can never report a false deletion success while a public photo remains reachable. The 2026-09-04 deployed-contract.v1.json capture's RLS/policy confirmations ('flags delete own', 'admin delete any flag') remain accurate and unaffected — only the client's own required-cleanup logic changed. See src/lib/__tests__/flags.supabase.test.ts's 'deleteFlag' describe block and src/__tests__/d1f4r3SourceClosure.guard.test.ts's D-04A-2 source-order guard. SUPERSEDED by D-04A-4: zero-photo direct DELETE is also unsafe because a photo can be inserted after the lookup.",
+      "callSites": [],
+      "deployedAlternative": "Existing RLS permits direct DELETE in the captured backend state, but Phase 04 client does not call it because photo insertion can race any client check. Future atomic deletion is deferred.",
+      "productionImpact": "DEGRADED - client-side flag deletion is temporarily unavailable for every flag; all attempts fail closed with FlagDeletionUnavailableError and preserve the row and photos. No Phase 04 backend deployment occurred.",
+      "phase04FinalRepairNote": "D-04A-4: client-side flag deletion is temporarily unavailable for owner, admin, and every other actor. No client photo-presence check can atomically prove that no photo appears between check and row deletion. deleteFlag raises FlagDeletionUnavailableError immediately; it makes no relational read, Storage call, Edge call, or flags DELETE. A future atomic/server deletion contract is deferred without choosing an implementation. No live backend deployment occurred in Phase 04. FDA-002 is PASS - SAFE TEMPORARY CAPABILITY REMOVAL."
     },
     {
       "surface": "account-deletion",
@@ -252,7 +228,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1869,
+          "line": 1809,
           "kind": "rpc",
           "name": "list_public_leaderboard",
           "onAbsent": "hard",
@@ -261,7 +237,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 1889,
+          "line": 1829,
           "kind": "rpc",
           "name": "get_my_leaderboard_rank",
           "onAbsent": "optional_omitted",

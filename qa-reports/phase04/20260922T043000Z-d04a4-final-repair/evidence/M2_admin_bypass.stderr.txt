@@ -1,0 +1,51 @@
+FAIL src/__tests__/d1f4r3SourceClosure.guard.test.ts
+  ● D1F4R3 source-closure database contracts › D-04A-4: ordinary client flag deletion refuses before any read, Storage call, Edge call, or row DELETE
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected substring: not "supabase."
+    Received string:        "export async function deleteFlag(_flagId: string): Promise<void> {
+      if (_flagId === 'admin-target') { await supabase.from('flags').delete(); return; }
+      throw new FlagDeletionUnavailableError();
+    }"
+
+      145 |
+      146 |     expect(body).toContain('throw new FlagDeletionUnavailableError()');
+    > 147 |     expect(body).not.toContain('supabase.');
+          |                      ^
+      148 |     expect(body).not.toContain('hasAnyPhoto');
+      149 |     expect(body).not.toContain('storagePathFromPublicUrl');
+      150 |     expect(body).not.toContain(".from('flags')");
+
+      at Object.toContain (src/__tests__/d1f4r3SourceClosure.guard.test.ts:147:22)
+
+FAIL src/lib/__tests__/flags.supabase.test.ts
+  ● deleteFlag › refuses admin-target before any database or Storage action
+
+    expect(received).rejects.toBeInstanceOf()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+      321 |   it.each(['f1', 'admin-target', 'owner-target', 'arbitrary-id', ''])
+      322 |   ('refuses %s before any database or Storage action', async (id) => {
+    > 323 |     await expect(deleteFlag(id)).rejects.toBeInstanceOf(FlagDeletionUnavailableError);
+          |           ^
+      324 |     expect(mockFrom).not.toHaveBeenCalled();
+      325 |     expect(deleteRow).not.toHaveBeenCalled();
+      326 |     expect(mockRemove).not.toHaveBeenCalled();
+
+      at expect (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/expect/build/index.js:113:15)
+      at expect (src/lib/__tests__/flags.supabase.test.ts:323:11)
+      at asyncGeneratorStep (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at ../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at ../../../../../../../AccessMap-phase03b-merge-20260920/node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12
+      at apply (src/lib/__tests__/flags.supabase.test.ts:327:4)
+
+PASS src/components/__tests__/FlagDetailModal.refusal.test.tsx (6.095 s)
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       2 failed, 58 passed, 60 total
+Snapshots:   0 total
+Time:        6.417 s

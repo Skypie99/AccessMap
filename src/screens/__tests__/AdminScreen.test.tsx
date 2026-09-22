@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { AdminReport } from '@/lib/adminReports';
 import type { CommentRow, FlagRow } from '@/types/database';
-import { FlagPhotoCleanupUnprovenError, FlagStatusConflictError } from '@/lib/flags';
+import { FlagDeletionUnavailableError, FlagStatusConflictError } from '@/lib/flags';
 import AdminScreen from '../AdminScreen';
 
 jest.mock('expo-blur', () => {
@@ -247,9 +247,9 @@ describe('AdminScreen — atomic report actions', () => {
 });
 
 describe('AdminScreen — refused flag removal', () => {
-  it('keeps the flag in the moderation list and shows an error when deletion is refused', async () => {
+  it('keeps the flag in the moderation list and shows an error on repeated refusal', async () => {
     mockListRecentFlags.mockResolvedValue([FLAG]);
-    mockDeleteFlag.mockRejectedValueOnce(new FlagPhotoCleanupUnprovenError());
+    mockDeleteFlag.mockRejectedValue(new FlagDeletionUnavailableError());
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     try {
       const { findByLabelText, getByLabelText, queryByText } = render(<AdminScreen />);
@@ -257,7 +257,7 @@ describe('AdminScreen — refused flag removal', () => {
       fireEvent.press(remove);
 
       await waitFor(() => expect(alertSpy).toHaveBeenCalledWith(
-        'Error', new FlagPhotoCleanupUnprovenError().message,
+        'Error', new FlagDeletionUnavailableError().message,
       ));
       expect(mockConfirm).toHaveBeenCalledWith(
         'Remove flag?', 'This permanently deletes the flag and cannot be undone.',
@@ -266,6 +266,9 @@ describe('AdminScreen — refused flag removal', () => {
       expect(getByLabelText('Remove Blocked path flag')).toBeTruthy();
       expect(queryByText('No flags to moderate')).toBeNull();
       expect(mockListRecentFlags).toHaveBeenCalledTimes(1);
+      fireEvent.press(getByLabelText('Remove Blocked path flag'));
+      await waitFor(() => expect(mockDeleteFlag).toHaveBeenCalledTimes(2));
+      expect(getByLabelText('Remove Blocked path flag')).toBeTruthy();
     } finally {
       alertSpy.mockRestore();
     }
