@@ -36,6 +36,7 @@ type CallSite = {
   name: string;
   onAbsent: string;
   deployed?: boolean;
+  note?: string;
 };
 type Surface = { surface: string; callSites: CallSite[]; finding: string | null };
 const surfaces: Surface[] = expectations.surfaces;
@@ -122,6 +123,16 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
     expect(finalNote).toBeDefined();
     expect(finalNote).toMatch(/gated/i);
     expect(finalNote).not.toMatch(/orphan.cleanup (is )?guaranteed/i);
+
+    const legacyInsert = flagPhoto.callSites.find(
+      (c) => c.file === 'src/lib/photos.ts' && c.name === 'flag_photos',
+    )!;
+    expect(legacyInsert.line).toBe(82);
+    expect(legacyInsert.note).toContain('20260904000200_adopt_d1sa_containment.sql:61-77');
+    expect(legacyInsert.note).toMatch(/own flag-photos folder/);
+    expect(legacyInsert.note).toMatch(/existing public\.users account/);
+    expect(legacyInsert.note).toMatch(/ownership of the related flag/);
+    expect(legacyInsert.note).not.toMatch(/WITH CHECK\s*\(?true\)?/i);
   });
 
   it('FDA-002 — flag deletion no longer depends on any undeployed Edge Function; a photo-bearing flag is refused, not deleted on unproven cleanup', () => {

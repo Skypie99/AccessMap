@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { AdminReport } from '@/lib/adminReports';
 import type { CommentRow, FlagRow } from '@/types/database';
-import { FlagStatusConflictError } from '@/lib/flags';
+import { FlagPhotoCleanupUnprovenError, FlagStatusConflictError } from '@/lib/flags';
 import AdminScreen from '../AdminScreen';
 
 jest.mock('expo-blur', () => {
@@ -243,5 +243,31 @@ describe('AdminScreen — atomic report actions', () => {
     await findByText('This looks fake');
     await act(async () => fireEvent.press(getByText('No action')));
     await waitFor(() => expect(mockCloseReport).toHaveBeenCalledWith('report-1', 'no_action'));
+  });
+});
+
+describe('AdminScreen — refused flag removal', () => {
+  it('keeps the flag in the moderation list and shows an error when deletion is refused', async () => {
+    mockListRecentFlags.mockResolvedValue([FLAG]);
+    mockDeleteFlag.mockRejectedValueOnce(new FlagPhotoCleanupUnprovenError());
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    try {
+      const { findByLabelText, getByLabelText, queryByText } = render(<AdminScreen />);
+      const remove = await findByLabelText('Remove Blocked path flag');
+      fireEvent.press(remove);
+
+      await waitFor(() => expect(alertSpy).toHaveBeenCalledWith(
+        'Error', new FlagPhotoCleanupUnprovenError().message,
+      ));
+      expect(mockConfirm).toHaveBeenCalledWith(
+        'Remove flag?', 'This permanently deletes the flag and cannot be undone.',
+      );
+      expect(mockDeleteFlag).toHaveBeenCalledWith(FLAG.id);
+      expect(getByLabelText('Remove Blocked path flag')).toBeTruthy();
+      expect(queryByText('No flags to moderate')).toBeNull();
+      expect(mockListRecentFlags).toHaveBeenCalledTimes(1);
+    } finally {
+      alertSpy.mockRestore();
+    }
   });
 });

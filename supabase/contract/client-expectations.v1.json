@@ -71,11 +71,11 @@
         },
         {
           "file": "src/lib/photos.ts",
-          "line": 77,
+          "line": 82,
           "kind": "table",
           "name": "flag_photos",
           "onAbsent": "n/a",
-          "note": "insertLegacyFlagPhoto's direct INSERT. Authorized by the live 'flag_photos: authenticated insert' policy (WITH CHECK true); writes only the legacy url/position/alt_text shape — object_key is server-guarded and never set by this insert. As of the FINAL repair this is no longer reached through uploadFlagPhoto's normal output for a new flag photo (see phase04aFinalRepairNote) — retained as a defensive/unreachable code path, not removed, since photos.ts and its own callers were not proven 04A-only."
+          "note": "insertLegacyFlagPhoto's direct INSERT. The accepted current 'flag_photos: authenticated insert' policy requires a URL in the authenticated user's own flag-photos folder, an existing public.users account for that user, and ownership of the related flag (supabase/migrations-next/20260904000200_adopt_d1sa_containment.sql:61-77; accepted 2026-09-20 production structure capture). The insert writes only the legacy url/position/alt_text shape — object_key is server-guarded and never set by this insert. As of the FINAL repair this is no longer reached through uploadFlagPhoto's normal output for a new flag photo (see phase04aFinalRepairNote) — retained as a defensive/unreachable code path, not removed, since photos.ts and its own callers were not proven 04A-only."
         }
       ],
       "deployedAlternative": "none — when prepare_flag_photo_upload is absent, signed-in flag-photo attachment is gated (FlagPhotoAttachmentUnavailableError) rather than falling back to the legacy uid-folder Storage upload the avatar surface still uses; report submission without a photo remains available",
