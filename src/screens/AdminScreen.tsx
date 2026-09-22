@@ -29,7 +29,7 @@ import { useColor, type ColorTheme } from '@/theme/ThemeContext';
 import { useDrawer } from '@/lib/drawerContext';
 import { useSharedModals } from '@/lib/sharedModalsContext';
 import { font, radius, severity as severityRamp, spacing } from '@/theme';
-import { hapticImpact, hapticSelection } from '@/lib/haptics';
+import { hapticSelection } from '@/lib/haptics';
 import { useIsAdmin } from '@/lib/admin';
 import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
@@ -39,7 +39,6 @@ import { a11yToggle } from '@/lib/accessibility';
 import { REPORT_CATEGORIES } from '@/lib/copy';
 import {
   CATEGORY_LABELS,
-  deleteFlag,
   FlagStatusConflictError,
   listRecentFlags,
   updateFlagStatus,
@@ -49,7 +48,6 @@ import {
   listOpenReports,
   rejectFlagReport,
   removeCommentReport,
-  removeFlagReport,
   type AdminReport,
   type ContentActionResult,
 } from '@/lib/adminReports';
@@ -92,7 +90,7 @@ export default function AdminScreen() {
   // F18: synchronous per-flag guard. The action buttons use only
   // accessibilityState.disabled (a screen-reader hint that does NOT block
   // touches) and setActioningId is set only AFTER the confirm dialog resolves,
-  // so a rapid double-tap (or Remove+Reject) on the same row would otherwise
+  // so a rapid double-tap on the same row would otherwise
   // start two concurrent mutations. This tracks in-flight flag ids.
   const actioningRef = useRef<Set<string>>(new Set());
   // F27: sequence tag so a stale load() (rapid tab focus/blur fires two) can't
@@ -198,16 +196,6 @@ export default function AdminScreen() {
   const handleRejectFlagReport = (report: AdminReport) => {
     if (!report.flag || !user) return;
     setPendingModeration({ action: 'reject', source: 'report', report });
-  };
-
-  const handleRemoveFlagReport = (report: AdminReport) => {
-    if (!report.flag || !user) return;
-    void runReportAction(
-      report,
-      'Remove flag?',
-      'This permanently deletes the flag and cannot be undone.',
-      () => removeFlagReport({ reportId: report.id }),
-    );
   };
 
   const handleRemoveCommentReport = (report: AdminReport) => {
@@ -316,30 +304,6 @@ export default function AdminScreen() {
       </View>
     );
   }
-
-  const handleRemove = async (flag: FlagRow) => {
-    if (actioningRef.current.has(flag.id)) return; // F18: already actioning this flag
-    actioningRef.current.add(flag.id);
-    try {
-      const ok = await confirm(
-        'Remove flag?',
-        'This permanently deletes the flag and cannot be undone.',
-      );
-      if (!ok) return;
-      hapticImpact('medium');
-      setActioningId(flag.id);
-      try {
-        await deleteFlag(flag.id);
-        setFlags((prev) => prev.filter((f) => f.id !== flag.id));
-      } catch (e) {
-        Alert.alert('Error', errorMessage(e));
-      } finally {
-        setActioningId(null);
-      }
-    } finally {
-      actioningRef.current.delete(flag.id);
-    }
-  };
 
   const handleReject = (flag: FlagRow) => {
     setPendingModeration({ action: 'reject', source: 'flag', flag });
@@ -477,18 +441,6 @@ export default function AdminScreen() {
           />
         ) : (
           <View style={styles.actions}>
-            <Pressable
-              style={({ pressed }) => [styles.btn, styles.btnRemove, pressed && styles.btnPressed]}
-              onPress={() => void handleRemove(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`Remove ${CATEGORY_LABELS[item.category]} flag`}
-              {...a11yToggle({ disabled: isBusy })}
-            >
-              <Trash2 size={16} color={color.textOnBrand} strokeWidth={2} />
-              <AppText variant="label" size={font.size.sm} color={color.textOnBrand}>
-                Remove flag
-              </AppText>
-            </Pressable>
             {item.status === 'rejected' ? (
               <Pressable
                 style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
@@ -629,18 +581,6 @@ export default function AdminScreen() {
                   <Ban size={16} color={color.textOnBrand} strokeWidth={2} />
                   <AppText variant="label" size={font.size.sm} color={color.textOnBrand}>
                     Reject flag
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [styles.btn, styles.btnDismiss, pressed && styles.btnPressed]}
-                  onPress={() => handleRemoveFlagReport(item)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Remove flag — the reported flag"
-                  {...a11yToggle({ disabled: isBusy })}
-                >
-                  <Trash2 size={16} color={color.text} strokeWidth={2} />
-                  <AppText variant="label" size={font.size.sm} color={color.text}>
-                    Remove flag
                   </AppText>
                 </Pressable>
               </>

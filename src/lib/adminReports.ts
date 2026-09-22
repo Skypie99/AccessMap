@@ -8,7 +8,7 @@
  */
 import { supabase } from './supabase';
 import { errorMessage } from './errors';
-import { fetchFlagsByIds, FlagStatusConflictError } from './flags';
+import { fetchFlagsByIds, FlagDeletionUnavailableError, FlagStatusConflictError } from './flags';
 import { fetchCommentsByIds } from './comments';
 import { parseReportBody } from './reports';
 import type { ReportCategoryId } from './copy';
@@ -167,10 +167,12 @@ export async function rejectFlagReport(params: {
   return moderateReport(params.reportId, 'flag_rejected', params.previousFlagStatus, params.reason);
 }
 
-export async function removeFlagReport(params: {
+export async function removeFlagReport(_params: {
   reportId: string;
 }): Promise<ContentActionResult> {
-  return moderateReport(params.reportId, 'flag_removed', null, null);
+  // A report resolution cannot prove that its flag and photos were safely removed.
+  // Keep this refusal below the UI so direct callers cannot bypass the gate.
+  throw new FlagDeletionUnavailableError();
 }
 
 export async function removeCommentReport(params: {

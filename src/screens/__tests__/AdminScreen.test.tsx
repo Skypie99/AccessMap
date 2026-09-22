@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { AdminReport } from '@/lib/adminReports';
 import type { CommentRow, FlagRow } from '@/types/database';
-import { FlagDeletionUnavailableError, FlagStatusConflictError } from '@/lib/flags';
+import { FlagStatusConflictError } from '@/lib/flags';
 import AdminScreen from '../AdminScreen';
 
 jest.mock('expo-blur', () => {
@@ -138,6 +138,25 @@ describe('AdminScreen — capability gate', () => {
 });
 
 describe('AdminScreen — explicit reject/restore reasons', () => {
+  it('keeps Flags queue Reject operational with its reason and expected status', async () => {
+    mockListRecentFlags.mockResolvedValue([FLAG]);
+    const { findByLabelText, findByText, getByText } = render(<AdminScreen />);
+    fireEvent.press(await findByLabelText('Reject Blocked path report'));
+    expect(await findByText('Why reject this report?')).toBeTruthy();
+    await act(async () => fireEvent.press(getByText('Duplicate')));
+    await waitFor(() =>
+      expect(mockUpdateFlagStatus).toHaveBeenCalledWith('flag-1', 'rejected', 'open', {
+        moderationReason: 'duplicate',
+      }),
+    );
+    expect(mockConfirm).toHaveBeenCalledWith(
+      'Reject this report?',
+      'It will be hidden from public views. The reporter will be notified. No points will change. An admin can restore it.',
+      'Reject',
+      true,
+    );
+  });
+
   it('does not reject until an admin explicitly selects a reason', async () => {
     mockListOpenReports.mockResolvedValue([flagReport()]);
     const { findByText, getByText } = render(<AdminScreen />);
@@ -246,31 +265,27 @@ describe('AdminScreen — atomic report actions', () => {
   });
 });
 
-describe('AdminScreen — refused flag removal', () => {
-  it('keeps the flag in the moderation list and shows an error on repeated refusal', async () => {
+describe('AdminScreen — unavailable flag removal', () => {
+  it('withholds Remove in the Flags queue while keeping the flag and Reject available', async () => {
     mockListRecentFlags.mockResolvedValue([FLAG]);
-    mockDeleteFlag.mockRejectedValue(new FlagDeletionUnavailableError());
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    try {
-      const { findByLabelText, getByLabelText, queryByText } = render(<AdminScreen />);
-      const remove = await findByLabelText('Remove Blocked path flag');
-      fireEvent.press(remove);
+    const { findByLabelText, queryByLabelText, queryByText } = render(<AdminScreen />);
+    expect(await findByLabelText('Reject Blocked path report')).toBeTruthy();
+    expect(queryByLabelText('Remove Blocked path flag')).toBeNull();
+    expect(queryByText('No flags to moderate')).toBeNull();
+    expect(mockDeleteFlag).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  });
 
-      await waitFor(() => expect(alertSpy).toHaveBeenCalledWith(
-        'Error', new FlagDeletionUnavailableError().message,
-      ));
-      expect(mockConfirm).toHaveBeenCalledWith(
-        'Remove flag?', 'This permanently deletes the flag and cannot be undone.',
-      );
-      expect(mockDeleteFlag).toHaveBeenCalledWith(FLAG.id);
-      expect(getByLabelText('Remove Blocked path flag')).toBeTruthy();
-      expect(queryByText('No flags to moderate')).toBeNull();
-      expect(mockListRecentFlags).toHaveBeenCalledTimes(1);
-      fireEvent.press(getByLabelText('Remove Blocked path flag'));
-      await waitFor(() => expect(mockDeleteFlag).toHaveBeenCalledTimes(2));
-      expect(getByLabelText('Remove Blocked path flag')).toBeTruthy();
-    } finally {
-      alertSpy.mockRestore();
-    }
+  it('withholds Remove in the Reports queue while keeping Reject and the report available', async () => {
+    mockListOpenReports.mockResolvedValue([flagReport()]);
+    const { findByText, getByText, getByLabelText, queryByLabelText } = render(<AdminScreen />);
+    await findByText('No flags to moderate');
+    fireEvent.press(getByText(/^Reports/));
+    await findByText('This looks fake');
+    expect(getByLabelText('Reject flag — the reported flag')).toBeTruthy();
+    expect(queryByLabelText('Remove flag — the reported flag')).toBeNull();
+    expect(getByText('This looks fake')).toBeTruthy();
+    expect(mockRemoveFlagReport).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
   });
 });

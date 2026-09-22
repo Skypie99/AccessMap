@@ -8,7 +8,7 @@ import {
   removeCommentReport,
   removeFlagReport,
 } from '../adminReports';
-import { FlagStatusConflictError } from '../flags';
+import { FlagDeletionUnavailableError, FlagStatusConflictError } from '../flags';
 
 const mockRpc = jest.fn();
 jest.mock('../supabase', () => ({
@@ -170,7 +170,6 @@ describe('moderate_report — one atomic RPC per decision', () => {
   });
 
   it.each([
-    ['flag_removed', () => removeFlagReport({ reportId: 'report-1' })],
     ['comment_removed', () => removeCommentReport({ reportId: 'report-1' })],
     ['no_action', () => closeReport('report-1', 'no_action')],
     ['target_unavailable', () => closeReport('report-1', 'target_unavailable')],
@@ -184,6 +183,16 @@ describe('moderate_report — one atomic RPC per decision', () => {
       p_expected_flag_status: null,
       p_moderation_reason: null,
     });
+  });
+
+  it('refuses admin flag removal on repeated direct calls without an RPC or fake closure', async () => {
+    await expect(removeFlagReport({ reportId: 'report-1' })).rejects.toBeInstanceOf(
+      FlagDeletionUnavailableError,
+    );
+    await expect(removeFlagReport({ reportId: 'report-1' })).rejects.toBeInstanceOf(
+      FlagDeletionUnavailableError,
+    );
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('maps a stale report target to FlagStatusConflictError', async () => {

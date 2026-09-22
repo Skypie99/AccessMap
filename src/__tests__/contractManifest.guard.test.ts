@@ -181,6 +181,11 @@ describe('PHASE-02A — the four shipped mismatches reproduce from the manifests
       deployed: false,
     });
     expect(mod.finding).toBe('FDA-004');
+    const removeNote = (mod as unknown as { prePhase05AdminRemoveNote: string }).prePhase05AdminRemoveNote;
+    expect(removeNote).toMatch(/Admin Remove flag is temporarily unavailable/);
+    expect(removeNote).toMatch(/removeFlagReport refuses before any flag_removed RPC/);
+    expect(removeNote).toMatch(/Admin Reject still uses flag_rejected/);
+    expect(removeNote).toMatch(/no backend destructive capability was deployed/);
   });
 });
 
