@@ -9,7 +9,7 @@ BRANCH: claude/flagstone-public-repo-professionalize-nf1wg9
   (harness-designated branch; did not exist on origin; created at BASE_SHA.
    Used instead of the prompt's preferred estate/... name because the cloud
    session is bound to this branch.)
-CURRENT_PHASE: 4 — sanitation batches (plan below)
+CURRENT_PHASE: 5 — public truth (PUBLIC_EVIDENCE done; README next)
 SAFE_TO_RESUME: YES
 
 ## Baseline (read-only preflight, 2026-09-26)
@@ -49,4 +49,4 @@ SAFE_TO_RESUME: YES
 - FD-01 history, FD-02 frozen-path PII (eas.json appleId, RLS maintainer email, test fixture display name), FD-03 hash-bound captures, FD-04 intentional contacts / operational docs, FD-05 About, FD-06 merge, FD-07 rename.
 
 ## NEXT_ACTION
-Visual review + redaction DONE (481 inspected; 21 derivatives: V1a 6, V1b 6, V2 4, V3 5). P1 DONE. Next: privacy gate record, then docs/PUBLIC_EVIDENCE.md + README, link validation, full Jest run, final scan, cleanup.
+Visual review + redaction DONE (481 inspected; 21 derivatives: V1a 6, V1b 6, V2 4, V3 5). P1 DONE. Full Jest on branch 2026-09-26: 299/299 suites, 4472 passed, 32 todo (== main). docs/PUBLIC_EVIDENCE.md written (45 links OK, targets PII-clean). Next: README rewrite, link check, Jest re-run, final scan, forbidden-path assertion, remove this file.
