@@ -13,7 +13,7 @@ Existing cleanup tip at intake: `091b535e86bb49f62faac23deec7d0f1839212dd`, 21 a
 Reused branch: `claude/flagstone-public-repo-professionalize-nf1wg9`.
 New contributor implementation commit: `1f98447e3986d8e69b9020f68a8be210ec1bada7`.
 
-This session changes only docs/CONTRIBUTING.md:13 from the mismatched directory command to `cd AccessMap`, and adds this QA receipt. The existing 125-file cleanup, including 21 PNGs, is preserved. Its source/App/backend/scripts/workflow/package files are unchanged from public main. No release/native/privacy policy or product behavior changes were added. An isolated bare object store and Codex worktree were used because the managed tool was unavailable in this projectless chat and no valid local cleanup checkout existed. The shared primary checkout was read only.
+This session changes docs/CONTRIBUTING.md:13 to `cd AccessMap`, removes inherited trailing whitespace from an already-redacted quote at qa-reports/2026-05-29_Steve_PreLaunchSecurityAudit.md:170, and adds this QA receipt. The existing 125-file cleanup, including 21 PNGs, is preserved. Its source/App/backend/scripts/workflow/package files are unchanged from public main. No release/native/privacy policy or product behavior changes were added. An isolated bare object store and Codex worktree were used because the managed tool was unavailable in this projectless chat and no valid local cleanup checkout existed. The shared primary checkout was read only.
 
 Primary AGENTS.md and CLAUDE.md were read. Phase 6 preparation was completed/idle/HOLD when inspected; no overlapping cleanup writer was observed in the bounded thread/worktree samples. Unseen cloud/Claude writers remain unverified. The active Portfolio GSAP session was not touched. No active Flagstone integration or map-navigation checkout was altered.
 
@@ -25,7 +25,7 @@ Primary AGENTS.md and CLAUDE.md were read. Phase 6 preparation was completed/idl
 | P0-04 | Private health/capacity fields in APP_STORE_TODO.md:12 and qa-reports/cycle-2026-08-03-morgan-appstore-distance.md:129 | Existing branch replaces precisely each sensitive line; line counts and every surrounding line are preserved. Public main retains them. |
 | P0-05 | Account-linked UI census fields at design-reviews/sim-walk/2026-08-19/screens/A5b_profile_census.json:94-96 and A5b_profile_17e_census.json:94-96; design-reviews/device-fixes/2026-08-18/HANDOFF.md:16 | Cited text redacted on existing branch. Finding remains PARTIAL: 21 changed PNGs are visually UNVERIFIED, and remaining contact/account-purpose candidates require adjudication. |
 
-Before state: sensitive fields, values withheld. After state: existing neutral public-evidence redactions. No original contact, health detail, account identifier, or secret value is reproduced. A scan of 3271 tracked UTF-8 text files found zero normalized copies of the confirmed phone token; 490 binary/large/non-UTF8 files were excluded. This is a bounded token check, not secret-free or media certification. Independent contextual review removed 132 related literal lines across 91 files; 66 remain across 31 files, including intentional-contact/SQL/admin/catalog candidates. Those counts are not confirmed additional leaks.
+Before state: sensitive fields, values withheld. After state: existing neutral public-evidence redactions. No original contact, health detail, account identifier, or secret value is reproduced. A scan of 3271 tracked UTF-8 text files found zero normalized copies of the confirmed phone token; 490 binary/large/non-UTF8 files were excluded. This is a bounded token check, not secret-free or media certification. Independent contextual review confirmed the existing branch removes 132 related literal lines across 91 files; 66 remain across 31 files, including intentional-contact/SQL/admin/catalog candidates. Those counts are not confirmed additional leaks.
 
 ## Gates and actual outcomes
 
@@ -59,7 +59,7 @@ Exit 0. `Test Suites: 299 passed, 299 total`; `Tests: 32 todo, 4472 passed, 4504
 git diff --cached --check
 ```
 
-Exit 0 before the implementation commit. Exact byte comparison against the existing cleanup confirms one directory command changed, and no other contributor text changed. The corrected command matches Git’s default clone destination. The file contains zero relative Markdown links to validate. No source formatting command was run.
+Exit 0 before the implementation commit. A later cumulative `git diff --check` against public main exited 2 for inherited trailing whitespace in the existing redaction at qa-reports/2026-05-29_Steve_PreLaunchSecurityAudit.md:170. The two trailing spaces were removed without changing the redacted quote; the cumulative check then exited 0. Exact byte comparison against the existing cleanup confirms one directory command changed, and no other contributor text changed. The corrected command matches Git’s default clone destination. The file contains zero relative Markdown links to validate. No source formatting command was run.
 
 ## What remains
 
@@ -69,6 +69,6 @@ Rollback: before adoption leave or close the draft; after owner merge use a new 
 
 ## Process self-check
 
-Efficiency: reused the exact public cleanup instead of duplicating 125 reviewed changes. Overlap: preserved primary work, all active product worktrees, and the Portfolio GSAP lane. Simplification: one contributor command plus a candid receipt; media review remains separate.
+Efficiency: reused the exact public cleanup instead of duplicating 125 existing changes. Overlap: preserved primary work, all active product worktrees, and the Portfolio GSAP lane. Simplification: one contributor command plus a candid receipt; media review remains separate.
 
 Main direct writes, merges, deployments, history rewrites, and credential rotations: NONE.

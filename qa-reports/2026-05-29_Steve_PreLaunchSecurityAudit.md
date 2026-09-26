@@ -167,7 +167,7 @@ Add this immediately before the `fetchFlagById(flagId)` call.
 
 ### P2-a — Replace personal email in geocode User-Agent
 
-**Current:** `'AccessMap/1.0 ([REDACTED_EMAIL])'` baked into the compiled binary.  
+**Current:** `'AccessMap/1.0 ([REDACTED_EMAIL])'` baked into the compiled binary.
 **Nominatim requires a contact** — a GitHub URL satisfies the policy and is less personal.
 
 **Exact fix** (`src/lib/geocode.ts` line 27):
