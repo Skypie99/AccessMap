@@ -41,10 +41,10 @@ ownership is ever evaluated. `errorMessage()` maps 42501 to exactly the copy Sky
 saw. Confirmed independently against the live catalog by Phase B.
 
 **The BUMBAKLOT detail, and why it is a side fact.** That flag belongs to
-`ranchin2023@gmail.com` (`7fe628a7…`), not to `skylerhalisky@gmail.com`
-(`8f99f7e0…`). But "Reported by: You" is plain uid equality
+`[TEST_ACCOUNT_1]` (`[REDACTED_USER_ID]`), not to `[OWNER_ACCOUNT]`
+(`[REDACTED_USER_ID]`). But "Reported by: You" is plain uid equality
 (`FlagDetailModal.tsx:513`) with no display-side fallback — so the device was
-signed in as ranchin2023, which genuinely **is** that flag's owner. She was the
+signed in as [TEST_ACCOUNT_1], which genuinely **is** that flag's owner. She was the
 owner, and the delete failed anyway. Both things are true; only the second one
 is the bug.
 
@@ -167,7 +167,7 @@ treats zero rows as a refusal, throwing 42501 → existing copy, no new strings.
 2. **Search by address** — open (it autofocuses). The whole input clears the keyboard; results are tappable with the keyboard up; ✕ reachable.
 3. **Saved Places** (the census pick) — tap Add; the name field and Save/Cancel are all visible above the keyboard.
 4. **After A1** — delete one of your own junk flags → the row disappears, no error. *(This is the MUST-1 cleanup unblock.)*
-5. **After A1 + A2**, signed in as skylerhalisky, relaunch — Admin appears in the drawer → Remove the BUMBAKLOT flag end to end (row gone; on a flag with photos, the photos go too).
+5. **After A1 + A2**, signed in as [OWNER_ACCOUNT], relaunch — Admin appears in the drawer → Remove the BUMBAKLOT flag end to end (row gone; on a flag with photos, the photos go too).
 6. **Worth one pass:** Profile → edit display name with the keyboard up (the field sits low on the scroll), and Tasks → search with the keyboard up (rows under it must be reachable).
 
 ---
@@ -175,7 +175,7 @@ treats zero rows as a refusal, throwing 42501 → existing copy, no new strings.
 ## Applied / shipped (2026-08-18, on Sky's explicit approval)
 
 - **A1 applied** — `grant select (is_admin) on public.users to authenticated`. Verified: is_admin now in the grant list; `email` still ungranted so the 2026-05-27 privacy protection is intact; the subselect that errored 42501 now returns cleanly.
-- **A2 applied** — `skylerhalisky@gmail.com` is `is_admin = true`, and the only admin.
+- **A2 applied** — `[OWNER_ACCOUNT]` is `is_admin = true`, and the only admin.
 - **Proven, in rolled-back transactions:** the owner deleting their own flag → 1 row; Sky as admin deleting someone else's flag → 1 row. Both previously errored 42501. The BUMBAKLOT flag was confirmed still present afterwards — nothing was actually deleted.
 - **Merged** `--no-ff` into `main` (`a7b816b`) and **pushed** to `origin/main`. Gates re-run green on merged main: 205 suites, 3000 pass, 3032 total; typecheck clean; lint 0 errors.
 - **Revert the whole train:** `git revert -m 1 a7b816b`. DB rollbacks are in `03_SQL_ARTIFACTS.md`.

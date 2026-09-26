@@ -34,7 +34,8 @@ SAFE_TO_RESUME: YES
 - Owner-gated (not edited): eas.json appleId, supabase/** RLS maintainer email, src test-fixture display name, operational runbooks, existing docs/* contact lines.
 
 ## Completed batches
-- (none yet)
+- T1 (7e07edf2): health + phone redactions, 4 files.
+- T2: device-fixes 2026-08-18 identity/live-rows census + deep-sweep reviewer account, 6 files.
 
 ## Open item IDs
 - FD-01 history, FD-02 frozen-path PII (eas.json appleId, RLS maintainer email, test fixture display name), FD-03 hash-bound captures, FD-04 intentional contacts / operational docs, FD-05 About, FD-06 merge, FD-07 rename.

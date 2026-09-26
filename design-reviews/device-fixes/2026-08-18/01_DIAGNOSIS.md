@@ -1,5 +1,7 @@
 # 01 — DIAGNOSIS (Phase A, read-only, 2026-08-18)
 
+> Public sanitation note: identifying account information was removed from this historical evidence on 2026-09-25. Test outcomes, reviewed source identities, engineering findings and acceptance conclusions are unchanged.
+
 Evidence below is from main @ `68fce6b` and live Supabase project `kldlwszpfkdmsjrjhjym` ("Accessable City App"). Live reads were SELECT-only; the one role-simulation ran inside `begin … rollback`.
 
 ---
@@ -18,14 +20,14 @@ Device: tap **Delete** on the Jun-2 "BUMBAKLOT" flag, which shows "Reported by: 
 ### A3. The live rows (who owns what)
 | account | uid | is_admin | points |
 |---|---|---|---|
-| skylerhalisky@gmail.com (Sky main, display "Jarvis Mckneil") | `8f99f7e0-bbad-4fd8-b3d0-4b6b99bdc8b2` | false | 90 |
-| ranchin2023@gmail.com (test) | `7fe628a7-6483-411f-a67b-39d754f403b8` | false | 166 |
-| gardenbeds2020@gmail.com (test) | `f4cf91d3-…` | false | 10 |
-| reviewer@accessmap.com (App-Review account) | `cdea9c39-…` | false | 15 |
+| [OWNER_ACCOUNT] (Sky main, display "[REDACTED_DISPLAY_NAME]") | `[REDACTED_USER_ID]` | false | [REDACTED_ACCOUNT_STATE] |
+| [TEST_ACCOUNT_1] (test) | `[REDACTED_USER_ID]` | false | [REDACTED_ACCOUNT_STATE] |
+| [TEST_ACCOUNT_2] (test) | `[REDACTED_USER_ID]` | false | [REDACTED_ACCOUNT_STATE] |
+| reviewer@accessmap.com (App-Review account) | `[REDACTED_USER_ID]` | false | [REDACTED_ACCOUNT_STATE] |
 
-The flag: `af36e3bf-2423-4c00-9f30-dfe80ac658a2` — "BUMBAKLOT", category other, severity 5, status **resolved**, no photo, created 2026-06-03 03:59 UTC (= Jun 2 evening local), **user_id = `7fe628a7…` = ranchin2023**.
+The flag: `af36e3bf-2423-4c00-9f30-dfe80ac658a2` — "BUMBAKLOT", category other, severity 5, status **resolved**, no photo, created 2026-06-03 03:59 UTC (= Jun 2 evening local), **user_id = `[REDACTED_USER_ID]` = [TEST_ACCOUNT_1]**.
 
-Since the UI said "You" and isOwn is uid-equality, the device session was **ranchin2023** — the flag's true owner. The owner delete failed anyway. (Also noteworthy: nobody has `is_admin = true`, confirming why the Admin tab renders for nobody *today* — but see A4 for why a grant alone wouldn't have fixed it.)
+Since the UI said "You" and isOwn is uid-equality, the device session was **[TEST_ACCOUNT_1]** — the flag's true owner. The owner delete failed anyway. (Also noteworthy: nobody has `is_admin = true`, confirming why the Admin tab renders for nobody *today* — but see A4 for why a grant alone wouldn't have fixed it.)
 
 ### A4. The root cause — a column grant missing under two RLS policy quals
 Live DELETE policies on `public.flags` (all policies on the table are **PERMISSIVE** — verified via `pg_policies.permissive`):
@@ -40,7 +42,7 @@ RLS policy quals evaluate **with the calling role's privileges**. Postgres inclu
 **Live proof (rolled back):**
 ```
 begin; set local role authenticated;
-set local request.jwt.claims to '{"sub":"8f99f7e0-…","role":"authenticated"}';
+set local request.jwt.claims to '{"sub":"[REDACTED_USER_ID]","role":"authenticated"}';
 select (select u.is_admin from public.users u where u.id = auth.uid());
 → ERROR 42501: permission denied for table users
 ```
