@@ -1,5 +1,7 @@
 # HANDOFF — Flagstone build prompt 00 · Phase 0 (PRE-SUBMISSION)
 
+> Public sanitation note: identifying account information was removed from this historical evidence on 2026-09-25. Test outcomes, reviewed source identities, engineering findings and acceptance conclusions are unchanged.
+
 **Branch:** `design/gsp-00-phase0-2026-08-21` · **base:** `a27864be5e8a668ed384505dd4483f07d477f675`
 **Scope:** exactly items 0.1–0.6 of `sections/13_phases.md`. Nothing more.
 **Resume rule:** read this file first, continue from NEXT ACTION. Never restart. Never re-do a landed commit.
@@ -41,8 +43,8 @@ without the stash would have made the data loss easier to hit. See BUILD_REPORT.
 - iPhone 17e `9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC` BOOTED, iOS 26.5.
 - Sim-release REBUILT from this branch: `Build Succeeded`, `.app` written 16:02:02.
 - Location granted via `simctl privacy`. Appearance light, content size medium.
-- **THE APP IS SIGNED IN AS SKY'S REAL ACCOUNT** (skylerhalisky@gmail.com,
-  "Jarvis Mckneil", 124 pts) against the LIVE backend. Do not sign out — signing
+- **THE APP IS SIGNED IN AS A REAL ACCOUNT** ([OWNER_ACCOUNT],
+  "[REDACTED_DISPLAY_NAME]", 124 pts) against the LIVE backend. Do not sign out — signing
   back in needs credentials no agent may handle. No writes of any kind: open
   FlagDetail but never press Verify / Resolved / Reject; open the report form
   but always cancel.
@@ -50,7 +52,7 @@ without the stash would have made the data loss easier to hit. See BUILD_REPORT.
   the GUEST Profile (0.3's before-capture) and the GUEST report form (0.4's
   nudge is `isAnon`-only). Both are covered by render tests; both are logged as
   NEEDS-GUEST-DEVICE in the build report. The signed-in Profile's long subtitle
-  ("Signed in as skylerhalisky@gmail.com") stands in for D3 at AXL.
+  ("Signed in as [REDACTED_EMAIL]") stands in for D3 at AXL.
 - Home place-search does not resolve here (the OpenStreetMap geocode returns
   nothing in this environment), so the "Near <place>" subtitle node is also
   unreachable.
