@@ -21,7 +21,7 @@ The two KAV-free modals land on an identical, consistent baseline (692 / 121). T
 - Row **title** buttons measure **320×29** — under the 44pt floor (see SW-43).
 - Elements found 24 in-sheet / exercised: open, filters present, census, scroll, close.
 
-## C11 — MyReportsModal (Sky's 6 real reports)
+## C11 — MyReportsModal (the signed-in account's 6 real reports)
 - All 6 present and correct: **3 Rejected + 3 Resolved**, reconciling exactly with the Profile "by status" row.
 - Adaptive filter chips — only statuses that exist are offered: **All (6) · Resolved (3) · Rejected (3)**; no empty Open/Verified chips. Good.
 - Search field 348×45 ✓; sort Newest/Oldest/Severity 71/66/76×45 ✓; map jump 44×45 ✓; Refresh + Close 44×45 ✓.
