@@ -48,11 +48,11 @@ Both documents end with a "Ratification block (paste into DECISIONS.md §SKY aft
 ---
 
 ## BQ-2 · `src/lib/geocode.ts:28` — the OpenStreetMap User-Agent
-`const USER_AGENT = 'AccessMap/1.0 (skylerhalisky@gmail.com)'`, asserted by `geocode.test.ts:171` as `/^AccessMap\//`.
+`const USER_AGENT = 'AccessMap/1.0 ([REDACTED_EMAIL])'`, asserted by `geocode.test.ts:171` as `/^AccessMap\//`.
 
 Left as-is. It is how the app introduces itself to Nominatim under their UA policy: no user ever sees it, and nothing breaks either way. It is neither brand nor plumbing, so it went here instead of into a sed.
 
-**Recommendation: change it to `Flagstone/1.0 (skylerhalisky@gmail.com)`** and move the test regex with it. Nominatim only needs a real identifier that reaches a human; that stays true. The reason to bother is that OSM's own policy is about being contactable and identifiable, and an operator who looks up the UA should find the app that exists. Two lines, no risk.
+**Recommendation: change it to `Flagstone/1.0 ([REDACTED_EMAIL])`** and move the test regex with it. Nominatim only needs a real identifier that reaches a human; that stays true. The reason to bother is that OSM's own policy is about being contactable and identifiable, and an operator who looks up the UA should find the app that exists. Two lines, no risk.
 
 ## BQ-3 · `src/components/ChangelogModal.tsx:52` — a changelog entry naming the old page title
 `'New "About AccessMap" page in Profile with version + maker note'`. User-visible, and also a historical record of a shipped release.

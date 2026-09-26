@@ -91,7 +91,7 @@ Note on test count: the checklist (2026-06-07) recorded 1,575 tests across 97 su
 | `testflight.environment` | `"production"` | ✅ (injects Supabase vars) |
 | `testflight.ios.buildConfiguration` | `"Release"` | ✅ |
 | No `//` comment keys or duplicate profile keys | confirmed by `node -e "JSON.parse(...)"` passing | ✅ |
-| `submit.production.ios.appleId` | `skylerhalisky@gmail.com` | ✅ |
+| `submit.production.ios.appleId` | `[REDACTED_EMAIL]` | ✅ |
 | `submit.production.ios.ascAppId` | `6774709116` | ✅ |
 | `submit.production.ios.appleTeamId` | `S78F8ZA8QU` | ✅ |
 | `submit.production.android.serviceAccountKeyPath` | `"TODO_PATH_..."` placeholder | ✅ (iOS/TestFlight unaffected) |

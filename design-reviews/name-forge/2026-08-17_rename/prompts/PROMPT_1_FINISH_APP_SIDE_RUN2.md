@@ -97,7 +97,7 @@ Sweep `docs/PRIVACY_POLICY.md` (14 hits) for the same name substitution, so the 
 ---
 
 ## LEG 2 · The OpenStreetMap User-Agent (BQ-2) — **GO box 2 TICKED**
-`src/lib/geocode.ts:28` → `const USER_AGENT = 'Flagstone/1.0 (skylerhalisky@gmail.com)'`, and move `src/lib/__tests__/geocode.test.ts:171`'s `/^AccessMap\//` to `/^Flagstone\//`. Two lines. Nominatim's policy only asks for an identifier that reaches a human, which stays true.
+`src/lib/geocode.ts:28` → `const USER_AGENT = 'Flagstone/1.0 ([REDACTED_EMAIL])'`, and move `src/lib/__tests__/geocode.test.ts:171`'s `/^AccessMap\//` to `/^Flagstone\//`. Two lines. Nominatim's policy only asks for an identifier that reaches a human, which stays true.
 
 ## LEG 3 · The changelog entry (BQ-3) — **GO box 3 TICKED**
 `src/components/ChangelogModal.tsx:52` → `'New "About Flagstone" page in Profile with version + maker note'`. It describes a page that still exists under a new title, and a user reading the changelog has no idea what AccessMap was.

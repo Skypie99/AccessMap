@@ -57,7 +57,7 @@ Say the word and I will apply it exactly like the other nine.
 
 ## Leg 2 · OpenStreetMap User-Agent · DONE
 
-`src/lib/geocode.ts:28` now reads `const USER_AGENT = 'Flagstone/1.0 (skylerhalisky@gmail.com)'`, and `src/lib/__tests__/geocode.test.ts:171` asserts `/^Flagstone\//`. Two lines, exactly as scoped. Commit `c561833`, geocode suite green (15 tests). No user ever sees this string; Nominatim's policy only asks for an identifier that reaches a human, which stays true, so this is honesty in the logs rather than a fix.
+`src/lib/geocode.ts:28` now reads `const USER_AGENT = 'Flagstone/1.0 ([REDACTED_EMAIL])'`, and `src/lib/__tests__/geocode.test.ts:171` asserts `/^Flagstone\//`. Two lines, exactly as scoped. Commit `c561833`, geocode suite green (15 tests). No user ever sees this string; Nominatim's policy only asks for an identifier that reaches a human, which stays true, so this is honesty in the logs rather than a fix.
 
 One cosmetic residual, left because the runbook scoped this leg to two lines: the test's own title on `geocode.test.ts:161` still reads "sends the AccessMap User-Agent per Nominatim policy". It is an internal test name, not a shipped string and not an assertion, so it changes nothing. Flag it if you want it swept.
 

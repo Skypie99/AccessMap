@@ -42,7 +42,8 @@ SAFE_TO_RESUME: YES
 - V1a (73656d0c): 6 sim-walk signed-in Profile-family captures (name/email/monogram; own-report card detail).
 - V1b (ee26abca): 6 sim-walk captures (leaderboard x3 name only - JA/ME monograms kept as SW-44 evidence; achievements ghost name; export share-sheet email; 17e Profile name/email/monogram).
 - V2 (08a0aeec): 4 art-direction signed-in Profile captures (name/email/monogram; AXL ellipsis kept as truncation evidence). _nav/_stats KEEP_UNCHANGED (no identity on screen).
-- V3: 5 sim-walk guest captures of pre-2026-08-23 legal copy (contact address only; owner retired it on 2026-08-23, commit 82bd23ae).
+- V3 (60801dfe): 5 sim-walk guest captures of pre-2026-08-23 legal copy (contact address only; owner retired it on 2026-08-23, commit 82bd23ae).
+- P1 owner-email: 64 files in 7 batches -> [REDACTED_EMAIL]; done: batch 0 (10 files, 13 tokens).
 
 ## Open item IDs
 - FD-01 history, FD-02 frozen-path PII (eas.json appleId, RLS maintainer email, test fixture display name), FD-03 hash-bound captures, FD-04 intentional contacts / operational docs, FD-05 About, FD-06 merge, FD-07 rename.
