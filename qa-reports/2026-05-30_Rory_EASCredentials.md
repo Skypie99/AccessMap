@@ -20,7 +20,7 @@ Wired confirmed Apple credentials into `eas.json` submit profile.
 
 | Field | Before | After |
 |---|---|---|
-| `submit.production.ios.appleId` | `TODO_APPLE_ID@example.com` | `skylerhalisky@gmail.com` |
+| `submit.production.ios.appleId` | `TODO_APPLE_ID@example.com` | `[REDACTED_EMAIL]` |
 | `submit.production.ios.appleTeamId` | `TODO_APPLE_TEAM_ID` | `S78F8ZA8QU` |
 | `submit.production.ios.ascAppId` | `TODO_ASC_APP_ID` | unchanged (still pending) |
 | Header comment block | "CREDENTIALS REQUIRED BEFORE FIRST BUILD" | Updated with ✅/⏳ status indicators |

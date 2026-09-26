@@ -24,7 +24,7 @@ production code touched. Branch is on origin and ready for Sky to review.
 
 ### 1. iMessage instruction — Constitutional conflict (UNCHANGED from Wave 2)
 
-The Wave 3 dispatch said *"send Sky an iMessage to skylerhalisky@gmail.com
+The Wave 3 dispatch said *"send Sky an iMessage to [REDACTED_EMAIL]
 with a 2-sentence summary."* Per global `CLAUDE.md` / Const. Art. 9.4,
 **only Morgan messages Sky, and only on a direct `/morgan` invocation.** I
 did not send.

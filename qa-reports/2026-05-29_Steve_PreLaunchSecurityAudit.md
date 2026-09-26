@@ -24,7 +24,7 @@ Full review of 7 security domains. One low-risk fix applied directly to this bra
 **Minor note — geocode user-agent contains personal email:**
 `src/lib/geocode.ts` line 27:
 ```ts
-const USER_AGENT = 'AccessMap/1.0 (skylerhalisky@gmail.com)';
+const USER_AGENT = 'AccessMap/1.0 ([REDACTED_EMAIL])';
 ```
 Nominatim requires a contact; the email is acceptable under their policy. It will be visible in the compiled app binary to anyone who decompiles it. See Proposal P2-a.
 
@@ -167,12 +167,12 @@ Add this immediately before the `fetchFlagById(flagId)` call.
 
 ### P2-a — Replace personal email in geocode User-Agent
 
-**Current:** `'AccessMap/1.0 (skylerhalisky@gmail.com)'` baked into the compiled binary.  
+**Current:** `'AccessMap/1.0 ([REDACTED_EMAIL])'` baked into the compiled binary.  
 **Nominatim requires a contact** — a GitHub URL satisfies the policy and is less personal.
 
 **Exact fix** (`src/lib/geocode.ts` line 27):
 ```diff
-- const USER_AGENT = 'AccessMap/1.0 (skylerhalisky@gmail.com)';
+- const USER_AGENT = 'AccessMap/1.0 ([REDACTED_EMAIL])';
 + const USER_AGENT = 'AccessMap/1.0 (https://github.com/skypie/AccessMap)';
 ```
 Or use a support/contact email if one exists for the app.
