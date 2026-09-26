@@ -10,7 +10,7 @@ Welcome! This guide covers the development workflow, local setup, testing, and s
 
 ```bash
 git clone https://github.com/skypie99/AccessMap.git
-cd Flagstone
+cd AccessMap
 npm install
 ```
 
