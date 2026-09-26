@@ -43,10 +43,10 @@ SAFE_TO_RESUME: YES
 - V1b (ee26abca): 6 sim-walk captures (leaderboard x3 name only - JA/ME monograms kept as SW-44 evidence; achievements ghost name; export share-sheet email; 17e Profile name/email/monogram).
 - V2 (08a0aeec): 4 art-direction signed-in Profile captures (name/email/monogram; AXL ellipsis kept as truncation evidence). _nav/_stats KEEP_UNCHANGED (no identity on screen).
 - V3 (60801dfe): 5 sim-walk guest captures of pre-2026-08-23 legal copy (contact address only; owner retired it on 2026-08-23, commit 82bd23ae).
-- P1 owner-email: 64 files in 7 batches -> [REDACTED_EMAIL]; done: batch 0 (10 files, 13 tokens), batch 1 (10 files, 11 tokens), batch 2 (10 files, 10 tokens), batch 3 (10 files, 14 tokens), batch 4 (10 files, 11 tokens), batch 5 (10 files, 10 tokens), batch 6 (4 files, 4 tokens)
+- P1 owner-email -> [REDACTED_EMAIL]: batches 0-6 = 64 qa-reports/design-reviews files (73 tokens); batch 7 = 4 historical docs (docs/PHASE_TESTFLIGHT_FIX_PLAN, MASTER_FIX_LOG, PHASE6_STRATEGY, LEARNINGS.md; 5 tokens). Remaining = owner-gated only (8 frozen, 16 hash-bound, 4 operational, 3 published-contact docs FD-04).
 
 ## Open item IDs
 - FD-01 history, FD-02 frozen-path PII (eas.json appleId, RLS maintainer email, test fixture display name), FD-03 hash-bound captures, FD-04 intentional contacts / operational docs, FD-05 About, FD-06 merge, FD-07 rename.
 
 ## NEXT_ACTION
-Visual review + redaction DONE (481 inspected; 21 derivatives: V1a 6, V1b 6, V2 4, V3 5). Next: P1 owner-email batches (qa-reports/**, design-reviews/** non-bound), then PUBLIC_EVIDENCE.md + README.
+Visual review + redaction DONE (481 inspected; 21 derivatives: V1a 6, V1b 6, V2 4, V3 5). P1 DONE. Next: privacy gate record, then docs/PUBLIC_EVIDENCE.md + README, link validation, full Jest run, final scan, cleanup.

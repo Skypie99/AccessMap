@@ -292,7 +292,7 @@ on the client side — the API silently returns errors or empty arrays.
 The pattern in `src/lib/geocode.ts`:
 
 ```ts
-const USER_AGENT = 'AccessMap/1.0 (skylerhalisky@gmail.com)';
+const USER_AGENT = 'AccessMap/1.0 ([REDACTED_EMAIL])';
 fetch(url, { headers: { 'User-Agent': USER_AGENT }, signal });
 ```
 

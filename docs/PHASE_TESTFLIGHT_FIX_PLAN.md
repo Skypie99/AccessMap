@@ -75,7 +75,7 @@ Work through these in order. Each check takes 2–5 minutes. Most submissions fa
 **Most likely cause of the vague "Something went wrong" error.**
 
 1. Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com)
-2. Sign in as `skylerhalisky@gmail.com`
+2. Sign in as `[REDACTED_EMAIL]`
 3. Look for a yellow/orange banner at the top: "You must accept the Apple Developer Program License Agreement." It may also appear at [developer.apple.com/account](https://developer.apple.com/account)
 4. Click through, accept the new terms
 
@@ -174,7 +174,7 @@ Before triggering the next TestFlight submit, confirm:
 - [ ] feat/phase5-trust-score merged to main (or build triggered from this branch explicitly)
 - [ ] feat/phase5-anon-reporting merged to main
 - [ ] EAS secrets set: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (verify via `eas secret:list`)
-- [ ] `eas.json` submit credentials present: `appleId: "skylerhalisky@gmail.com"`, `ascAppId: "6774709116"`, `appleTeamId: "S78F8ZA8QU"`
+- [ ] `eas.json` submit credentials present: `appleId: "[REDACTED_EMAIL]"`, `ascAppId: "6774709116"`, `appleTeamId: "S78F8ZA8QU"`
 
 ### Apple / App Store Connect
 - [ ] Apple Developer Program agreement accepted (check appstoreconnect.apple.com for banners)
