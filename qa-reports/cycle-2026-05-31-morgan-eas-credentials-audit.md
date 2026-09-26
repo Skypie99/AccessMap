@@ -168,7 +168,7 @@ The `eas-testflight-submit.yml` CI workflow can't run unattended without 4 secre
 
 Secrets to add at `github.com/[your-repo]/settings/secrets/actions`:
 - `EAS_TOKEN` — from expo.dev account settings
-- `EXPO_APPLE_ID` — `skylerhalisky@gmail.com`
+- `EXPO_APPLE_ID` — `[REDACTED_EMAIL]`
 - `EXPO_APPLE_PASSWORD` — Apple app-specific password
 - `EXPO_APPLE_TEAM_ID` — `S78F8ZA8QU`
 

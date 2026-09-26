@@ -1,4 +1,4 @@
-To:      skylerhalisky@gmail.com
+To:      [REDACTED_EMAIL]
 Subject: Feature push AccessMap — 2026-05-23 — Auto-open list (a11y Phase 2) + Onboarding cards
 
 Hi Sky,

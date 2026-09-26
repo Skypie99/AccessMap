@@ -30,12 +30,12 @@
 **File:** `eas.json` lines 32–34
 
 ```json
-"appleId": "skylerhalisky@gmail.com",
+"appleId": "[REDACTED_EMAIL]",
 "ascAppId": "TODO_ASC_APP_ID",
 "appleTeamId": "S78F8ZA8QU"
 ```
 
-- `skylerhalisky@gmail.com` — Sky's personal email is PII committed to version control (and thus git history). Not a credential, but it will be indexed by GitHub if the repo is ever made public.
+- `[REDACTED_EMAIL]` — Sky's personal email is PII committed to version control (and thus git history). Not a credential, but it will be indexed by GitHub if the repo is ever made public.
 - `appleTeamId: S78F8ZA8QU` — Apple Team IDs are semi-public (they appear in provisioning profiles), but committing them to version control is avoidable. It's not a secret per se, but combined with the email it narrows the attack surface for social engineering against Sky's Apple Developer account.
 
 **Recommendation:** Move `appleId` and `appleTeamId` out of `eas.json` and into GitHub Secrets (already done for `APPLE_TEAM_ID` in the workflow — just need `eas.json` to reference `$APPLE_TEAM_ID` via env). The `eas.json` `submit.production` block can be omitted or use placeholder values; EAS CLI picks up env vars at submit time.
@@ -146,7 +146,7 @@ The actions used in workflows (`actions/checkout@v4`, `actions/setup-node@v4`, `
 
 ## Decisions for Sky
 
-1. **`eas.json` email/Team ID** — Remove `skylerhalisky@gmail.com` and `S78F8ZA8QU` from `eas.json` and use GitHub Secrets instead. This also means removing them from git history (a `git filter-repo` or `BFG` run). Worth doing before any repo visibility change.
+1. **`eas.json` email/Team ID** — Remove `[REDACTED_EMAIL]` and `S78F8ZA8QU` from `eas.json` and use GitHub Secrets instead. This also means removing them from git history (a `git filter-repo` or `BFG` run). Worth doing before any repo visibility change.
 
 2. **Apple ID password vs. API key** — Switching `EXPO_APPLE_PASSWORD` to App Store Connect API keys is the right long-term move. Low urgency for private dev use; higher urgency before public release.
 

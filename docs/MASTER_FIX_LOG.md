@@ -146,7 +146,7 @@ These prevented the IPA from being accepted by App Store Connect.
 
 **Problem:** EAS submit needed authenticated Apple credentials. The submit config initially used env var references that weren't consistently set.
 
-**Fix:** `appleId: "skylerhalisky@gmail.com"` and `appleTeamId: "S78F8ZA8QU"` hardcoded in `eas.json` under `submit.production.ios`. Team ID also added to `app.json` under `ios.appleTeamId`.
+**Fix:** `appleId: "[REDACTED_EMAIL]"` and `appleTeamId: "S78F8ZA8QU"` hardcoded in `eas.json` under `submit.production.ios`. Team ID also added to `app.json` under `ios.appleTeamId`.
 
 **Commit:** `f97e242`, `158f38a`
 

@@ -1,11 +1,13 @@
 # FLAGSTONE SIMULATOR WALK — **PHASE A-2 (AUTHED) CLOSE-OUT**
 **Fable 5 · 2026-08-20 · walk + diagnose only. Zero fixes, zero commits, zero tracked-file edits.**
 
+> Public sanitation note: identifying account information was removed from this historical evidence on 2026-09-25. Test outcomes, reviewed source identities, engineering findings and acceptance conclusions are unchanged.
+
 ## ★ COMMIT HANDSHAKE (repeated at close)
 `git -C ~/AccessMap rev-parse main` = **`bc917891513da35265559f373b110b2a6bd8ea7f`** at session start **and unchanged at close**. Branch `main`, tracked tree clean (only untracked `design-reviews/` artifacts). The walked binary is still valid for every finding below. **Build type = sim-release** (Release config, embedded bundle). Every Session-5 ledger row carries this tag.
 
 ## ★★ THE GOVERNING CAVEAT — WHOSE ACCOUNT THIS WAS
-Sky signed in with her **real account** (`skylerhalisky@gmail.com`), not the throwaway the prompt anticipated, and that account turned out to be an **ADMIN** (`is_admin = true`) — which she did not expect.
+Sky signed in with her **real account** (`[OWNER_ACCOUNT]`), not the throwaway the prompt anticipated, and that account turned out to be an **ADMIN** (`is_admin = true`) — which she did not expect.
 - Evidence: the drawer renders an **Admin** row; the tab-bar count moved 5 (guest) → **6** (signed in), and `RootNavigator.tsx:409` registers Admin only when `isAdmin === true`.
 - **Why she didn't know:** `src/lib/admin.ts` documents that `authenticated` held no SELECT grant on `users.is_admin` until **2026-08-18** — the hook returned 42501 and `?? false` laundered it into a clean-looking "not an admin" for months. Her account did not change; the gate started working two days before this walk.
 - **Consequence for coverage:** every authed surface here was seen through an admin's eyes. A **normal signed-in user's** view is still unwalked — listed as a real gap below, not silently absorbed.
@@ -86,7 +88,7 @@ Drawer → **Sign out** → `confirm()` dialog **"Sign out?"** with Cancel / Sig
 
 ## ★ VERIFIED-GOOD UNDER AUTH (worth Sky's confidence, and worth protecting in Phase B)
 - **Achievements a11y is exemplary** — earned vs locked is carried in the accessible *name* ("…Earned." vs "…Progress: 6 of 10."), never by colour alone.
-- **Leaderboard self-highlight** works and is announced ("2nd, Jarvis Mckneil, 90 points, **you**"); other contributors are correctly anonymised to "Member".
+- **Leaderboard self-highlight** works and is announced ("2nd, [REDACTED_DISPLAY_NAME], 90 points, **you**"); other contributors are correctly anonymised to "Member".
 - **Per-photo alt-text field** ("Describe the photo for screen reader users") appears the moment a photo is attached — above-average for a UGC app.
 - **Every destructive action is `confirm()`-guarded**, including both admin actions, with double-tap protection (`AdminScreen.tsx:145,169`), and the flag Delete dialog behaved correctly.
 - **The EXIF promise is stated in the form, beside the control** — not buried in the privacy policy — and the sanitizer genuinely sits in the upload path.

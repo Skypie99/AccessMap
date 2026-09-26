@@ -339,7 +339,7 @@ describe('openFeedbackComposer', () => {
 
     expect(alertMock).toHaveBeenCalled();
     const [, message] = alertMock.mock.calls[0];
-    expect(message).toContain('skylerhalisky@gmail.com');
+    expect(message).toContain('[REDACTED_EMAIL]');
   });
 });
 ```

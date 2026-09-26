@@ -8,7 +8,7 @@
 
 Two independent pieces of work, planned together:
 
-1. **A personal-email scrub** — replaced `skylerhalisky@gmail.com` with
+1. **A personal-email scrub** — replaced `[REDACTED_EMAIL]` with
    `support@skypistudio.com` (Namecheap-forwards to the same inbox, confirmed
    live by Sky) everywhere it was user- or reviewer-facing.
 2. **A new, additional publish location** for the four Flagstone legal/support

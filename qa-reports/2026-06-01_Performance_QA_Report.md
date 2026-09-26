@@ -210,7 +210,7 @@ git diff main..qa-peter/accessmap-2026-06-01
 
 ## Constitution note
 
-The task asked to email this to skylerhalisky@gmail.com. Per the standing rule +
+The task asked to email this to [REDACTED_EMAIL]. Per the standing rule +
 Constitution Art. 9 (only Morgan messages Sky), **I did not email it.** This report is
 saved at `qa-reports/2026-06-01_Performance_QA_Report.md` on the branch — **invoke
 `/morgan` to relay it.**

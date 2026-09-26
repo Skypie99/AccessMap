@@ -1,5 +1,7 @@
 # SIM-WALK HANDOFF — Flagstone Full Simulator Walk (Phase A)
 
+> Public sanitation note: identifying account information was removed from this historical evidence on 2026-09-25. Test outcomes, reviewed source identities, engineering findings and acceptance conclusions are unchanged.
+
 **Run started:** 2026-08-19 23:46 PDT · **Model:** Fable 5 (Phase A = walk + diagnose only; Phase B = separate Opus window fixes)
 **Output root:** `design-reviews/sim-walk/2026-08-19/`
 **Repo:** `~/AccessMap` (app is named **Flagstone**; repo folder + identifiers deliberately still say accessmap — bundle `com.accessmap.app`, slug `accessmap`, scheme `accessmap://` — these are PROTECTED, never "fix")
@@ -84,7 +86,7 @@ A5b Profile signed-in ✓ · C11 MyReports ✓ · C12 MyWatched ✓ · C10 Activ
 **ALL 6 SKY-QUEUE NODES WALKED.** New findings SW-38..SW-48 (incl. 2 BLOCKERS: SW-46 abuse-report unreachable app-wide, SW-47 SW-30 confirmed identical under auth).
 
 ## ACCOUNT FACTS (established, load-bearing)
-- Signed in as **skylerhalisky@gmail.com — Sky's REAL account**, NOT a throwaway. 90 points, 6 real reports, Bronze, 10 pts from Silver.
+- Signed in as **[OWNER_ACCOUNT] — a real account**, NOT a throwaway. 90 points, 6 real reports, Bronze, 10 pts from Silver.
 - Account **IS ADMIN** (`is_admin=true`) — drawer shows Admin row; tab count 5→6. Sky expected non-admin. Cause: the `users.is_admin` SELECT grant only went live 2026-08-18 (src/lib/admin.ts), so the gate silently read false for months.
 - **Points trigger is forward-only** → a verify/resolve on any own row would push 90→105 and permanently cross Silver + Engaged. WRITE ACTIONS ESCALATED TO SKY, not assumed.
 

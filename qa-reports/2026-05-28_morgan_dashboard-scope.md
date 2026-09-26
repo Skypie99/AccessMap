@@ -22,4 +22,4 @@ Once Sky responds:
 - T-shirt estimate (S/M/L/XL)
 - Phase breakdown + blockers
 
-**Sent:** iMessage to +1 778-581-3605 @ 2026-05-28
+**Sent:** iMessage to [REDACTED_PHONE] @ 2026-05-28

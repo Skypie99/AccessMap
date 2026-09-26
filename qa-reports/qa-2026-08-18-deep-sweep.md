@@ -34,7 +34,7 @@ Full-project sweep ahead of App Store submission: three parallel audits (screens
 
 1. **Seed the reviewer's map (Apple 2.1/4.2 — the big one).** Production has zero open/verified flags: the reviewer would meet an empty app. Your prepared, double-paste-guarded seed SQL is at `supabase/migrations/2026-08-18_seed_reviewer_flags.sql`. Apply it in the Supabase SQL editor (or tell me and I'll run it — it's your production content, so it's your call). Never run the companion purge file standalone.
 2. **Verify EAS production env vars (launch-crash if wrong).** `src/lib/supabase.ts` throws at module scope if the two `EXPO_PUBLIC_SUPABASE_*` vars are missing. Run: `eas env:list --environment production` and confirm both are set before building.
-3. **Reviewer credentials — ✅ DONE today.** Rotated, sign-in tested by you, entered in App Store Connect (account: gardenbeds2020@gmail.com). The old placeholder-based notes file already pointed at ASC correctly.
+3. **Reviewer credentials — ✅ DONE today.** Rotated, sign-in tested by you, entered in App Store Connect (account: [TEST_ACCOUNT_2]). The old placeholder-based notes file already pointed at ASC correctly.
 4. **Screenshots** still need regenerating with Flagstone branding before submission (store metadata itself is ratified at `design-reviews/name-forge/2026-08-17_rename/05_store_metadata_flagstone.md`).
 
 ## Proposals (NOT applied — need your review)
@@ -59,7 +59,7 @@ Full-project sweep ahead of App Store submission: three parallel audits (screens
 ## Verified-safe today (so nobody re-audits these)
 
 - `is_admin` privilege escalation: **closed.** Live `users update own row` policy's WITH CHECK pins `is_admin` to its current value; the column-level UPDATE grant is inert. (Checked directly against production.)
-- Reviewer seed SQL contains no reference to the old reviewer email — this morning's account change (reviewer@accessmap.com → gardenbeds2020@gmail.com) breaks nothing.
+- Reviewer seed SQL contains no reference to the old reviewer email — this morning's account change (reviewer@accessmap.com → [TEST_ACCOUNT_2]) breaks nothing.
 - Privacy policy URL is live, Flagstone-branded, and accurate about EXIF stripping; icon is 1024² no-alpha; permission strings, privacy manifest, account deletion, UGC report/block/filter, guest browse — all verified present and consistent.
 - No secrets anywhere in `src/`; PKCE + cache purge on sign-out; EXIF strip is fail-closed as documented.
 

@@ -3,7 +3,7 @@
 **Status:** PROPOSED — not added yet. Adds a single `.github/workflows`
 file. No new npm dependencies; runs whatever scripts are already in
 `package.json`.
-**Owner to approve:** Sky (skylerhalisky@gmail.com)
+**Owner to approve:** Sky ([REDACTED_EMAIL])
 **Author:** Gary (safety-net pass, 2026-05-23)
 **Estimated effort:** ~3 minutes to drop in the file and push.
 

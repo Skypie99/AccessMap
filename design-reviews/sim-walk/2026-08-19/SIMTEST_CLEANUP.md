@@ -21,7 +21,7 @@ The Production Law: anon writes walked to the EDGE only; nothing persisted to th
 
 # SESSION 5 — AUTHED PASS (2026-08-20)
 
-**Account used: Sky's REAL account `skylerhalisky@gmail.com` (ADMIN), not a throwaway.** No `[SIMTEST]` rows were created — all write-class actions were escalated to Sky instead of assumed (see 00_CLOSEOUT_AUTHED.md §DECISIONS). Backend state changes below are limited to reversible preference toggles, all restored and re-verified.
+**Account used: a real account `[OWNER_ACCOUNT]` (ADMIN), not a throwaway.** No `[SIMTEST]` rows were created — all write-class actions were escalated to Sky instead of assumed (see 00_CLOSEOUT_AUTHED.md §DECISIONS). Backend state changes below are limited to reversible preference toggles, all restored and re-verified.
 
 | # | Item | Where stored | Status |
 |---|------|--------------|--------|
@@ -41,7 +41,7 @@ The Production Law: anon writes walked to the EDGE only; nothing persisted to th
 - The deliberate SW-47 crash was induced on a READ path (opening a flag's detail from a second parent) and wrote nothing.
 
 ## ⚠ NOT REVERSIBLE — points and tier (Sky authorised this explicitly)
-The points trigger is forward-only, so **deleting the flag did NOT return the points**. Sky's real account moved **90 → 124** and **Bronze → Silver**, plus a new badge (Achievements 3/13 → **4/13**, the Engaged badge at 100 points). Exact ledger, all confirmed in RECENT POINT ACTIVITY:
+The points trigger is forward-only, so **deleting the flag did NOT return the points**. The signed-in account moved **90 → 124** and **Bronze → Silver**, plus a new badge (Achievements 3/13 → **4/13**, the Engaged badge at 100 points). Exact ledger, all confirmed in RECENT POINT ACTIVITY:
 | Award | Points | From |
 |---|---|---|
 | Reported a barrier | +5 | creating the [SIMTEST] flag |

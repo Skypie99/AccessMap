@@ -39,9 +39,9 @@ GO box 1 was unticked, so nothing here was changed. This is the leg that matters
 
 ## Leg 2 · OpenStreetMap User-Agent (BQ-2) · BANKED
 
-GO box 2 unticked. Left as-is: `src/lib/geocode.ts:28` still reads `const USER_AGENT = 'AccessMap/1.0 (skylerhalisky@gmail.com)'`, and `src/lib/__tests__/geocode.test.ts:171` still asserts `/^AccessMap\//`.
+GO box 2 unticked. Left as-is: `src/lib/geocode.ts:28` still reads `const USER_AGENT = 'AccessMap/1.0 ([REDACTED_EMAIL])'`, and `src/lib/__tests__/geocode.test.ts:171` still asserts `/^AccessMap\//`.
 
-Ready when you tick it (two lines, no risk): set the UA to `'Flagstone/1.0 (skylerhalisky@gmail.com)'` and move the test regex to `/^Flagstone\//`. Nominatim's policy only asks for an identifier that reaches a human, which stays true either way, so this is cosmetic honesty rather than a fix.
+Ready when you tick it (two lines, no risk): set the UA to `'Flagstone/1.0 ([REDACTED_EMAIL])'` and move the test regex to `/^Flagstone\//`. Nominatim's policy only asks for an identifier that reaches a human, which stays true either way, so this is cosmetic honesty rather than a fix.
 
 ## Leg 3 · Changelog entry (BQ-3) · BANKED
 

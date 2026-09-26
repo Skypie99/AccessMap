@@ -49,7 +49,7 @@ The hardening era is closed out. `fix/qa-sweep` (22 commits) fast-forwarded clea
 | Tree | `dist/` gitignored, **0 tracked changes** on main ✓ |
 
 ## Build readiness (for your demo build)
-- `eas` CLI present (**eas-cli@20.3.0**, satisfies eas.json `>=10.0.0`), logged in as **skypie911 / skylerhalisky@gmail.com**.
+- `eas` CLI present (**eas-cli@20.3.0**, satisfies eas.json `>=10.0.0`), logged in as **skypie911 / [REDACTED_EMAIL]**.
 - App config: `ios.bundleIdentifier: com.accessmap.app`, `version: 3.0.0`, EAS project linked (`a7149107-…`). Prior builds exist (remote buildNumber 17) → build path proven.
 - `eas.json` `testflight` profile (store dist, Release, autoIncrement) + `submit.production.ios` (appleId/ascAppId `6774709116`/teamId) valid.
 

@@ -1,7 +1,7 @@
 # Proposal — Jest test runner + jest-expo preset
 
 **Status:** PROPOSED — not installed yet. Adds new dev dependencies.
-**Owner to approve:** Sky (skylerhalisky@gmail.com)
+**Owner to approve:** Sky ([REDACTED_EMAIL])
 **Author:** Gary (safety-net pass, 2026-05-23)
 **Estimated effort:** ~10 minutes to install + verify
 

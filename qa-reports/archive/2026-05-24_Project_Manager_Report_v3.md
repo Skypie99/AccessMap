@@ -283,4 +283,4 @@ This has been sitting since the Dani compiler ran at 17:18. It's the cleanest br
 
 ---
 
-*Morgan — ACTIVE mode. Report saved to `AccessMap/qa-reports/2026-05-24_Project_Manager_Report_v3.md` and Access Map Summaries. Email sent to skylerhalisky@gmail.com.*
+*Morgan — ACTIVE mode. Report saved to `AccessMap/qa-reports/2026-05-24_Project_Manager_Report_v3.md` and Access Map Summaries. Email sent to [REDACTED_EMAIL].*

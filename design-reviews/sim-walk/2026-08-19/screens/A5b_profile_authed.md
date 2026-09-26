@@ -1,13 +1,13 @@
 # A5b — ProfileScreen (SIGNED IN) · Pro Max 440×956 · light · sim-release @ bc91789
 
 ## SESSION VERIFICATION (proof, not Sky's word)
-Census shows the **stats surface, not the GuestProfile CTA**: header "Jarvis Mckneil" + "Signed in as skylerhalisky@gmail.com" + POINTS 90 + Sign out / Delete Account. Session confirmed.
+Census shows the **stats surface, not the GuestProfile CTA**: header "[REDACTED_DISPLAY_NAME]" + "Signed in as [REDACTED_EMAIL]" + POINTS 90 + Sign out / Delete Account. Session confirmed.
 Shots: `shots/promax-authed/02_post_signin.png`, `A5b_profile_light.png`. Census: `screens/A5b_profile_census.json`.
 
 ## ⚠ ACCOUNT REALITY (governs the whole authed pass)
-- Account = **Sky's REAL account** (`skylerhalisky@gmail.com`), NOT the throwaway the prompt anticipated. Real data: **90 points, 6 real reports, Bronze tier, 10 pts from Silver.**
+- Account = **a real account** (`[OWNER_ACCOUNT]`), NOT the throwaway the prompt anticipated. Real data: **90 points, 6 real reports, Bronze tier, 10 pts from Silver.**
 - Account is **ADMIN** (`is_admin = true`) — see the SW-38 caveat block in LEDGER.md.
-- **Consequence:** the points trigger is forward-only. Any verify/resolve I fire on my own row adds real points to her real profile and would push 90 → 105, **crossing the Silver threshold and the Engaged badge**, permanently and un-undoably. Write actions therefore ESCALATED to Sky rather than assumed (see close-out §DECISIONS).
+- **Consequence:** the points trigger is forward-only. Any verify/resolve I fire on my own row adds real points to the real account and would push 90 → 105, **crossing the Silver threshold and the Engaged badge**, permanently and un-undoably. Write actions therefore ESCALATED to Sky rather than assumed (see close-out §DECISIONS).
 
 ## MEASUREMENTS (numeric, 44pt floor)
 | Control | Rect w×h | Verdict |

@@ -71,7 +71,7 @@ Fetches via `public.users` once on mount; cancellation-safe; all errors return `
 ```
 
 **Post-apply steps:**
-1. To promote a user to admin: `UPDATE public.users SET is_admin = true WHERE email = 'skylerhalisky@gmail.com';`
+1. To promote a user to admin: `UPDATE public.users SET is_admin = true WHERE email = '[REDACTED_EMAIL]';`
 2. Reload the app — the Admin tab appears immediately.
 
 ---

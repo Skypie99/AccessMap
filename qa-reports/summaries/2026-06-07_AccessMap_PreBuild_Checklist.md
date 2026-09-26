@@ -97,7 +97,7 @@ npx eas-cli env:list --environment production
 - `testflight` profile: `"distribution": "store"` **and** `"environment": "production"` ✅
   (the `environment` is what injects the Supabase vars).
 - No `//` comment keys, no duplicate profile keys ✅ (both previously broke every eas command).
-- `submit.production.ios`: `appleId` (skylerhalisky@gmail.com) · `ascAppId` **6774709116** ·
+- `submit.production.ios`: `appleId` ([REDACTED_EMAIL]) · `ascAppId` **6774709116** ·
   `appleTeamId` **S78F8ZA8QU** ✅.
 - Quick validity check: `node -e "JSON.parse(require('fs').readFileSync('eas.json'))" && echo OK`
 
