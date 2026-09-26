@@ -38,7 +38,8 @@ SAFE_TO_RESUME: YES
 - T2 (ebc27d72): device-fixes 2026-08-18 identity/live-rows census + deep-sweep reviewer account, 6 files.
 - T3 (a2f4d55e): sim-walk 2026-08-19 authed markdown, 10 files (identity tokens; possessive account-state claims decoupled; load-bearing numbers kept).
 - T4 (a111e497): sim-walk generated evidence, 9 files (8 census JSON stay valid; console log: identity tokens + owner data-export report locations/text).
-- T5: art-direction 2026-08-21 + v4.1.1 EAS readiness, 5 files (incl. truncated email form).
+- T5 (08bbac58): art-direction 2026-08-21 + v4.1.1 EAS readiness, 5 files (incl. truncated email form).
+- V1a: 6 sim-walk signed-in Profile-family captures (name/email/monogram; own-report card detail).
 
 ## Open item IDs
 - FD-01 history, FD-02 frozen-path PII (eas.json appleId, RLS maintainer email, test fixture display name), FD-03 hash-bound captures, FD-04 intentional contacts / operational docs, FD-05 About, FD-06 merge, FD-07 rename.
