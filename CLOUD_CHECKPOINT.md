@@ -36,10 +36,11 @@ SAFE_TO_RESUME: YES
 ## Completed batches
 - T1 (7e07edf2): health + phone redactions, 4 files.
 - T2 (ebc27d72): device-fixes 2026-08-18 identity/live-rows census + deep-sweep reviewer account, 6 files.
-- T3: sim-walk 2026-08-19 authed markdown, 10 files (identity tokens; possessive account-state claims decoupled; load-bearing numbers kept).
+- T3 (a2f4d55e): sim-walk 2026-08-19 authed markdown, 10 files (identity tokens; possessive account-state claims decoupled; load-bearing numbers kept).
+- T4: sim-walk generated evidence, 9 files (8 census JSON stay valid; console log: identity tokens + owner data-export report locations/text).
 
 ## Open item IDs
 - FD-01 history, FD-02 frozen-path PII (eas.json appleId, RLS maintainer email, test fixture display name), FD-03 hash-bound captures, FD-04 intentional contacts / operational docs, FD-05 About, FD-06 merge, FD-07 rename.
 
 ## NEXT_ACTION
-Visual review DONE (481 images inspected; 23 need derivatives). Next: T4 (sim-walk census JSON + console log), T5 (art-direction), V1-V3 image redaction, then P1 email batches.
+Visual review DONE (481 images inspected; 23 need derivatives). Next: T5 (art-direction), V1-V3 image redaction, then P1 email batches.
