@@ -9,7 +9,7 @@ Step 2 can't start until step 1 is done. Steps 3–7 can't start until step 2 ma
 **The serialization is the risk, not the hour count.** Do steps 0 and 1 tonight and the rest can drift.
 
 **Two clocks:** Apple's social-media questionnaire becomes mandatory for new apps **Sept 2026**.
-Your medical leave ends **Thu 2026-09-17** — 45 days out. After that, these 5 hours compete with a job.
+Your personal availability window [detail redacted] ends **Thu 2026-09-17** — 45 days out. After that, these 5 hours compete with other commitments.
 
 ---
 

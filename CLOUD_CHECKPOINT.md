@@ -9,7 +9,7 @@ BRANCH: claude/flagstone-public-repo-professionalize-nf1wg9
   (harness-designated branch; did not exist on origin; created at BASE_SHA.
    Used instead of the prompt's preferred estate/... name because the cloud
    session is bound to this branch.)
-CURRENT_PHASE: 3 — privacy inventory complete (text); visual review next
+CURRENT_PHASE: 4 — sanitation batches (plan below)
 SAFE_TO_RESUME: YES
 
 ## Baseline (read-only preflight, 2026-09-26)
@@ -21,6 +21,17 @@ SAFE_TO_RESUME: YES
 - Public App Store listing: NOT VERIFIABLE (egress policy blocks apple.com hosts). Latest repo evidence: "Build 33 under review" (2026-09-09).
 - GitHub About: accurate (Flagstone = product; AccessMap = repository / retained technical identifier).
 - Active secret scan: NONE FOUND (all secret-class hits are fixtures, env-var names, or QA "PASS" results).
+
+## Integrity classification (done)
+- HASH_BOUND / do-not-edit: qa-reports/phase03a/**, qa-reports/phase03b/** (ARTIFACT_SHA256 / ARTIFACT_MANIFEST packets), qa-reports/releases/** (immutable receipts), qa-reports/CURRENT_RELEASE.md (generated; release:verify), design-reviews/ship-ready/14_MODERATION_TEXTS_v1.md + 15_PRIVACY_POLICY_v1.md (ratified copy; guard tests), scripts-read packet qa-reports/phase03a/2026-09-15-production-preflight.
+- REFERENCED_BUT_EDITABLE: files listed only in qa-reports/phase03a/2026-09-05-owner-resume/preservation-start.json (point-in-time snapshot pinned to commit c794ba85; 7/967 entries already changed since; no consumer).
+- OPERATIONALLY_LOAD_BEARING (not edited): CLAUDE.md, AGENTS.md (release rule + pointsSqlParity test), RELEASING.md, docs/RELEASE_PLAYBOOK.md, docs/RELEASE_IDENTITY.md.
+
+## Sanitation plan (batches, <=10 files each)
+- T1 P0 health/phone: 4 files. T2 P0 device-fixes 2026-08-18 live-rows census (+ deep-sweep). T3 P0 sim-walk 2026-08-19 authed markdown. T4 P0 sim-walk generated census JSON + console log. T5 P0 art-direction 2026-08-21 + v4.1.1 readiness.
+- V1-V3 visuals: 12 sim-walk signed-in captures, 6 art-direction signed-in Profile captures, 5 guest captures of pre-2026-08-23 legal copy — hatched redaction boxes, paths unchanged.
+- T6+ P1 owner email in qa-reports/** + design-reviews/** (non-bound) — marker [REDACTED_EMAIL].
+- Owner-gated (not edited): eas.json appleId, supabase/** RLS maintainer email, src test-fixture display name, operational runbooks, existing docs/* contact lines.
 
 ## Completed batches
 - (none yet)
