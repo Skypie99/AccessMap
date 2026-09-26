@@ -49,7 +49,7 @@ edges:
 - `{name: accessmap-d6-applied, role: Sky+Claude, artifact: supabase:kldlwszpfkdmsjrjhjym (flag_edit_history + view live), qa-report: 2026-05-28_Cowork_BigBatch_Result.md:1}`
 - `{name: iron-lantern-crons-live, role: Cowork, artifact: scheduled-tasks (3 Haiku tasks: weekly/monthly/quarterly), qa-report: 2026-05-28_Cowork_BigBatch_Result.md:1}`
 - `{name: stale-branches-retired, role: Claude, artifact: git (feat/heatmap-severity-gradient-2026-05-25 + feat/tasks-search-2026-05-25 deleted local+remote), qa-report: 2026-05-28_Cowork_BigBatch_Result.md:1}`
-- `{name: apple-developer-enrolled, role: Sky, artifact: Apple Developer Program (skylerhalisky@gmail.com, Individual, $99/yr), qa-report: 2026-05-28_Morgan_Sky-Actions-Complete.md:10}`
+- `{name: apple-developer-enrolled, role: Sky, artifact: Apple Developer Program ([REDACTED_EMAIL], Individual, $99/yr), qa-report: 2026-05-28_Morgan_Sky-Actions-Complete.md:10}`
 
 # §5 Duplication Report
 

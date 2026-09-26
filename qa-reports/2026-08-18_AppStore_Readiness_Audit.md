@@ -189,7 +189,7 @@ your published Terms disclose — *"Anything you've contributed may stay in the 
 removed."* Deletion is ungated and works for a user who never posted, and the dialog explains what will
 happen first. *(Residuals: S4, and photos under the user's UUID prefix, which is disclosed at `copy.ts:742`.)*
 
-**Guideline 1.2 — support contact: PASS.** `skylerhalisky@gmail.com` (`feedback.ts:8`) reachable through
+**Guideline 1.2 — support contact: PASS.** `[REDACTED_EMAIL]` (`feedback.ts:8`) reachable through
 three traced chains, and printed as readable text in the in-app Terms and Privacy screens — **reachable
 while signed out**, one tap from the first screen.
 

@@ -23,7 +23,7 @@ All judgment calls below were taken on the safest reversible path. Nothing here 
    - **Brand-font cleanup:** ~17 secondary/modal files still use raw `<Text>` (system font) instead of `<AppText>` (Public Sans / Plus Jakarta). I converted the core screens + the files I touched; the rest is a mechanical ~200-node pass best done deliberately. Flagged in DESIGN.md §11.
    - **`Sheet` adoption:** most existing modals are intentionally full-screen page-sheets / lightboxes / drawers — they should NOT become bottom-sheets. No migration warranted; `Sheet` is for new bottom-sheets.
 
-6. **Delivery:** this report is saved to `qa-reports/` and to your **Access Map Summaries**; I've prepared a Gmail **draft** to skylerhalisky@gmail.com (you press send — the safest reversible path, and it respects the "only Morgan messages Sky" rule). Say the word and I'll send it.
+6. **Delivery:** this report is saved to `qa-reports/` and to your **Access Map Summaries**; I've prepared a Gmail **draft** to [REDACTED_EMAIL] (you press send — the safest reversible path, and it respects the "only Morgan messages Sky" rule). Say the word and I'll send it.
 
 7. **Hard lines held:** no merge to main · no live DB / RLS / auth / migration changes (none needed) · nothing newly collects/logs/exposes location or disability data.
 

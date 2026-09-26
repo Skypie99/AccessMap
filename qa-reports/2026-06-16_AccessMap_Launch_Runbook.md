@@ -12,7 +12,7 @@ All engineering work on AccessMap is done and on `main`. The only remaining step
 | `main` vs `origin/main` | **synced** (not ahead/behind) |
 | `npm run typecheck` (`tsc --noEmit`) | ✅ **0 errors** |
 | `eas.json` → `testflight` profile | ✅ `distribution: store`, `environment: production`, `autoIncrement: true`, Release config |
-| `eas.json` → `submit.production.ios` | ✅ appleId `skylerhalisky@gmail.com`, ascAppId `6774709116`, teamId `S78F8ZA8QU` |
+| `eas.json` → `submit.production.ios` | ✅ appleId `[REDACTED_EMAIL]`, ascAppId `6774709116`, teamId `S78F8ZA8QU` |
 | Tests (per PROJECT_STATE) | 103 suites / ~1,680 tests green |
 
 The only thing I could **not** verify (requires your EAS login) is whether the production Supabase env vars are still set in EAS. That's Step 1 below — do not skip it; missing vars = the app launches blank.

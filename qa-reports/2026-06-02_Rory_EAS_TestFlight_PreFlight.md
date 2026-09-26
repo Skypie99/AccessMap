@@ -46,7 +46,7 @@ eas secret:list
 `eas.json` submit.production.ios (lines 113–118):
 
 ```json
-"appleId": "skylerhalisky@gmail.com",
+"appleId": "[REDACTED_EMAIL]",
 "ascAppId": "6774709116",
 "appleTeamId": "S78F8ZA8QU"
 ```
