@@ -11,8 +11,6 @@ jobs:
   lighthouse:
     name: Lighthouse Audit
     runs-on: ubuntu-latest
-    env:
-      PUPPETEER_CACHE_DIR: ${{ runner.temp }}/lighthouse-browser
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +21,9 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             .github/lighthouse/package-lock.json
+
+      - name: Select temporary browser cache
+        run: echo "PUPPETEER_CACHE_DIR=$RUNNER_TEMP/lighthouse-browser" >> "$GITHUB_ENV"
 
       - name: Install app dependencies
         run: npm ci --legacy-peer-deps
