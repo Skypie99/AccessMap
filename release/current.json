@@ -20,7 +20,7 @@
       "createdAt": null
     },
     "appStore": {
-      "status": "submitted_for_review",
+      "status": "released",
       "submittedAt": null
     }
   },
@@ -53,5 +53,5 @@
     }
   },
   "releaseTag": null,
-  "lastVerified": "2026-09-02T06:15:01Z"
+  "lastVerified": "2026-10-20"
 }

@@ -2,6 +2,14 @@
 
 All notable changes to AccessMap, in plain language. Newest first.
 
+## [4.1.1] — 2026-09-15
+
+Flagstone 4.1.1 (build 33) was released on the App Store in the US and
+Canada. The release identity is recorded in [`release/current.json`](release/current.json);
+the dated QA, accessibility and release receipts are in [`qa-reports/`](qa-reports/)
+and [`design-reviews/`](design-reviews/). This changelog does not restate
+the full 4.1.x feature history.
+
 ## [Unreleased] — release/auto-2026-05-30
 
 ### Fixed
@@ -15,10 +23,11 @@ All notable changes to AccessMap, in plain language. Newest first.
 
 ---
 
-## [0.2.0] — already on `main`
+## [0.2.0] — 2026-06 — historical
 
-The 0.2.0 line is what's currently on `main` (app version 0.2.0). Highlights
-that shipped in this line, for reference:
+The 0.2.0 line was the pre-release line (app version 0.2.0). It is kept here
+as history, not as a description of the current app. Highlights from that
+line:
 
 - Crowdsourced accessibility flags: drop a pin, pick a category + severity, add
   a photo, and others can verify / resolve / reject it.

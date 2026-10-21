@@ -1,9 +1,14 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'npx expo export --platform web && npx serve dist -p 9001',
+      staticDistDir: 'dist-lighthouse',
+      puppeteerScript: '.github/lighthouse/ready.cjs',
+      chromePath: require('./.github/lighthouse/node_modules/puppeteer').executablePath(),
       url: ['http://localhost:9001'],
       numberOfRuns: 1,
+      // Lantern simulation returned NO_LCP for this rendered first-launch modal.
+      // Measure with the same default mobile throttling profile instead.
+      settings: { throttlingMethod: 'devtools' },
     },
     assert: {
       preset: 'lighthouse:recommended',

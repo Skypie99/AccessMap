@@ -14,7 +14,7 @@
 - Tree: `a4a5e70c1a413d39e457f5254af1bba91f08d7ed`
 - EAS source: `f5594171e75bc5ec92a87d0392c361601ddedfba` (build ID: UNPROVEN; profile: UNPROVEN; status: UNPROVEN; created: UNPROVEN)
 - origin/main at build: UNPROVEN
-- App Store state: submitted_for_review
+- App Store state: released
 
 ## WEB
 
@@ -38,7 +38,7 @@
 - Governance base: `c4626479f6344011530396602422c746f4bb4cc9`
 - Release tag: none
 
-Last verified: 2026-09-02T06:15:01Z
+Last verified: 2026-10-20
 
 Machine authority: `release/current.json`
 
