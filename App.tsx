@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -16,9 +16,21 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import LiveStatusRegion from '@/components/LiveStatusRegion';
 import OnboardingCards from '@/components/OnboardingCards';
-import RootNavigator from '@/navigation/RootNavigator';
+import { ScreenFallback } from '@/navigation/ScreenFallback';
 import type { TakePendingUrl } from '@/navigation/linking';
 import SignInScreen from '@/screens/SignInScreen';
+
+// The first-launch carousel does not render the navigator. Keep map libraries
+// and the signed-in screens in an on-demand production chunk until it does.
+const LazyRootNavigator = React.lazy(() => import('@/navigation/RootNavigator'));
+
+function RootNavigator(props: React.ComponentProps<typeof LazyRootNavigator>) {
+  return (
+    <Suspense fallback={<ScreenFallback />}>
+      <LazyRootNavigator {...props} />
+    </Suspense>
+  );
+}
 
 function SignedInArea({ takePendingUrl }: { takePendingUrl?: TakePendingUrl }) {
   const { user } = useAuth();
