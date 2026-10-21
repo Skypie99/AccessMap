@@ -63,7 +63,7 @@ Invariants:
 | Source tree | `a4a5e70c1a413d39e457f5254af1bba91f08d7ed` |
 | EAS source | `f5594171e75bc5ec92a87d0392c361601ddedfba` (== intended) |
 | EAS version source | remote (local `app.json` buildNumber `15` is diagnostic only) |
-| App Store | submitted_for_review |
+| App Store | released 2026-09-15 (US and Canada) |
 | EAS build ID / profile / created / origin-main-at-build | **UNPROVEN** — not in primary evidence and not invented |
 
 `a0bf4d0…` was proven to be `main` only at the later web-deployment decision, not at EAS build
