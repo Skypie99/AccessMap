@@ -45,3 +45,7 @@ coverage/
 # would only swap one stale dangerous target for another; the target must be
 # named explicitly on every command instead (`--project-ref <ref>`).
 supabase/.temp/
+
+# Isolated first-launch Lighthouse fixture and local reports.
+dist-lighthouse/
+.lighthouseci/

@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [main]
 
-# S-4 (security audit 2026-07-31): this workflow had no `permissions:` block, so
-# it silently inherited the repo/org default GITHUB_TOKEN scope — which is not
-# declared anywhere in this repo and can be org-wide read-write. It only reads
-# the code and posts Lighthouse results, so pin it to the minimum.
 permissions:
   contents: read
 
@@ -15,6 +11,8 @@ jobs:
   lighthouse:
     name: Lighthouse Audit
     runs-on: ubuntu-latest
+    env:
+      PUPPETEER_CACHE_DIR: ${{ runner.temp }}/lighthouse-browser
     steps:
       - uses: actions/checkout@v4
 
@@ -22,19 +20,36 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            .github/lighthouse/package-lock.json
 
-      - name: Install dependencies
+      - name: Install app dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Install serve
-        run: npm install -g serve
+      - name: Install locked audit tools and browser
+        run: |
+          npm ci --prefix .github/lighthouse --ignore-scripts
+          .github/lighthouse/node_modules/.bin/puppeteer browsers install chrome
+
+      - name: Verify isolated fixture settings
+        run: node --test .github/lighthouse/fixture.test.cjs
+
+      - name: Build synthetic first-launch fixture
+        run: node .github/lighthouse/build.cjs
 
       - name: Run Lighthouse CI
-        run: |
-          npm install -g @lhci/cli@0.14.x
-          lhci autorun
+        run: .github/lighthouse/node_modules/.bin/lhci autorun
         env:
-          # Optional: add LHCI_GITHUB_APP_TOKEN secret in repo settings to enable
-          # inline PR status annotations. Without it, Lighthouse still runs and
-          # uploads results to temporary-public-storage — just no PR check annotation.
+          NODE_PATH: ${{ github.workspace }}/.github/lighthouse/node_modules
+          # Optional PR annotations; not an app/backend credential.
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Preserve first-launch proof and audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-first-launch
+          path: .lighthouseci/
+          include-hidden-files: true
+          if-no-files-found: ignore
