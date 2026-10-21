@@ -10,7 +10,8 @@ permissions:
 jobs:
   lighthouse:
     name: Lighthouse Audit
-    runs-on: ubuntu-latest
+    # Keep Chrome sandboxing enabled; newer Ubuntu images restrict user namespaces.
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 

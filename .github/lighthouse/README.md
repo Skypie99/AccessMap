@@ -25,7 +25,10 @@ thresholds. These measurements should not be compared directly with old simulate
 scores. See the [Lighthouse throttling documentation](https://github.com/GoogleChrome/lighthouse/blob/main/docs/throttling.md).
 The request blocker applies to the readiness page; the audit's network trace is
 separate evidence, not a claim of universal browser network isolation. Tool and browser revisions
-are fixed by this directory's lockfile and Puppeteer version.
+are fixed by this directory's lockfile and Puppeteer version. CI pins the supported
+Ubuntu 22.04 runner because Ubuntu 24.04's AppArmor policy prevented the downloaded
+Chrome from starting. Browser sandboxing remains enabled; no host security policy
+is modified.
 
 From the repository root:
 
