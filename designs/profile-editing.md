@@ -34,7 +34,7 @@ values.
 
 ```
 ┌────────────────────────────────────────────────┐
-│  Skyler Halisky                          ✏️    │  ← header row
+│  [REDACTED_DISPLAY_NAME]                          ✏️    │  ← header row
 │  ┌──────────────┐                              │
 │  │     128      │   points                     │
 │  └──────────────┘                              │
@@ -61,7 +61,7 @@ Bottom-sheet modal, same `radius.lg` + `shadow.e3` family as
 │                                                 │
 │  DISPLAY NAME                                  │
 │  ┌──────────────────────────────────────────┐ │
-│  │ Skyler Halisky                           │ │
+│  │ [REDACTED_DISPLAY_NAME]                           │ │
 │  └──────────────────────────────────────────┘ │
 │                                                 │
 │  LANDING TAB                                   │

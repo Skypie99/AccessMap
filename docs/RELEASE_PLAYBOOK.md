@@ -90,7 +90,7 @@ The submit block must have real values (not placeholders):
 "submit": {
   "production": {
     "ios": {
-      "appleId": "skylerhalisky@gmail.com",
+      "appleId": "[REDACTED_EMAIL]",
       "ascAppId": "6774709116",
       "appleTeamId": "S78F8ZA8QU"
     }

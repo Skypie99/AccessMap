@@ -2626,7 +2626,7 @@
       "s": "public",
       "t": "feedback",
       "cmd": "SELECT",
-      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "qual": "(( SELECT auth.email() AS email) = '[REDACTED_EMAIL]'::text)",
       "roles": "{public}",
       "withcheck": "",
       "permissive": "PERMISSIVE"
@@ -2696,7 +2696,7 @@
       "s": "public",
       "t": "flag_edit_history",
       "cmd": "SELECT",
-      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "qual": "(( SELECT auth.email() AS email) = '[REDACTED_EMAIL]'::text)",
       "roles": "{authenticated}",
       "withcheck": "",
       "permissive": "PERMISSIVE"
@@ -2766,7 +2766,7 @@
       "s": "public",
       "t": "flag_status_history",
       "cmd": "SELECT",
-      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "qual": "(( SELECT auth.email() AS email) = '[REDACTED_EMAIL]'::text)",
       "roles": "{authenticated}",
       "withcheck": "",
       "permissive": "PERMISSIVE"

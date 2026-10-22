@@ -59,4 +59,4 @@ Phase 5 ships three big things: **anonymous reporting**, a **community trust tie
 
 ---
 
-_Questions or weird behaviour → tap Feedback (top-right on any screen) or email skylerhalisky@gmail.com._
+_Questions or weird behaviour → tap Feedback (top-right on any screen) or email [REDACTED_EMAIL]._

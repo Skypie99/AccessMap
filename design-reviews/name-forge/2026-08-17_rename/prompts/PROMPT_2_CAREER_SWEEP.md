@@ -23,7 +23,7 @@ Introduce it **once** per document, where the project first appears. Repeating i
 ```
 ~/Library/Application Support/Claude/local-agent-mode-sessions/c33613f8-b7b5-4c3d-b309-221e8e82c10a/de10261b-e063-47df-a47a-8448c4f835e4/local_5eb17c51-e781-4cfc-860e-86cdfabc5540/outputs/
 ```
-That folder holds `RESUME_SOURCE.md`, `RESUME_SOURCE_2026-07-16_full-version-backup.md`, `Skyler_Halisky_Resume.html`, `Skyler_Halisky_Resume.pdf`, `Application_Package.md`, `Interview_Answers.md`, plus a `Delta-X` docx variant. A Claude session-outputs directory is not a safe home for any of that.
+That folder holds `RESUME_SOURCE.md`, `RESUME_SOURCE_2026-07-16_full-version-backup.md`, `[REDACTED_RESUME_FILENAME]`, `[REDACTED_RESUME_FILENAME]`, `Application_Package.md`, `Interview_Answers.md`, plus a `Delta-X` docx variant. A Claude session-outputs directory is not a safe home for any of that.
 
 1. **COPY** (never move, never delete the originals) that whole set into `~/career-arsenal/resume/` .
 2. Write `~/career-arsenal/resume/PROVENANCE.md`: where each file came from, the copy date, the file sizes and dates as found, and which file is truth.

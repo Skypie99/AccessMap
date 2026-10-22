@@ -44,7 +44,7 @@ eas submit --platform ios --profile production --latest
 
 | Field | Value |
 |---|---|
-| `appleId` | skylerhalisky@gmail.com |
+| `appleId` | [REDACTED_EMAIL] |
 | `appleTeamId` | S78F8ZA8QU |
 | `ascAppId` | 6774709116 |
 
