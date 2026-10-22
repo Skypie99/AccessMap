@@ -37,7 +37,7 @@ Screenshots: the capture factory picks up the new home-screen label on its next 
 ```
 ~/Library/Application Support/Claude/local-agent-mode-sessions/c33613f8-…/local_5eb17c51-…/outputs/RESUME_SOURCE.md
 ```
-The whole toolchain sits in that same ephemeral session-outputs folder: `RESUME_SOURCE.md` (1 AccessMap hit), `RESUME_SOURCE_2026-07-16_full-version-backup.md`, `Skyler_Halisky_Resume.html`, `Skyler_Halisky_Resume.pdf`, plus `Application_Package.md` and `Interview_Answers.md`.
+The whole toolchain sits in that same ephemeral session-outputs folder: `RESUME_SOURCE.md` (1 AccessMap hit), `RESUME_SOURCE_2026-07-16_full-version-backup.md`, `[REDACTED_RESUME_FILENAME]`, `[REDACTED_RESUME_FILENAME]`, plus `Application_Package.md` and `Interview_Answers.md`.
 
 **Sky decides before B2 runs:** move that set into `~/career-arsenal/` (or another durable home) first? A session-outputs directory is not a safe home for the document that is declared the source of truth for every application. Editing it in place would leave the resume law pointing at a path that can vanish.
 
