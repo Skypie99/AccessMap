@@ -1,4 +1,4 @@
-To: skylerhalisky@gmail.com
+To: [REDACTED_EMAIL]
 Subject: QA run AccessMap — 2026-05-22 — 11 fixes, 9 proposals
 
 Hey Sky —

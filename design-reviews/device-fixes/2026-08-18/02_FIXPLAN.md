@@ -64,27 +64,27 @@ revoke select (is_admin) on public.users from authenticated;
 ```
 
 ### A2 — the is_admin GRANT for Sky's account
-*Main account only (`skylerhalisky@gmail.com`). ranchin2023 stays non-admin — it's junk-slated. Decision noted: the Admin tab will appear only when the device is signed in as skylerhalisky.*
+*Main account only (`[OWNER_ACCOUNT]`). [TEST_ACCOUNT_1] stays non-admin — it's junk-slated. Decision noted: the Admin tab will appear only when the device is signed in as [OWNER_ACCOUNT].*
 
 ```sql
 -- PRE-STATE
 select id, email, is_admin from public.users
- where id = '8f99f7e0-bbad-4fd8-b3d0-4b6b99bdc8b2';
--- Expected: skylerhalisky@gmail.com, is_admin = false
+ where id = '[REDACTED_USER_ID]';
+-- Expected: [REDACTED_EMAIL], is_admin = false
 
 -- THE CHANGE
 update public.users set is_admin = true
- where id = '8f99f7e0-bbad-4fd8-b3d0-4b6b99bdc8b2';
+ where id = '[REDACTED_USER_ID]';
 -- Expected: UPDATE 1
 
 -- VERIFY
 select id, is_admin from public.users
- where id = '8f99f7e0-bbad-4fd8-b3d0-4b6b99bdc8b2';   -- → true
--- App (A1 applied, signed in as skylerhalisky, relaunch): drawer shows Admin; flag list loads.
+ where id = '[REDACTED_USER_ID]';   -- → true
+-- App (A1 applied, signed in as [OWNER_ACCOUNT], relaunch): drawer shows Admin; flag list loads.
 
 -- ROLLBACK
 update public.users set is_admin = false
- where id = '8f99f7e0-bbad-4fd8-b3d0-4b6b99bdc8b2';
+ where id = '[REDACTED_USER_ID]';
 ```
 
 ### A3 — admin DELETE policy on flags: **NOT NEEDED**
@@ -101,12 +101,12 @@ Phase A proved world (b) — but the defect is **database-side** (the missing gr
 
 ## CLOSE-OUT REQUIREMENTS (Phase B report)
 - The census with before/after per surface (the §C3 table + what changed).
-- The Bug-B verdict stated plainly: **world (b)** — owner-delete broken live for all users via the 42501 policy-qual chain; the BUMB flag additionally belongs to ranchin2023, and "You" attribution was correct for that session.
+- The Bug-B verdict stated plainly: **world (b)** — owner-delete broken live for all users via the 42501 policy-qual chain; the BUMB flag additionally belongs to [TEST_ACCOUNT_1], and "You" attribution was correct for that session.
 - The artifact packet in one place (this file §Item 3), routed to Sky: apply in the live Sprint session's Phase 4 or the Supabase dashboard, per-statement yes.
 - **New DEVICE ROWS for Sky's checklist** (small phone):
   1. Watched Flags: open, tap search, type — field AND rows stay visible/reachable above the keyboard; pull-to-refresh + Close ✕ still work.
   2. Search by address: open (autoFocus) — the whole input clears the keyboard; results tappable with keyboard up; ✕ reachable.
   3. Saved Places (the census pick): tap Add, name field + Save/Cancel visible above the keyboard.
   4. After A1: delete one of your own junk flags → row disappears, no error.
-  5. After A1+A2 (signed in as skylerhalisky): Admin appears in the drawer → Remove the BUMBAKLOT flag end-to-end (row gone; for a photo flag, photos gone too).
+  5. After A1+A2 (signed in as [OWNER_ACCOUNT]): Admin appears in the drawer → Remove the BUMBAKLOT flag end-to-end (row gone; for a photo flag, photos gone too).
 - Gate numbers at baseline and at every commit. Report and STOP on the branch.

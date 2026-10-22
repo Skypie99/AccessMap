@@ -646,7 +646,7 @@ drop policy if exists "flag_status_history readable by maintainer"
   on public.flag_status_history;
 create policy "flag_status_history readable by maintainer"
   on public.flag_status_history for select to authenticated
-  using ((select auth.email()) = 'skylerhalisky@gmail.com');
+  using ((select auth.email()) = '[REDACTED_EMAIL]');
 ```
 ```sql
 -- ROLLBACK: re-run the ORIGINAL policy bodies from, in order,

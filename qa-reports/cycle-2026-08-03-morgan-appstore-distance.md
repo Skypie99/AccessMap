@@ -126,7 +126,7 @@ distance_to_submittable: 4.65 h Sky-hands
 distance_to_not_embarrassing: 5.30 h Sky-hands
 agent_work_remaining: 0
 hard_deadline_soft: 2026-09-01 (Apple social-media questionnaire becomes mandatory)
-hard_deadline_capacity: 2026-09-17 (medical leave ends — 45 days from today)
+hard_deadline_capacity: 2026-09-17 (owner availability window ends [personal detail redacted] — 45 days from today)
 open_decisions_for_sky: 6
 live_security_exposure: 1 (plaintext reviewer credential on public origin/main, day 62+)
 ```

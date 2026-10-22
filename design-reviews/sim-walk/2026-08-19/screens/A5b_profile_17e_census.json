@@ -46,8 +46,8 @@
  },
  {
   "type": "Other(accessible)",
-  "label": "Jarvis Mckneil",
-  "name": "Jarvis Mckneil",
+  "label": "[REDACTED_DISPLAY_NAME]",
+  "name": "[REDACTED_DISPLAY_NAME]",
   "value": null,
   "enabled": "1",
   "visible": "1",
@@ -91,9 +91,9 @@
  },
  {
   "type": "StaticText",
-  "label": "Signed in as skylerhalisky@gmail.com",
-  "name": "Signed in as skylerhalisky@gmail.com",
-  "value": "Signed in as skylerhalisky@gmail.com",
+  "label": "Signed in as [REDACTED_EMAIL]",
+  "name": "Signed in as [REDACTED_EMAIL]",
+  "value": "Signed in as [REDACTED_EMAIL]",
   "enabled": "1",
   "visible": "1",
   "rect": [
@@ -723,7 +723,7 @@
   "type": "TextField",
   "label": "Display name",
   "name": "Display name",
-  "value": "Jarvis Mckneil",
+  "value": "[REDACTED_DISPLAY_NAME]",
   "enabled": "1",
   "visible": "0",
   "rect": [

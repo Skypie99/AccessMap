@@ -10,7 +10,7 @@ Welcome! This guide covers the development workflow, local setup, testing, and s
 
 ```bash
 git clone https://github.com/skypie99/AccessMap.git
-cd Flagstone
+cd AccessMap
 npm install
 ```
 
@@ -32,11 +32,25 @@ Get these from [Supabase Dashboard](https://app.supabase.com) → Settings → A
 
 ### 3. Database Setup (One-time)
 
-If the Supabase project is new, run the schema:
+The app needs a Supabase project with this schema. The schema's source of truth is the **ordered,
+forward-only migration history** in [`supabase/migrations/`](../supabase/migrations/). Do **not**
+bootstrap from `supabase/schema.sql` — it is an older, partial snapshot and not a complete
+bootstrap.
 
-1. Open **Supabase SQL Editor**.
-2. Copy the contents of `supabase/schema.sql`.
-3. Paste and run.
+To build the schema:
+
+1. **Apply the migrations in order** to your Supabase project (for example with the Supabase CLI's
+   migration push against a linked project). The history is forward-only: never edit a migration
+   that has already been applied. Corrections are new migrations with a fresh version.
+2. **Verify locally (recommended):**
+   ```bash
+   npm run db:replay    # replays every migration into a disposable PostgreSQL 17
+   ```
+   This needs PostgreSQL 17 installed locally. CI runs the same replay on every pull request.
+3. **If you changed the schema**, keep the client–database contract in step:
+   ```bash
+   npm run contract:check
+   ```
 
 Existing projects already have the schema, so skip this step.
 
@@ -48,10 +62,14 @@ npm start
 # In the Expo CLI, press 'i' to open iOS simulator
 ```
 
-**Android Emulator:**
+**Android (not shipped):**
 ```bash
 npm run android
 ```
+Android is **not a shipped platform**: the released app is iOS and web only (see the
+[release manifest](../release/current.json) and [README](../README.md)). The platform line in
+[ARCHITECTURE.md](../ARCHITECTURE.md) lists Android, but that has not shipped. Treat Android runs
+as unsupported development experiments.
 
 **Web Browser:**
 ```bash
@@ -121,7 +139,8 @@ Examples:
 
 ### Review & Merge
 
-- All PRs must pass `npm run typecheck` (checked via CI).
+- All PRs must pass CI: `npm run typecheck`, `npm run lint`, the Jest suite (`npm run test:ci`),
+  a client–database contract freshness check, and a full migration replay against PostgreSQL 17.
 - Assign a reviewer (usually Shamus or Sky).
 - Address review comments.
 - Once approved, merge to `main` (only Sky can push to main).
@@ -132,7 +151,11 @@ Examples:
 
 ### Jest
 
-Currently, the project has Jest configured but no tests written. To add tests:
+The project has an extensive Jest suite — 299 suites and 4,472 tests passing as recorded on
+2026-09-21 — so `npm test` is part of the normal workflow, not a placeholder. It includes the
+"guard" tests in `src/__tests__/`, which turn product promises (accessibility wiring, ratified
+legal copy, privacy fences, credential hygiene, release scripts) into executable checks. To run
+the suite or add tests:
 
 ```bash
 npm test                 # Run all tests once
@@ -140,7 +163,9 @@ npm run test:watch      # Run in watch mode
 npm run test:ci         # Run with coverage (for CI)
 ```
 
-**Test file locations:** `src/**/__tests__/*.test.tsx` (co-located with source).
+**Test file locations:** `*.test.ts` / `*.test.tsx` in `__tests__/` folders next to the code under
+test (for example `src/lib/__tests__/`), plus the guard suites in `src/__tests__/` and the release
+tooling tests in `scripts/__tests__/`.
 
 ### Type Checking
 
@@ -310,9 +335,11 @@ To add a new table or column:
    ```
    This creates `supabase/migrations/<timestamp>_add_new_table.sql`.
 
-2. **Write SQL (idempotent):**
+2. **Write SQL (forward-only):** the migration history is ordered and append-only. Never edit,
+   reorder or delete a migration that has already been applied — corrections are new migrations
+   with a fresh version, applied in order.
    ```sql
-   -- Use CREATE TABLE IF NOT EXISTS, DROP IF EXISTS, etc.
+   -- e.g. additive DDL for the new table
    CREATE TABLE IF NOT EXISTS public.my_table (
      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
      ...
@@ -321,8 +348,8 @@ To add a new table or column:
 
 3. **Test locally:**
    ```bash
-   supabase start
-   supabase db push
+   npm run db:replay      # replays every migration into a disposable PostgreSQL 17
+   npm run contract:check # client–database contract crosswalk is current
    ```
 
 4. **Update TS types:**
@@ -398,17 +425,31 @@ Non-public vars (e.g., API keys for build servers) go in `.env.local` and are **
 
 ### Build & Submit (iOS only, for now)
 
+There are no `deploy:*` scripts. Builds run through EAS Build (Expo's cloud builder) from the iOS
+profiles in `eas.json`:
+
 ```bash
 # Build for TestFlight
-npm run deploy:testflight
+npm run build:testflight
 
 # Build for App Store
-npm run deploy:appstore
+npm run build:production
 ```
 
-These commands:
-1. Build the app via EAS Build (Expo's cloud builder).
-2. Submit to App Store / TestFlight.
+These commands **build only** — they do not submit anything.
+
+**Submission is a separate, owner-gated step.** Uploading to App Store Connect / TestFlight is done
+with `eas submit` (the `production` submit profile in `eas.json`) and requires Sky's explicit
+sign-off. Sky holds final authority over merges to `main`, production deployments and App Store
+submissions.
+
+**Release identity is proven by exact commit, not by branch name:**
+
+1. Read [`release/current.json`](../release/current.json) and
+   [docs/RELEASE_IDENTITY.md](RELEASE_IDENTITY.md) before any release work.
+2. Run `npm run release:preflight` first — a dirty tracked tree is not a build source.
+3. Run `npm run release:verify` before and after any release-record change; `npm run
+   release:finalize` records an already-built, already-verified release.
 
 **Requirements:**
 - Apple Developer account.
@@ -419,7 +460,7 @@ These commands:
 
 - [ ] All TypeScript checks pass: `npm run typecheck`.
 - [ ] No ESLint errors: `npm run lint`.
-- [ ] Manual testing on iOS, Android, and web.
+- [ ] Manual testing on iOS and web (Android is not a shipped platform).
 - [ ] DB migrations applied (if any).
 - [ ] `.env` points to production Supabase (not a dev project).
 - [ ] Version bumped in `package.json` and `app.json`.
@@ -453,7 +494,7 @@ These commands:
 
 ```bash
 npm start
-# Press 'i' (iOS) or 'a' (Android)
+# Press 'i' to open the iOS simulator (Android is not a shipped platform)
 # Tap through your feature
 # Check for console errors
 ```

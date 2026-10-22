@@ -30,7 +30,7 @@ Given that Rory's TestFlight build (Step 4) is the release candidate environment
 **Action for Sky:** Complete Steps 1–2 when ready. Morgan will then route Step 3 to Rory or retry locally depending on timeline.
 
 ## iMessage Sent
-- **To:** +1 778-581-3605
+- **To:** [REDACTED_PHONE]
 - **Time:** 2026-05-28 (this cycle)
 - **Body:** Build blocker status + recommendation to proceed with Steps 1–2
 

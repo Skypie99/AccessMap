@@ -5,8 +5,8 @@ Card **y548 h408 (42.7%), gap below = 0** — this sheet runs **flush to the scr
 
 ## CONTENT OBSERVED
 - Title "Leaderboard" + "Top 20 contributors by points"; period toggle **All-time / This Month** (194×45 each ✓).
-- All-time ranking (4 contributors hold points): **1st Member 166 · 2nd Jarvis Mckneil 90 (you) · 3rd Member 21 · 4th Member 10**.
-- **Self-highlight WORKS**: the row is blue-tinted AND the accessible name carries it — `"2nd, Jarvis Mckneil, 90 points, you"`. Rank + name + points + self-status all in one label. ✓
+- All-time ranking (4 contributors hold points): **1st Member 166 · 2nd [REDACTED_DISPLAY_NAME] 90 (you) · 3rd Member 21 · 4th Member 10**.
+- **Self-highlight WORKS**: the row is blue-tinted AND the accessible name carries it — `"2nd, [REDACTED_DISPLAY_NAME], 90 points, you"`. Rank + name + points + self-status all in one label. ✓
 - **This Month → proper empty state**, not a blank list: *"No monthly ranking yet — points appear as people verify each other's reports."* ✓
 - Rows are `Other(accessible)` 440×55–56 — non-interactive by design (no drill-in), so the 44pt floor doesn't apply. Close 44×45 ✓.
 - **Ties:** none present in this data (166/90/21/10 all distinct) — tie-rendering is therefore **UNVERIFIED**, recorded as a coverage gap, not a pass.

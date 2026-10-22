@@ -44,7 +44,7 @@ content uncapped), exported from `@/components/ui`. Guard:
 
 ## Carried in from Phase 0
 Residual #1 of `build/00/BUILD_REPORT.md`: the signed-in Profile subtitle still
-truncates at AXL ("Signed in as skylerhalisky@g…") because two lines are not
+truncates at AXL ("Signed in as [REDACTED_EMAIL]…") because two lines are not
 enough for a long unbreakable email token. Item 1.1's header block is the fix
 for the class — check that node in this phase's re-walk.
 

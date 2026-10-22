@@ -56,11 +56,11 @@ revoke select (is_admin) on public.users from authenticated;
 
 ---
 
-## A2 — make `skylerhalisky@gmail.com` an admin
+## A2 — make `[OWNER_ACCOUNT]` an admin
 
-Main account only. `ranchin2023@gmail.com` stays non-admin — it is junk-slated.
+Main account only. `[TEST_ACCOUNT_1]` stays non-admin — it is junk-slated.
 Consequence to note: the Admin tab appears only on the device signed in as
-skylerhalisky.
+[OWNER_ACCOUNT].
 
 The change is written to look the account up by email so there is no UUID to
 transcribe by hand; the expected id is shown so you can confirm the pre-state
@@ -70,25 +70,25 @@ matches. A mistyped email updates 0 rows rather than the wrong person.
 -- PRE-STATE
 select pu.id, u.email, pu.is_admin
   from public.users pu join auth.users u on u.id = pu.id
- where u.email = 'skylerhalisky@gmail.com';
--- Expected: 8f99f7e0-bbad-4fd8-b3d0-4b6b99bdc8b2 | skylerhalisky@gmail.com | false
+ where u.email = '[REDACTED_EMAIL]';
+-- Expected: [REDACTED_USER_ID] | [REDACTED_EMAIL] | false
 
 -- THE CHANGE
 update public.users set is_admin = true
- where id = (select id from auth.users where email = 'skylerhalisky@gmail.com');
+ where id = (select id from auth.users where email = '[REDACTED_EMAIL]');
 -- Expected: UPDATE 1   (UPDATE 0 = the email did not match — change nothing else,
 --                       re-check the pre-state)
 
 -- VERIFY
 select pu.is_admin from public.users pu
   join auth.users u on u.id = pu.id
- where u.email = 'skylerhalisky@gmail.com';         -- → true
--- App (A1 applied, signed in as skylerhalisky, relaunch): Admin appears in the
+ where u.email = '[REDACTED_EMAIL]';         -- → true
+-- App (A1 applied, signed in as [OWNER_ACCOUNT], relaunch): Admin appears in the
 -- drawer and its flag list loads.
 
 -- ROLLBACK
 update public.users set is_admin = false
- where id = (select id from auth.users where email = 'skylerhalisky@gmail.com');
+ where id = (select id from auth.users where email = '[REDACTED_EMAIL]');
 ```
 
 ---

@@ -3,7 +3,7 @@
 Sky signed in on this device separately. An iOS **"Save Password?"** sheet blocked the app on arrival; **the agent did not touch it** (credential-storage decision) — Sky dismissed it. The app's own push priming alert stacked on top of it WAS cleared by the agent (an app dialog, and both its branches were already walked on the Pro Max, so no coverage lost).
 
 ## A5b PROFILE @ 390×844 — PASS
-Renders correctly and reflows: "Jarvis Mckneil" / "Signed in as skylerhalisky@gmail.com" / **124 points** / **Silver tier** / full RECENT POINT ACTIVITY feed (all five award rows) / nav rows 342×69–85 ✓ / avatar 72×73 ✓ / menu + feedback 44×45 ✓.
+Renders correctly and reflows: "[REDACTED_DISPLAY_NAME]" / "Signed in as [REDACTED_EMAIL]" / **124 points** / **Silver tier** / full RECENT POINT ACTIVITY feed (all five award rows) / nav rows 342×69–85 ✓ / avatar 72×73 ✓ / menu + feedback 44×45 ✓.
 - **SW-40 confirmed on small screen:** the tier chip is **83×32** here (vs 87×33 on Pro Max) — still ~12pt under the 44pt floor.
 
 ## ★ C12 MyWatched @ 390×844 — SW-42 REPRODUCES, same character

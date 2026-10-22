@@ -34,8 +34,8 @@ written 16:02:02 on the iPhone 17e (`9C9D3ED6-E62F-4A5C-A0C2-D8294D6575AC`,
 
 **Two constraints on the walk, stated up front:**
 
-1. **The simulator is signed in as Sky's real account** (skylerhalisky@gmail.com,
-   "Jarvis Mckneil", 124 pts) against the LIVE backend. Nothing was written: no
+1. **The simulator is signed in as a real account** ([OWNER_ACCOUNT],
+   "[REDACTED_DISPLAY_NAME]", 124 pts) against the LIVE backend. Nothing was written: no
    report submitted, no Verify/Resolved/Reject pressed, the report form opened
    and cancelled only. I did **not** sign out — signing back in needs credentials
    no agent may handle, and it would have left the environment unusable.
@@ -171,7 +171,7 @@ source scans and a renamed symbol would otherwise make them pass forever.
 ## 6. Residuals and honest gaps
 
 1. **The subtitle still truncates for a long email.** At AXL the signed-in Profile
-   reads "Signed in as / skylerhalisky@g…" — two lines now instead of one, but the
+   reads "Signed in as / [REDACTED_EMAIL]…" — two lines now instead of one, but the
    address is a single unbreakable token that needs about three. 0.3 is
    implemented as specified; the string is simply longer than the cap. **Route:
    Phase 1 item 1.1** (T3 cap-by-container caps the header block at 1.6x, which

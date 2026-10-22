@@ -505,7 +505,7 @@ The exact steps in order. Each step must complete before the next.
 [ ] Sky applies Jordan's changes
 [ ] Privacy policy hosted at public URL (GitHub Pages or equivalent)
 [ ] URL confirmed accessible: curl -I https://<your-url>/privacy → 200 OK
-[ ] Support URL confirmed (GitHub Issues or skylerhalisky@gmail.com)
+[ ] Support URL confirmed (GitHub Issues or [REDACTED_EMAIL])
 ```
 
 ### Step 4 — App Store listing ready (Dani + Sky)

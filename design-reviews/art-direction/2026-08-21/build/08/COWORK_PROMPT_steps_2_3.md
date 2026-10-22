@@ -8,7 +8,7 @@ it assumes no memory of the session that produced it.
 
 **Current state, so you do not re-derive it:**
 - App name **Flagstone**, version **4.1.1**, bundle `com.accessmap.app`
-- App Store Connect app id `6774709116`, Apple team `S78F8ZA8QU`, Apple ID `skylerhalisky@gmail.com`
+- App Store Connect app id `6774709116`, Apple team `S78F8ZA8QU`, Apple ID `[REDACTED_EMAIL]`
 - EAS project `a7149107-fb9b-4853-a053-648320c05cb6`, logged in as `skypie911`
 - Gate on `main`: typecheck 0 errors · lint 0 errors / 82 warnings · jest **242 suites / 3605 passed / 32 todo / 0 failed**
 - Supabase project **"Accessable City App"** ref `kldlwszpfkdmsjrjhjym`

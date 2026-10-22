@@ -1,7 +1,7 @@
 # Proposal — ESLint + Prettier (Expo flat config)
 
 **Status:** PROPOSED — not installed yet. Adds new dev dependencies.
-**Owner to approve:** Sky (skylerhalisky@gmail.com)
+**Owner to approve:** Sky ([REDACTED_EMAIL])
 **Author:** Gary (safety-net pass, 2026-05-23)
 **Estimated effort:** ~5 minutes to install + 1 minute to auto-fix
 existing files

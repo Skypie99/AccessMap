@@ -9,7 +9,7 @@
 
 ## ⚠️ FOR SKY — a concurrent BP11 commit is duplicated on this branch (documented, no lost work)
 
-While I was building (between my Commit 3 and Commit 4), the **concurrent BP11 agent's completion commit `eafd20e`** — "r2/bp11 — T3: finish the estate — same-file neutral residuals + error-red CTAs" — landed on the checked-out `r2/bp12-status-ledge` branch. (All repo commits are authored as `skylerhalisky@gmail.com`, so the author field is the BP11 *agent*, not a manual commit by you.) **BP11's own §P entry (line 48) documents the same event and its recovery.**
+While I was building (between my Commit 3 and Commit 4), the **concurrent BP11 agent's completion commit `eafd20e`** — "r2/bp11 — T3: finish the estate — same-file neutral residuals + error-red CTAs" — landed on the checked-out `r2/bp12-status-ledge` branch. (All repo commits are authored as `[REDACTED_EMAIL]`, so the author field is the BP11 *agent*, not a manual commit by you.) **BP11's own §P entry (line 48) documents the same event and its recovery.**
 
 - **No work is at risk.** The BP11 agent already **cherry-picked `eafd20e`'s content onto `r2/bp11-press-vocab`** (now tip `8acb184` — I verified `errorPressed`/`borderPressed` are present there). So `eafd20e` on bp12 is a **duplicate** whose content is safely on bp11.
 - It is **BP11** work (press-state color swaps → `errorPressed`/`borderPressed`) touching 6 files: `FlagDetailModal.tsx`, `MapScreen.tsx`, `TasksScreen.tsx` (style blocks ~1967–2372), `bp11PressVocabGuards.test.ts` (+3 guards), `theme.ts`, `ThemeContext.tsx`. Disjoint from my BP12 regions (its TasksScreen edits are style defs far from my one-line `publishLedge={false}` at :839), so **no conflict** — the branch is fully green with it.

@@ -135,7 +135,7 @@ bump and the changelog entry broke nothing — including
 
 ## 4. THE BUILD
 
-Logged in as `skypie911` / skylerhalisky@gmail.com. EAS project
+Logged in as `skypie911` / [REDACTED_EMAIL]. EAS project
 `a7149107-fb9b-4853-a053-648320c05cb6`.
 
 ```bash

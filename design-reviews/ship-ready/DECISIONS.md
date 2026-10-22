@@ -422,7 +422,7 @@ Mission statement RATIFIED (v1, Sky's words): "The goal of AccessMap is to
   everyone's benefit, because accessibility benefits everyone."
   Lives in: About page, App Store description, README. Voice: Sky's, always.
 ToS & Community Guidelines v1.0: RATIFIED per accessmap_moderation_texts_v1.md
-  (contact = skylerhalisky@gmail.com; account-deletion wording
+  (contact = [REDACTED_EMAIL]; account-deletion wording
   matches live SET NULL behavior per SR-117)
 Filter (1.2a): seed = LDNOOBW English + Sky-editable additions file;
   rejection copy ratified as drafted
@@ -432,7 +432,7 @@ REPORT_SENT_BODY: "Thanks, your report was sent. Reports are reviewed
   within 24 hours."
 ```
 
-**Contact address resolved to `skylerhalisky@gmail.com`** — Sky-confirmed after being shown it is her
+**Contact address resolved to `[REDACTED_EMAIL]`** — Sky-confirmed after being shown it is her
 personal Gmail and that a published ToS is a more durable surface than an in-app alert. It is the same
 address the report failure ladder surfaces, so doc and app agree: `FEEDBACK_EMAIL` in `src/lib/feedback.ts`
 → `reportFailedBody()` in `src/lib/copy.ts` → `ReportContentModal`. Leg 1.2(d) stays internally consistent.

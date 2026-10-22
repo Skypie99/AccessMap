@@ -192,7 +192,7 @@ already uses one component up.
 Named rows now go through `getInitials()` — the tested helper ProfileScreen has always used. **Two
 deliberate consequences:**
 
-1. A two-word name's monogram changes. "Jarvis Mckneil" was **JA** (first two characters) and is now
+1. A two-word name's monogram changes. "[REDACTED_DISPLAY_NAME]" was **JA** (first two characters) and is now
    **JM** (one code point per word). The leaderboard was the odd one out; it matches Profile now.
 2. The **F59 surrogate-pair bug is fixed here too** — `.slice(0, 2)` counts UTF-16 code units, so an
    emoji-leading name was cut in half and rendered as mojibake.
