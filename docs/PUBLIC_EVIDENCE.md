@@ -59,11 +59,26 @@ outranks everything else.
 | [Credential history](CREDENTIAL_HISTORY.md) | A candid account of two historical credentials in published Git history: why both are dead, and why history is not rewritten | Written 2026-09-03. Its note that `origin/main` still carried one redacted string predates the redaction commit (`2e29913e`) reaching `main`. |
 | [`noCredentialsInTree.guard.test.ts`](../src/__tests__/noCredentialsInTree.guard.test.ts), [pre-commit secret scan](../.husky/pre-commit) | Secret detection in CI and at commit time; both report a shape, never the value | Current |
 
-**Privacy review of historical evidence (2026-09-25).** Older QA and design records were reviewed
-for personal information. Identifying account details were replaced with bracketed markers such as
-`[REDACTED_EMAIL]`, `[OWNER_ACCOUNT]` and `[TEST_ACCOUNT_1]`, and screenshots received visible
-hatched redaction boxes. Test outcomes, findings and decisions are unchanged, and files that needed
-context carry a short sanitation note. The review is forward-only: it does not rewrite Git history.
+**Privacy review of historical evidence (2026-09-25) — a bounded pass, not a clearance.** Older QA
+and design records were reviewed for personal information. Identifying account details were
+replaced with bracketed markers such as `[REDACTED_EMAIL]`, `[OWNER_ACCOUNT]` and
+`[TEST_ACCOUNT_1]`, and screenshots received visible hatched redaction boxes. Test outcomes,
+findings and decisions are unchanged, and files that needed context carry a short sanitation note.
+The review is forward-only: it does not rewrite Git history. The
+[public-estate P0/P1 receipt](../qa-reports/2026-09-26_Codex_PublicEstateP0P1.md) records exactly
+what the pass covered and what it does not certify. Specifically:
+
+- **Historical exposure remains.** The redactions apply to the current tree only. Earlier commits,
+  other refs and any copies already fetched or downloaded still contain the original material;
+  history has not been rewritten, and doing so is an owner decision.
+- **Residual exposure remains in the current tree.** The pass was bounded to confirmed tokens;
+  further contact, account-purpose, SQL, admin and catalog candidates were left in place pending
+  adjudication, so no file should be read as certified clean.
+- **Image verification is incomplete.** The changed screenshots were not visually verified, so the
+  redaction boxes on those images are unconfirmed.
+
+No complete privacy clearance is claimed or implied: this is a bounded, text-first containment
+pass with known residual and historical exposure.
 
 ## Release identity
 
@@ -95,6 +110,10 @@ governance warning, listed below.
 - **Some checks need real hardware.** VoiceOver on a physical device, push delivery, real GPS and
   release-binary performance are listed as device-only in the
   [simulator-walk close-out](../design-reviews/sim-walk/2026-08-19/00_CLOSEOUT_AUTHED.md).
+- **Privacy clearance is bounded, not complete.** The 2026-09-25 pass over historical evidence left
+  known historical and residual exposure, and the image redactions are visually unverified (see the
+  [public-estate P0/P1 receipt](../qa-reports/2026-09-26_Codex_PublicEstateP0P1.md)). Nothing on
+  this page should be read as a full privacy clearance.
 - **The web demo is pinned by design** to the Build 33 lineage on a frozen branch. It does not
   follow `main`.
 
