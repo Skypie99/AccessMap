@@ -1,7 +1,17 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'npx expo export --platform web && npx serve dist -p 9001',
+      // The web export is built by the workflow BEFORE this server starts.
+      // Previously `npx expo export` ran inside startServerCommand: Metro takes
+      // far longer than LHCI's ready timeout (10s default), the timeout fired
+      // while the export was still bundling, and Lighthouse audited port 9001
+      // while nothing was listening yet — Chrome showed an error interstitial
+      // and every run failed with CHROME_INTERSTITIAL_ERROR. `serve` announces
+      // readiness with "Accepting connections at ...", which the default
+      // pattern (/listen|ready/i) never matches either, so name it explicitly.
+      startServerCommand: 'npx serve dist -p 9001',
+      startServerReadyPattern: 'accepting connections',
+      startServerReadyTimeout: 30000,
       url: ['http://localhost:9001'],
       numberOfRuns: 1,
     },
