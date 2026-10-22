@@ -26,6 +26,33 @@ module.exports = {
         'categories:best-practices': ['warn', { minScore: 0.9 }],
         // SEO: lower bar (it's an app, not a public website)
         'categories:seo': ['warn', { minScore: 0.7 }],
+
+        // ------------------------------------------------------------------
+        // ENFORCEMENT CHANGE — REQUIRES OWNER APPROVAL BEFORE ANY PUSH
+        // (prepared 2026-10-22, Flagstone QA closeout; not yet approved)
+        //
+        // Exactly three `lighthouse:recommended` preset assertions are
+        // disabled because Lighthouse 12.1.0's TraceElements gatherer crashed
+        // before the audits could run on this page:
+        //   Dependency "RootCauses" failed with exception:
+        //   Cannot read properties of undefined (reading 'frame_sequence')
+        // Each audit therefore returned scoreDisplayMode 'error' with no
+        // value, and LHCI reports: "Audit did not produce a value at all.
+        // 'minScore' might not be a valid assertion for this audit." An
+        // assertion on a no-value audit can never pass and enforces nothing.
+        // Evidence: Lighthouse run 39755992084 on commit 65471ff1 (2026-10-22);
+        // see the Flagstone QA closeout record (2026-10-22).
+        // Re-enable these three once the upstream gatherer is fixed.
+        //
+        // Deliberately NOT disabled: the three genuine, measured findings —
+        // font-display (0.5), unused-javascript (647 KB of 903 KB AppEntry
+        // wasted), valid-source-maps (0) — keep failing honestly at preset
+        // severity and are tracked as open quality debt (QUALITY-DEBT-RECORD
+        // 2026-10-22) for the future website performance workstream.
+        // The preset and all four category thresholds above are unchanged.
+        'lcp-lazy-loaded': 'off',
+        'non-composited-animations': 'off',
+        'prioritize-lcp-image': 'off',
       },
     },
     upload: {
