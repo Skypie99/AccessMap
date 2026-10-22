@@ -380,7 +380,7 @@
     },
     {
       "cmd": "SELECT",
-      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "qual": "(( SELECT auth.email() AS email) = '[REDACTED_EMAIL]'::text)",
       "roles": [
         "public"
       ],
@@ -464,7 +464,7 @@
     },
     {
       "cmd": "SELECT",
-      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "qual": "(( SELECT auth.email() AS email) = '[REDACTED_EMAIL]'::text)",
       "roles": [
         "authenticated"
       ],
@@ -548,7 +548,7 @@
     },
     {
       "cmd": "SELECT",
-      "qual": "(( SELECT auth.email() AS email) = 'skylerhalisky@gmail.com'::text)",
+      "qual": "(( SELECT auth.email() AS email) = '[REDACTED_EMAIL]'::text)",
       "roles": [
         "authenticated"
       ],

@@ -99,7 +99,7 @@ Flagstone Beta Feedback
 5. Confusing moments: [describe what was unclear]
 6. What worked well: [describe positive experience]
 
-Send to: skylerhalisky@gmail.com
+Send to: [REDACTED_EMAIL]
 Or use the in-app feedback button
 ```
 

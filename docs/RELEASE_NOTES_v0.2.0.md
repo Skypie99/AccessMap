@@ -48,7 +48,7 @@ The Tasks list now loads in batches instead of all at once, keeping the app resp
 Found something weird? Have an idea?
 
 1. Tap the **Feedback** button (top-right corner of any screen)
-2. Or email: skylerhalisky@gmail.com
+2. Or email: [REDACTED_EMAIL]
 
 ---
 

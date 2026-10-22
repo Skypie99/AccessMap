@@ -35,7 +35,7 @@ The following secrets must be present in **GitHub → Settings → Secrets → A
 | Secret | Value |
 |--------|-------|
 | `EXPO_TOKEN` | Your Expo access token |
-| `EXPO_APPLE_ID` | `skylerhalisky@gmail.com` |
+| `EXPO_APPLE_ID` | `[REDACTED_EMAIL]` |
 | `EXPO_APPLE_TEAM_ID` | Your Apple Team ID (same as step 1) |
 
 ---

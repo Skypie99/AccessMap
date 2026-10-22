@@ -5,7 +5,7 @@
 A crowdsourced accessibility-flagging mobile app. Users drop pins at locations where there's an accessibility issue (no ramp, broken sidewalk, etc.), and other users verify, resolve, or reject those reports. Built so I (a beginner coder) could learn by doing — keep explanations friendly and avoid over-engineering.
 
 **Live local path:** `~/AccessMap`
-**Owner:** skylerhalisky@gmail.com
+**Owner:** [REDACTED_EMAIL]
 
 ## Release source rule (HIGH PRIORITY — read before any release work)
 
