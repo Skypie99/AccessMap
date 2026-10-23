@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
+import { loadNotifications } from './loadNotifications';
 
 export const pushEnabledKey = (userId: string) => `@accessmap/push_enabled:${userId}`;
 
@@ -83,9 +84,10 @@ interface ExpoNotificationsModule {
  */
 export async function requestExpoPushToken(): Promise<string | null> {
   try {
-    // Dynamic require so the app doesn't crash if expo-notifications is absent.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Notifications = require('expo-notifications') as ExpoNotificationsModule;
+    // The native loader stays synchronous; web downloads its SDK only on demand.
+    const Notifications = (Platform.OS === 'web'
+      ? await loadNotifications()
+      : loadNotifications()) as ExpoNotificationsModule;
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -123,9 +125,8 @@ export async function requestExpoPushToken(): Promise<string | null> {
 export async function getNotificationPermission(): Promise<boolean | null> {
   try {
     if (Platform.OS === 'web') return null;
-    // Dynamic require — same optional-dep pattern as the rest of this file.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Notifications = require('expo-notifications') as ExpoNotificationsModule;
+    // The existing native permission flow keeps its synchronous SDK lookup.
+    const Notifications = loadNotifications() as ExpoNotificationsModule;
     const { status } = await Notifications.getPermissionsAsync();
     return status === 'granted';
   } catch {
@@ -145,8 +146,7 @@ export async function getNotificationPermission(): Promise<boolean | null> {
 export async function requestNotificationPermission(): Promise<boolean> {
   try {
     if (Platform.OS === 'web') return false;
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Notifications = require('expo-notifications') as ExpoNotificationsModule;
+    const Notifications = loadNotifications() as ExpoNotificationsModule;
     const { status: existing } = await Notifications.getPermissionsAsync();
     let finalStatus = existing;
     if (existing !== 'granted') {
@@ -204,9 +204,10 @@ export async function deletePushToken(userId: string): Promise<void> {
 
     // Cancel any locally scheduled notifications too.
     try {
-      // Dynamic require — same optional dep pattern as above.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const Notifications = require('expo-notifications') as ExpoNotificationsModule;
+      // Keep the native lookup synchronous; web uses an on-demand chunk.
+      const Notifications = (Platform.OS === 'web'
+        ? await loadNotifications()
+        : loadNotifications()) as ExpoNotificationsModule;
       await Notifications.cancelAllScheduledNotificationsAsync();
     } catch {
       // expo-notifications absent — nothing to cancel.
