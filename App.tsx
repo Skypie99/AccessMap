@@ -1,7 +1,8 @@
-import 'react-native-gesture-handler';
+// First import: on native this initialises react-native-gesture-handler before
+// anything else, as RNGH requires. Web resolves GestureRoot.web.tsx instead.
+import GestureRoot from '@/components/GestureRoot';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform, StyleSheet, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useColor } from '@/theme/ThemeContext';
@@ -18,7 +19,9 @@ import LiveStatusRegion from '@/components/LiveStatusRegion';
 import OnboardingCards from '@/components/OnboardingCards';
 import RootNavigator from '@/navigation/RootNavigator';
 import type { TakePendingUrl } from '@/navigation/linking';
-import SignInScreen from '@/screens/SignInScreen';
+// The native sign-in wall. Web never renders it (see Gate), so web resolves
+// SignInWall.web.tsx and keeps the screen off the first-launch page.
+import SignInScreen from '@/screens/SignInWall';
 
 function SignedInArea({ takePendingUrl }: { takePendingUrl?: TakePendingUrl }) {
   const { user } = useAuth();
@@ -245,8 +248,9 @@ function App() {
           the top of this file is not enough. Added for the sheet pull-to-dismiss
           primitive (src/components/ui/SheetPull.tsx); it is inert for every
           screen that uses no gesture handler, so nothing else changes. Inside
-          ErrorBoundary so the boundary still catches everything below it. */}
-      <GestureHandlerRootView style={styles.root}>
+          ErrorBoundary so the boundary still catches everything below it. On
+          web it is the plain View RNGH's web root reduces to (GestureRoot.web). */}
+      <GestureRoot style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
@@ -264,7 +268,7 @@ function App() {
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
-      </GestureHandlerRootView>
+      </GestureRoot>
     </ErrorBoundary>
   );
 }
