@@ -10,7 +10,7 @@ import { trackEvent } from '@/lib/analytics';
 import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
 import { getDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '@/lib/points';
-import { useAppFonts } from '@/lib/fonts';
+import { useAllAppFonts, useAppFonts } from '@/lib/fonts';
 import A11yLiveRegion from '@/components/A11yLiveRegion';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
@@ -178,6 +178,9 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
   const color = useColor();
   // null = still loading, true = onboarded, false = needs the intro
   const [onboarded, setOnboardedState] = useState<boolean | null>(null);
+  // The intro draws with the faces App already waited for; everything past it
+  // waits for all eight. Native bundles every face, so this is already true there.
+  const [allFontsLoaded, allFontsError] = useAllAppFonts();
 
   useEffect(() => {
     let cancelled = false;
@@ -195,12 +198,13 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
     setOnboardedState(true);
   }, []);
 
-  if (onboarded === null) {
+  if (onboarded === null || (onboarded && !allFontsLoaded && !allFontsError)) {
     // Loading — themed screen wash so dark-mode users don't get a white boot
     // strobe on frame 1 (M-56). surfaceMuted is the deepest plane in each
     // palette, so it matches whatever screen paints next. Residual: an
     // OS-light / app-dark user gets one light frame here; the OS-dark cohort
     // (the strobe's whole audience) gets the dark wash immediately.
+    // Web also holds it past the intro until the remaining faces are ready.
     return <View style={{ flex: 1, backgroundColor: color.surfaceMuted }} />;
   }
 
@@ -214,7 +218,9 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 function App() {
   // Load design-system custom fonts. Non-blocking: if fontError is set we
   // continue with system fonts rather than blocking the app forever.
-  // Fonts are bundled (~150KB) so they load quickly on first paint.
+  // Fonts are bundled (~150KB) so they load quickly on first paint. On web this
+  // waits only for the welcome cards' three faces; FirstLaunchGate holds the
+  // rest of the app for all eight.
   const [fontsLoaded, fontError] = useAppFonts();
 
   // Analytics: one event per app launch. platform only — no PII. Runs once
