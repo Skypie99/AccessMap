@@ -17,7 +17,11 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import LiveStatusRegion from '@/components/LiveStatusRegion';
 import OnboardingCards from '@/components/OnboardingCards';
-import RootNavigator from '@/navigation/RootNavigator';
+// Web resolves AppNavigator.web.tsx: the navigator (map libraries + signed-in
+// screens) downloads as one on-demand chunk instead of sitting in the
+// first-launch entry. Native resolves AppNavigator.tsx — a straight re-export
+// of RootNavigator, so native rendering is unchanged.
+import RootNavigator, { preloadAppNavigator } from '@/navigation/AppNavigator';
 import type { TakePendingUrl } from '@/navigation/linking';
 // The native sign-in wall. Web never renders it (see Gate), so web resolves
 // SignInWall.web.tsx and keeps the screen off the first-launch page.
@@ -194,6 +198,15 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  // Web: request the navigator's chunk the moment the app is needed (after Skip
+  // or Continue, or at once for a returning visitor) rather than after the
+  // remaining font faces below, so the two downloads overlap. The wash still
+  // holds what is painted until every face is ready. Native has one bundle, so
+  // its preload is a no-op.
+  useEffect(() => {
+    if (Platform.OS === 'web' && onboarded) preloadAppNavigator().catch(() => {});
+  }, [onboarded]);
 
   const handleDone = useCallback(() => {
     // Fire-and-forget; the worst case on storage error is one extra showing.

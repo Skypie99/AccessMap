@@ -90,13 +90,14 @@ import { useSharedModals } from '@/lib/sharedModalsContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { safeImageUrl } from '@/lib/remoteImageUrl';
 import { ModerationReasonPicker } from '@/components/ModerationReasonPicker';
+import { loadFlagDetailModal } from '@/navigation/deferredScreens';
 
-// Code-split: the flag-detail sheet only opens when a card is tapped. React.lazy
-// moves its (large) code into a shared async web chunk — the SAME chunk is reused
-// by ProfileScreen's FlagDetailModal (Metro dedups by module path). Always-mounted
-// below (visible-prop controlled), so behavior is unchanged. Declared after the
-// imports so eslint's import/first stays satisfied.
-const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
+// The flag-detail sheet only opens when a card is tapped. React.lazy keeps it
+// out of this screen's first render, through the same loader ProfileScreen
+// uses; on web it ships in the navigator chunk (deferredScreens.web.ts).
+// Always-mounted below (visible-prop controlled), so behavior is unchanged.
+// Declared after the imports so eslint's import/first stays satisfied.
+const FlagDetailModal = React.lazy(loadFlagDetailModal);
 
 // Statuses Tasks shows. Even if the provider's `statuses` is widened by the
 // Map's filter, Tasks restricts the visible set to the actionable lifecycle
