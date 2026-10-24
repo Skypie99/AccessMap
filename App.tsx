@@ -21,7 +21,7 @@ import OnboardingCards from '@/components/OnboardingCards';
 // screens) downloads as one on-demand chunk instead of sitting in the
 // first-launch entry. Native resolves AppNavigator.tsx — a straight re-export
 // of RootNavigator, so native rendering is unchanged.
-import RootNavigator, { preloadAppNavigator } from '@/navigation/AppNavigator';
+import RootNavigator, { prefetchAppNavigatorOnEngagement, preloadAppNavigator } from '@/navigation/AppNavigator';
 import type { TakePendingUrl } from '@/navigation/linking';
 // The native sign-in wall. Web never renders it (see Gate), so web resolves
 // SignInWall.web.tsx and keeps the screen off the first-launch page.
@@ -206,6 +206,14 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
   // its preload is a no-op.
   useEffect(() => {
     if (Platform.OS === 'web' && onboarded) preloadAppNavigator().catch(() => {});
+  }, [onboarded]);
+
+  // Web: while the welcome is up, the visitor's first press, tap, key or scroll
+  // starts the navigator download (AppNavigator.web.tsx), so reading the cards
+  // overlaps it instead of Skip waiting for all of it. Native: a no-op.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || onboarded !== false) return undefined;
+    return prefetchAppNavigatorOnEngagement();
   }, [onboarded]);
 
   const handleDone = useCallback(() => {

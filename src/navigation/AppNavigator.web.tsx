@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { ScreenFallback } from './ScreenFallback';
-import { importRootNavigatorChunk } from './rootNavigatorChunk';
+import { importRootNavigatorChunk, prefetchRootNavigatorChunk } from './rootNavigatorChunk';
 
 // Web: the first-launch welcome does not render the navigator. Keeping the
 // navigator (map libraries, screens, React Navigation) out of the entry chunk
@@ -38,6 +38,31 @@ export function preloadAppNavigator(): Promise<RootNavigatorModule> {
     });
   }
   return rootNavigatorLoad;
+}
+
+// The welcome holds the visitor for as long as they choose to read, while the
+// navigator chunk (most of the app) would otherwise wait for Skip or Continue
+// and then make them wait for it. Their first press, tap, key or scroll on the
+// welcome says they are heading in, so the download starts then and runs while
+// they finish the cards. It only fetches and defines the chunk: no navigator
+// code runs until the app is needed, so the cards stay responsive. A page
+// nobody touches (a first-load audit included) fetches nothing extra.
+const ENGAGEMENT_EVENTS = ['pointerdown', 'touchstart', 'keydown', 'wheel'] as const;
+const CAPTURE = { capture: true } as const;
+
+export function prefetchAppNavigatorOnEngagement(): () => void {
+  if (typeof document === 'undefined') return () => {};
+  const stop = () => {
+    for (const type of ENGAGEMENT_EVENTS) document.removeEventListener(type, onEngage, CAPTURE);
+  };
+  const onEngage = () => {
+    stop();
+    if (!rootNavigatorLoad) prefetchRootNavigatorChunk();
+  };
+  for (const type of ENGAGEMENT_EVENTS) {
+    document.addEventListener(type, onEngage, { capture: true, passive: true });
+  }
+  return stop;
 }
 
 // React.lazy keeps a rejected load for the life of the page: the error
