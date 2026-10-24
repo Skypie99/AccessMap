@@ -11,6 +11,8 @@
  * And the download should not wait for Skip at all once the visitor engages:
  * their first press, tap, key or scroll on the welcome warms the chunk, while a
  * page nobody touches (a first-load audit) fetches nothing extra.
+ * While the visitor waits, the wait is put into words once it is long enough to
+ * matter, and a failed download says so instead of reporting a crash.
  *
  * Each test loads a fresh module registry: the navigator keeps its load promise
  * and lazy component at module scope, exactly as the app does across renders.
@@ -27,6 +29,18 @@ const mockPrefetchChunk = jest.fn();
 jest.mock('../rootNavigatorChunk', () => ({
   importRootNavigatorChunk: () => mockImportChunk(),
   prefetchRootNavigatorChunk: () => mockPrefetchChunk(),
+}));
+
+// What the app-wide live region would be asked to say.
+const mockAnnounce = jest.fn();
+jest.mock('@/lib/announce', () => ({ announce: (message: string) => mockAnnounce(message) }));
+
+// The font faces the welcome did not need; settled unless a test holds them.
+let mockFontsSettled: Promise<void> = Promise.resolve();
+jest.mock('@/lib/fonts', () => ({
+  get allAppFontsSettled() {
+    return mockFontsSettled;
+  },
 }));
 
 const chunkFailure = () => Promise.reject(new Error('Loading chunk RootNavigator failed.'));
@@ -59,7 +73,7 @@ function freshApp() {
         </ErrorBoundary>
       </SafeAreaProvider>,
     );
-  return { fireEvent: rntl.fireEvent, navigator, renderApp };
+  return { act: rntl.act, fireEvent: rntl.fireEvent, navigator, renderApp };
 }
 
 // Past the quiet retry: the default 1 s wait would end on the retry's own tick.
@@ -71,6 +85,8 @@ beforeEach(() => {
   jest.useFakeTimers();
   mockImportChunk.mockReset();
   mockPrefetchChunk.mockReset();
+  mockAnnounce.mockReset();
+  mockFontsSettled = Promise.resolve();
   // ErrorBoundary logs what it catches; the failures here are deliberate.
   consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -108,6 +124,107 @@ test('when the retry fails too, "Try again" requests the chunk again and lets th
   expect(await app.findByText('navigator ready', {}, WAIT)).toBeTruthy();
   expect(mockImportChunk).toHaveBeenCalledTimes(3);
   app.unmount();
+});
+
+describe('the wait, in words', () => {
+  // A download the test releases by hand: the visitor waits until it does.
+  function heldChunk() {
+    let release = () => {};
+    mockImportChunk.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve(chunkSuccess());
+        }),
+    );
+    return () => release();
+  }
+
+  test('a quick load says nothing: the status stays empty and no arrival is announced', async () => {
+    mockImportChunk.mockImplementation(chunkSuccess);
+    const { renderApp } = freshApp();
+    const app = renderApp();
+
+    expect(await app.findByText('navigator ready', {}, WAIT)).toBeTruthy();
+    expect(app.queryByText('Loading Flagstone…')).toBeNull();
+    expect(mockAnnounce).not.toHaveBeenCalled();
+    app.unmount();
+  });
+
+  test('a long wait gets one polite status after the delay, and its end is announced once', async () => {
+    const release = heldChunk();
+    const { renderApp, navigator, act } = freshApp();
+    const app = renderApp();
+
+    // The status region is there from the start, empty, so the words that
+    // arrive later are a text change a browser screen reader speaks.
+    const status = app.UNSAFE_getByProps({ role: 'status' });
+    expect(status.props['aria-live']).toBe('polite');
+    act(() => jest.advanceTimersByTime(navigator.NAVIGATOR_STATUS_DELAY_MS - 1));
+    expect(app.queryByText('Loading Flagstone…')).toBeNull();
+    act(() => jest.advanceTimersByTime(1));
+    expect(app.getByText('Loading Flagstone…')).toBeTruthy();
+    expect(app.UNSAFE_getByProps({ role: 'status' })).toBe(status);
+    expect(mockAnnounce).not.toHaveBeenCalled();
+
+    await act(async () => release());
+
+    expect(await app.findByText('navigator ready', {}, WAIT)).toBeTruthy();
+    expect(app.queryByText('Loading Flagstone…')).toBeNull();
+    expect(mockAnnounce).toHaveBeenCalledTimes(1);
+    expect(mockAnnounce).toHaveBeenCalledWith('Flagstone is open.');
+    app.unmount();
+  });
+
+  test('the remaining font faces are part of the wait: no navigator before they settle', async () => {
+    let fontsDone = () => {};
+    mockFontsSettled = new Promise<void>((resolve) => {
+      fontsDone = resolve;
+    });
+    mockImportChunk.mockImplementation(chunkSuccess);
+    const { renderApp, act } = freshApp();
+    const app = renderApp();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+    expect(mockImportChunk).toHaveBeenCalledTimes(1);
+    expect(app.queryByText('navigator ready')).toBeNull();
+    expect(app.getByText('Loading Flagstone…')).toBeTruthy();
+
+    await act(async () => fontsDone());
+
+    expect(await app.findByText('navigator ready', {}, WAIT)).toBeTruthy();
+    app.unmount();
+  });
+
+  test('a failed download says so and how to recover, not that the app crashed', async () => {
+    mockImportChunk.mockImplementation(chunkFailure);
+    const { renderApp } = freshApp();
+    const app = renderApp();
+
+    expect(await app.findByText("Couldn't load Flagstone", {}, WAIT)).toBeTruthy();
+    expect(
+      app.getByText('Check your connection and try again. If it keeps happening, reload the page.'),
+    ).toBeTruthy();
+    expect(app.queryByText('Something went wrong')).toBeNull();
+    expect(app.UNSAFE_getByProps({ accessibilityRole: 'alert' })).toBeTruthy();
+    expect(app.getByLabelText('Try again')).toBeTruthy();
+    expect(app.queryByText('Loading Flagstone…')).toBeNull();
+    app.unmount();
+  });
+
+  test('a crash inside the navigator still reaches the app-level crash screen', async () => {
+    const Crash = (): React.ReactElement => {
+      throw new Error('render crash');
+    };
+    mockImportChunk.mockImplementation(() => Promise.resolve({ __esModule: true, default: Crash }));
+    const { renderApp } = freshApp();
+    const app = renderApp();
+
+    expect(await app.findByText('Something went wrong', {}, WAIT)).toBeTruthy();
+    expect(app.queryByText("Couldn't load Flagstone")).toBeNull();
+    app.unmount();
+  });
 });
 
 test("the gate's preload and the lazy navigator share one download", async () => {

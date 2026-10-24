@@ -1,4 +1,11 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { ErrorFallback } from '@/components/ErrorBoundary';
+import { AppText } from '@/components/ui/AppText';
+import { announce } from '@/lib/announce';
+import { allAppFontsSettled } from '@/lib/fonts';
+import { font } from '@/theme';
+import { useColor } from '@/theme/ThemeContext';
 import { ScreenFallback } from './ScreenFallback';
 import { importRootNavigatorChunk, prefetchRootNavigatorChunk } from './rootNavigatorChunk';
 
@@ -11,6 +18,7 @@ import { importRootNavigatorChunk, prefetchRootNavigatorChunk } from './rootNavi
 // once and the download overlaps the remaining fonts instead of queueing after
 // them. A failed load is forgotten, so the next attempt retries.
 type RootNavigatorModule = typeof import('./RootNavigator');
+type RootNavigatorProps = React.ComponentProps<RootNavigatorModule['default']>;
 type LazyRootNavigator = React.LazyExoticComponent<RootNavigatorModule['default']>;
 
 // Skip is the moment a flaky mobile connection drops this download, and it is
@@ -65,27 +73,140 @@ export function prefetchAppNavigatorOnEngagement(): () => void {
   return stop;
 }
 
+// A download that failed twice (the quiet retry included) is named, so the
+// boundary below can tell it from a crash inside the navigator. A crash still
+// reaches the app-level ErrorBoundary and its crash copy.
+const NAVIGATOR_LOAD_ERROR = 'NavigatorLoadError';
+
+function navigatorLoadError(cause: unknown): Error {
+  const error = new Error(`The app could not be downloaded: ${cause instanceof Error ? cause.message : String(cause)}`);
+  error.name = NAVIGATOR_LOAD_ERROR;
+  return error;
+}
+
+// The navigator's screens draw with all eight font faces, and the welcome only
+// waited for three, so it also waits for the other five: right after an
+// immediate Skip they can still be downloading. One loading frame covers both
+// waits, instead of a blank wash before the frame.
+//
 // React.lazy keeps a rejected load for the life of the page: the error
 // boundary's "Try again" would re-render straight into the same failure, so the
 // only way out was reloading the browser tab. After a failure, swap in a fresh
-// lazy component; "Try again" re-renders AppNavigator, which picks it up and
+// lazy component; "Try again" remounts LazyNavigator, which picks it up and
 // requests the chunk again.
 function createLazyRootNavigator(): LazyRootNavigator {
   return React.lazy(() =>
-    preloadAppNavigator().catch((error: unknown) => {
-      lazyRootNavigator = createLazyRootNavigator();
-      throw error;
-    }),
+    Promise.all([preloadAppNavigator(), allAppFontsSettled]).then(
+      ([module]) => module,
+      (error: unknown) => {
+        lazyRootNavigator = createLazyRootNavigator();
+        throw navigatorLoadError(error);
+      },
+    ),
   );
 }
 
 let lazyRootNavigator = createLazyRootNavigator();
 
-export default function AppNavigator(props: React.ComponentProps<RootNavigatorModule['default']>) {
+// An immediate Skip on a slow connection waits for the whole chunk and the last
+// faces (about 6 s on Lighthouse's slow 4G), and the skeleton alone says
+// nothing: it is hidden from screen readers and holds still under Reduce
+// Motion. Past this delay the wait gets words, on screen and in a polite
+// status. A visitor who engaged with the welcome, or is returning, usually has
+// everything sooner and is spared a status that would vanish as it was spoken.
+export const NAVIGATOR_STATUS_DELAY_MS = 1000;
+export const NAVIGATOR_LOADING_TEXT = 'Loading Flagstone…';
+export const NAVIGATOR_OPEN_TEXT = 'Flagstone is open.';
+export const NAVIGATOR_FAILED_TITLE = "Couldn't load Flagstone";
+export const NAVIGATOR_FAILED_BODY = 'Check your connection and try again. If it keeps happening, reload the page.';
+
+// Set once the loading status has shown, so the app's arrival is announced only
+// after a wait that was announced.
+let loadingAnnounced = false;
+
+// The status mounts empty with the fallback and only its text changes: browser
+// screen readers speak a live region's text changes but often skip a region
+// that arrives with its text. role="status" is polite and atomic on its own
+// (react-native-web 0.21 drops aria-atomic). The words sit in the subtitle slot
+// of the header the skeleton is shaped like, at the subtitle's size and ink,
+// in the welcome's body face: the other faces may still be downloading, and
+// this line must not swap fonts while it is read.
+function NavigatorLoadingStatus() {
+  const color = useColor();
+  const [waiting, setWaiting] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      loadingAnnounced = true;
+      setWaiting(true);
+    }, NAVIGATOR_STATUS_DELAY_MS);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <View role="status" aria-live="polite">
+      <AppText variant="bodyMedium" size={font.size.md} color={color.textMuted}>
+        {waiting ? NAVIGATOR_LOADING_TEXT : ''}
+      </AppText>
+    </View>
+  );
+}
+
+// The status above leaves with the fallback, so the app-wide live region says
+// the wait is over. It mounts with the navigator, never before.
+function NavigatorArrival() {
+  useEffect(() => {
+    if (!loadingAnnounced) return;
+    loadingAnnounced = false;
+    announce(NAVIGATOR_OPEN_TEXT);
+  }, []);
+  return null;
+}
+
+type LoadBoundaryState = { failed: boolean; error: unknown };
+
+// A failed download is not a crash, so it keeps the error screen but says what
+// happened and what helps; "Try again" remounts LazyNavigator, which requests
+// the chunk again. Anything else is rethrown to the app-level ErrorBoundary.
+class NavigatorLoadBoundary extends React.Component<{ children: React.ReactNode }, LoadBoundaryState> {
+  state: LoadBoundaryState = { failed: false, error: null };
+
+  static getDerivedStateFromError(error: unknown): LoadBoundaryState {
+    return { failed: true, error };
+  }
+
+  handleRetry = () => {
+    this.setState({ failed: false, error: null });
+  };
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    const { error } = this.state;
+    if (!(error instanceof Error && error.name === NAVIGATOR_LOAD_ERROR)) throw error;
+    return <ErrorFallback title={NAVIGATOR_FAILED_TITLE} body={NAVIGATOR_FAILED_BODY} onReset={this.handleRetry} />;
+  }
+}
+
+// Reads the lazy component at render, so a remount after a failure picks up the
+// fresh one.
+function LazyNavigator(props: RootNavigatorProps) {
   const Navigator = lazyRootNavigator;
   return (
-    <Suspense fallback={<ScreenFallback />}>
+    <Suspense
+      fallback={
+        <ScreenFallback>
+          <NavigatorLoadingStatus />
+        </ScreenFallback>
+      }
+    >
       <Navigator {...props} />
+      <NavigatorArrival />
     </Suspense>
+  );
+}
+
+export default function AppNavigator(props: RootNavigatorProps) {
+  return (
+    <NavigatorLoadBoundary>
+      <LazyNavigator {...props} />
+    </NavigatorLoadBoundary>
   );
 }

@@ -11,7 +11,7 @@ import { trackEvent } from '@/lib/analytics';
 import { loadOnboarded, setOnboarded } from '@/lib/onboardingState';
 import { getDefaultTab, type DefaultTab } from '@/lib/preferences';
 import { fetchCurrentPoints, getLastSeenPoints, setLastSeenPoints } from '@/lib/points';
-import { useAllAppFonts, useAppFonts } from '@/lib/fonts';
+import { useAppFonts } from '@/lib/fonts';
 import A11yLiveRegion from '@/components/A11yLiveRegion';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
@@ -185,9 +185,6 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
   const color = useColor();
   // null = still loading, true = onboarded, false = needs the intro
   const [onboarded, setOnboardedState] = useState<boolean | null>(null);
-  // The intro draws with the faces App already waited for; everything past it
-  // waits for all eight. Native bundles every face, so this is already true there.
-  const [allFontsLoaded, allFontsError] = useAllAppFonts();
 
   useEffect(() => {
     let cancelled = false;
@@ -200,10 +197,10 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Web: request the navigator's chunk the moment the app is needed (after Skip
-  // or Continue, or at once for a returning visitor) rather than after the
-  // remaining font faces below, so the two downloads overlap. The wash still
-  // holds what is painted until every face is ready. Native has one bundle, so
-  // its preload is a no-op.
+  // or Continue, or at once for a returning visitor), so it downloads alongside
+  // the remaining font faces. The navigator waits for both behind one loading
+  // frame (AppNavigator.web.tsx). Native has one bundle, so its preload is a
+  // no-op.
   useEffect(() => {
     if (Platform.OS === 'web' && onboarded) preloadAppNavigator().catch(() => {});
   }, [onboarded]);
@@ -222,13 +219,14 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
     setOnboardedState(true);
   }, []);
 
-  if (onboarded === null || (onboarded && !allFontsLoaded && !allFontsError)) {
+  if (onboarded === null) {
     // Loading — themed screen wash so dark-mode users don't get a white boot
     // strobe on frame 1 (M-56). surfaceMuted is the deepest plane in each
     // palette, so it matches whatever screen paints next. Residual: an
     // OS-light / app-dark user gets one light frame here; the OS-dark cohort
     // (the strobe's whole audience) gets the dark wash immediately.
-    // Web also holds it past the intro until the remaining faces are ready.
+    // Past the intro, web's remaining faces are waited for by the navigator,
+    // behind a loading frame that says so (AppNavigator.web.tsx), not here.
     return <View style={{ flex: 1, backgroundColor: color.surfaceMuted }} />;
   }
 
@@ -243,8 +241,8 @@ function App() {
   // Load design-system custom fonts. Non-blocking: if fontError is set we
   // continue with system fonts rather than blocking the app forever.
   // Fonts are bundled (~150KB) so they load quickly on first paint. On web this
-  // waits only for the welcome cards' three faces; FirstLaunchGate holds the
-  // rest of the app for all eight.
+  // waits only for the welcome cards' three faces; the navigator waits for all
+  // eight (AppNavigator.web.tsx).
   const [fontsLoaded, fontError] = useAppFonts();
 
   // Analytics: one event per app launch. platform only — no PII. Runs once

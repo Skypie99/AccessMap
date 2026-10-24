@@ -37,23 +37,29 @@ interface State {
   error: Error | null;
 }
 
-function ErrorFallback({
+// Exported for the web navigator's download failure (AppNavigator.web.tsx),
+// which is not a crash: it keeps this exact surface and passes its own copy.
+export function ErrorFallback({
   onReset,
   variant = 'app',
   label,
+  title: titleOverride,
+  body: bodyOverride,
 }: {
   onReset: () => void;
   variant?: 'app' | 'screen';
   label?: string;
+  title?: string;
+  body?: string;
 }) {
   const color = useColor();
   const styles = makeStyles(color);
   const isScreen = variant === 'screen';
-  const title = isScreen
+  const title = titleOverride ?? (isScreen
     ? label
       ? `${label} ran into a problem`
       : 'This section ran into a problem'
-    : 'Something went wrong';
+    : 'Something went wrong');
   // SW-31: this used to end "…or switch to another tab and come back", which is
   // advice to walk into the same wall. When the crashing state lives ABOVE this
   // boundary — the SW-47 realtime re-subscribe was exactly that — the other tabs
@@ -64,9 +70,9 @@ function ErrorFallback({
   // finding by showing it recovers cleanly (twice, under auth, straight back to
   // Home with no re-crash in the console). So only the false half changes, and
   // the honest fallback is the one the sibling string below already gives.
-  const body = isScreen
+  const body = bodyOverride ?? (isScreen
     ? 'You can try again. If it keeps happening, close and reopen the app.'
-    : 'The app hit an unexpected problem and stopped. Try again, or close and reopen the app if it keeps happening.';
+    : 'The app hit an unexpected problem and stopped. Try again, or close and reopen the app if it keeps happening.');
   return (
     <View style={styles.container} accessibilityRole="alert">
       <AppText variant="heading" style={styles.title}>{title}</AppText>

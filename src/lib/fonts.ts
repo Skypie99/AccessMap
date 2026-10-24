@@ -4,7 +4,8 @@
  * Usage in App.tsx:
  *   const [fontsLoaded, fontError] = useAppFonts();
  *   if (!fontsLoaded && !fontError) return null; // or hold splash
- * and, for everything past the welcome cards, useAllAppFonts().
+ * and, for everything past the welcome cards, the web navigator awaits
+ * allAppFontsSettled (AppNavigator.web.tsx).
  *
  * Font family strings come from font.family in @/theme.
  * Design system 2026-05-31:
@@ -50,8 +51,8 @@ const appFonts = {
 
 // The first-launch welcome cards (OnboardingCards) draw with three faces only:
 // `display` (title), `bodyMedium` (copy) and `label` (buttons). On web the
-// cards wait for just these. Everything after the cards still waits for all
-// eight (useAllAppFonts), so no screen ever swaps fonts mid-render.
+// cards wait for just these. The navigator still waits for all eight
+// (allAppFontsSettled), so none of its screens swaps fonts mid-render.
 // public/index.html preloads these three so they download alongside the JS
 // bundle; change the set and update those tags (a guard test checks them).
 const welcomeFonts = {
@@ -133,23 +134,23 @@ function useWebWelcomeFonts() {
   return useFontLoad(webWelcomeLoad);
 }
 
-function useWebAllFonts() {
-  return useFontLoad(webAllLoad);
-}
-
 function useBundledFonts() {
   return useFonts(appFonts);
-}
-
-// Native: App's first-render gate already waited for all eight bundled faces
-// (or gave up on an error), so there is nothing more to wait for, exactly as
-// before the web-only split.
-function useBundledFontsSettled(): FontLoadState {
-  return [true, null];
 }
 
 /** First-render gate. Web waits for the welcome faces; native has all eight bundled. */
 export const useAppFonts = Platform.OS === 'web' ? useWebWelcomeFonts : useBundledFonts;
 
-/** Gate for everything after the welcome cards: all eight faces. */
-export const useAllAppFonts = Platform.OS === 'web' ? useWebAllFonts : useBundledFontsSettled;
+/**
+ * Gate for everything after the welcome cards: settles once all eight faces
+ * have loaded or failed (a failure falls back to system fonts, never a stall).
+ * The web navigator awaits it behind its loading frame. Native: App's
+ * first-render gate already waited for all eight bundled faces, so it is
+ * settled from the start, exactly as before the web-only split.
+ */
+export const allAppFontsSettled: Promise<void> = webAllLoad
+  ? webAllLoad.promise.then(
+      () => undefined,
+      () => undefined,
+    )
+  : Promise.resolve();
