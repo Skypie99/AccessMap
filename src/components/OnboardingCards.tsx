@@ -460,8 +460,16 @@ export default function OnboardingCards({ onDone }: Props) {
   const heroDisc = wide ? HERO_DISC_WIDE : HERO_DISC;
   const heroMark = wide ? HERO_MARK_WIDE : HERO_MARK;
 
+  // Web: no fade-in. react-native-web runs the Modal fade as a compositor
+  // opacity animation that starts at 0, and Chrome never reports text first
+  // painted invisible, so the welcome (the first-launch page's main content) was
+  // never a Largest Contentful Paint candidate. The only candidate left was the
+  // static splash, which React's first commit removes; whenever that commit beat
+  // Chrome's paint report, Lighthouse recorded no LCP at all (9 of 21 lab runs,
+  // 2026-10-23). Appearing at full opacity makes the welcome's own first frame
+  // the measured paint. Native keeps its fade; Reduce Motion skips it everywhere.
   return (
-    <Modal aria-label="Welcome to Flagstone" visible animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={handleSkip} presentationStyle="fullScreen">
+    <Modal aria-label="Welcome to Flagstone" visible animationType={reduceMotion || Platform.OS === 'web' ? 'none' : 'fade'} onRequestClose={handleSkip} presentationStyle="fullScreen">
       <View
         style={styles.screen}
         accessibilityViewIsModal
