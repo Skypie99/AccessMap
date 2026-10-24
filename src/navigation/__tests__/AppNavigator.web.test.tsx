@@ -165,6 +165,12 @@ describe('the wait, in words', () => {
     expect(app.getByText('Loading Flagstone…')).toBeTruthy();
     expect(app.UNSAFE_getByProps({ role: 'status' })).toBe(status);
     expect(mockAnnounce).not.toHaveBeenCalled();
+    // Body ink: the muted ink measured under 4.5:1 on the stage at this height.
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    const { color } = require('@/theme') as typeof import('@/theme');
+    const { StyleSheet } = require('react-native') as typeof import('react-native');
+    /* eslint-enable @typescript-eslint/no-require-imports */
+    expect(StyleSheet.flatten(app.getByText('Loading Flagstone…').props.style).color).toBe(color.text);
 
     await act(async () => release());
 

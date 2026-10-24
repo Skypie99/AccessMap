@@ -128,9 +128,11 @@ let loadingAnnounced = false;
 // screen readers speak a live region's text changes but often skip a region
 // that arrives with its text. role="status" is polite and atomic on its own
 // (react-native-web 0.21 drops aria-atomic). The words sit in the subtitle slot
-// of the header the skeleton is shaped like, at the subtitle's size and ink,
-// in the welcome's body face: the other faces may still be downloading, and
-// this line must not swap fonts while it is read.
+// of the header the skeleton is shaped like, at the subtitle's size, in the
+// welcome's body face: the other faces may still be downloading, and this line
+// must not swap fonts while it is read. Body ink, not the subtitle's muted ink:
+// this high on the stage the brand pool is at its deepest, and textMuted
+// measured 4.47:1 there against the 4.5:1 floor (2026-10-24).
 function NavigatorLoadingStatus() {
   const color = useColor();
   const [waiting, setWaiting] = useState(false);
@@ -143,7 +145,7 @@ function NavigatorLoadingStatus() {
   }, []);
   return (
     <View role="status" aria-live="polite">
-      <AppText variant="bodyMedium" size={font.size.md} color={color.textMuted}>
+      <AppText variant="bodyMedium" size={font.size.md} color={color.text}>
         {waiting ? NAVIGATOR_LOADING_TEXT : ''}
       </AppText>
     </View>
