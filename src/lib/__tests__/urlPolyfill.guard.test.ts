@@ -3,8 +3,9 @@
  *
  * supabase.ts used to import `react-native-url-polyfill/auto` directly. That
  * entry already installs nothing on web (`if (Platform.OS !== 'web')`), but the
- * import still bundled and evaluated its whatwg-url + buffer implementation
- * (~70 KB) on the first-launch page. supabase.ts now imports ./urlPolyfill:
+ * import still bundled and evaluated its whatwg-url implementation (47,743 B raw
+ * of the web entry, measured) on the first-launch page. supabase.ts now imports
+ * ./urlPolyfill:
  * native resolves urlPolyfill.ts (the same polyfill import, still first), web
  * resolves the empty urlPolyfill.web.ts.
  *
