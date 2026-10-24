@@ -1,7 +1,8 @@
-import 'react-native-gesture-handler';
+// First import: on native this initialises react-native-gesture-handler before
+// anything else, as RNGH requires. Web resolves GestureRoot.web.tsx instead.
+import GestureRoot from '@/components/GestureRoot';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform, StyleSheet, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useColor } from '@/theme/ThemeContext';
@@ -16,9 +17,15 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import FlashBanner from '@/components/FlashBanner';
 import LiveStatusRegion from '@/components/LiveStatusRegion';
 import OnboardingCards from '@/components/OnboardingCards';
-import RootNavigator from '@/navigation/RootNavigator';
+// Web resolves AppNavigator.web.tsx: the navigator (map libraries + signed-in
+// screens) downloads as one on-demand chunk instead of sitting in the
+// first-launch entry. Native resolves AppNavigator.tsx — a straight re-export
+// of RootNavigator, so native rendering is unchanged.
+import RootNavigator, { prefetchAppNavigatorOnEngagement, preloadAppNavigator } from '@/navigation/AppNavigator';
 import type { TakePendingUrl } from '@/navigation/linking';
-import SignInScreen from '@/screens/SignInScreen';
+// The native sign-in wall. Web never renders it (see Gate), so web resolves
+// SignInWall.web.tsx and keeps the screen off the first-launch page.
+import SignInScreen from '@/screens/SignInWall';
 
 function SignedInArea({ takePendingUrl }: { takePendingUrl?: TakePendingUrl }) {
   const { user } = useAuth();
@@ -189,6 +196,23 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Web: request the navigator's chunk the moment the app is needed (after Skip
+  // or Continue, or at once for a returning visitor), so it downloads alongside
+  // the remaining font faces. The navigator waits for both behind one loading
+  // frame (AppNavigator.web.tsx). Native has one bundle, so its preload is a
+  // no-op.
+  useEffect(() => {
+    if (Platform.OS === 'web' && onboarded) preloadAppNavigator().catch(() => {});
+  }, [onboarded]);
+
+  // Web: while the welcome is up, the visitor's first press, tap, key or scroll
+  // starts the navigator download (AppNavigator.web.tsx), so reading the cards
+  // overlaps it instead of Skip waiting for all of it. Native: a no-op.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || onboarded !== false) return undefined;
+    return prefetchAppNavigatorOnEngagement();
+  }, [onboarded]);
+
   const handleDone = useCallback(() => {
     // Fire-and-forget; the worst case on storage error is one extra showing.
     setOnboarded();
@@ -201,6 +225,8 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
     // palette, so it matches whatever screen paints next. Residual: an
     // OS-light / app-dark user gets one light frame here; the OS-dark cohort
     // (the strobe's whole audience) gets the dark wash immediately.
+    // Past the intro, web's remaining faces are waited for by the navigator,
+    // behind a loading frame that says so (AppNavigator.web.tsx), not here.
     return <View style={{ flex: 1, backgroundColor: color.surfaceMuted }} />;
   }
 
@@ -214,7 +240,9 @@ function FirstLaunchGate({ children }: { children: React.ReactNode }) {
 function App() {
   // Load design-system custom fonts. Non-blocking: if fontError is set we
   // continue with system fonts rather than blocking the app forever.
-  // Fonts are bundled (~150KB) so they load quickly on first paint.
+  // Fonts are bundled (~150KB) so they load quickly on first paint. On web this
+  // waits only for the welcome cards' three faces; the navigator waits for all
+  // eight (AppNavigator.web.tsx).
   const [fontsLoaded, fontError] = useAppFonts();
 
   // Analytics: one event per app launch. platform only — no PII. Runs once
@@ -239,8 +267,9 @@ function App() {
           the top of this file is not enough. Added for the sheet pull-to-dismiss
           primitive (src/components/ui/SheetPull.tsx); it is inert for every
           screen that uses no gesture handler, so nothing else changes. Inside
-          ErrorBoundary so the boundary still catches everything below it. */}
-      <GestureHandlerRootView style={styles.root}>
+          ErrorBoundary so the boundary still catches everything below it. On
+          web it is the plain View RNGH's web root reduces to (GestureRoot.web). */}
+      <GestureRoot style={styles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
@@ -258,7 +287,7 @@ function App() {
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
-      </GestureHandlerRootView>
+      </GestureRoot>
     </ErrorBoundary>
   );
 }

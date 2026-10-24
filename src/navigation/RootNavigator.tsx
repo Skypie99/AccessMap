@@ -43,15 +43,15 @@ import {
   schedulePushEducationAfterTabPress,
   type CancellableInteractionTask,
 } from './postSignInPushGate';
+import { loadAdminScreen, loadSettingsScreen } from './deferredScreens';
 
 // Settings + Admin are reached ONLY from the hamburger drawer (Admin is also
-// gated by is_admin), so they never appear on first paint. Code-split them out
-// of the initial bundle with React.lazy — on web Metro emits a separate async
-// chunk for each (loaded on demand when the user opens the screen); on native
-// they load from the packaged bundle the same way. Keeps the heavy SettingsScreen
-// (nested About/Onboarding/NotificationPrefs) out of the main chunk.
-const SettingsScreen = React.lazy(() => import('@/screens/SettingsScreen'));
-const AdminScreen = React.lazy(() => import('@/screens/AdminScreen'));
+// gated by is_admin), so they never appear on first paint. React.lazy keeps
+// them out of the navigator's first render. On web they ship inside this
+// navigator's chunk, not chunks of their own: separate chunks made Expo load
+// their shared code on the first-launch page (see deferredScreens.web.ts).
+const SettingsScreen = React.lazy(loadSettingsScreen);
+const AdminScreen = React.lazy(loadAdminScreen);
 
 // React Navigation's `component` prop wants a plain component, not a lazy ref.
 // Wrap each lazy screen so navigation/route props are forwarded and a Suspense
@@ -585,10 +585,11 @@ function DrawerHost() {
   // boundary re-attempts the load on navigation. The dynamic import is cached, so
   // repeat opens are no-ops; the Admin chunk is gated on isAdmin so guests never
   // fetch it (isAdmin is boolean | null — null while loading, hence === true).
+  // On web both loaders resolve at once: the screens ship in this chunk.
   useEffect(() => {
     if (!open) return;
-    import('@/screens/SettingsScreen').catch(() => {});
-    if (isAdmin === true) import('@/screens/AdminScreen').catch(() => {});
+    loadSettingsScreen().catch(() => {});
+    if (isAdmin === true) loadAdminScreen().catch(() => {});
   }, [open, isAdmin]);
   return (
     <HamburgerDrawer

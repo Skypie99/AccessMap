@@ -30,7 +30,11 @@ jobs:
         run: npm install -g serve
 
       - name: Build web export for the audit
-        run: npx expo export --platform web
+        # --source-maps (QD-3): the deployment build (vercel.json buildCommand)
+        # emits source maps, so the audited fixture must emit them too. Adding
+        # maps here alone would green the check while the live site still ships
+        # without them; keep the two commands identical on purpose.
+        run: npx expo export --platform web --source-maps
         env:
           # Public Expo config is baked into the exported bundle at build time.
           # CI has no `.env` and must not need real services: without these

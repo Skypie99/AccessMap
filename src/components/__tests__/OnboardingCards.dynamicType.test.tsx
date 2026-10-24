@@ -31,7 +31,7 @@
  */
 
 import React from 'react';
-import { AccessibilityInfo, ScrollView, StyleSheet, Text } from 'react-native';
+import { AccessibilityInfo, Modal, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import useWindowDimensions from 'react-native/Libraries/Utilities/useWindowDimensions';
 import * as Location from 'expo-location';
@@ -350,5 +350,27 @@ describe('analytics parity with the replay (the consequential flow reported noth
     const u = render(<OnboardingCards onDone={onDone} />);
     fireEvent.press(u.getByLabelText('Skip the tutorial'));
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('LCP — on web the welcome is a contentful paint (no Modal fade there)', () => {
+  // react-native-web runs the Modal fade as a compositor opacity animation from 0,
+  // and Chrome never reports text first painted invisible: with the fade, the
+  // welcome was never a Largest Contentful Paint candidate on web, and runs where
+  // React removed the static splash first recorded no LCP at all (2026-10-23 trace
+  // study). Native keeps the fade; Reduce Motion is guarded in reduceMotion.modalGate.
+  const welcomeAnimation = () =>
+    render(<OnboardingCards onDone={jest.fn()} />).UNSAFE_getByType(Modal).props.animationType;
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('web: the welcome appears at full opacity (animationType none)', () => {
+    jest.replaceProperty(Platform, 'OS', 'web');
+    expect(welcomeAnimation()).toBe('none');
+  });
+
+  it('native: the welcome keeps its fade', () => {
+    expect(Platform.OS).toBe('ios');
+    expect(welcomeAnimation()).toBe('fade');
   });
 });

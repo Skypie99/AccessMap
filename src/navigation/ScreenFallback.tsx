@@ -19,13 +19,16 @@ import { useColor } from '@/theme/ThemeContext';
  * fallback is F3-01's sanctioned exception, NOT a material-train migration (the
  * ErrorBoundary crash fallback stays a bare surface, untouched). The Skeleton is
  * RM-static (0.5) and AT-hidden, so this swaps the un-gated spinner for a calmer,
- * RM-improving frame. On web the chunk is local, so this only flashes briefly;
- * the drawer-open warm-import (DrawerHost) usually resolves it before it shows.
+ * RM-improving frame. Settings / Admin resolve at once (on web they ship inside
+ * the navigator chunk), so there it only flashes briefly. The web navigator
+ * itself is a network download that can take seconds: AppNavigator.web.tsx
+ * shows this frame meanwhile and passes its loading status as `children`, under
+ * the bars, where the destination header's subtitle sits.
  *
  * Extracted from RootNavigator so the dressed frame is unit-testable without the
  * full navigator graph.
  */
-export function ScreenFallback() {
+export function ScreenFallback({ children }: { children?: React.ReactNode }) {
   const color = useColor();
   const insets = useSafeAreaInsets();
   return (
@@ -34,6 +37,7 @@ export function ScreenFallback() {
       <View style={{ paddingTop: insets.top + spacing.xxl, paddingHorizontal: spacing.xxl, gap: spacing.sm }}>
         <Skeleton width={96} height={12} borderRadius={radius.sm} />
         <Skeleton width={200} height={40} borderRadius={radius.md} />
+        {children}
       </View>
     </View>
   );
