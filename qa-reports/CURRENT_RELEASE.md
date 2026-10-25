@@ -20,25 +20,25 @@
 
 - Mode: web-only-descendant (APPROVED WEB-ONLY DESCENDANT)
 - Base: `f5594171e75bc5ec92a87d0392c361601ddedfba`
-- Source: `ebf091c21066d39898160b1357bde0aa35bdb8bf`
-- Tree: `6cb842e3be0f4c3bfec569307829ad240d3f270a`
-- Overlay: Accepted OpenFreeMap web basemap repair for the Build 33 demo (approved: yes; receipt: `qa-reports/2026-09-01_Build33_WebDeploymentDecision.md`)
-- Deployed: `ebf091c21066d39898160b1357bde0aa35bdb8bf`
-- Production branch: `release/web-4.1.1-build33-openfreemap`
-- Deployment ID: `HMszH26wADRRDd1CqH4UkJ8kAugQ`
+- Source: `4a27691b2f2f66f02cca936f50d87d7c6b5795dc`
+- Tree: `c89d67eae4727e63ba258e8df21787b186655e99`
+- Overlay: Option B accessible first-launch load reduction on the converged main lineage; includes merged post-Build-33 main changes and preserves the accepted OpenFreeMap web basemap repair (approved: yes; receipt: `qa-reports/releases/2026-10-25_Flagstone_4.1.1_Build33_OptionB_WebDeployment.md`)
+- Deployed: `4a27691b2f2f66f02cca936f50d87d7c6b5795dc`
+- Production branch: `release/web-4.1.1-build33-optionb`
+- Deployment ID: `dpl_DhFGfQScrFRtnSUkd2CXnbq1Zs4c`
 - Provider: vercel project `access-map` (team `skypie99s-projects`)
 - Domains: flagstone.skypistudio.com, accessmap.skypistudio.com
 - Live identity mode: legacy-triangulated
-- Deployment verified at: 2026-09-02
-- Deployment receipt: `qa-reports/2026-09-01_Build33_WebDeploymentDecision.md`
+- Deployment verified at: 2026-10-25T09:32:55Z
+- Deployment receipt: `qa-reports/releases/2026-10-25_Flagstone_4.1.1_Build33_OptionB_WebDeployment.md`
 
 ## MAIN
 
-- Release-code integration: DEFERRED
+- Release-code integration: CONVERGED
 - Governance base: `c4626479f6344011530396602422c746f4bb4cc9`
 - Release tag: none
 
-Last verified: 2026-09-02T06:15:01Z
+Last verified: 2026-10-25T09:33:34Z
 
 Machine authority: `release/current.json`
 
