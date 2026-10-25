@@ -33,6 +33,12 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#1466E0" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d1829" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- The welcome cards' three font faces (src/lib/fonts.ts welcomeFonts), fetched
+         alongside the JS bundle instead of after it. Exported asset paths: the hash is
+         each file's MD5, and welcomeFontPreload.guard.test.ts fails if it drifts. -->
+    <link rel="preload" as="font" type="font/ttf" crossorigin data-flagstone-font="PlusJakartaSans_800ExtraBold" href="/assets/node_modules/@expo-google-fonts/plus-jakarta-sans/800ExtraBold/PlusJakartaSans_800ExtraBold.f90855567d2c693a26e66f7184645099.ttf" />
+    <link rel="preload" as="font" type="font/ttf" crossorigin data-flagstone-font="PublicSans_500Medium" href="/assets/node_modules/@expo-google-fonts/public-sans/500Medium/PublicSans_500Medium.80840e462a09263d0e9833565df34cfd.ttf" />
+    <link rel="preload" as="font" type="font/ttf" crossorigin data-flagstone-font="PublicSans_600SemiBold" href="/assets/node_modules/@expo-google-fonts/public-sans/600SemiBold/PublicSans_600SemiBold.9903b8962526b688e7df03f2f9c7dfa7.ttf" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */

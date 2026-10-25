@@ -118,21 +118,22 @@ import FilterPresetsModal from '@/components/FilterPresetsModal';
 import { loadPlaces, type SavedPlace } from '@/lib/savedPlaces';
 import { useAuth } from '@/lib/auth';
 import type { GeocodeResult } from '@/lib/geocode';
+import { loadFlagDetailModal, loadReportFlagModal } from '@/navigation/deferredScreens';
 
-// Code-split: the report bottom-sheet only mounts once the user taps the Report
-// FAB. React.lazy moves its (large) code into a separate async web chunk; it's
+// The report bottom-sheet only mounts once the user taps the Report FAB.
+// React.lazy keeps its (large) module out of this screen's first render; it's
 // still always-mounted below (visible-prop controlled), so open/close behavior is
-// unchanged — the chunk just loads on demand instead of sitting in the main
-// bundle. (severityColor lives in @/lib/flags, not this module, so the split is
-// clean.) Declared after the imports so eslint's import/first stays satisfied.
-const ReportFlagModal = React.lazy(() => import('./ReportFlagModal'));
+// unchanged. On web it ships in the navigator chunk (see
+// src/navigation/deferredScreens.web.ts). Declared after the imports so eslint's
+// import/first stays satisfied.
+const ReportFlagModal = React.lazy(loadReportFlagModal);
 
 // S3 (trust instrumentation): the flag-detail sheet is now reachable from the
 // map itself — the pin callout's "Open details" and, under a screen reader, the
-// Nearby list. Same React.lazy split as Tasks/Profile (Metro dedups by module
-// path, so all three share one async chunk). Always-mounted below, visible-prop
+// Nearby list. Same React.lazy loader as Tasks/Profile (one shared module; on
+// web it ships in the navigator chunk). Always-mounted below, visible-prop
 // controlled. Declared after the imports so eslint's import/first stays happy.
-const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
+const FlagDetailModal = React.lazy(loadFlagDetailModal);
 
 interface Coords {
   lat: number;

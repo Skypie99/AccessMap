@@ -57,10 +57,10 @@ function between(haystack: string, anchor: string, end: string): string {
 describe('S3 source invariants — MapScreen integration hub', () => {
   const map = readScreen('MapScreen.tsx');
 
-  it('mounts the already-built FlagDetailModal via the shared lazy chunk', () => {
-    expect(map).toContain(
-      "const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));",
-    );
+  it('mounts the already-built FlagDetailModal via the shared lazy loader', () => {
+    // One loader for Map/Tasks/Profile: a dynamic import on native; on web the
+    // sheet ships in the navigator chunk (src/navigation/deferredScreens.web.ts).
+    expect(map).toContain('const FlagDetailModal = React.lazy(loadFlagDetailModal);');
     // 700, not 400: GSP-02 §2.1 added `distanceKm` to the mount (the sheet's
     // meta line says how far away the barrier is, and it takes the number from
     // the caller rather than acquiring a location permission of its own). The

@@ -117,12 +117,13 @@ import {
 } from '@/lib/pointEvents';
 import SignInScreen from '@/screens/SignInScreen';
 import AboutScreen from '@/screens/AboutScreen';
+import { loadFlagDetailModal } from '@/navigation/deferredScreens';
 
-// Code-split: shares the same lazy FlagDetailModal async web chunk as TasksScreen
-// (Metro dedups by module path), so the sheet's code lives outside the main
-// bundle and loads on demand. Always-mounted below (visible-prop controlled).
-// Declared after the imports so eslint's import/first stays satisfied.
-const FlagDetailModal = React.lazy(() => import('@/components/FlagDetailModal'));
+// Shares the same lazy FlagDetailModal loader as TasksScreen; on web the sheet
+// ships in the navigator chunk (src/navigation/deferredScreens.web.ts).
+// Always-mounted below (visible-prop controlled). Declared after the imports
+// so eslint's import/first stays satisfied.
+const FlagDetailModal = React.lazy(loadFlagDetailModal);
 
 // Converts an ISO timestamp to a human-readable relative string.
 // Falls back to a short date once the event is more than a week old.
