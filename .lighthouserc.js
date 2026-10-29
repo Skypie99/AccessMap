@@ -1,7 +1,7 @@
 // Unused-JavaScript budget in KiB, enforced by scripts/check-unused-js-budget.mjs
 // (a Lighthouse workflow step right after `lhci autorun`). See the note at the
 // 'unused-javascript' assertion below. It may only go down.
-const UNUSED_JAVASCRIPT_BUDGET_KIB = 135;
+const UNUSED_JAVASCRIPT_BUDGET_KIB = 134;
 
 module.exports = {
   UNUSED_JAVASCRIPT_BUDGET_KIB,
