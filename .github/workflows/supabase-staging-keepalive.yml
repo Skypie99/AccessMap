@@ -1,0 +1,51 @@
+# Supabase staging keepalive — stop flagstonep07-freestaging free-tier auto-pausing.
+#
+# A free-tier Supabase project pauses after ~7 idle days. This job makes one tiny
+# anon read a day so the staging project always counts as active.
+#
+# The staging project has no public tables (auth + storage only), so the ping
+# lists storage buckets: a real Postgres read that RLS answers with an empty
+# array for anon. It reads and writes nothing else.
+#
+# This repo is public, so its Actions logs are public too. The URL and anon key
+# are SECRETS, not variables, so GitHub masks them in the log.
+#
+# Caveat: GitHub disables scheduled workflows after ~60 days with no repo
+# activity. Any push resets that clock, and the Actions tab has a one-click
+# "Enable workflow" button if it ever sleeps.
+name: Supabase staging keepalive
+
+on:
+  schedule:
+    - cron: '41 6 * * *' # daily ~06:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Ping the staging project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Anon storage read (keeps the project active)
+        env:
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Staging Supabase secrets not set yet — nothing to ping. Skipping."
+            exit 0
+          fi
+          # `|| true` so a DNS/connection failure still reports (as HTTP 000)
+          # instead of the step dying silently on curl's exit code.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+            "$SUPABASE_URL/storage/v1/bucket" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY") || true
+          echo "Storage keepalive returned HTTP ${code:-000} (200 = empty bucket list via RLS = success)"
+          case "$code" in
+            2*) exit 0 ;;
+            000|"") echo "could not reach the project — it may be paused, deleted, or the URL is wrong"; exit 1 ;;
+            *) echo "unexpected status — the project may be paused or misconfigured"; exit 1 ;;
+          esac
