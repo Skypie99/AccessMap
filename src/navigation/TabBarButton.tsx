@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { PlatformPressable } from '@react-navigation/elements';
 import { type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { hapticSelection } from '@/lib/haptics';
@@ -86,7 +86,7 @@ export function TabBarButton({
       ) : null}
       <PlatformPressable
         {...rest}
-        style={styles.pressable}
+        style={Platform.OS === 'web' ? [styles.pressable, styles.pressableWeb] : styles.pressable}
         pressOpacity={1}
         pressColor="transparent"
         onPress={(e) => {
@@ -111,6 +111,18 @@ export function TabBarButton({
 const styles = StyleSheet.create({
   segment: { flex: 1, position: 'relative' },
   pressable: { flex: 1 },
+  // WEB ONLY — desktop tab layout hotfix (2026-10-28), paired with the
+  // `tabBarLabelPosition: 'below-icon'` web override in RootNavigator. On web
+  // the library-injected layout style lands on `segment`, so this pressable is
+  // the real icon+label container and needs the centring itself:
+  //   - alignSelf:'stretch' keeps the pressable filling its segment, so the
+  //     tab's whole intended region stays clickable (and the focus outline
+  //     wraps that region) instead of collapsing to the label's content width;
+  //   - alignItems:'center' centres the icon exactly above its label (the
+  //     column default left-aligned the icon beside the stretched label);
+  //   - justifyContent:'center' keeps the icon+label group centred in the bar.
+  // Native is untouched: it keeps the plain flex:1 pressable.
+  pressableWeb: { alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   divider: {
     position: 'absolute',
     top: 12,
@@ -130,8 +142,19 @@ const styles = StyleSheet.create({
     left: '50%',
     marginLeft: -(FLOATING_TAB_BAR_SELECTED_FILL_WIDTH / 2),
     width: FLOATING_TAB_BAR_SELECTED_FILL_WIDTH,
-    top: spacing.xs,
-    bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + spacing.sm,
     borderRadius: radius.lg,
+    // WEB ONLY — desktop tab layout hotfix (2026-10-28): on web the label box
+    // runs to the segment's bottom edge, so the native tuned insets
+    // (top spacing.xs / bottom CONTROL_BOTTOM_PADDING + spacing.sm) left the
+    // wash clipping mid-label instead of sitting behind the complete
+    // icon+label group. Web wraps the full segment height (the group fills
+    // it); the fixed 68pt width keeps the wash a chip, not a band. Native
+    // geometry is untouched.
+    ...(Platform.OS === 'web'
+      ? { top: 0, bottom: 0 }
+      : {
+          top: spacing.xs,
+          bottom: FLOATING_TAB_BAR_CONTROL_BOTTOM_PADDING + spacing.sm,
+        }),
   },
 });
