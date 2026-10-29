@@ -62,7 +62,7 @@ jest.mock('expo-location', () => ({
   getForegroundPermissionsAsync: jest.fn(() => new Promise(() => {})),
   requestForegroundPermissionsAsync: jest.fn(() => new Promise(() => {})),
 }));
-jest.mock('@/lib/pushNotifications', () => ({
+jest.mock('@/lib/notificationPermission', () => ({
   getNotificationPermission: jest.fn(() => new Promise(() => {})),
   requestNotificationPermission: jest.fn(() => new Promise(() => {})),
 }));

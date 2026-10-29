@@ -25,7 +25,7 @@
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { decorativeProps } from '@/lib/accessibility';
-import { severityColor } from '@/lib/flags';
+import { severityColor } from '@/lib/severity';
 import { font, radius, severity } from '@/theme';
 import type { FlagSeverity } from '@/types/database';
 

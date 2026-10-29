@@ -230,7 +230,7 @@
       "callSites": [
         {
           "file": "src/lib/flags.ts",
-          "line": 1809,
+          "line": 1763,
           "kind": "rpc",
           "name": "list_public_leaderboard",
           "onAbsent": "hard",
@@ -239,7 +239,7 @@
         },
         {
           "file": "src/lib/flags.ts",
-          "line": 1829,
+          "line": 1783,
           "kind": "rpc",
           "name": "get_my_leaderboard_rank",
           "onAbsent": "optional_omitted",

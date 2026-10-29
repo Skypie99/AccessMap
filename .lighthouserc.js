@@ -1,4 +1,10 @@
+// Unused-JavaScript budget in KiB, enforced by scripts/check-unused-js-budget.mjs
+// (a Lighthouse workflow step right after `lhci autorun`). See the note at the
+// 'unused-javascript' assertion below. It may only go down.
+const UNUSED_JAVASCRIPT_BUDGET_KIB = 0;
+
 module.exports = {
+  UNUSED_JAVASCRIPT_BUDGET_KIB,
   ci: {
     collect: {
       // The web export is built by the workflow BEFORE this server starts.
@@ -49,10 +55,27 @@ module.exports = {
         // wasted), valid-source-maps (0) — keep failing honestly at preset
         // severity and are tracked as open quality debt (QUALITY-DEBT-RECORD
         // 2026-10-22) for the future website performance workstream.
+        // (unused-javascript has since moved to a byte budget; see below.)
         // The preset and all four category thresholds above are unchanged.
         'lcp-lazy-loaded': 'off',
         'non-composited-animations': 'off',
         'prioritize-lcp-image': 'off',
+
+        // ------------------------------------------------------------------
+        // unused-javascript: BYTE BUDGET — owner-approved 2026-10-29.
+        //
+        // The preset fails any script with more than 20 KiB of unused code
+        // (transfer-size bytes). This entry cannot get there: measured
+        // 2026-10-29 with this workflow's build, a welcome-only entry with
+        // Supabase removed still left 85 KiB unused, of which react-dom alone
+        // was about 20 KiB, and the react-native-web / Expo runtime most of
+        // the rest. So the assertion stays visible here as a warning, and
+        // the error-level gate is UNUSED_JAVASCRIPT_BUDGET_KIB (top of this
+        // file): the audit's total unused bytes as measured in CI for the
+        // full app on 2026-10-29, rounded up to the next KiB with no
+        // headroom. The budget may only go down: lower it when a change
+        // ships less unused code, never raise it to make a check pass.
+        'unused-javascript': ['warn', { maxLength: 0 }],
       },
     },
     upload: {
