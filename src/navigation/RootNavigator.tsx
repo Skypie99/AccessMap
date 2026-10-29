@@ -389,6 +389,17 @@ function NavInner({ initialRouteName }: { initialRouteName: keyof RootTabParamLi
             showDivider={route.name === 'Home' || route.name === 'Tasks'}
           />
         ),
+        // WEB ONLY — desktop tab layout hotfix (2026-10-28): keep the stacked
+        // icon-above-label layout at every web width. Unset, the library flips
+        // to its "label beside icon" variant at >=768px and injects a ROW
+        // layout style through `tabBarButton`; TabBarButton places that style
+        // on the outer segment while icon+label live in the inner pressable,
+        // so on desktop the icon hugged the far edge of each full-width
+        // segment while the label centred across it (measured 104-296px apart
+        // at 768-1920px). Forcing 'below-icon' on web restores the compact
+        // group the phone layout uses. Native keeps the library's responsive
+        // behavior untouched.
+        ...(Platform.OS === 'web' ? { tabBarLabelPosition: 'below-icon' as const } : null),
         // Native: TabBarGlass supplies liquid glass on normal iOS and preserves
         // opaque fallback material paths. Web keeps its CSS backdrop filter.
         tabBarBackground: Platform.OS === 'web' ? undefined : () => <TabBarGlass />,
