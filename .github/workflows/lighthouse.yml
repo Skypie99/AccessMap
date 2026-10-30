@@ -59,3 +59,10 @@ jobs:
           # inline PR status annotations. Without it, Lighthouse still runs and
           # uploads results to temporary-public-storage — just no PR check annotation.
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Check unused-JavaScript budget
+        # The error-level unused-javascript gate: total unused bytes must stay
+        # within UNUSED_JAVASCRIPT_BUDGET_KIB in .lighthouserc.js (see the note
+        # there). LHCI can't assert this audit in bytes, so it is checked here.
+        if: ${{ !cancelled() }}
+        run: node scripts/check-unused-js-budget.mjs

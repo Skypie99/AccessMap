@@ -25,10 +25,10 @@ import * as Location from 'expo-location';
 import {
   getNotificationPermission,
   requestNotificationPermission,
-} from '@/lib/pushNotifications';
+} from '@/lib/notificationPermission';
 import { a11yToggle, decorativeProps, isAxRecompose, useFocusOnOpen, useReducedMotion } from '@/lib/accessibility';
 import { trackEvent } from '@/lib/analytics';
-import { SEVERITY_LABELS, SEVERITY_ORDER, severityColor } from '@/lib/flags';
+import { SEVERITY_LABELS, SEVERITY_ORDER, severityColor } from '@/lib/severity';
 import { font, radius, spacing } from '@/theme';
 import { type ColorTheme, useColor } from '@/theme/ThemeContext';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
