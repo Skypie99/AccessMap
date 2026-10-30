@@ -1,0 +1,74 @@
+name: Bug report
+description: Something in the Flagstone app or web version is not working as expected.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Issues on this repository are public, so please leave out your email address, phone number, home address or exact location, and any photo that shows a person or a licence plate.
+
+        To report an accessibility barrier, use the map at [flagstone.skypistudio.com](https://flagstone.skypistudio.com) or the app instead. For account, privacy or deletion requests, email support@skypistudio.com.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Where did it happen?
+      options:
+        - iPhone app
+        - Web version (flagstone.skypistudio.com)
+        - Both, or not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version, device and browser
+      description: For the app, see the App Store page or Settings. For the web, name the browser and device.
+      placeholder: "Flagstone 4.1.1 on iPhone 15, iOS 18.1 (or Safari 18 on a Mac)"
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw, including any error message, word for word if you can.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: assistive-tech
+    attributes:
+      label: Were you using assistive technology or display settings?
+      description: Optional, but it helps reproduce accessibility problems.
+      multiple: true
+      options:
+        - None
+        - VoiceOver or another screen reader
+        - Larger Text or Dynamic Type
+        - Reduce Motion
+        - Voice Control or Switch Control
+        - Something else (describe below)
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: Crop or blur anything that shows a location, a person or account details before you attach it.
+    validations:
+      required: false
