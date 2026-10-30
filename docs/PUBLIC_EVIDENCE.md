@@ -2,7 +2,7 @@
 
 A curated route through the strongest evidence in this repository, for anyone who would rather
 check the [README](../README.md)'s claims than take them on trust. Each row says what the evidence
-shows, where it lives, and how current it is. "Current" means current as of **2026-09-26**.
+shows, where it lives, and how current it is. "Current" means current as of **2026-10-29**.
 
 This page routes; it does not restate. If a linked record and this page ever disagree, the record
 wins, and for anything about what shipped, [`release/current.json`](../release/current.json)
@@ -15,7 +15,7 @@ outranks everything else.
 | 1. Overview | What Flagstone is and where it stands | [README](../README.md) |
 | 2. Router | This page | — |
 | 3. Current authority | Machine-checked records and policy documents that are kept current | [`release/current.json`](../release/current.json), [RELEASE_IDENTITY.md](RELEASE_IDENTITY.md), [AGENTS.md](../AGENTS.md), [`supabase/contract/`](../supabase/contract/) |
-| 4. Recent detailed QA | Dated reports from the latest work (September 2026) | [`qa-reports/`](../qa-reports/) files dated `2026-09-*` |
+| 4. Recent detailed QA | Dated reports from the latest work (September and October 2026) | [`qa-reports/`](../qa-reports/) files dated `2026-09-*` and `2026-10-*`, and the release receipts in [`qa-reports/releases/`](../qa-reports/releases/) |
 | 5. Historical receipts | Dated evidence from earlier work: true for its date, not current authority | older [`qa-reports/`](../qa-reports/), [`design-reviews/`](../design-reviews/), [`security-audit/`](../security-audit/) |
 
 ## Product and architecture
@@ -34,7 +34,8 @@ outranks everything else.
 | Evidence | What it shows | Currency |
 |---|---|---|
 | [CI workflow](../.github/workflows/ci.yml) | On every pull request and push to `main`: TypeScript, ESLint, the Jest suite, a migration-crosswalk freshness check, a full migration replay against PostgreSQL 17, and a performance budget | Current |
-| [Pre-Phase-05 safety handoff](../qa-reports/2026-09-21_Codex_PrePhase05AdminRemoveSafety.md) | Latest recorded full run on `main`'s newest code: **299 suites, 4,472 tests passing, 32 todo, 0 failing**; typecheck and lint clean | 2026-09-21; since merged to `main` |
+| [Pre-Phase-05 safety handoff](../qa-reports/2026-09-21_Codex_PrePhase05AdminRemoveSafety.md) | A full local run on the branch that was then merged to `main`: **299 suites, 4,472 tests passing, 32 todo, 0 failing**; typecheck and lint clean | 2026-09-21; superseded by the October runs below |
+| [October accessible-loading QA](../qa-reports/2026-10-24_OptionB_Accessible_Loading_QA.md) | The latest recorded full local runs, for the web release candidate: **303 suites, 4,483 passing, 32 todo, 6 failing**, and CI's coverage-gated command at 4,495 passing and 7 failing. The report traces the 6 to database-tooling guards that refuse a workspace path containing spaces (`main` fails the same 6 there) and the 7th to a timeout under load that passes when run alone. CI passed on the release merge | 2026-10-24 |
 | [Phase 04 integration gate](../qa-reports/phase04/20260922T032010Z-final-integration/FINAL_INTEGRATION.md) | Serialized integration of two accepted branches, with exact commit and tree identities and full test gates | 2026-09-22 (UTC); since merged to `main` |
 | [Guard tests](../src/__tests__/) | 55 "guard" tests that turn invariants into executable checks: accessibility wiring, ratified legal copy, privacy fences, credential hygiene, release scripts, migration lineage | Current |
 | [Simulator walk](../design-reviews/sim-walk/2026-08-19/00_CLOSEOUT.md), [signed-in pass](../design-reviews/sim-walk/2026-08-19/00_CLOSEOUT_AUTHED.md), [ledger](../design-reviews/sim-walk/2026-08-19/LEDGER.md) | A full walk of a Release build on the largest and smallest iPhone simulators, with measured hit targets and accessibility-tree censuses, findings SW-01 to SW-53, and a four-wave fix pass | 2026-08-19 to 2026-08-20 |
@@ -84,29 +85,35 @@ pass with known residual and historical exposure.
 
 | Evidence | What it shows | Currency |
 |---|---|---|
-| [`release/current.json`](../release/current.json) | The one machine-readable record of what shipped: the app 4.1.1 / iOS build 33 source commit and tree, the web source, the serving deployment and domains | Last verified 2026-09-02 |
+| [`release/current.json`](../release/current.json) | The one machine-readable record of what shipped: the app 4.1.1 / iOS build 33 source commit and tree, the web source, the serving deployment and domains | Last verified 2026-10-25 |
 | [RELEASE_IDENTITY.md](RELEASE_IDENTITY.md) | The release policy: commands, invariants, and why identity is proven by exact commit rather than branch names | 2026-09-02 |
 | [CURRENT_RELEASE.md](../qa-reports/CURRENT_RELEASE.md) | Human view generated from the manifest; CI fails if it drifts | Generated |
 | [Build 33 release receipt](../qa-reports/releases/2026-09-01_Flagstone_4.1.1_Build33_ReleaseIdentity.md), [web deployment decision](../qa-reports/2026-09-01_Build33_WebDeploymentDecision.md) | The immutable receipt, and the deployment decision with host state before and after and recruiter-path acceptance | 2026-09-01/02 |
+| [October web release receipt](../qa-reports/releases/2026-10-25_Flagstone_4.1.1_Build33_OptionB_WebDeployment.md), [owner approvals on PR #35](https://github.com/Skypie99/AccessMap/pull/35) | The web-only production release of source `4a27691`: exact deployment identity, both domains verified, live browser checks, accepted limits and the rollback target, with separate owner approvals for the merge and for production | 2026-10-24/25 |
 | [Release-identity CI](../.github/workflows/release-identity.yml) | Network-free verification of the manifest against real Git objects | Current |
 
-`npm run release:verify` runs the same checks locally. As of 2026-09-26 it passes with one
-governance warning, listed below.
+`npm run release:verify` runs the same checks locally. The Release Identity workflow passed on
+`main` at the 2026-10-25 release-record commit.
 
-## Known limitations and current work (as of 2026-09-26)
+## Known limitations and current work (as of 2026-10-29)
 
-- **Current App Store state is not asserted here.** The manifest records Build 33 as
-  `submitted_for_review` (last verified 2026-09-02), and a 2026-09-09 report still describes it as
-  under review. The App Store itself is the source of truth for availability.
-- **`main` is ahead of the shipped app.** The September 2026 work on `main` (contract and
-  migration truth, moderation semantics, the anonymous-read contract, account-deletion accuracy)
-  is not yet in a released build.
+- **The App Store is the source of truth for availability.** Flagstone 4.1.1 has been available
+  there since 2026-09-15, in the United States and Canada only (storefront lookup rechecked
+  2026-10-29), and the manifest's App Store field still reads `submitted_for_review` until the release tool updates it. No download, rating or usage figures are
+  claimed.
+- **The web is ahead of the iOS app.** The September 2026 work on `main` (contract and migration
+  truth, moderation semantics, the anonymous-read contract, account-deletion accuracy) is partly
+  database work, applied to the shared production backend from 2026-09-15 and serving both apps,
+  and partly client code, which shipped to the web on 2026-10-25 and is not yet in a native build.
 - **Two paths are deliberately switched off on `main`** until safer backend contracts exist:
   client-side flag deletion (commit `df58cac`) and admin flag removal (see the
   [pre-Phase-05 handoff](../qa-reports/2026-09-21_Codex_PrePhase05AdminRemoveSafety.md)).
-- **Release-manifest governance warning.** The manifest still marks `main` convergence as
-  deferred, although the Build 33 source is already in `main`'s history. `release:verify` reports
-  this as a warning; updating the manifest is an owner decision.
+- **The 2026-09-26 governance warning is resolved.** The manifest now records `main` convergence
+  (`releaseCodeIntegration: converged`, 2026-10-25).
+- **The October web release has accepted limits.** Its Lighthouse unused-JavaScript assertion still
+  fails (accepted, threshold unchanged), and physical Safari, VoiceOver, iPhone and iPad testing of
+  that release is still to do. See the
+  [web release receipt](../qa-reports/releases/2026-10-25_Flagstone_4.1.1_Build33_OptionB_WebDeployment.md).
 - **Some checks need real hardware.** VoiceOver on a physical device, push delivery, real GPS and
   release-binary performance are listed as device-only in the
   [simulator-walk close-out](../design-reviews/sim-walk/2026-08-19/00_CLOSEOUT_AUTHED.md).
@@ -114,8 +121,9 @@ governance warning, listed below.
   known historical and residual exposure, and the image redactions are visually unverified (see the
   [public-estate P0/P1 receipt](../qa-reports/2026-09-26_Codex_PublicEstateP0P1.md)). Nothing on
   this page should be read as a full privacy clearance.
-- **The web demo is pinned by design** to the Build 33 lineage on a frozen branch. It does not
-  follow `main`.
+- **The web version is pinned by design** to an exact source on a frozen release branch
+  (`release/web-4.1.1-build33-optionb`). It does not follow `main`; a new web release needs its own
+  approval and receipt.
 
 ## Reading older files
 

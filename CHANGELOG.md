@@ -1,8 +1,24 @@
 # Changelog
 
-All notable changes to AccessMap, in plain language. Newest first.
+All notable changes to Flagstone (repository: AccessMap), in plain language. Newest first.
 
-## [Unreleased] — release/auto-2026-05-30
+## [Web release] - 2026-10-25
+
+The web version at [flagstone.skypistudio.com](https://flagstone.skypistudio.com) moved to source
+`4a27691`: a lighter, accessible first launch on top of the work merged to `main` since the 4.1.1
+build. The iOS app did not change. The
+[release receipt](qa-reports/releases/2026-10-25_Flagstone_4.1.1_Build33_OptionB_WebDeployment.md)
+records the exact identity, the live checks, the accepted limits and the rollback target.
+
+## [4.1.1] - 2026-09-15
+
+Flagstone 4.1.1 was released on the App Store in the United States and Canada. The release
+manifest, [`release/current.json`](release/current.json), records it as iOS build 33; the dated QA,
+accessibility and release receipts are in [`qa-reports/`](qa-reports/) and
+[`design-reviews/`](design-reviews/). This changelog does not restate the full 4.1.x feature
+history.
+
+## [Historical] - 2026-05-30, release/auto-2026-05-30
 
 ### Fixed
 - **iOS cloud builds no longer fail to compile.** Removed a leftover piece of
@@ -15,10 +31,10 @@ All notable changes to AccessMap, in plain language. Newest first.
 
 ---
 
-## [0.2.0] — already on `main`
+## [0.2.0] - historical pre-release line
 
-The 0.2.0 line is what's currently on `main` (app version 0.2.0). Highlights
-that shipped in this line, for reference:
+The 0.2.0 line was the pre-release line (app version 0.2.0). It is kept here as
+history, not as a description of the current app. Highlights from that line:
 
 - Crowdsourced accessibility flags: drop a pin, pick a category + severity, add
   a photo, and others can verify / resolve / reject it.
@@ -33,8 +49,10 @@ that shipped in this line, for reference:
 ---
 
 ### Notes for maintainers
-- Versions live in `app.json` (`expo.version` + `ios.buildNumber`) and
-  `package.json`. Bump both together when cutting a release.
-- This file is updated by Rory (release engineering) as part of release prep.
-- Sentry crash reporting is wired but stays silent until the
-  `EXPO_PUBLIC_SENTRY_DSN` secret is added via `eas secret:create`.
+- The marketing version lives in `app.json` (`expo.version`) and `package.json`;
+  bump both together. The iOS build number comes from EAS
+  (`appVersionSource: "remote"`), so `app.json`'s `ios.buildNumber` is
+  diagnostic only. See [docs/RELEASE_IDENTITY.md](docs/RELEASE_IDENTITY.md).
+- Update this file as part of release prep, alongside `release/current.json`.
+- No crash-reporting SDK is installed (checked against `package.json` on
+  2026-10-29). Older notes that described Sentry as wired are historical.

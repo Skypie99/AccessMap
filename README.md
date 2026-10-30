@@ -8,8 +8,14 @@ they can plan around them and so the barriers get fixed.
 
 - **Try it:** [flagstone.skypistudio.com](https://flagstone.skypistudio.com). Browse the live map as
   a guest; no account needed.
+- **Get the iPhone app:** [Flagstone Accessibility Map](https://apps.apple.com/app/flagstone-accessibility-map/id6774709116)
+  on the App Store, free, in the United States and Canada.
 - **Check the claims:** [docs/PUBLIC_EVIDENCE.md](docs/PUBLIC_EVIDENCE.md) routes to the testing,
   accessibility, privacy and release records behind this page.
+
+<p align="center">
+  <img src="docs/assets/readme/flagstone-explore.webp" width="300" alt="Flagstone's Explore map with an expanded verified Steep grade report, a real barrier photograph, orange map pins, map controls, and bottom navigation.">
+</p>
 
 > **Flagstone or AccessMap?** Flagstone is the product: every flag report is a stone, and laid down
 > one by one they pave a path everyone walks. AccessMap was the working name until the 2026-08-17
@@ -18,14 +24,15 @@ they can plan around them and so the barriers get fixed.
 > orphan the build project and break existing deep links. Records written before the rename say
 > AccessMap because that was the name at the time.
 
-## Where it stands (as of 2026-09-26)
+## Where it stands (as of 2026-10-29)
 
 | | |
 |---|---|
-| **iOS app** | **Flagstone 4.1.1 (build 33)** is the latest native release in the [release manifest](release/current.json), which records it as submitted for App Store review (last verified 2026-09-02; repository notes from 2026-09-09 still describe it as under review). This README does not claim current App Store availability. |
-| **Web demo** | [flagstone.skypistudio.com](https://flagstone.skypistudio.com) serves the Build 33 code plus one approved web-only fix (an OpenFreeMap basemap). The serving deployment was verified on 2026-09-02, and it is pinned by design: it does not follow `main`. |
-| **`main`** | Active work since the Build 33 submission: database contract and migration truth, moderation semantics, an anonymous-read privacy contract, and account-deletion accuracy. None of it is in a released build (the manifest's latest release is still Build 33), and two paths (client-side flag deletion and admin flag removal) are deliberately switched off until safer backend contracts exist. |
-| **Quality gates** | 299 Jest suites and 4,472 tests passing on `main`'s latest code (recorded 2026-09-21), strict TypeScript, ESLint, a replay of every database migration against PostgreSQL 17, and a release-identity verifier, all in CI. |
+| **iOS app** | **Flagstone 4.1.1** has been on the App Store since 2026-09-15, free, in the United States and Canada only (storefront lookup rechecked 2026-10-29). The [release manifest](release/current.json) records the 4.1.1 submission as iOS build 33, from source `f559417`; its App Store field still reads `submitted_for_review` because it changes only through the release tool. The launch is recent, so no download or usage figures are claimed. |
+| **Web version** | [flagstone.skypistudio.com](https://flagstone.skypistudio.com) serves the 2026-10-25 web release, deployed from source `4a27691` on a frozen release branch ([receipt](qa-reports/releases/2026-10-25_Flagstone_4.1.1_Build33_OptionB_WebDeployment.md)). It is a web-only descendant of the 4.1.1 build: it adds the later `main` work and a lighter, accessible first launch, and it does not change the iOS app. It is pinned by design and does not follow `main`. |
+| **`main`** | Work since the 4.1.1 build: database contract and migration truth, moderation semantics, an anonymous-read privacy contract, and account-deletion accuracy. Its database changes were applied to the shared production backend from 2026-09-15 and serve both apps; its client-side parts shipped to the web on 2026-10-25, and the iOS app still runs the 4.1.1 client. Two paths, client-side flag deletion and admin flag removal, stay switched off until safer backend contracts exist. |
+| **Quality gates** | Every pull request to `main`, and every push to it, runs strict TypeScript, ESLint, the Jest suite with its coverage gate, a migration-crosswalk check, a replay of every database migration against PostgreSQL 17, and a performance-budget check; a release-identity check runs when release records change. CI passed on the October web release merge (`4a27691`) and on the release-record commit after it. Dated full-suite results, including environment-specific failures, are in the [evidence map](docs/PUBLIC_EVIDENCE.md). |
+| **Known limits** | The Lighthouse check on pull requests enforces a 135 KiB unused-JavaScript budget, measured in CI on 2026-10-29 after Supabase was moved off the welcome screen; the default 20 KiB limit is out of reach for the current web runtime, and the budget may only go down. Physical Safari, VoiceOver, iPhone and iPad testing of the October web release is still to do; automated Chromium and WebKit checks are not a substitute. |
 
 ## What Flagstone 4.1.1 does
 
@@ -49,24 +56,27 @@ they can plan around them and so the barriers get fixed.
 
 ## How it was built
 
-Flagstone is Sky Halisky's project. Sky set the product direction and its accessibility and privacy
+Flagstone is Skyler Halisky's project. Sky set the product direction and its accessibility and privacy
 commitments, ran simulator and on-device QA, and made the product, moderation, privacy and release
 decisions recorded in [DECISIONS_LOG.md](DECISIONS_LOG.md) and the QA handoffs. Sky also holds final
 authority over merges to `main`, production deployments and App Store submissions.
 
-The code, audits and reviews were produced with AI coding agents (Claude Code and OpenAI Codex),
+The code, audits and reviews were produced with AI coding agents (mainly Claude Code and OpenAI Codex,
+plus some October web work by Xiaomi's MiMo),
 working under written repository rules ([AGENTS.md](AGENTS.md)), guard tests that turn product
 promises into CI checks, and a release process that proves identity by exact commit rather than by
 branch name ([docs/RELEASE_IDENTITY.md](docs/RELEASE_IDENTITY.md)). Most changes come with a dated
 report in [`qa-reports/`](qa-reports/) or [`design-reviews/`](design-reviews/), and production
-deployments and App Store submissions require Sky's sign-off.
+deployments and App Store submissions require Sky's sign-off. The approvals for the October web
+release are public: the [source-merge approval](https://github.com/Skypie99/AccessMap/pull/35#issuecomment-6392586946)
+and, separately, the [production approval](https://github.com/Skypie99/AccessMap/pull/35#issuecomment-6394476701).
 
 ## Stack
 
 Expo SDK 54 · React Native 0.81 · React 19.1 · TypeScript (strict) · Supabase (Postgres with
 row-level security, Auth, Storage, Realtime, Edge Functions) · react-native-maps on iOS, react-leaflet
 with MapLibre and OpenFreeMap tiles on the web · Jest and Testing Library · pgTAP · EAS for iOS
-builds · Vercel for the web demo.
+builds · Vercel for the web version.
 
 ## Repository map
 
@@ -80,6 +90,8 @@ builds · Vercel for the web demo.
 | `qa-reports/`, `design-reviews/`, `security-audit/` | Dated QA, design and security records: evidence for their date, not current authority |
 
 ## Run it locally
+
+CI uses Node.js 22; use the same version locally.
 
 ```bash
 npm install            # .npmrc sets legacy-peer-deps (react-leaflet 5 alongside React 19.1)
@@ -106,6 +118,14 @@ npm run typecheck && npm run lint && npm test
 - Before any release or deployment work, read [`release/current.json`](release/current.json) and
   [docs/RELEASE_IDENTITY.md](docs/RELEASE_IDENTITY.md), and run `npm run release:verify`.
 - Rules for AI coding agents working in this repository are in [AGENTS.md](AGENTS.md).
+
+## Reporting a problem
+
+Found something broken in the app or on the web? [Open an issue](https://github.com/Skypie99/AccessMap/issues/new/choose)
+with the steps to reproduce, or email support@skypistudio.com. Issues are public, so leave out
+personal details, exact home locations and photos of people. Barrier reports belong on the map
+itself, not in issues. The [support page](https://skypistudio.com/flagstone/support/) covers account
+deletion and common questions.
 
 ## License
 

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report an accessibility barrier
+    url: https://flagstone.skypistudio.com
+    about: Barriers go on the map, where the community can verify them. Please do not file them as issues.
+  - name: Account, privacy or deletion requests
+    url: https://skypistudio.com/flagstone/support/
+    about: Email support or use the in-app deletion steps described on the support page.
+  - name: Privacy policy
+    url: https://skypistudio.com/flagstone/privacy/
+    about: What Flagstone collects, what it never collects, and your rights.

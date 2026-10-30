@@ -75,14 +75,14 @@ time, so `originMainAtBuild` is `null`. Historical honesty outranks a prettier m
 |---|---|
 | Mode | `web-only-descendant` (APPROVED WEB-ONLY DESCENDANT) |
 | Base (== app source) | `f5594171e75bc5ec92a87d0392c361601ddedfba` |
-| Source commit / tree | `ebf091c21066d39898160b1357bde0aa35bdb8bf` / `6cb842e3be0f4c3bfec569307829ad240d3f270a` |
-| Ancestry | `git merge-base --is-ancestor f559417… ebf091c…` → PASS |
-| Overlay | Accepted OpenFreeMap web basemap repair for the Build 33 demo (approved; receipt below) |
-| Frozen branch | `release/web-4.1.1-build33-openfreemap` @ `ebf091c…` — **do not move it** |
-| Vercel | project `access-map`, team `skypie99s-projects`, production branch = frozen branch, deployment `HMszH26wADRRDd1CqH4UkJ8kAugQ` @ `ebf091c…` |
+| Source commit / tree | `4a27691b2f2f66f02cca936f50d87d7c6b5795dc` / `c89d67eae4727e63ba258e8df21787b186655e99` |
+| Ancestry | `git merge-base --is-ancestor f559417… 4a27691…` → PASS |
+| Overlay | Option B accessible first-launch load reduction on the converged `main` lineage; includes the merged post-Build-33 `main` changes and keeps the accepted OpenFreeMap basemap repair (approved; receipt below) |
+| Frozen branch | `release/web-4.1.1-build33-optionb` @ `4a27691…`; **do not move it** |
+| Vercel | project `access-map`, team `skypie99s-projects`, production branch = frozen branch, deployment `dpl_DhFGfQScrFRtnSUkd2CXnbq1Zs4c` @ `4a27691…`, verified 2026-10-25T09:32:55Z |
 | Domains | `flagstone.skypistudio.com` (primary recruiter path), `accessmap.skypistudio.com` |
 | Live identity mode | `legacy-triangulated` (no release-meta endpoint; see §12) |
-| Receipt | `qa-reports/2026-09-01_Build33_WebDeploymentDecision.md`; identity receipt `qa-reports/releases/2026-09-01_Flagstone_4.1.1_Build33_ReleaseIdentity.md` |
+| Receipt | `qa-reports/releases/2026-10-25_Flagstone_4.1.1_Build33_OptionB_WebDeployment.md`, which also names the rollback target: the previous web identity `ebf091c…` on `release/web-4.1.1-build33-openfreemap`, deployment `HMszH26wADRRDd1CqH4UkJ8kAugQ`. Earlier receipts: `qa-reports/2026-09-01_Build33_WebDeploymentDecision.md`; identity receipt `qa-reports/releases/2026-09-01_Flagstone_4.1.1_Build33_ReleaseIdentity.md` |
 
 ## 4. Mode A — exact (DEFAULT)
 
